@@ -21,7 +21,7 @@ func main() {
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
-		port = "8080"
+		port = "8088"
 	}
 
 	pgHost := os.Getenv("POSTGRES_HOST")
