@@ -2,6 +2,7 @@
 	import "../app.css";
 	import { page } from "$app/stores";
 	import { ShieldCheck, CommandLine, ArrowRightOnRectangle, ArrowLeftOnRectangle, Square3Stack3d } from "svelte-heros-v2";
+	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import type { LayoutData } from "./$types";
 
 	let { data, children }: { data: LayoutData; children: any } = $props();
@@ -101,6 +102,11 @@
 						<span>Sign In</span>
 					</a>
 				{/if}
+
+				<!-- Theme Toggle (Light by default, Aceternity / Magic UI style) -->
+				<div class="ml-1 pl-1 border-l border-border/50">
+					<ThemeToggle />
+				</div>
 			</nav>
 		</div>
 	</header>
