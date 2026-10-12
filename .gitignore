@@ -34,6 +34,9 @@ mcp-server/.env
 auth_info/
 .wwebjs_auth/
 .wwebjs_cache/
+.baileys_auth/
+whatsapp-gateway/.baileys_auth/
+whatsapp-gateway/.env
 baileys_store.json
 
 # Local Databases & Logs

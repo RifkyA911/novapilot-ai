@@ -70,41 +70,29 @@
 						</span>
 					</div>
 				</a>
-
-				<!-- Live Plant On-Call Status Pulse (Humanized for Factory IT Team) -->
-				<div class="hidden lg:flex items-center gap-2 ml-2 pl-3 border-l border-border/60 text-xs">
-					<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-						<span class="relative flex h-2 w-2">
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-						</span>
-						<span class="font-mono text-[11px] font-semibold tracking-tight">PIKET WATCH ACTIVE</span>
-					</div>
-				</div>
 			</div>
 
 			<!-- Center: Navigation Links (Desktop) -->
-			<nav class="hidden md:flex items-center gap-1.5 bg-secondary/40 p-1 rounded-xl border border-border/50">
+			<nav class="hidden md:flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-border/40 text-xs">
 				<a
 					href="/"
-					class="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 {currentPath === '/' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'}"
+					class="px-3.5 py-1.5 font-medium rounded-lg transition-all duration-150 {currentPath === '/' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}"
 				>
 					Overview
 				</a>
 				<a
 					href="/flow"
-					class="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 flex items-center gap-1.5 {currentPath.startsWith('/flow') ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'}"
+					class="px-3.5 py-1.5 font-medium rounded-lg transition-all duration-150 flex items-center gap-1.5 {currentPath.startsWith('/flow') ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}"
 				>
 					<Square3Stack3d class="h-3.5 w-3.5 text-emerald-500" />
 					<span>System Flow</span>
 				</a>
 				<a
 					href="/dashboard"
-					class="px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 flex items-center gap-1.5 {currentPath.startsWith('/dashboard') ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'}"
+					class="px-3.5 py-1.5 font-medium rounded-lg transition-all duration-150 flex items-center gap-1.5 {currentPath.startsWith('/dashboard') ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}"
 				>
 					<CommandLine class="h-3.5 w-3.5 text-primary" />
-					<span>On-Call Dashboard</span>
-					<span class="flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
+					<span>Dashboard</span>
 				</a>
 			</nav>
 
@@ -165,43 +153,34 @@
 					>
 						<span class="flex items-center gap-2">
 							<CommandLine class="h-4 w-4 text-primary" />
-							<span>On-Call Incident Queue</span>
+							<span>Dashboard Queue</span>
 						</span>
-						<span class="text-xs font-mono px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">LIVE</span>
 					</a>
 				</div>
 
-				<!-- Mobile User Profile & Shift Card -->
+				<!-- Mobile User Profile Card -->
 				<div class="pt-3 border-t border-border/60">
 					{#if user}
-						<div class="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-2">
+						<div class="p-3 rounded-xl bg-secondary/40 border border-border/40 space-y-2">
 							<div class="flex items-center gap-3">
 								<img
 									src={user.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe"}
 									alt={user.name}
-									class="w-10 h-10 rounded-xl bg-card border border-border object-cover"
+									class="w-9 h-9 rounded-xl bg-card border border-border object-cover"
 								/>
 								<div class="min-w-0 flex-1">
-									<div class="text-xs font-bold text-foreground truncate">{user.name}</div>
+									<div class="text-xs font-semibold text-foreground truncate">{user.name}</div>
 									<div class="text-[11px] text-muted-foreground font-mono truncate">{user.email}</div>
 								</div>
-								<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-									ON-CALL
-								</span>
-							</div>
-
-							<div class="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-								<span>Piket Quota:</span>
-								<span class="font-mono font-semibold text-foreground">Shift 1 / 2 Active</span>
 							</div>
 
 							<button
 								type="button"
 								onclick={() => { closeMobileMenu(); handleLogout(); }}
-								class="w-full mt-2 py-2 text-xs font-semibold rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors flex items-center justify-center gap-1.5"
+								class="w-full mt-2 py-2 text-xs font-medium rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5"
 							>
 								<ArrowRightOnRectangle class="h-3.5 w-3.5" />
-								<span>End Piket Shift / Sign Out</span>
+								<span>Sign Out</span>
 							</button>
 						</div>
 					{:else}
@@ -211,7 +190,7 @@
 								onclick={closeMobileMenu}
 								class="w-full py-2.5 text-center text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
 							>
-								Sign In to On-Call Roster
+								Sign In
 							</a>
 						</div>
 					{/if}

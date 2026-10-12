@@ -91,61 +91,48 @@
 
 <div class="relative" bind:this={dropdownRef}>
 	{#if user}
-		<!-- Authenticated Human-Friendly Profile Trigger -->
+		<!-- Authenticated Calm Profile Trigger -->
 		<button
 			type="button"
 			onclick={toggleMenu}
-			class="flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-full bg-secondary/60 hover:bg-secondary/90 border border-border/70 hover:border-primary/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 group shadow-sm"
+			class="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full hover:bg-secondary/70 border border-transparent hover:border-border/60 transition-all duration-150 focus:outline-none group text-left"
 			aria-expanded={isMenuOpen}
 			aria-haspopup="true"
 		>
-			<!-- User Avatar with live status ring -->
+			<!-- User Avatar with calm status ring -->
 			<div class="relative flex-shrink-0">
 				{#if activeUser.avatar}
 					<img
 						src={activeUser.avatar}
 						alt={activeUser.name}
-						class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20 group-hover:ring-primary/40 bg-card transition-all"
+						class="w-7 h-7 rounded-full object-cover ring-1 ring-border group-hover:ring-primary/40 bg-card transition-all"
 					/>
 				{:else}
-					<div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center ring-2 ring-primary/20">
+					<div class="w-7 h-7 rounded-full bg-secondary text-foreground font-medium text-xs flex items-center justify-center ring-1 ring-border">
 						{getInitials(activeUser.name)}
 					</div>
 				{/if}
-				<!-- Active on-call shift pulse -->
-				<span class="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-					<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-					<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-background"></span>
-				</span>
+				<!-- Calm status dot (no ping) -->
+				<span class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background"></span>
 			</div>
 
-			<!-- User Name & Role Info (Desktop) -->
-			<div class="hidden md:flex flex-col text-left">
-				<div class="flex items-center gap-1.5 leading-tight">
-					<span class="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-						{activeUser.name}
-					</span>
-					<span class="text-[9px] px-1 py-0.2 rounded font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-						Piket Aktif
-					</span>
-				</div>
-				<span class="text-[10px] text-muted-foreground font-mono leading-tight">
-					{activeUser.email}
-				</span>
-			</div>
+			<!-- User Name (Desktop) -->
+			<span class="hidden sm:inline-block text-xs font-medium text-foreground group-hover:text-primary transition-colors">
+				{activeUser.name}
+			</span>
 
 			<!-- Dropdown Chevron -->
 			<ChevronDown class="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-transform duration-200 {isMenuOpen ? 'rotate-180 text-primary' : ''}" />
 		</button>
 	{:else}
-		<!-- Guest / Unauthenticated Mode with friendly Login CTA -->
+		<!-- Guest / Unauthenticated Mode with calm Login CTA -->
 		<div class="flex items-center gap-2">
 			<a
 				href="/auth"
-				class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm hover:shadow"
+				class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
 			>
 				<UserCircle class="w-4 h-4" />
-				<span>Sign In (Piket)</span>
+				<span>Sign In</span>
 			</a>
 		</div>
 	{/if}
@@ -158,73 +145,52 @@
 			tabindex="-1"
 		>
 			<!-- Profile Header Card -->
-			<div class="flex items-start gap-3.5 pb-4 border-b border-border/60">
+			<div class="flex items-start gap-3 pb-3 border-b border-border/50">
 				<div class="relative flex-shrink-0">
 					{#if activeUser.avatar}
 						<img
 							src={activeUser.avatar}
 							alt={activeUser.name}
-							class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/30 shadow-md bg-secondary"
+							class="w-10 h-10 rounded-xl object-cover ring-1 ring-border shadow-xs bg-secondary"
 						/>
 					{:else}
-						<div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary font-bold text-base flex items-center justify-center ring-2 ring-primary/30 shadow-md">
+						<div class="w-10 h-10 rounded-xl bg-secondary text-foreground font-semibold text-sm flex items-center justify-center ring-1 ring-border shadow-xs">
 							{getInitials(activeUser.name)}
 						</div>
 					{/if}
-					<span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-emerald-500 text-white shadow-sm">
-						LIVE
-					</span>
 				</div>
 
 				<div class="flex-1 min-w-0">
-					<div class="flex items-center gap-2">
-						<h4 class="text-sm font-bold text-foreground truncate">{activeUser.name}</h4>
-						<span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold bg-primary/10 text-primary border border-primary/20 uppercase">
-							{activeUser.role === 'oncall_engineer' ? 'IT On-Call' : activeUser.role}
+					<div class="flex items-center gap-1.5">
+						<h4 class="text-sm font-semibold text-foreground truncate">{activeUser.name}</h4>
+						<span class="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-secondary text-muted-foreground border border-border/50">
+							{activeUser.role === 'oncall_engineer' ? 'IT Support' : activeUser.role}
 						</span>
 					</div>
 					<p class="text-xs text-muted-foreground truncate font-mono mt-0.5">{activeUser.email}</p>
-					
-					<div class="mt-2 flex items-center gap-2">
-						<span class="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-							<CheckCircle class="w-3.5 h-3.5" />
-							<span>Verified Staff Clearance</span>
-						</span>
-					</div>
 				</div>
 			</div>
 
-			<!-- Factory On-Call Shift Context (Directly Humanized for User's Routine) -->
-			<div class="my-3.5 p-3 rounded-xl bg-secondary/50 border border-border/50 text-xs space-y-2.5">
-				<div class="flex items-center justify-between">
-					<span class="text-muted-foreground font-medium flex items-center gap-1.5">
+			<!-- On-Call Shift Assignment -->
+			<div class="my-3 p-3 rounded-xl bg-secondary/40 border border-border/40 text-xs space-y-2">
+				<div class="flex items-center justify-between text-muted-foreground">
+					<span class="font-medium flex items-center gap-1.5">
 						<Clock class="w-3.5 h-3.5 text-primary" />
-						<span>Piket Bulanan Pabrik</span>
+						<span>On-Call Roster</span>
 					</span>
-					<span class="font-mono font-semibold text-[11px] text-foreground bg-background px-2 py-0.5 rounded border border-border/60">
-						2x Quota / Month
+					<span class="font-mono text-[11px] text-foreground font-medium">
+						2x Monthly (Shift 1 of 2)
 					</span>
-				</div>
-
-				<!-- Quota Visual Progress -->
-				<div>
-					<div class="flex justify-between text-[11px] text-muted-foreground mb-1">
-						<span>Piket Shift Progress</span>
-						<span class="font-mono font-semibold text-primary">Shift 1 / 2 Active</span>
-					</div>
-					<div class="w-full h-1.5 rounded-full bg-border overflow-hidden">
-						<div class="h-full bg-primary rounded-full transition-all" style="width: 50%;"></div>
-					</div>
 				</div>
 
 				<!-- Authorized Branch Coverage -->
-				<div class="pt-1.5 border-t border-border/40">
-					<span class="text-[10px] text-muted-foreground uppercase font-mono tracking-wider block mb-1.5">
-						Branch WA Support Coverage:
+				<div class="pt-1.5 border-t border-border/30">
+					<span class="text-[10px] text-muted-foreground uppercase font-mono tracking-wider block mb-1">
+						Covered Branches:
 					</span>
 					<div class="flex flex-wrap gap-1">
 						{#each (activeUser.branchClearance || ["SURABAYA_HQ", "MEDAN_HUB", "SEMARANG_DC"]) as branch}
-							<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-card border border-border/60 text-foreground font-medium">
+							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-background border border-border/50 text-foreground">
 								{branch}
 							</span>
 						{/each}
@@ -232,44 +198,38 @@
 				</div>
 			</div>
 
-			<!-- Guardrail Security Assurance -->
-			<div class="p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-muted-foreground flex items-center gap-2 mb-3">
-				<ShieldCheck class="w-4 h-4 text-emerald-500 flex-shrink-0" />
-				<span>Zero Raw SQL Certified: Every change requires human sign-off & audit log.</span>
-			</div>
-
 			<!-- Menu Quick Links -->
-			<div class="space-y-1">
+			<div class="space-y-0.5">
 				<a
 					href="/dashboard"
 					onclick={closeMenu}
-					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-xl hover:bg-secondary text-foreground transition-colors"
+					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg hover:bg-secondary text-foreground transition-colors"
 				>
 					<CommandLine class="w-4 h-4 text-primary" />
-					<span>Open On-Call Incident Queue</span>
+					<span>Dashboard Queue</span>
 				</a>
 				<a
 					href="/flow"
 					onclick={closeMenu}
-					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-xl hover:bg-secondary text-foreground transition-colors"
+					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg hover:bg-secondary text-foreground transition-colors"
 				>
 					<Square3Stack3d class="w-4 h-4 text-emerald-500" />
-					<span>Inspect Complete System Flow</span>
+					<span>System Architecture Flow</span>
 				</a>
 			</div>
 
-			<!-- Sign Out / End Shift -->
-			<div class="pt-2 mt-2 border-t border-border/60">
+			<!-- Sign Out -->
+			<div class="pt-2 mt-2 border-t border-border/50">
 				<button
 					type="button"
 					onclick={handleLogout}
-					class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-destructive hover:bg-destructive/10 transition-colors group"
+					class="w-full flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
 				>
 					<span class="flex items-center gap-2">
-						<ArrowRightOnRectangle class="w-4 h-4 text-destructive" />
-						<span>End Piket Shift / Sign Out</span>
+						<ArrowRightOnRectangle class="w-4 h-4" />
+						<span>Sign Out</span>
 					</span>
-					<span class="text-[10px] font-mono text-muted-foreground group-hover:text-destructive">
+					<span class="text-[10px] font-mono">
 						johndoe
 					</span>
 				</button>

@@ -48,8 +48,9 @@ All architectural specifications, security rules, and implementation blueprints 
 4. [**`docs/ROADMAP.md`**](./docs/ROADMAP.md) — Phased Implementation Sprints (Phases 1 through 5).
 5. [**`docs/TESTING.md`**](./docs/TESTING.md) — Testing Pyramid: Go Unit Tests, Mock SQL, AI Accuracy Benchmarks, and E2E Tests.
 6. [**`docs/AI_SPECIFICATION_AND_TRAINING.md`**](./docs/AI_SPECIFICATION_AND_TRAINING.md) — Supported AI Models, Hyperparameters, and Active Learning Loop.
-7. [**`AGENT.md`**](./AGENT.md) — Official Agent Instructions and Coding Guidelines.
-8. [**`CLAUDE.md`**](./CLAUDE.md) — Quick CLI Commands and Developer Reference.
+7. [**`docs/WHATSAPP_GATEWAY_TUTORIAL.md`**](./docs/WHATSAPP_GATEWAY_TUTORIAL.md) — Complete Step-by-Step Guide for WhatsApp Baileys Gateway & Group Extractor.
+8. [**`AGENT.md`**](./AGENT.md) — Official Agent Instructions and Coding Guidelines.
+9. [**`CLAUDE.md`**](./CLAUDE.md) — Quick CLI Commands and Developer Reference.
 
 ---
 
