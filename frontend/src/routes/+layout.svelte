@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "../app.css";
 	import { page } from "$app/stores";
-	import { Shield, Radio, Terminal, LogIn, LogOut, ExternalLink, Workflow, Sparkles, UserCheck } from "lucide-svelte";
+	import { ShieldCheck, CommandLine, ArrowRightOnRectangle, ArrowLeftOnRectangle, Square3Stack3d } from "svelte-heros-v2";
 	import type { LayoutData } from "./$types";
 
 	let { data, children }: { data: LayoutData; children: any } = $props();
@@ -26,7 +26,7 @@
 			<div class="flex items-center gap-3">
 				<a href="/" class="flex items-center gap-2.5 group">
 					<div class="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-						<Shield class="h-5 w-5" />
+						<ShieldCheck class="h-5 w-5" />
 					</div>
 					<div class="flex flex-col">
 						<div class="flex items-center gap-1.5">
@@ -62,14 +62,14 @@
 					href="/flow"
 					class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 {currentPath.startsWith('/flow') ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}"
 				>
-					<Workflow class="h-3.5 w-3.5 text-emerald-400" />
+					<Square3Stack3d class="h-3.5 w-3.5 text-emerald-400" />
 					<span>System Flow</span>
 				</a>
 				<a
 					href="/dashboard"
 					class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 {currentPath.startsWith('/dashboard') ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}"
 				>
-					<Terminal class="h-3.5 w-3.5" />
+					<CommandLine class="h-3.5 w-3.5" />
 					<span>On-Call Dashboard</span>
 				</a>
 
@@ -88,7 +88,7 @@
 							class="px-3 py-1.5 text-xs font-medium rounded-xl bg-secondary/80 hover:bg-destructive/10 hover:text-destructive text-muted-foreground border border-border/50 transition-colors flex items-center gap-1.5"
 							title="Sign Out of On-Call Session"
 						>
-							<LogOut class="h-3.5 w-3.5" />
+							<ArrowRightOnRectangle class="h-3.5 w-3.5" />
 							<span class="hidden sm:inline">Sign Out</span>
 						</button>
 					</div>
@@ -97,7 +97,7 @@
 						href="/auth"
 						class="ml-2 px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-1.5"
 					>
-						<LogIn class="h-3.5 w-3.5" />
+						<ArrowLeftOnRectangle class="h-3.5 w-3.5" />
 						<span>Sign In</span>
 					</a>
 				{/if}

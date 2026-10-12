@@ -45,7 +45,7 @@ func NewRepository(db *sql.DB) *Repository {
 			},
 			{
 				ID: 2, TicketNo: "TK-2026-002", BranchID: &branchId2, BranchName: "Medan Logistics Hub",
-				RawMessage:      "Good afternoon Rifky, please revise invoice INV/2026/003 customer name from Medan Hub to CV Bintang Timur Sejahtera due to administrative typographical error.",
+				RawMessage:      "Good afternoon John, please revise invoice INV/2026/003 customer name from Medan Hub to CV Bintang Timur Sejahtera due to administrative typographical error.",
 				ExtractedIntent: "UPDATE_CUSTOMER_NAME", DocumentNo: "INV/2026/003", FieldTarget: "customer_name",
 				CurrentValue: "CV Bintang Timur", ProposedValue: "CV Bintang Timur Sejahtera",
 				ConfidenceScore: 0.96, Status: domain.StatusPendingApproval,
@@ -65,7 +65,7 @@ func NewRepository(db *sql.DB) *Repository {
 		},
 		logs: []domain.AuditLog{
 			{ID: 1, TicketID: 3, Action: "PRECHECKED", PerformedBy: "SYSTEM_AI", OldState: `{"status": "OPEN"}`, NewState: `{"verified": true}`, IPAddress: "127.0.0.1", CreatedAt: time.Now().Add(-2 * time.Hour)},
-			{ID: 2, TicketID: 3, Action: "APPROVED", PerformedBy: "Rifky Aditya", OldState: `{"status": "PENDING_APPROVAL"}`, NewState: `{"status": "APPROVED"}`, IPAddress: "192.168.1.104", CreatedAt: time.Now().Add(-2 * time.Hour)},
+			{ID: 2, TicketID: 3, Action: "APPROVED", PerformedBy: "John Doe", OldState: `{"status": "PENDING_APPROVAL"}`, NewState: `{"status": "APPROVED"}`, IPAddress: "192.168.1.104", CreatedAt: time.Now().Add(-2 * time.Hour)},
 		},
 	}
 	return repo

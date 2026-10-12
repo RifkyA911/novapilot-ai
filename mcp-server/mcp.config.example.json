@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "novapilot-mcp": {
+      "command": "bun",
+      "args": ["run", "src/index.ts"],
+      "env": {
+        "BACKEND_URL": "http://localhost:8080",
+        "NODE_ENV": "development",
+        "INTERNAL_SECRET_TOKEN": "your-internal-secret-token"
+      }
+    }
+  }
+}

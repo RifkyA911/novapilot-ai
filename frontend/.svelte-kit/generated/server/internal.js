@@ -26,7 +26,7 @@ export const options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\" class=\"dark\">\n\t<head>\n\t\t<meta charset=\"utf-8\" />\n\t\t<link rel=\"icon\" href=\"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>\" />\n\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n\t\t<title>NovaPilot AI — Autonomous ChatOps & Database Gatekeeper</title>\n\t\t\n\t\t<!-- Vercel & Nuxt Official Typography (Geist Sans & Geist Mono) -->\n\t\t<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" />\n\t\t<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/core.css\" />\n\t\t<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/font-sans/index.css\" />\n\t\t<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/font-mono/index.css\" />\n\t\t\n\t\t" + head + "\n\t</head>\n\t<body data-sveltekit-preload-data=\"hover\" class=\"bg-background text-foreground antialiased min-h-screen selection:bg-primary/20 selection:text-primary font-sans\">\n\t\t<div style=\"display: contents\">" + body + "</div>\n\t</body>\n</html>\n",
 		error
 	},
-	version_hash: "q5gzys"
+	version_hash: "1aykrnb"
 };
 
 export async function get_hooks() {

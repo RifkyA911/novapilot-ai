@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Shield, CheckCircle2, AlertTriangle, ArrowRight, Database, Bot, Radio, Lock, Zap, FileText, Sparkles, Terminal } from "lucide-svelte";
+	import { ShieldCheck, CheckCircle, ArrowRight, CommandLine, LockClosed, Radio, CpuChip } from "svelte-heros-v2";
 	import Ripple from "$lib/components/magicui/Ripple.svelte";
 </script>
 
@@ -45,7 +45,7 @@
 					href="/dashboard"
 					class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 group active:scale-[0.99]"
 				>
-					<Terminal class="h-4 w-4" />
+					<CommandLine class="h-4 w-4" />
 					<span>Launch On-Call Cockpit</span>
 					<ArrowRight class="h-4 w-4 group-hover:translate-x-1 transition-transform" />
 				</a>
@@ -53,7 +53,7 @@
 					href="/auth"
 					class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-secondary/80 backdrop-blur-md text-foreground font-semibold text-sm hover:bg-secondary border border-border/60 transition-colors flex items-center justify-center gap-2 shadow-sm"
 				>
-					<Lock class="h-4 w-4 text-muted-foreground" />
+					<LockClosed class="h-4 w-4 text-muted-foreground" />
 					<span>Sign In via Better Auth</span>
 				</a>
 			</div>
@@ -96,7 +96,7 @@
 		<!-- Bento 2 -->
 		<div class="p-6 rounded-2xl bg-card border border-border/70 shadow-sm space-y-4 hover:border-foreground/30 hover:-translate-y-0.5 transition-all">
 			<div class="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20">
-				<Bot class="h-5 w-5" />
+				<CpuChip class="h-5 w-5" />
 			</div>
 			<h3 class="text-base font-bold text-foreground">Active Learning Agent</h3>
 			<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -107,7 +107,7 @@
 		<!-- Bento 3 -->
 		<div class="p-6 rounded-2xl bg-card border border-border/70 shadow-sm space-y-4 hover:border-foreground/30 hover:-translate-y-0.5 transition-all">
 			<div class="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20">
-				<Shield class="h-5 w-5" />
+				<ShieldCheck class="h-5 w-5" />
 			</div>
 			<h3 class="text-base font-bold text-foreground">Strict Human-in-the-Loop Gate</h3>
 			<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">

@@ -30,7 +30,7 @@ flowchart TB
 
     subgraph HumanGate ["🧑‍💻 Human Approval Gate (WebUI)"]
         ViteApp["Bun + SvelteKit 5 + Tailwind WebUI\n(Accessible via Local LAN IP)"]
-        Approver["On-Call IT Engineer (Rifky)"]
+        Approver["On-Call IT Engineer (John Doe)"]
     end
 
     subgraph DatabaseLayer ["🗄️ Enterprise Data Storage"]
@@ -67,7 +67,7 @@ sequenceDiagram
     participant BE as Golang Backend
     participant AI as AI LLM Engine
     participant DB as Enterprise DB (Postgres / Oracle)
-    actor Rifky as Rifky (On-Call IT / WebUI)
+    actor JohnDoe as John Doe (On-Call IT / WebUI)
 
     Branch->>GW: "Please change customer name on invoice INV/2026/001 to PT SUMBER MAKMUR ABADI"
     GW->>GW: Verify group whitelist & rate limit
@@ -79,19 +79,19 @@ sequenceDiagram
     DB-->>BE: Record Found: Current Name = 'PT Sumber Makmur', Status = 'OPEN'
     
     BE->>BE: Create Ticket: Status = PENDING_APPROVAL
-    BE->>Rifky: Real-time SSE Push Notification to WebUI (Desktop / Mobile)
+    BE->>JohnDoe: Real-time SSE Push Notification to WebUI (Desktop / Mobile)
     
-    Note over Rifky: Rifky inspects ticket card in WebUI:<br/>- Originating Branch<br/>- Red Diff: PT Sumber Makmur<br/>- Green Diff: PT Sumber Makmur Abadi
+    Note over JohnDoe: John Doe inspects ticket card in WebUI:<br/>- Originating Branch<br/>- Red Diff: PT Sumber Makmur<br/>- Green Diff: PT Sumber Makmur Abadi
     
     alt Approval Granted
-        Rifky->>BE: Clicks [Approve & Mutate] in WebUI
+        JohnDoe->>BE: Clicks [Approve & Mutate] in WebUI
         BE->>DB: Execute Transaction: UPDATE invoices SET customer_name = $1 WHERE invoice_no = $2
         DB-->>BE: Commit Success (1 row updated)
         BE->>GW: Dispatch Success Callback
         GW->>Branch: "✅ Ticket #TK-101 processed. Invoice INV/2026/001 has been updated."
         BE->>BE: Update Ticket Status -> EXECUTED
     else Approval Rejected
-        Rifky->>BE: Clicks [Reject Request] with Reason: "Invoice is in closed accounting period"
+        JohnDoe->>BE: Clicks [Reject Request] with Reason: "Invoice is in closed accounting period"
         BE->>GW: Dispatch Rejection Callback
         GW->>Branch: "❌ Request rejected: Invoice is in closed accounting period."
         BE->>BE: Update Ticket Status -> REJECTED

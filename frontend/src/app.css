@@ -45,20 +45,19 @@
 	}
 }
 
-/* Vercel & Nuxt Typography Engine */
+/* Strict Geist Sans & Geist Mono Typography */
 html, body {
-	font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-family: "Geist Sans", "Geist", sans-serif;
 	letter-spacing: -0.015em;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
 code, kbd, samp, pre {
-	font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+	font-family: "Geist Mono", monospace;
 	letter-spacing: -0.02em;
 }
 
-/* Nuxt-Style Smooth Subtle Transitions */
 * {
 	border-color: hsl(var(--border));
 }

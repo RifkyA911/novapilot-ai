@@ -32,7 +32,7 @@
 
 | Persona | Role | Core Requirement |
 | :--- | :--- | :--- |
-| **Rifky (On-Call IT Engineer)** | Primary operator responsible for system stability during off-hours shifts. | Avoid manual SQL typing; review and sign off requests with 1-click from a phone without opening database IDEs. |
+| **John Doe (On-Call IT Engineer)** | Primary operator responsible for system stability during off-hours shifts. | Avoid manual SQL typing; review and sign off requests with 1-click from a phone without opening database IDEs. |
 | **Branch Coordinator / Admin** | Initiator requesting data corrections via branch WhatsApp groups. | Fast turnarounds and transparent feedback regarding request status or policy rejections. |
 | **IT Lead & Security Auditor** | Oversees database compliance, data integrity, and access controls. | Strict assurance of zero credential leaks, comprehensive audit trails, and zero arbitrary unverified AI mutations. |
 

@@ -10,21 +10,21 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		if (provider === "google") {
 			userSession = {
-				id: "usr_google_rifky",
-				email: email || "rifky.aditya@enterprise.corp",
-				name: name || "Rifky Aditya (Google OAuth)",
+				id: "usr_google_johndoe",
+				email: email || "john.doe@enterprise.corp",
+				name: name || "John Doe (Google OAuth)",
 				role: "oncall_engineer",
-				avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rifky",
+				avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe",
 				branchClearance: ["SURABAYA_HQ", "SEMARANG_DC", "JAKARTA_CENTRAL", "MEDAN_HUB"]
 			};
-		} else if (email === "rifky@factory.internal" || email?.endsWith(".internal") || email?.includes("@")) {
+		} else if (email === "johndoe@factory.internal" || email?.endsWith(".internal") || email?.includes("@")) {
 			// Internal Enterprise or On-call shift login
 			userSession = {
-				id: "usr_internal_rifky",
+				id: "usr_internal_johndoe",
 				email: email,
-				name: name || (email === "rifky@factory.internal" ? "Rifky Aditya" : email.split("@")[0]),
+				name: name || (email === "johndoe@factory.internal" ? "John Doe" : email.split("@")[0]),
 				role: "oncall_engineer",
-				avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rifky",
+				avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe",
 				branchClearance: ["SURABAYA_HQ", "SEMARANG_DC", "JAKARTA_CENTRAL", "MEDAN_HUB"]
 			};
 		} else {

@@ -25,7 +25,9 @@
   "dependencies": {
     "better-auth": "^1.1.0",
     "clsx": "^2.1.1",
+    "heroicons": "^2.2.0",
     "lucide-svelte": "^0.469.0",
+    "svelte-heros-v2": "^3.0.1",
     "tailwind-merge": "^2.6.0"
   }
 }

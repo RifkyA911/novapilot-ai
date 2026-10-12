@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Shield, Lock, Mail, ArrowRight, CheckCircle2, AlertCircle, Sparkles, KeyRound } from "lucide-svelte";
+	import { ShieldCheck, LockClosed, Envelope, ArrowRight, CheckCircle, ExclamationTriangle, Sparkles, Key } from "svelte-heros-v2";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
 
@@ -23,8 +23,8 @@
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					provider: "google",
-					email: "rifky.aditya@enterprise.corp",
-					name: "Rifky Aditya (Google Workspace)"
+					email: "john.doe@enterprise.corp",
+					name: "John Doe (Google Workspace)"
 				})
 			});
 			const data = await res.json();
@@ -76,13 +76,13 @@
 	}
 
 	function fillDemoAccount() {
-		email = "rifky@factory.internal";
+		email = "johndoe@factory.internal";
 		password = "oncall-shift-password-2026";
-		name = "Rifky Aditya";
+		name = "John Doe";
 	}
 </script>
 
-<div class="flex-1 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="flex-1 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
 	<!-- VibeUI Ambient Gradient Glow -->
 	<span
 		aria-hidden="true"
@@ -100,7 +100,7 @@
 		<!-- Header -->
 		<div class="text-center space-y-2">
 			<div class="mx-auto h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-lg shadow-primary/25 border border-primary/20">
-				<Shield class="h-6 w-6" />
+				<ShieldCheck class="h-6 w-6" />
 			</div>
 			<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-mono text-muted-foreground border border-border/50">
 				<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
@@ -117,27 +117,27 @@
 		<!-- Alerts -->
 		{#if unauthorizedError}
 			<div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2">
-				<AlertCircle class="h-4 w-4 shrink-0" />
+				<ExclamationTriangle class="h-4 w-4 shrink-0" />
 				<span>Access Denied: Middleware Guardrail blocked unauthenticated access to the On-Call Cockpit. Please authenticate below.</span>
 			</div>
 		{/if}
 
 		{#if loggedOutMsg}
 			<div class="p-3 rounded-lg bg-secondary/80 border border-border text-muted-foreground text-xs flex items-center gap-2">
-				<CheckCircle2 class="h-4 w-4 shrink-0 text-emerald-400" />
+				<CheckCircle class="h-4 w-4 shrink-0 text-emerald-400" />
 				<span>You have been signed out safely. Session token revoked.</span>
 			</div>
 		{/if}
 
 		{#if errorMessage}
 			<div class="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
-				<AlertCircle class="h-4 w-4 shrink-0" />
+				<ExclamationTriangle class="h-4 w-4 shrink-0" />
 				<span>{errorMessage}</span>
 			</div>
 		{/if}
 		{#if successMessage}
 			<div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-				<CheckCircle2 class="h-4 w-4 shrink-0" />
+				<CheckCircle class="h-4 w-4 shrink-0" />
 				<span>{successMessage}</span>
 			</div>
 		{/if}
@@ -188,7 +188,7 @@
 						type="text"
 						bind:value={name}
 						required
-						placeholder="e.g. Rifky Aditya"
+						placeholder="e.g. John Doe"
 						class="w-full px-3.5 py-2.5 rounded-xl bg-background/80 border border-border text-foreground text-sm focus:outline-none focus:border-foreground/40 transition-colors"
 					/>
 				</div>
@@ -201,7 +201,7 @@
 					type="email"
 					bind:value={email}
 					required
-					placeholder="rifky@factory.internal"
+					placeholder="johndoe@factory.internal"
 					class="w-full px-3.5 py-2.5 rounded-xl bg-background/80 border border-border text-foreground text-sm focus:outline-none focus:border-foreground/40 transition-colors font-mono text-xs"
 				/>
 			</div>
@@ -236,7 +236,7 @@
 				class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-primary font-mono text-[11px] transition-colors border border-border/50"
 			>
 				<Sparkles class="h-3.5 w-3.5" />
-				<span>Autofill Demo Credentials (Rifky - On-Call)</span>
+				<span>Autofill Demo Credentials (John Doe - On-Call)</span>
 			</button>
 
 			<div class="text-muted-foreground text-[11px]">

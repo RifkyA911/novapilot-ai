@@ -88,7 +88,7 @@ Before processing messages, the backend injects current corporate business const
 The platform improves continuously through human operator interactions:
 
 ```
-[Incoming Chat] ──> [AI Predicts JSON] ──> [Presented in WebUI to Rifky]
+[Incoming Chat] ──> [AI Predicts JSON] ──> [Presented in WebUI to John Doe]
                                                       │
                                ┌──────────────────────┴──────────────────────┐
                                ▼                                             ▼

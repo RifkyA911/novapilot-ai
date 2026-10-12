@@ -26,6 +26,9 @@ vendor/
 *.ora
 tnsnames.ora
 sqlnet.log
+mcp.config.json
+mcp-server/mcp.config.json
+mcp-server/.env
 
 # WhatsApp Sessions & Auth
 auth_info/

@@ -7,7 +7,9 @@
       "dependencies": {
         "better-auth": "^1.1.0",
         "clsx": "^2.1.1",
+        "heroicons": "^2.2.0",
         "lucide-svelte": "^0.469.0",
+        "svelte-heros-v2": "^3.0.1",
         "tailwind-merge": "^2.6.0",
       },
       "devDependencies": {
@@ -270,6 +272,8 @@
 
     "hasown": ["hasown@2.0.4", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A=="],
 
+    "heroicons": ["heroicons@2.2.0", "", {}, "sha512-yOwvztmNiBWqR946t+JdgZmyzEmnRMC2nxvHFC90bF1SUttwB6yJKYeme1JeEcBfobdOs827nCyiWBS2z/brog=="],
+
     "import-meta-resolve": ["import-meta-resolve@4.2.0", "", {}, "sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg=="],
 
     "is-binary-path": ["is-binary-path@2.1.0", "", { "dependencies": { "binary-extensions": "^2.0.0" } }, "sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw=="],
@@ -379,6 +383,8 @@
     "svelte": ["svelte@5.57.2", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "@jridgewell/sourcemap-codec": "^1.6.0", "@sveltejs/acorn-typescript": "^1.0.13", "@types/estree": "^1.0.9", "acorn": "^8.18.0", "aria-query": "5.3.1", "axobject-query": "^4.1.0", "clsx": "^2.1.1", "devalue": "^5.9.2", "esm-env": "^1.2.1", "esrap": "^2.3.6", "is-reference": "^3.0.3", "locate-character": "^3.0.0", "magic-string": "^0.30.11", "zimmerframe": "^1.1.2" } }, "sha512-1YiPCAXT0Ct6g1vOMmSLa0Nsc3QRMvtDF32ihgglGVrugIuIK38RyDiFNXVDhtQ81TJjSO57NdMw6DyYLqSGDQ=="],
 
     "svelte-check": ["svelte-check@4.7.6", "", { "dependencies": { "@jridgewell/trace-mapping": "^0.3.25", "@sveltejs/load-config": "^0.2.3", "chokidar": "^4.0.1", "fdir": "^6.2.0", "picocolors": "^1.0.0", "sade": "^1.7.4" }, "peerDependencies": { "svelte": "^4.0.0 || ^5.0.0-next.0", "typescript": "^5.0.0 || ^6.0.0" }, "bin": { "svelte-check": "bin/svelte-check" } }, "sha512-t2scM//ZuVbSY/T2w6FSBw1v9s2NEmh/g+sy1lqtosW5ylBV5AF4wFb1Ts9Kf3MbfPDUDJDZ9L436YT0SPTdvw=="],
+
+    "svelte-heros-v2": ["svelte-heros-v2@3.0.1", "", { "peerDependencies": { "svelte": "^5.0.0" } }, "sha512-UT8pyFv7MQgJSiLJ9p7gRsVeGF+6QFHZ72cPOjoKCG0nGk+cPreQvd3zbiBAv9vr5+C1D0GXuvzJlIl5FSpxLA=="],
 
     "tailwind-merge": ["tailwind-merge@2.6.1", "", {}, "sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ=="],
 

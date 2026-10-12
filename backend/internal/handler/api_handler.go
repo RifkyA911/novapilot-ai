@@ -93,7 +93,7 @@ func (h *APIHandler) ApproveTicket(c *gin.Context) {
 
 	var input domain.ApproveTicketInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		input.ApproverName = "Rifky (On-Call)"
+		input.ApproverName = "John Doe (On-Call)"
 	}
 
 	ticket, err := h.ticketService.ApproveTicket(id, input.ApproverName)
