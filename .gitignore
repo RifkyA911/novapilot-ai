@@ -1,0 +1,50 @@
+# Compiled binaries
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage artifacts
+*.test
+*.out
+coverage.html
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+*.ora
+tnsnames.ora
+sqlnet.log
+
+# WhatsApp Sessions & Auth
+auth_info/
+.wwebjs_auth/
+.wwebjs_cache/
+baileys_store.json
+
+# Local Databases & Logs
+*.db
+*.sqlite
+*.sqlite3
+data/
+logs/
+*.log
+
+# IDE & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

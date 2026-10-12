@@ -1,0 +1,15 @@
+{
+  "name": "novapilot-ai-workspace",
+  "version": "1.0.0",
+  "description": "NovaPilot AI: Autonomous ChatOps & Human-in-the-Loop Database Gatekeeper",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd frontend && bun run dev",
+    "dev:backend": "cd backend && go run cmd/server/main.go",
+    "dev:mcp": "cd mcp-server && bun run start",
+    "seed:db": "cd backend && go run cmd/seed/main.go",
+    "build:frontend": "cd frontend && bun run build",
+    "build:backend": "cd backend && go build -o bin/server.exe cmd/server/main.go",
+    "test:backend": "cd backend && go test -v -race -cover ./..."
+  }
+}
