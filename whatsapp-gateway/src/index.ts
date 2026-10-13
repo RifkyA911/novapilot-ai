@@ -264,7 +264,7 @@ async function startLiveGateway() {
                     `📄 *Dokumen:* ${extracted.documentNo}\n` +
                     `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
                     `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
-                    `_Sistem sedang melakukan pre-check database & menunggu approval staf piket._`;
+                    `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._`;
 
                 await sock.sendMessage(fromJid, { text: ackText });
                 console.log(`[ACK SENT] Replied to ${fromJid}`);

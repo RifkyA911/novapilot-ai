@@ -210,7 +210,7 @@
 			<div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
 				<span class="font-semibold text-foreground">NovaPilot AI</span>
 				<span>•</span>
-				<span>Piket Shift Assistant</span>
+				<span>On-Call Operations Assistant</span>
 				<span>•</span>
 				<span>Zero Raw SQL Certified</span>
 			</div>

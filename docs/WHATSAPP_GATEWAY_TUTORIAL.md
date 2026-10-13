@@ -166,7 +166,7 @@ bun run start
 > ✏️ **Nilai Baru:** `PT Sumber Makmur Abadi`  
 > 🔒 **Status:** `Menunggu Verifikasi IT On-Call`  
 >
-> _Sistem sedang melakukan pre-check database & menunggu approval staf piket._
+> _Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._
 
 ### 3. IT On-Call Review on Dashboard:
 1. Open [http://localhost:3000/dashboard](http://localhost:3000/dashboard).

@@ -9,7 +9,7 @@
 
 ## 1. Project Overview & Architecture Summary
 
-NovaPilot AI was engineered specifically to solve the work-life balance and operational risks of factory IT support on-call shifts (*piket IT pabrik*, minimum 2x monthly). It replaces tedious, high-risk manual database editing with a secure **Human-in-the-Loop ChatOps Gatekeeper**:
+NovaPilot AI was engineered specifically to solve the work-life balance and operational risks of factory IT support on-call shifts (minimum 2x monthly). It replaces tedious, high-risk manual database editing with a secure **Human-in-the-Loop ChatOps Gatekeeper**:
 
 ```
 [ WhatsApp Branch Groups / Ferdium ]
