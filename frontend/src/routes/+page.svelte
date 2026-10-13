@@ -26,6 +26,50 @@
 	let activeStage = $state<number>(0);
 	let previewTab = $state<"ticket" | "sql" | "rollback">("ticket");
 
+	// Architecture Beam Visualizer Multi-Platform Mode
+	type BeamMode = "all" | "whatsapp" | "telegram" | "discord" | "slack";
+	let beamMode = $state<BeamMode>("all");
+
+	const activeIngressNodes = $derived(() => {
+		switch (beamMode) {
+			case "whatsapp":
+				return [
+					{ name: "Ferdium App", desc: "webview.js hook", icon: "https://avatars.githubusercontent.com/u/102928503?s=200&v=4" },
+					{ name: "Rambox App", desc: "Custom JS code", icon: "https://avatars.githubusercontent.com/u/19875476?s=200&v=4" },
+					{ name: "WhatsApp Web", desc: "DOM Extractor", icon: "https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" },
+					{ name: "PC Desktop WA", desc: "Native Port 8088", icon: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" }
+				];
+			case "telegram":
+				return [
+					{ name: "BotFather API", desc: "Webhook Token", icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" },
+					{ name: "Telegram Web", desc: "Channel Ingress", icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" },
+					{ name: "Long-Polling", desc: "Daemon Socket", icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" },
+					{ name: "Desktop Client", desc: "HTTPS :8088", icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" }
+				];
+			case "discord":
+				return [
+					{ name: "Bot Gateway", desc: "Discord WebSocket", icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" },
+					{ name: "Slash Command", desc: "/novapilot mutate", icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" },
+					{ name: "REST Webhook", desc: "Guild Channel", icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" },
+					{ name: "Guild RBAC", desc: "Role Check", icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" }
+				];
+			case "slack":
+				return [
+					{ name: "Slack Bolt SDK", desc: "Go/Node Ingress", icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" },
+					{ name: "Events API", desc: "HMAC SHA256", icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" },
+					{ name: "Slash Command", desc: "/novapilot inv", icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" },
+					{ name: "Block Kit UI", desc: "Interactive Modal", icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" }
+				];
+			default: // "all"
+				return [
+					{ name: "WhatsApp Hook", desc: "Baileys / Ferdium", icon: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
+					{ name: "Telegram Bot", desc: "BotFather Webhook", icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" },
+					{ name: "Discord Gateway", desc: "Guild Interactions", icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" },
+					{ name: "Slack Enterprise", desc: "Events API / Bolt", icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" }
+				];
+		}
+	});
+
 	// FAQ Accordion State
 	let openFaq = $state<number | null>(null);
 	function toggleFaq(index: number) {
@@ -134,16 +178,32 @@
 		<div class="mt-14 md:mt-20 relative w-full">
 			<div class="p-4 sm:p-6 rounded-3xl bg-card/60 backdrop-blur-md border border-border/70 shadow-xl overflow-hidden relative">
 				
-				<!-- Header bar for architecture visualizer -->
+				<!-- Header bar for architecture visualizer with Platform Tabs -->
 				<div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border/50 text-xs">
 					<div class="flex items-center gap-2">
 						<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
 						<span class="font-mono font-semibold uppercase tracking-wider text-foreground">
-							Live Hook Ecosystem Architecture
+							ChatOps Pipeline Circuit Architecture
 						</span>
-						<span class="hidden sm:inline text-muted-foreground font-mono">
-							[Ferdium · Rambox · Chrome · PC Desktop]
-						</span>
+					</div>
+
+					<!-- Platform Switcher Tabs -->
+					<div class="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-secondary/60 border border-border/60">
+						{#each [
+							{ id: 'all', label: 'All Channels' },
+							{ id: 'whatsapp', label: 'WhatsApp' },
+							{ id: 'telegram', label: 'Telegram' },
+							{ id: 'discord', label: 'Discord' },
+							{ id: 'slack', label: 'Slack' }
+						] as tab}
+							<button
+								type="button"
+								onclick={() => beamMode = tab.id as BeamMode}
+								class="px-2.5 py-1 rounded-lg font-mono text-[11px] font-semibold transition-all cursor-pointer {beamMode === tab.id ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}"
+							>
+								{tab.label}
+							</button>
+						{/each}
 					</div>
 
 					<button
@@ -254,43 +314,17 @@
 							/>
 						</svg>
 
-						<!-- DOM NODES: Ingestion Clients (Left Column) -->
+						<!-- DOM NODES: Ingestion Clients (Left Column - Multi-Platform Adaptive) -->
 						<div class="absolute left-0 top-0 w-36 flex flex-col gap-2 justify-between h-full py-1 text-left">
-							<!-- Ferdium -->
-							<div class="p-2 rounded-xl bg-background border border-border/80 shadow-xs flex items-center gap-2 {activeStage === 1 ? 'ring-2 ring-primary ring-offset-1' : ''}">
-								<img src="https://avatars.githubusercontent.com/u/102928503?s=200&v=4" alt="Ferdium" class="h-6 w-6 rounded-md object-contain shrink-0" />
-								<div class="min-w-0">
-									<div class="text-[11px] font-bold text-foreground truncate">Ferdium App</div>
-									<div class="text-[9px] font-mono text-muted-foreground truncate">webview.js hook</div>
+							{#each activeIngressNodes() as node, i}
+								<div class="p-2 rounded-xl bg-background border border-border/80 shadow-xs flex items-center gap-2 transition-all {activeStage === 1 ? 'ring-2 ring-primary ring-offset-1' : ''}">
+									<img src={node.icon} alt={node.name} class="h-6 w-6 rounded-md object-contain shrink-0" />
+									<div class="min-w-0">
+										<div class="text-[11px] font-bold text-foreground truncate">{node.name}</div>
+										<div class="text-[9px] font-mono text-muted-foreground truncate">{node.desc}</div>
+									</div>
 								</div>
-							</div>
-
-							<!-- Rambox -->
-							<div class="p-2 rounded-xl bg-background border border-border/80 shadow-xs flex items-center gap-2">
-								<img src="https://avatars.githubusercontent.com/u/19875476?s=200&v=4" alt="Rambox" class="h-6 w-6 rounded-md object-contain shrink-0" />
-								<div class="min-w-0">
-									<div class="text-[11px] font-bold text-foreground truncate">Rambox App</div>
-									<div class="text-[9px] font-mono text-muted-foreground truncate">Custom JS code</div>
-								</div>
-							</div>
-
-							<!-- Web WhatsApp -->
-							<div class="p-2 rounded-xl bg-background border border-border/80 shadow-xs flex items-center gap-2">
-								<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" class="h-6 w-6 rounded-md object-contain shrink-0" />
-								<div class="min-w-0">
-									<div class="text-[11px] font-bold text-foreground truncate">WhatsApp Web</div>
-									<div class="text-[9px] font-mono text-muted-foreground truncate">DOM Extractor</div>
-								</div>
-							</div>
-
-							<!-- PC Desktop WA -->
-							<div class="p-2 rounded-xl bg-background border border-border/80 shadow-xs flex items-center gap-2">
-								<img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Desktop WA" class="h-6 w-6 rounded-md object-contain shrink-0" />
-								<div class="min-w-0">
-									<div class="text-[11px] font-bold text-foreground truncate">PC WhatsApp</div>
-									<div class="text-[9px] font-mono text-muted-foreground truncate">Native Port 8088</div>
-								</div>
-							</div>
+							{/each}
 						</div>
 
 						<!-- DOM NODES: Central NovaPilot Engine (Center) -->

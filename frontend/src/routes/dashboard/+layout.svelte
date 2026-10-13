@@ -281,45 +281,59 @@
 				</a>
 			</div>
 
-			<!-- Group 4: PUBLIC PORTAL (Links back to public website) -->
-			<div class="space-y-1 pt-2 border-t border-border/40">
+			<!-- Group 4: ACTIVE CHATOPS PLATFORM SELECTOR (Interactive Channel Switcher) -->
+			<div class="space-y-2 pt-2 border-t border-border/40">
 				{#if !sidebarCollapsed}
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						Public Portal
+					<div class="px-2 flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+						<span>ChatOps Platform</span>
+						<span class="text-[9px] px-1.5 py-0.2 rounded font-bold {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}">
+							{cockpit.chatPlatform.toUpperCase()}
+						</span>
+					</div>
+
+					<div class="grid grid-cols-2 gap-1.5 px-0.5">
+						{#each [
+							{ id: 'whatsapp', label: 'WhatsApp', sub: 'Baileys/Hook' },
+							{ id: 'telegram', label: 'Telegram', sub: 'Bot/API' },
+							{ id: 'discord', label: 'Discord', sub: 'Webhook/Bot' },
+							{ id: 'slack', label: 'Slack', sub: 'Events/Bolt' }
+						] as p}
+							<button
+								type="button"
+								onclick={() => cockpit.chatPlatform = p.id as ChatPlatform}
+								class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-left flex flex-col justify-between cursor-pointer {cockpit.chatPlatform === p.id ? 'bg-primary text-primary-foreground font-semibold shadow-xs ring-1 ring-primary/40' : 'bg-secondary/40 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/40'}"
+								title="Switch active platform to {p.label}"
+							>
+								<div class="flex items-center justify-between w-full">
+									<span class="truncate">{p.label}</span>
+									{#if cockpit.chatPlatform === p.id}
+										<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+									{/if}
+								</div>
+								<span class="text-[9px] font-mono opacity-80 mt-0.5">{p.sub}</span>
+							</button>
+						{/each}
+					</div>
+				{:else}
+					<!-- Collapsed Platform Switcher Buttons -->
+					<div class="flex flex-col items-center gap-1.5 py-1">
+						{#each [
+							{ id: 'whatsapp', code: 'WA' },
+							{ id: 'telegram', code: 'TG' },
+							{ id: 'discord', code: 'DC' },
+							{ id: 'slack', code: 'SL' }
+						] as p}
+							<button
+								type="button"
+								onclick={() => cockpit.chatPlatform = p.id as ChatPlatform}
+								class="h-7 w-7 rounded-md text-[10px] font-mono font-bold flex items-center justify-center transition-all cursor-pointer {cockpit.chatPlatform === p.id ? 'bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/40' : 'bg-muted text-muted-foreground hover:text-foreground'}"
+								title="Switch platform to {p.id.toUpperCase()}"
+							>
+								{p.code}
+							</button>
+						{/each}
 					</div>
 				{/if}
-
-				<a
-					href="/"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-					title="Public Overview (Home /)"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<ShieldCheck class="h-3.5 w-3.5 shrink-0 opacity-70" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Public Home (/)</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<ArrowTopRightOnSquare class="h-3 w-3 opacity-50" />
-					{/if}
-				</a>
-
-				<a
-					href="/flow"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-					title="System Flow (/flow)"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<Square3Stack3d class="h-3.5 w-3.5 shrink-0 text-emerald-500 opacity-80" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Public Flow (/flow)</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<ArrowTopRightOnSquare class="h-3 w-3 opacity-50" />
-					{/if}
-				</a>
 			</div>
 		</div>
 
@@ -362,7 +376,7 @@
 				<button
 					type="button"
 					onclick={toggleMobileMenu}
-					class="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/50 transition-colors"
+					class="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/50 transition-colors cursor-pointer"
 					aria-label="Toggle Navigation Menu"
 				>
 					{#if mobileMenuOpen}
@@ -400,26 +414,30 @@
 				</button>
 			</div>
 
-			<!-- Right: CHATOPS PLATFORM SELECTOR, THEME TOGGLE & SIMPLIFIED USER AVATAR -->
-			<div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
-				<!-- ChatOps Platform Selector Dropdown (WA, TG, Discord, Slack) -->
-				<div class="flex items-center">
+			<!-- Right: CLEAN CHATOPS PLATFORM SELECTOR, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
+			<div class="flex items-center gap-2 sm:gap-3 shrink-0">
+				<!-- Clean Platform Selector Dropdown (No emojis/distracting icons) -->
+				<div class="flex items-center gap-1.5">
+					<label for="platform-select-top" class="text-[11px] font-mono font-medium text-muted-foreground uppercase hidden xl:inline">
+						Platform:
+					</label>
 					<select
+						id="platform-select-top"
 						bind:value={cockpit.chatPlatform}
-						class="h-8 rounded-lg border border-input bg-background px-2 text-xs font-semibold text-foreground shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+						class="h-8 rounded-lg border border-input bg-background px-2.5 text-xs font-semibold text-foreground shadow-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
 						title="Select Active ChatOps Ingestion Platform"
 					>
-						<option value="whatsapp">💬 WhatsApp (Live Hook)</option>
-						<option value="telegram">✈️ Telegram Bot</option>
-						<option value="discord">🎮 Discord Webhook</option>
-						<option value="slack">💼 Slack Enterprise</option>
+						<option value="whatsapp">WhatsApp</option>
+						<option value="telegram">Telegram</option>
+						<option value="discord">Discord</option>
+						<option value="slack">Slack</option>
 					</select>
 				</div>
 
 				<!-- Theme Toggle -->
 				<ThemeToggle />
 
-				<!-- Simplified Circular Avatar UserNav -->
+				<!-- UserNav with Name, Role, and Avatar -->
 				<div class="pl-1 sm:pl-1.5 border-l border-border/50">
 					<UserNav {user} />
 				</div>
@@ -556,9 +574,9 @@
 			{@render children()}
 		</main>
 
-		<!-- Minimal Enterprise Footer -->
-		<footer class="border-t border-border/40 py-5 text-xs text-muted-foreground bg-card/20 transition-colors mt-auto">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+		<!-- Minimal Enterprise Footer with Public Links -->
+		<footer class="border-t border-border/40 py-4 text-xs text-muted-foreground bg-card/20 transition-colors mt-auto">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
 				<div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
 					<span class="font-semibold text-foreground">NovaPilot AI Cockpit</span>
 					<span>•</span>
@@ -566,13 +584,19 @@
 					<span>•</span>
 					<span>Zero Raw SQL Certified</span>
 				</div>
-				<div class="flex items-center gap-3 text-[11px] font-mono">
+				<div class="flex flex-wrap items-center gap-3 text-[11px] font-mono">
 					<span class="text-foreground font-medium flex items-center gap-1.5">
 						<span class="h-1.5 w-1.5 rounded-full {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
-						Platform: {cockpit.platformStatuses[cockpit.chatPlatform].name}
+						{cockpit.platformStatuses[cockpit.chatPlatform].name}
 					</span>
 					<span>•</span>
-					<span>Universal LTS Multi-Engine</span>
+					<a href="/" class="text-muted-foreground hover:text-foreground hover:underline transition-colors">
+						Public Home (/)
+					</a>
+					<span>•</span>
+					<a href="/flow" class="text-muted-foreground hover:text-foreground hover:underline transition-colors">
+						System Flow (/flow)
+					</a>
 				</div>
 			</div>
 		</footer>

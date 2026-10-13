@@ -91,29 +91,42 @@
 
 <div class="relative" bind:this={dropdownRef}>
 	{#if user}
-		<!-- Compact Circular Avatar Trigger (Simplified & Space-Efficient) -->
+		<!-- Humanized User Trigger with Name, Role and Avatar -->
 		<button
 			type="button"
 			onclick={toggleMenu}
-			class="relative p-0.5 rounded-full hover:ring-2 hover:ring-primary/40 focus:outline-none transition-all cursor-pointer flex items-center justify-center"
+			class="relative flex items-center gap-2 sm:gap-2.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl border border-border/80 bg-secondary/40 hover:bg-secondary text-left hover:border-border transition-all cursor-pointer shadow-xs focus:outline-none"
 			aria-expanded={isMenuOpen}
 			aria-haspopup="true"
 			aria-label="User Account Menu"
 			title="{activeUser.name} ({activeUser.email})"
 		>
-			{#if activeUser.avatar}
-				<img
-					src={activeUser.avatar}
-					alt={activeUser.name}
-					class="w-8 h-8 rounded-full object-cover ring-1 ring-border hover:ring-primary/40 bg-card transition-all shadow-xs"
-				/>
-			{:else}
-				<div class="w-8 h-8 rounded-full bg-secondary text-foreground font-semibold text-xs flex items-center justify-center ring-1 ring-border">
-					{getInitials(activeUser.name)}
-				</div>
-			{/if}
-			<!-- Calm online status dot -->
-			<span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background"></span>
+			<div class="relative shrink-0">
+				{#if activeUser.avatar}
+					<img
+						src={activeUser.avatar}
+						alt={activeUser.name}
+						class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-1 ring-border bg-card shadow-xs"
+					/>
+				{:else}
+					<div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center ring-1 ring-border shadow-xs">
+						{getInitials(activeUser.name)}
+					</div>
+				{/if}
+				<!-- Calm online status dot -->
+				<span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background"></span>
+			</div>
+
+			<div class="hidden sm:flex flex-col min-w-0 leading-tight">
+				<span class="text-xs font-semibold text-foreground truncate max-w-[120px]">
+					{activeUser.name}
+				</span>
+				<span class="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
+					{activeUser.role === 'oncall_engineer' ? 'On-Call Engineer' : activeUser.role}
+				</span>
+			</div>
+
+			<ChevronDown class="h-3.5 w-3.5 text-muted-foreground shrink-0 hidden sm:block opacity-70" />
 		</button>
 	{:else}
 		<!-- Guest / Unauthenticated Mode with calm Login CTA -->

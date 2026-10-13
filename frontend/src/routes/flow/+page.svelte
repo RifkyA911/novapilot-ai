@@ -5,25 +5,25 @@
 		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight
 	} from "svelte-heros-v2";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
+	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 
 	let activeStage = $state(1);
+	let isSimulating = $state(false);
 
-	const stages = [
-		{
-			id: 1,
-			title: "1. Branch Ingestion Layer",
-			subtitle: "WhatsApp Gateway & Whitelist Filter",
-			badge: "Network Ingress",
-			icon: Radio,
-			color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-			summary: "Captures messages from authorized regional WhatsApp groups, applies debounce rate-limiting, and normalizes conversational text.",
-			details: [
-				"Maintains a persistent virtual WhatsApp Web session locally via socket connection (Baileys / WA-Web.js).",
+	const platformMeta = $derived({
+		whatsapp: {
+			name: "WhatsApp",
+			ingressTitle: "1. WhatsApp Ingestion Layer",
+			ingressSubtitle: "Baileys Socket & DOM Hook Filter",
+			ingressBadge: "WhatsApp Ingress",
+			ingressSummary: "Captures messages from authorized regional WhatsApp groups, applies debounce rate-limiting, and normalizes conversational chat.",
+			ingressDetails: [
+				"Maintains a persistent virtual WhatsApp Web session locally via socket connection (Baileys / WA-Web.js) or DOM MutationObserver.",
 				"Validates incoming sender JID against an authorized group whitelist (e.g. Surabaya, Medan, Semarang, Makassar).",
 				"Non-whitelisted chats, stickers, and casual social chatter are dropped immediately at the network edge with zero AI token consumption.",
 				"Dispatches a clean JSON webhook payload to the Golang core backend at POST /api/tickets."
 			],
-			codeSnippet: `// WA Gateway Filtering Logic
+			ingressCode: `// WhatsApp Baileys & DOM Filter Logic
 if (!WHITELISTED_GROUPS.includes(message.remoteJid)) {
     return; // Immediate drop: Zero token waste
 }
@@ -34,9 +34,126 @@ await fetch("http://localhost:8088/api/tickets", {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
         raw_message: message.body,
-        branch_id: resolveBranchId(message.remoteJid)
+        branch_id: resolveBranchId(message.remoteJid),
+        channel: "whatsapp"
     })
-});`
+});`,
+			replyTitle: "6. WhatsApp Reply & Active Learning",
+			replySubtitle: "Thread Confirmation & Training Cache",
+			replyDetails: [
+				"Outbound Reply: Sends exactly one confirmation message back to the originating WhatsApp group thread ('✅ Ticket #TK-101 completed').",
+				"Active Learning Capture: If the engineer modified the proposed value prior to approval, the pair (raw_chat, corrected_json) is stored in data/training/ground_truth.jsonl.",
+				"Dynamic Context Injection: Backend automatically loads recently corrected pairs as dynamic few-shot prompts for future queries.",
+				"The agent learns branch-specific dialect patterns organically over time without requiring manual codebase changes."
+			],
+			circuitDesc: "WhatsApp Socket & Hook → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
+			node1Label: "WhatsApp"
+		},
+		telegram: {
+			name: "Telegram Bot",
+			ingressTitle: "1. Telegram Ingress Layer",
+			ingressSubtitle: "BotFather Webhook & Chat ID Filter",
+			ingressBadge: "Telegram Ingress",
+			ingressSummary: "Captures escalations via Telegram Bot API Webhook or Long-Polling, verifies chat_id against regional plant whitelist.",
+			ingressDetails: [
+				"Configures HTTPS Webhook listener at /api/webhooks/telegram or long-polling worker via BotFather token.",
+				"Validates incoming update.Message.Chat.ID against the authorized regional plant group whitelist.",
+				"Non-whitelisted public messages, stickers, and channel spam are dropped immediately at the gateway edge.",
+				"Dispatches standard JSON ticket payload to Golang core backend at POST /api/tickets."
+			],
+			ingressCode: `// Telegram Bot Webhook & Chat ID Whitelist
+if !IsWhitelistedChat(update.Message.Chat.ID) {
+    return // Drop unauthorized group update immediately
+}
+
+ticketPayload := ParseTelegramUpdate(update)
+resp, err := http.Post("http://localhost:8088/api/tickets", "application/json", ticketPayload)
+if err != nil {
+    log.Printf("Failed to dispatch ticket: %v", err)
+}`,
+			replyTitle: "6. Telegram Inline Reply & Active Learning",
+			replySubtitle: "Inline Keyboard Confirmation & Training Cache",
+			replyDetails: [
+				"Outbound Reply: Dispatches rich inline keyboard status message back to the originating Telegram chat ('✅ Ticket #TK-101 completed').",
+				"Active Learning Capture: Saves human supervisor overrides in ground_truth.jsonl for ongoing model few-shot tuning.",
+				"Dynamic Context Injection: Automatically provides newly learned corrections to future parsing pipelines.",
+				"Ensures prompt consistency across branch plant teams."
+			],
+			circuitDesc: "Telegram Bot API → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
+			node1Label: "Telegram"
+		},
+		discord: {
+			name: "Discord Webhook",
+			ingressTitle: "1. Discord Gateway Layer",
+			ingressSubtitle: "Interaction Webhook & Guild Role RBAC",
+			ingressBadge: "Discord Ingress",
+			ingressSummary: "Listens to Discord server channel messages and slash commands (/mutate, /escalate), validates guild role permissions.",
+			ingressDetails: [
+				"Listens to Discord WebSocket gateway (MESSAGE_CREATE, INTERACTION_CREATE) using Bot Token.",
+				"Enforces RBAC: only users with 'Plant Operations' role in authorized guild can trigger mutations.",
+				"Rejects direct DM spam and unverified channels with zero AI token consumption.",
+				"Dispatches standard JSON ticket payload to Golang backend at POST /api/tickets."
+			],
+			ingressCode: `// Discord Interaction & Guild RBAC Ingress
+if interaction.GuildID != PlantGuildID || !HasPlantRole(interaction.Member) {
+    return discord.RespondEphemeral("Unauthorized regional branch channel")
+}
+
+forwardToNovaPilot("http://localhost:8088/api/tickets", interaction.Data)`,
+			replyTitle: "6. Discord Embed Reply & Active Learning",
+			replySubtitle: "Rich Embed Notification & Training Cache",
+			replyDetails: [
+				"Outbound Reply: Posts rich Discord embed with green status banner into the originating channel.",
+				"Active Learning Capture: Human operator modifications logged to ground_truth.jsonl.",
+				"Dynamic Context Injection: Feeds past accepted diffs back into few-shot prompt context.",
+				"Continuous improvement of entity extraction accuracy."
+			],
+			circuitDesc: "Discord Gateway & Embeds → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
+			node1Label: "Discord"
+		},
+		slack: {
+			name: "Slack Enterprise",
+			ingressTitle: "1. Slack Enterprise Gateway",
+			ingressSubtitle: "Events API & HMAC Signature Verification",
+			ingressBadge: "Slack Ingress",
+			ingressSummary: "Subscribes to Slack channel mentions, enterprise app commands (/novapilot), and validates cryptographic HMAC SHA256 signature.",
+			ingressDetails: [
+				"Receives incoming JSON payloads at /api/webhooks/slack with X-Slack-Signature verification.",
+				"Verifies workspace team_id against authorized corporate plant tenants.",
+				"Drops non-whitelisted channel banter and social mentions with zero overhead.",
+				"Transforms Slack conversational event into standard NovaPilot ticket schema."
+			],
+			ingressCode: `// Slack HMAC Signature Verification & Events Ingress
+if !VerifySlackHMAC(r.Header.Get("X-Slack-Signature"), body, SlackSigningSecret) {
+    http.Error(w, "Invalid Slack signature", http.StatusUnauthorized)
+    return
+}
+
+forwardTicketToCore("http://localhost:8088/api/tickets", slackEvent)`,
+			replyTitle: "6. Slack Block Kit Reply & Active Learning",
+			replySubtitle: "Interactive Card Feedback & Model Tuning",
+			replyDetails: [
+				"Outbound Reply: Dispatches updated Slack Block Kit card with interactive resolution audit trail.",
+				"Active Learning Capture: Logs corrections in ground_truth.jsonl for iterative prompt adaptation.",
+				"Dynamic Context Injection: Dynamic few-shot examples adapt to corporate terminology.",
+				"Eliminates repetitive ticket correction overhead."
+			],
+			circuitDesc: "Slack Events API & Bolt → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
+			node1Label: "Slack"
+		}
+	});
+
+	const stages = $derived([
+		{
+			id: 1,
+			title: platformMeta[cockpit.chatPlatform].ingressTitle,
+			subtitle: platformMeta[cockpit.chatPlatform].ingressSubtitle,
+			badge: platformMeta[cockpit.chatPlatform].ingressBadge,
+			icon: Radio,
+			color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+			summary: platformMeta[cockpit.chatPlatform].ingressSummary,
+			details: platformMeta[cockpit.chatPlatform].ingressDetails,
+			codeSnippet: platformMeta[cockpit.chatPlatform].ingressCode
 		},
 		{
 			id: 2,
@@ -60,7 +177,8 @@ await fetch("http://localhost:8088/api/tickets", {
   "field_target": "customer_name",
   "proposed_value": "PT Sumber Makmur Abadi",
   "branch_origin": "Surabaya Regional Hub",
-  "confidence_score": 0.98
+  "confidence_score": 0.98,
+  "ingested_channel": "${cockpit.chatPlatform}"
 }`
 		},
 		{
@@ -141,29 +259,24 @@ return tx.Commit()`
 		},
 		{
 			id: 6,
-			title: "6. WhatsApp Reply & Active Learning",
-			subtitle: "Automated Feedback Loop & Training Cache",
+			title: platformMeta[cockpit.chatPlatform].replyTitle,
+			subtitle: platformMeta[cockpit.chatPlatform].replySubtitle,
 			badge: "Continuous Loop",
 			icon: Sparkles,
 			color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
-			summary: "Confirms resolution to the branch thread and commits any human corrections to few-shot training memory.",
-			details: [
-				"Outbound Reply: Sends exactly one confirmation message back to the originating branch thread ('✅ Ticket #TK-101 completed').",
-				"Active Learning Capture: If the engineer modified the proposed name prior to approval, the pair (raw_chat, corrected_json) is stored in data/training/ground_truth.jsonl.",
-				"Dynamic Context Injection: Backend automatically loads recently corrected pairs as dynamic few-shot prompts for future queries.",
-				"The agent learns branch-specific dialect patterns organically over time without requiring manual codebase changes."
-			],
+			summary: "Confirms resolution to the branch channel and commits any human corrections to few-shot training memory.",
+			details: platformMeta[cockpit.chatPlatform].replyDetails,
 			codeSnippet: `// Active Learning Memory Ingestion
 if humanCorrectedValue != aiExtractedValue {
     logGroundTruthPair({
         raw_message: ticket.raw_message,
+        channel: "${cockpit.chatPlatform}",
         corrected_entity: humanCorrectedValue,
         corrected_by: "John Doe"
     }); // Dynamically loaded as future few-shot prompt
 }`
 		}
-	];
-	let isSimulating = $state(false);
+	]);
 
 	function runSimulation() {
 		if (isSimulating) return;
@@ -190,11 +303,11 @@ if humanCorrectedValue != aiExtractedValue {
 		style="background: radial-gradient(circle, #2FB479 0%, transparent 70%);"
 	></span>
 
-	<!-- Header with Action Button -->
+	<!-- Header with Action Button & Platform Selector -->
 	<div class="text-center space-y-4 max-w-3xl mx-auto relative z-10">
 		<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-secondary/80 border border-border/70 text-xs font-mono text-muted-foreground shadow-xs">
 			<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-			<span>WhatsApp ChatOps Engine Pipeline</span>
+			<span>{platformMeta[cockpit.chatPlatform].name} ChatOps Engine Pipeline</span>
 			<span class="text-border">|</span>
 			<span class="text-foreground font-semibold">100% Deterministic & Audited</span>
 		</div>
@@ -202,8 +315,29 @@ if humanCorrectedValue != aiExtractedValue {
 			End-to-End System Flow
 		</h1>
 		<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-			From raw WhatsApp chat message to safe prepared statement execution: how NovaPilot AI eliminates on-call burnout while preserving zero-error database governance.
+			From raw {platformMeta[cockpit.chatPlatform].name} chat escalation to safe prepared statement execution: how NovaPilot AI eliminates on-call burnout while preserving zero-error database governance.
 		</p>
+
+		<!-- Interactive ChatOps Platform Switcher -->
+		<div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+			{#each [
+				{ id: 'whatsapp', label: 'WhatsApp' },
+				{ id: 'telegram', label: 'Telegram' },
+				{ id: 'discord', label: 'Discord' },
+				{ id: 'slack', label: 'Slack' }
+			] as p}
+				<button
+					type="button"
+					onclick={() => cockpit.chatPlatform = p.id as ChatPlatform}
+					class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 {cockpit.chatPlatform === p.id ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30' : 'bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/60'}"
+				>
+					{#if cockpit.chatPlatform === p.id}
+						<span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+					{/if}
+					<span>{p.label} Flow</span>
+				</button>
+			{/each}
+		</div>
 
 		<!-- Simulation Trigger Button -->
 		<div class="pt-2 flex justify-center">
@@ -211,10 +345,10 @@ if humanCorrectedValue != aiExtractedValue {
 				type="button"
 				onclick={runSimulation}
 				disabled={isSimulating}
-				class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-md hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-60"
+				class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold shadow-md hover:opacity-90 transition-all cursor-pointer disabled:opacity-60"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isSimulating ? 'animate-spin' : ''}" />
-				<span>{isSimulating ? `Traversing Stage 0${activeStage}/06...` : 'Simulate Live Ingestion Flow'}</span>
+				<span>{isSimulating ? `Traversing Stage 0${activeStage}/06...` : `Simulate Live ${platformMeta[cockpit.chatPlatform].name} Ingestion`}</span>
 			</button>
 		</div>
 	</div>
@@ -226,7 +360,9 @@ if humanCorrectedValue != aiExtractedValue {
 				<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
 				Active Circuit: Stage 0{activeStage} Processing
 			</span>
-			<span class="text-emerald-600 dark:text-emerald-400 font-medium">WhatsApp Socket &rarr; LLM &rarr; DB Commit</span>
+			<span class="text-emerald-600 dark:text-emerald-400 font-medium">
+				{platformMeta[cockpit.chatPlatform].circuitDesc}
+			</span>
 		</div>
 
 		<!-- SVG Circuit Path -->
@@ -257,7 +393,7 @@ if humanCorrectedValue != aiExtractedValue {
 							<s.icon class="h-4 w-4" />
 						</div>
 						<span class="text-[10px] font-mono font-medium truncate max-w-[90px] text-center {activeStage === s.id ? 'text-foreground font-bold' : 'text-muted-foreground'}">
-							0{s.id}. {s.title.split('. ')[1]?.split(' ')[0]}
+							0{s.id}. {s.id === 1 ? platformMeta[cockpit.chatPlatform].node1Label : s.title.split('. ')[1]?.split(' ')[0]}
 						</span>
 					</button>
 				{/each}
