@@ -38,6 +38,7 @@ auth_info/
 whatsapp-gateway/.baileys_auth/
 whatsapp-gateway/.env
 baileys_store.json
+*.traineddata
 uploads/wa_attachments/
 uploads/whatsapp_qr.json
 
@@ -46,7 +47,7 @@ uploads/whatsapp_qr.json
 *.sqlite
 *.sqlite3
 data/
-logs/
+/logs/
 *.log
 
 # IDE & OS files

@@ -14,7 +14,10 @@
 		PaperAirplane,
 		ArrowRight,
 		AdjustmentsHorizontal,
-		ChatBubbleLeftRight
+		ChatBubbleLeftRight,
+		Sparkles,
+		UserGroup,
+		DocumentText
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 
@@ -63,8 +66,18 @@
 			category: "Operations",
 			url: "/dashboard",
 			icon: CommandLine,
-			badge: "Cockpit",
+			badge: "Overview",
 			keywords: ["dashboard", "overview", "guardrail", "kpi", "assurance", "intake", "metrics"]
+		},
+		{
+			id: "cockpit_overview",
+			title: "Cockpit Overview & AI Analytics",
+			description: "In-depth Intent Classification Distribution, OCR Accuracy & Guardrail Metrics",
+			category: "Operations",
+			url: "/dashboard/cockpit",
+			icon: Sparkles,
+			badge: "AI Analytics",
+			keywords: ["cockpit", "ai", "analytics", "intent", "ocr", "tesseract", "confidence", "metrics", "chart"]
 		},
 		{
 			id: "queue",
@@ -105,6 +118,26 @@
 			icon: CpuChip,
 			badge: "Probes",
 			keywords: ["connectivity", "telemetry", "lan", "ip", "probes", "ferdium", "rambox", "tutorial", "runtime", "health"]
+		},
+		{
+			id: "logs",
+			title: "System Logs & Daemon Telemetry",
+			description: "Streaming stdout runtime logs from Go Core :8088, PostgreSQL 18 :5432, and WA Gateway",
+			category: "Databases & Telemetry",
+			url: "/dashboard/logs",
+			icon: DocumentText,
+			badge: "Live Logs",
+			keywords: ["logs", "system", "stdout", "daemon", "telemetry", "core", "terminal", "debug"]
+		},
+		{
+			id: "contacts",
+			title: "Group Contacts & Regional Whitelist",
+			description: "Directory of whitelisted branch WhatsApp groups, Telegram alert channels, and admins",
+			category: "ChatOps & Hooks",
+			url: "/dashboard/contacts",
+			icon: UserGroup,
+			badge: "Directory",
+			keywords: ["contacts", "groups", "whatsapp", "branches", "directory", "whitelist", "surabaya", "medan", "jakarta"]
 		},
 		{
 			id: "hooks",

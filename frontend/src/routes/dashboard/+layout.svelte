@@ -19,7 +19,10 @@
 		ArrowRightOnRectangle,
 		ArrowTopRightOnSquare,
 		ChatBubbleLeftRight,
-		AdjustmentsHorizontal
+		AdjustmentsHorizontal,
+		Sparkles,
+		UserGroup,
+		DocumentText
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
@@ -156,14 +159,33 @@
 				<a
 					href="/dashboard"
 					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Dashboard Overview"
+					title="Operations Dashboard Overview"
 				>
 					<div class="flex items-center gap-2.5 min-w-0">
 						<CommandLine class="h-4 w-4 shrink-0" />
 						{#if !sidebarCollapsed}
+							<span class="truncate">Dashboard</span>
+						{/if}
+					</div>
+				</a>
+
+				<!-- Cockpit Overview & AI Analytics -->
+				<a
+					href="/dashboard/cockpit"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/cockpit' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="Cockpit Overview & AI Analytics"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<Sparkles class="h-4 w-4 shrink-0 {currentPath === '/dashboard/cockpit' ? '' : 'text-purple-500'}" />
+						{#if !sidebarCollapsed}
 							<span class="truncate">Cockpit Overview</span>
 						{/if}
 					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/cockpit' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
+							DUMMY
+						</span>
+					{/if}
 				</a>
 
 				<!-- Approval Queue -->
@@ -240,6 +262,25 @@
 						{/if}
 					</div>
 				</a>
+
+				<!-- System Logs Viewer -->
+				<a
+					href="/dashboard/logs"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/logs' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="Enterprise System Logs & Daemon Telemetry"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<DocumentText class="h-4 w-4 shrink-0 {currentPath === '/dashboard/logs' ? '' : 'text-cyan-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">System Logs</span>
+						{/if}
+					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/logs' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'}">
+							STREAM
+						</span>
+					{/if}
+				</a>
 			</div>
 
 			<!-- Group 3: CHATOPS GATEWAYS -->
@@ -284,6 +325,25 @@
 					{#if !sidebarCollapsed}
 						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
 							{cockpit.chatPlatform}
+						</span>
+					{/if}
+				</a>
+
+				<!-- Group Contacts Directory -->
+				<a
+					href="/dashboard/contacts"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/contacts' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="Omnichannel Group Contacts & Directory"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<UserGroup class="h-4 w-4 shrink-0 {currentPath === '/dashboard/contacts' ? '' : 'text-teal-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">Group Contacts</span>
+						{/if}
+					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/contacts' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
+							DUMMY
 						</span>
 					{/if}
 				</a>
@@ -443,9 +503,21 @@
 					>
 						<span class="flex items-center gap-2">
 							<CommandLine class="h-4 w-4 text-primary" />
-							<span>Cockpit Overview</span>
+							<span>Dashboard</span>
 						</span>
 						<span class="font-mono text-[10px]">/dashboard</span>
+					</a>
+
+					<a
+						href="/dashboard/cockpit"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/cockpit' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<Sparkles class="h-4 w-4 text-purple-500" />
+							<span>Cockpit Overview</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">DUMMY</span>
 					</a>
 
 					<a
@@ -498,6 +570,18 @@
 					</a>
 
 					<a
+						href="/dashboard/logs"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/logs' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<DocumentText class="h-4 w-4 text-cyan-500" />
+							<span>System Logs</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-500">STREAM</span>
+					</a>
+
+					<a
 						href="/dashboard/messages"
 						onclick={closeMobileMenu}
 						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/messages' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
@@ -522,6 +606,18 @@
 							<CodeBracket class="h-4 w-4 text-purple-500" />
 							<span>Client Hook Flows</span>
 						</span>
+					</a>
+
+					<a
+						href="/dashboard/contacts"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/contacts' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<UserGroup class="h-4 w-4 text-teal-500" />
+							<span>Group Contacts</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500">DUMMY</span>
 					</a>
 
 					<a

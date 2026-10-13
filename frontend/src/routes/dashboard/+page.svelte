@@ -5,7 +5,8 @@
 		XMark, ArrowUpTray, ArrowTopRightOnSquare, ChartBarSquare, 
 		MagnifyingGlass, Sparkles, CommandLine, CpuChip, Radio, LockClosed, 
 		CodeBracket, Eye, InformationCircle, ChevronDown, ChevronUp,
-		CircleStack, PaperAirplane, ArrowRight, ExclamationTriangle, ChatBubbleLeftRight
+		CircleStack, PaperAirplane, ArrowRight, ExclamationTriangle, ChatBubbleLeftRight,
+		UserGroup, DocumentText
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
 	import InspectModal from "$lib/components/InspectModal.svelte";
@@ -358,6 +359,200 @@
 	</div>
 
 	<!-- ========================================================================= -->
+	<!-- 2.5 REAL-TIME OPERATIONS TRAFFIC & MULTIPLATFORM INTAKE CHARTS             -->
+	<!-- ========================================================================= -->
+	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+			<div class="flex items-center gap-2.5">
+				<div class="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold shadow-xs">
+					<ChartBarSquare class="h-5 w-5" />
+				</div>
+				<div>
+					<h3 class="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+						Operations Traffic &amp; Omnichannel Ingress Trends
+						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+							7-DAY METRICS
+						</span>
+					</h3>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Volume pesan masuk per hari, perbandingan intake otomatis vs persetujuan petugas, dan pembagian kanal ChatOps.
+					</p>
+				</div>
+			</div>
+
+			<a
+				href="/dashboard/cockpit"
+				class="h-8 px-3 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto cursor-pointer"
+			>
+				<Sparkles class="h-3.5 w-3.5 text-purple-500" />
+				<span>Cockpit Overview [AI Metrics] &rarr;</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 pt-1">
+			<!-- Left 2 Cols: Inbound Traffic Chart -->
+			<div class="lg:col-span-2 p-4 rounded-xl bg-secondary/30 border border-border/60 space-y-3 flex flex-col justify-between">
+				<div class="flex items-center justify-between text-xs font-mono">
+					<span class="text-foreground font-semibold">Volume Pesan Masuk vs Tiket Tereksekusi</span>
+					<div class="flex items-center gap-3 text-[11px]">
+						<span class="flex items-center gap-1.5 text-blue-500">
+							<span class="h-2 w-2 rounded-full bg-blue-500"></span>
+							<span>Total Intake</span>
+						</span>
+						<span class="flex items-center gap-1.5 text-emerald-500">
+							<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+							<span>Mutasi Disetujui (MCP)</span>
+						</span>
+					</div>
+				</div>
+
+				<!-- SVG Area Chart -->
+				<div class="w-full h-44 flex items-end">
+					<svg viewBox="0 0 600 160" class="w-full h-full overflow-visible">
+						<defs>
+							<linearGradient id="dashTrafficGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+								<stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35" />
+								<stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+							</linearGradient>
+							<linearGradient id="dashApprovedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+								<stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+								<stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+							</linearGradient>
+						</defs>
+
+						<!-- Grid lines -->
+						<line x1="20" y1="30" x2="580" y2="30" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
+						<line x1="20" y1="80" x2="580" y2="80" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
+						<line x1="20" y1="130" x2="580" y2="130" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
+
+						<!-- Total Intake Curve (Blue) -->
+						<path 
+							d="M 30 120 C 110 90, 150 110, 210 75 C 270 45, 330 95, 390 40 C 450 -5, 510 50, 570 30 L 570 145 L 30 145 Z" 
+							fill="url(#dashTrafficGrad)" 
+						/>
+						<path 
+							d="M 30 120 C 110 90, 150 110, 210 75 C 270 45, 330 95, 390 40 C 450 -5, 510 50, 570 30" 
+							fill="none" 
+							stroke="#3b82f6" 
+							stroke-width="2.5" 
+						/>
+
+						<!-- Approved & Mutated Curve (Emerald) -->
+						<path 
+							d="M 30 135 C 110 110, 150 125, 210 95 C 270 70, 330 115, 390 65 C 450 25, 510 75, 570 55 L 570 145 L 30 145 Z" 
+							fill="url(#dashApprovedGrad)" 
+						/>
+						<path 
+							d="M 30 135 C 110 110, 150 125, 210 95 C 270 70, 330 115, 390 65 C 450 25, 510 75, 570 55" 
+							fill="none" 
+							stroke="#10b981" 
+							stroke-width="2" 
+						/>
+
+						<!-- Data Points -->
+						<circle cx="30" cy="120" r="3.5" fill="#3b82f6" />
+						<circle cx="210" cy="75" r="3.5" fill="#3b82f6" />
+						<circle cx="390" cy="40" r="3.5" fill="#3b82f6" />
+						<circle cx="570" cy="30" r="3.5" fill="#3b82f6" />
+
+						<circle cx="30" cy="135" r="3" fill="#10b981" />
+						<circle cx="210" cy="95" r="3" fill="#10b981" />
+						<circle cx="390" cy="65" r="3" fill="#10b981" />
+						<circle cx="570" cy="55" r="3" fill="#10b981" />
+					</svg>
+				</div>
+
+				<div class="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/50">
+					<span>Sen (42 chat)</span>
+					<span>Sel (68 chat)</span>
+					<span>Rab (55 chat)</span>
+					<span>Kam (90 chat)</span>
+					<span>Jum (112 chat)</span>
+					<span>Sab (48 chat)</span>
+					<span>Min (35 chat)</span>
+				</div>
+			</div>
+
+			<!-- Right 1 Col: Platform Share Breakdown -->
+			<div class="p-4 rounded-xl bg-secondary/30 border border-border/60 space-y-3">
+				<div class="flex items-center justify-between text-xs font-mono">
+					<span class="text-foreground font-semibold">Pangsa Kanal ChatOps</span>
+					<span class="text-primary font-bold">500 Total Ingress</span>
+				</div>
+
+				<div class="space-y-2.5 text-xs font-mono">
+					<!-- WhatsApp -->
+					<div class="space-y-1">
+						<div class="flex items-center justify-between">
+							<span class="text-emerald-500 font-semibold flex items-center gap-1.5">
+								<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+								<span>WhatsApp (Baileys/Hook)</span>
+							</span>
+							<span class="font-bold text-foreground">68% (340)</span>
+						</div>
+						<div class="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+							<div class="h-full rounded-full bg-emerald-500" style="width: 68%"></div>
+						</div>
+					</div>
+
+					<!-- Telegram -->
+					<div class="space-y-1">
+						<div class="flex items-center justify-between">
+							<span class="text-sky-500 font-semibold flex items-center gap-1.5">
+								<span class="h-2 w-2 rounded-full bg-sky-500"></span>
+								<span>Telegram Bot API</span>
+							</span>
+							<span class="font-bold text-foreground">18% (90)</span>
+						</div>
+						<div class="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+							<div class="h-full rounded-full bg-sky-500" style="width: 18%"></div>
+						</div>
+					</div>
+
+					<!-- Slack -->
+					<div class="space-y-1">
+						<div class="flex items-center justify-between">
+							<span class="text-rose-500 font-semibold flex items-center gap-1.5">
+								<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+								<span>Slack Enterprise</span>
+							</span>
+							<span class="font-bold text-foreground">9% (45)</span>
+						</div>
+						<div class="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+							<div class="h-full rounded-full bg-rose-500" style="width: 9%"></div>
+						</div>
+					</div>
+
+					<!-- Discord -->
+					<div class="space-y-1">
+						<div class="flex items-center justify-between">
+							<span class="text-indigo-500 font-semibold flex items-center gap-1.5">
+								<span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+								<span>Discord Webhook</span>
+							</span>
+							<span class="font-bold text-foreground">5% (25)</span>
+						</div>
+						<div class="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+							<div class="h-full rounded-full bg-indigo-500" style="width: 5%"></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="pt-2 border-t border-border/50 text-[10.5px] font-mono text-muted-foreground space-y-1">
+					<div class="flex items-center justify-between">
+						<span>Avg Latency (P50):</span>
+						<span class="text-foreground font-semibold">180 ms</span>
+					</div>
+					<div class="flex items-center justify-between">
+						<span>DB 1 Pool State:</span>
+						<span class="text-emerald-500 font-semibold">HEALTHY (1 Open)</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ========================================================================= -->
 	<!-- 3. DEDICATED OPERATIONS NAVIGATION HUB (DIRECT URL SHORTCUTS)              -->
 	<!-- ========================================================================= -->
 	<div class="space-y-3">
@@ -505,6 +700,78 @@
 					</p>
 					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
 						/dashboard/simulator &rarr;
+					</span>
+				</div>
+			</a>
+
+			<!-- Menu 7: Cockpit Overview & AI Analytics -->
+			<a
+				href="/dashboard/cockpit"
+				class="p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-start gap-3.5 group shadow-xs"
+			>
+				<div class="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+					<Sparkles class="h-5 w-5" />
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="flex items-center justify-between">
+						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Cockpit Overview</span>
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+							DUMMY
+						</span>
+					</div>
+					<p class="text-xs text-muted-foreground mt-1 line-clamp-2">
+						AI intent classification breakdown, Tesseract OCR confidence, and guardrail metrics.
+					</p>
+					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
+						/dashboard/cockpit &rarr;
+					</span>
+				</div>
+			</a>
+
+			<!-- Menu 8: System Logs & Telemetry -->
+			<a
+				href="/dashboard/logs"
+				class="p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-start gap-3.5 group shadow-xs"
+			>
+				<div class="h-10 w-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+					<DocumentText class="h-5 w-5" />
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="flex items-center justify-between">
+						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">System Logs</span>
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+							STREAM
+						</span>
+					</div>
+					<p class="text-xs text-muted-foreground mt-1 line-clamp-2">
+						Live daemon terminal logs from Go Core :8088, PostgreSQL 18 :5432, and WA Gateway.
+					</p>
+					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
+						/dashboard/logs &rarr;
+					</span>
+				</div>
+			</a>
+
+			<!-- Menu 9: Group Contacts Directory -->
+			<a
+				href="/dashboard/contacts"
+				class="p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-start gap-3.5 group shadow-xs"
+			>
+				<div class="h-10 w-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+					<UserGroup class="h-5 w-5" />
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="flex items-center justify-between">
+						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Group Contacts</span>
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+							DUMMY
+						</span>
+					</div>
+					<p class="text-xs text-muted-foreground mt-1 line-clamp-2">
+						Whitelisted regional branch WhatsApp groups, Telegram channels, and authorized admins.
+					</p>
+					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
+						/dashboard/contacts &rarr;
 					</span>
 				</div>
 			</a>

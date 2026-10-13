@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { 
 		ChatBubbleLeftRight, 
 		MagnifyingGlass, 
@@ -177,6 +177,8 @@
 		}
 	}
 
+	let autoPollTimer: any = null;
+
 	onMount(async () => {
 		await cockpit.fetchInboundMessages();
 		await cockpit.fetchLearnedPatterns();
@@ -189,6 +191,17 @@
 				}
 			}
 		} catch {}
+
+		// Active Real-Time Poller (every 2.5s) to guarantee zero latency updates alongside SSE
+		autoPollTimer = setInterval(async () => {
+			await cockpit.fetchInboundMessages();
+		}, 2500);
+	});
+
+	onDestroy(() => {
+		if (autoPollTimer) {
+			clearInterval(autoPollTimer);
+		}
 	});
 </script>
 
