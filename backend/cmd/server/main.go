@@ -72,7 +72,7 @@ func main() {
 	if _, err := os.Stat("uploads"); err == nil {
 		uploadDir = "uploads"
 	}
-	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, uploadDir)
+	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, uploadDir, db)
 
 	// 4. Setup Gin HTTP Engine
 	router := gin.Default()
@@ -93,6 +93,7 @@ func main() {
 	api := router.Group("/api")
 	{
 		api.GET("/health", apiHandler.HealthCheck)
+		api.GET("/telemetry", apiHandler.GetTelemetry)
 		api.GET("/events", sseHub.HandleSSE)
 
 		// Tickets

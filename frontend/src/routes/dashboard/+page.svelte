@@ -61,6 +61,34 @@
 	let eventSource = $state<EventSource | null>(null);
 	let isPipelineFolded = $state(true);
 
+	interface TelemetryData {
+		lan_ip: string;
+		status: string;
+		uptime_seconds: number;
+		goroutines: number;
+		memory_alloc_mb: string;
+		database: {
+			driver: string;
+			status: string;
+			open_connections?: number;
+			idle?: number;
+			in_use?: number;
+		};
+	}
+
+	let telemetry = $state<TelemetryData | null>(null);
+
+	async function fetchTelemetry() {
+		try {
+			const res = await fetch("/api/telemetry");
+			if (res.ok) {
+				telemetry = await res.json();
+			}
+		} catch (err) {
+			console.error("Failed to fetch telemetry:", err);
+		}
+	}
+
 	// Multi-Engine Database Paradigm (Relational vs Non-Relational)
 	let dbEngineMode = $state<"relational" | "non_relational">("relational");
 
@@ -128,6 +156,7 @@
 
 	async function fetchTickets() {
 		try {
+			fetchTelemetry();
 			const res = await fetch("/api/tickets");
 			if (res.ok) {
 				tickets = await res.json();
@@ -312,6 +341,7 @@
 	onMount(() => {
 		fetchTickets();
 		fetchAuditLogs();
+		fetchTelemetry();
 		setupSSE();
 	});
 
@@ -346,10 +376,10 @@
 
 			<!-- Right: Shadcn Telemetry Controls & DB Paradigm Switcher -->
 			<div class="flex items-center gap-2 flex-wrap">
-				<!-- LAN Telemetry Badge -->
+				<!-- LAN Telemetry Badge (Live from backend probe) -->
 				<div class="h-9 px-3 rounded-md bg-muted/60 border border-input text-xs font-mono text-muted-foreground flex items-center gap-1.5 shadow-xs">
 					<span class="text-foreground font-semibold">LAN:</span>
-					<span>192.168.1.104</span>
+					<span>{telemetry?.lan_ip || "127.0.0.1"}</span>
 				</div>
 
 				<!-- Dual Database Paradigm Dropdown (Relational vs Non-Relational) -->
@@ -384,9 +414,6 @@
 				>
 					<ArrowPath class="h-4 w-4 {loading ? 'animate-spin' : ''}" />
 				</button>
-
-				<!-- Theme Toggle -->
-				<ThemeToggle />
 			</div>
 		</div>
 
