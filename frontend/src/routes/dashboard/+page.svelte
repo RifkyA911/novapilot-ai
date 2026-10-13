@@ -7,11 +7,13 @@
 		MagnifyingGlass, Sparkles, CommandLine, CpuChip, Radio, LockClosed, 
 		CodeBracket, Eye, InformationCircle, ChevronDown, ChevronUp,
 		Funnel, ArrowsUpDown, BookOpen, QuestionMarkCircle, ClipboardDocument,
-		ClipboardDocumentCheck, CircleStack, DevicePhoneMobile
+		ClipboardDocumentCheck, CircleStack, DevicePhoneMobile,
+		ChevronDoubleLeft, ChevronDoubleRight, Bars3
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import HistoryTable from "$lib/components/HistoryTable.svelte";
+	import DatabaseConnectors from "$lib/components/DatabaseConnectors.svelte";
 	import { timeAgo } from "$lib/utils";
 	import type { PageData } from "./$types";
 
@@ -98,8 +100,11 @@
 	let filterConfidence = $state("all");
 	let sortBy = $state<"newest" | "oldest" | "confidence">("newest");
 
-	// Active tab: 'pending' | 'simulator' | 'hooks' | 'connectivity' | 'history'
-	let activeTab = $state<"pending" | "simulator" | "hooks" | "connectivity" | "history">("pending");
+	// Sidebar Collapsed State
+	let sidebarCollapsed = $state(false);
+
+	// Active tab: 'pending' | 'history' | 'connectors' | 'connectivity' | 'hooks' | 'simulator'
+	let activeTab = $state<"pending" | "history" | "connectors" | "connectivity" | "hooks" | "simulator">("pending");
 
 	// Inspected Ticket State (Transparency & Explainability)
 	let inspectedTicketId = $state<number | null>(null);
@@ -394,6 +399,17 @@
 					</select>
 				</div>
 
+				<!-- DB Connectors GUI Quick Trigger -->
+				<button
+					type="button"
+					onclick={() => (activeTab = "connectors")}
+					class="h-9 px-3 rounded-md border border-input bg-background hover:bg-accent text-foreground text-xs font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer {activeTab === 'connectors' ? 'border-primary ring-1 ring-primary' : ''}"
+					title="Open Database Connectors GUI Manager"
+				>
+					<CircleStack class="h-3.5 w-3.5 text-amber-500" />
+					<span class="hidden sm:inline">DB Connectors</span>
+				</button>
+
 				<!-- SSE Pulse Indicator -->
 				<div class="h-9 px-3 rounded-md bg-muted/60 border border-input text-xs font-mono flex items-center gap-2 shadow-xs">
 					<span class="relative flex h-2 w-2">
@@ -566,65 +582,210 @@
 			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Database Architecture</div>
 			<div class="text-2xl sm:text-3xl font-bold font-mono text-primary flex items-center justify-between">
 				<span>{dbEngineMode === 'relational' ? 'SQL' : 'NoSQL'}</span>
-				<ServerStack class="h-5 w-5 text-primary/40" />
+				<button 
+					type="button"
+					onclick={() => (activeTab = "connectors")}
+					class="p-1 rounded hover:bg-muted text-primary transition-colors cursor-pointer"
+					title="Open Database Connectors GUI Manager"
+				>
+					<ServerStack class="h-5 w-5 text-primary/70 hover:text-primary" />
+				</button>
 			</div>
-			<div class="text-xs text-muted-foreground">
-				{dbEngineMode === 'relational' ? 'PostgreSQL / Oracle 11g' : 'MongoDB / Redis Store'}
+			<div class="flex items-center justify-between text-xs text-muted-foreground">
+				<span class="truncate">{dbEngineMode === 'relational' ? 'PostgreSQL / Oracle 11g' : 'MongoDB / Redis Store'}</span>
+				<button 
+					type="button"
+					onclick={() => (activeTab = "connectors")}
+					class="text-[11px] font-medium text-primary hover:underline ml-1 cursor-pointer shrink-0"
+				>
+					Manage &rarr;
+				</button>
 			</div>
 		</div>
 	</div>
 
-	<!-- Shadcn Segmented Tab Navigation -->
-	<div class="inline-flex h-10 items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground w-full flex-wrap gap-1">
-		<button
-			type="button"
-			onclick={() => (activeTab = "pending")}
-			class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer {activeTab === 'pending' ? 'bg-background text-foreground shadow-xs font-semibold' : 'hover:text-foreground'}"
+	<!-- Main Workspace: Collapsible Sidebar + Operational Content Area -->
+	<div class="flex flex-col lg:flex-row gap-6 items-start">
+		<!-- Collapsible Sidebar -->
+		<aside 
+			class="bg-card border border-border rounded-xl shadow-xs transition-all duration-300 ease-in-out shrink-0 w-full {sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'} p-3 space-y-4"
 		>
-			<span>Approval Queue</span>
-			{#if pendingCount > 0}
-				<span class="ml-1.5 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
-					{pendingCount}
-				</span>
+			<!-- Sidebar Header & Toggle Button -->
+			<div class="flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} pb-3 border-b border-border">
+				{#if !sidebarCollapsed}
+					<div class="flex items-center gap-2 min-w-0">
+						<div class="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+							<CommandLine class="h-4 w-4" />
+						</div>
+						<div class="truncate">
+							<div class="text-xs font-semibold text-foreground tracking-tight">Console Cockpit</div>
+							<div class="text-[10px] text-muted-foreground font-mono">NovaPilot Engine</div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Collapse Toggle Button -->
+				<button
+					type="button"
+					onclick={() => sidebarCollapsed = !sidebarCollapsed}
+					class="h-8 w-8 rounded-md border border-input bg-background hover:bg-accent text-foreground transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+					title={sidebarCollapsed ? "Expand Sidebar Navigation" : "Collapse Sidebar Navigation"}
+				>
+					{#if sidebarCollapsed}
+						<ChevronDoubleRight class="h-4 w-4" />
+					{:else}
+						<ChevronDoubleLeft class="h-4 w-4" />
+					{/if}
+				</button>
+			</div>
+
+			<!-- Navigation Categories -->
+			<div class="space-y-4">
+				<!-- Category 1: OPERATIONS -->
+				<div class="space-y-1">
+					{#if !sidebarCollapsed}
+						<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+							Operations
+						</div>
+					{/if}
+
+					<!-- Item: Approval Queue -->
+					<button
+						type="button"
+						onclick={() => activeTab = "pending"}
+						title="Approval Queue"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'pending' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<Clock class="h-4 w-4 shrink-0" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">Approval Queue</span>
+							{/if}
+						</div>
+						{#if pendingCount > 0}
+							<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 {activeTab === 'pending' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
+								{pendingCount}
+							</span>
+						{/if}
+					</button>
+
+					<!-- Item: Execution History & Audit -->
+					<button
+						type="button"
+						onclick={() => activeTab = "history"}
+						title="Execution History & Audit Log"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'history' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<ChartBarSquare class="h-4 w-4 shrink-0" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">Execution History</span>
+							{/if}
+						</div>
+					</button>
+				</div>
+
+				<!-- Category 2: DATABASE ENGINES -->
+				<div class="space-y-1">
+					{#if !sidebarCollapsed}
+						<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+							Databases & Engines
+						</div>
+					{/if}
+
+					<!-- Item: Database Connectors (Dedicated GUI Menu) -->
+					<button
+						type="button"
+						onclick={() => activeTab = "connectors"}
+						title="Database Connectors (Universal GUI Manager)"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'connectors' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<CircleStack class="h-4 w-4 shrink-0 {activeTab === 'connectors' ? '' : 'text-amber-500'}" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">DB Connectors</span>
+							{/if}
+						</div>
+						{#if !sidebarCollapsed}
+							<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {activeTab === 'connectors' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}">
+								Universal
+							</span>
+						{/if}
+					</button>
+
+					<!-- Item: System Telemetry & Platform Probes -->
+					<button
+						type="button"
+						onclick={() => activeTab = "connectivity"}
+						title="System Connectivity & Platform Probes"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'connectivity' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<CpuChip class="h-4 w-4 shrink-0 {activeTab === 'connectivity' ? '' : 'text-blue-500'}" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">System Telemetry</span>
+							{/if}
+						</div>
+					</button>
+				</div>
+
+				<!-- Category 3: INGESTION & GATEWAYS -->
+				<div class="space-y-1">
+					{#if !sidebarCollapsed}
+						<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+							Ingestion & Gateways
+						</div>
+					{/if}
+
+					<!-- Item: Client Hook Visualizer -->
+					<button
+						type="button"
+						onclick={() => activeTab = "hooks"}
+						title="Client Hooks (Visual Flow)"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'hooks' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<CodeBracket class="h-4 w-4 shrink-0 {activeTab === 'hooks' ? '' : 'text-purple-500'}" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">Client Hook Flows</span>
+							{/if}
+						</div>
+					</button>
+
+					<!-- Item: Ingestion Simulator -->
+					<button
+						type="button"
+						onclick={() => activeTab = "simulator"}
+						title="Simulate WhatsApp Ingestion"
+						class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer {activeTab === 'simulator' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<div class="flex items-center gap-2.5 min-w-0">
+							<PaperAirplane class="h-4 w-4 shrink-0" />
+							{#if !sidebarCollapsed}
+								<span class="truncate">Ingestion Simulator</span>
+							{/if}
+						</div>
+					</button>
+				</div>
+			</div>
+
+			<!-- Sidebar Footer Widget (when expanded) -->
+			{#if !sidebarCollapsed}
+				<div class="pt-3 border-t border-border text-[11px] font-mono text-muted-foreground space-y-1.5">
+					<div class="flex items-center justify-between">
+						<span class="text-foreground font-semibold">Active Engine:</span>
+						<span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">{dbEngineMode === 'relational' ? 'PostgreSQL' : 'MongoDB'}</span>
+					</div>
+					<div class="flex items-center justify-between text-[10px]">
+						<span>Stream Status:</span>
+						<span class="{sseConnected ? 'text-emerald-500' : 'text-amber-500'}">● {sseConnected ? 'Connected' : 'Offline'}</span>
+					</div>
+				</div>
 			{/if}
-		</button>
+		</aside>
 
-		<button
-			type="button"
-			onclick={() => (activeTab = "simulator")}
-			class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer {activeTab === 'simulator' ? 'bg-background text-foreground shadow-xs font-semibold' : 'hover:text-foreground'}"
-		>
-			<PaperAirplane class="h-3.5 w-3.5 mr-1.5" />
-			<span>Simulate Ingestion</span>
-		</button>
-
-		<button
-			type="button"
-			onclick={() => (activeTab = "hooks")}
-			class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer {activeTab === 'hooks' ? 'bg-background text-foreground shadow-xs font-semibold' : 'hover:text-foreground'}"
-		>
-			<CodeBracket class="h-3.5 w-3.5 mr-1.5 text-purple-500" />
-			<span>Client Hooks (Visual Flow)</span>
-		</button>
-
-		<button
-			type="button"
-			onclick={() => (activeTab = "connectivity")}
-			class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer {activeTab === 'connectivity' ? 'bg-background text-foreground shadow-xs font-semibold' : 'hover:text-foreground'}"
-		>
-			<CpuChip class="h-3.5 w-3.5 mr-1.5 text-blue-500" />
-			<span>System Connectivity & Platform Indicators</span>
-		</button>
-
-		<button
-			type="button"
-			onclick={() => (activeTab = "history")}
-			class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer {activeTab === 'history' ? 'bg-background text-foreground shadow-xs font-semibold' : 'hover:text-foreground'}"
-		>
-			<ChartBarSquare class="h-3.5 w-3.5 mr-1.5" />
-			<span>Execution History & Audit</span>
-		</button>
-	</div>
+		<!-- Main Operational Content Pane -->
+		<div class="flex-1 min-w-0 w-full space-y-4">
 
 	<!-- TAB 1: PENDING APPROVAL QUEUE (SHADCN DATA-TABLE TOOLBAR & CARDS) -->
 	{#if activeTab === "pending"}
@@ -1333,7 +1494,13 @@
 	<!-- TAB 4: EXECUTION HISTORY & AUDIT (TANSTACK TABLE V9 POWERED) -->
 	{:else if activeTab === "history"}
 		<HistoryTable {tickets} />
+
+	<!-- TAB 5: DATABASE CONNECTORS (UNIVERSAL GUI MANAGER) -->
+	{:else if activeTab === "connectors"}
+		<DatabaseConnectors />
 	{/if}
+		</div>
+	</div>
 </div>
 
 <!-- REJECT REASON MODAL (SHADCN DIALOG STYLE) -->
