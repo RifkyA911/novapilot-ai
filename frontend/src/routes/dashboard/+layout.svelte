@@ -233,11 +233,11 @@
 					</div>
 				{/if}
 
-				<!-- DB Connectors (Universal Enterprise LTS) -->
+				<!-- DB Connectors (Database Configuration & Setup) -->
 				<a
 					href="/dashboard/connectors"
 					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/connectors' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Universal DB Connectors (Dual-DB Cockpit & Pool Telemetry)"
+					title="Database Configuration & Setup"
 				>
 					<div class="flex items-center gap-2.5 min-w-0">
 						<CircleStack class="h-4 w-4 shrink-0 {currentPath === '/dashboard/connectors' ? '' : 'text-amber-500'}" />
@@ -246,8 +246,8 @@
 						{/if}
 					</div>
 					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/connectors' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}">
-							DUAL-DB
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/connectors' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary text-muted-foreground border border-border'}">
+							SETUP
 						</span>
 					{/if}
 				</a>
@@ -256,7 +256,7 @@
 				<a
 					href="/dashboard/mcp"
 					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/mcp' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Model Context Protocol (MCP) Knowledge Base & Dual-DB Specification"
+					title="Model Context Protocol (MCP) Knowledge Base & Tools"
 				>
 					<div class="flex items-center gap-2.5 min-w-0">
 						<Cube class="h-4 w-4 shrink-0 {currentPath === '/dashboard/mcp' ? '' : 'text-cyan-500'}" />

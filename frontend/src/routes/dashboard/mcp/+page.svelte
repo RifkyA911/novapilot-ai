@@ -256,7 +256,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'dual-db' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CircleStack class="h-4 w-4" />
-			<span>1. Dual-DB Separation</span>
+			<span>1. Arsitektur Isolasi Database</span>
 		</button>
 		<button
 			type="button"
@@ -284,17 +284,17 @@
 		</button>
 	</div>
 
-	<!-- TAB 1: DUAL-DB ARCHITECTURE SPECIFICATION -->
+	<!-- TAB 1: ARSITEKTUR ISOLASI DATABASE -->
 	{#if activeTab === "dual-db"}
 		<div class="space-y-6">
 			<!-- Architecture Highlight Banner -->
 			<div class="p-5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 space-y-3">
 				<div class="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 font-bold text-sm">
 					<ShieldCheck class="h-5 w-5" />
-					<span>Prinsip Keamanan Utama: Zero Direct SQL Access ke Database Enterprise</span>
+					<span>Prinsip Keamanan: Isolasi Database Operasional & Sumber Data MCP</span>
 				</div>
 				<p class="text-xs text-muted-foreground leading-relaxed">
-					Sistem NovaPilot AI menerapkan arsitektur <strong>Dual Database</strong>. AI Agent dan bot chat <strong>tidak pernah memiliki kredensial SQL langsung</strong> ke database ERP. Segala interaksi dibatasi melalui protokol MCP yang terisolasi dan memerlukan verifikasi manual oleh petugas on-call.
+					Sistem NovaPilot AI memisahkan antara <strong>Database Internal Sistem</strong> (antrean tiket, log audit) dan <strong>Database Referensi Bisnis</strong>. AI Agent dan bot chat <strong>tidak pernah memiliki kredensial SQL langsung</strong> ke database ERP. Segala interaksi dibatasi melalui protokol MCP yang terisolasi dan memerlukan verifikasi manual oleh petugas on-call.
 				</p>
 			</div>
 

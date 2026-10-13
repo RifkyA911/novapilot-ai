@@ -28,7 +28,12 @@ type APIHandler struct {
 	sseHub        *SSEHub
 	uploadDir     string
 	db            *sql.DB
+	mcpRefDB      *sql.DB
 	startTime     time.Time
+}
+
+func (h *APIHandler) SetMCPRefDB(db *sql.DB) {
+	h.mcpRefDB = db
 }
 
 func NewAPIHandler(
@@ -608,5 +613,123 @@ func (h *APIHandler) DeleteLearnedPattern(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "pattern removed", "id": id})
+}
+
+func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
+	sysStatus := "DISCONNECTED"
+	if h.db != nil && h.db.Ping() == nil {
+		sysStatus = "CONNECTED"
+	}
+
+	mcpStatus := "STANDBY"
+	if h.mcpRefDB != nil && h.mcpRefDB.Ping() == nil {
+		mcpStatus = "CONNECTED"
+	}
+
+	sysHost := os.Getenv("SYSTEM_DB_HOST")
+	if sysHost == "" { sysHost = os.Getenv("POSTGRES_HOST") }
+	if sysHost == "" { sysHost = "localhost" }
+
+	sysPort := os.Getenv("SYSTEM_DB_PORT")
+	if sysPort == "" { sysPort = os.Getenv("POSTGRES_PORT") }
+	if sysPort == "" { sysPort = "5432" }
+
+	sysUser := os.Getenv("SYSTEM_DB_USER")
+	if sysUser == "" { sysUser = os.Getenv("POSTGRES_USER") }
+	if sysUser == "" { sysUser = "postgres" }
+
+	sysDB := os.Getenv("SYSTEM_DB_NAME")
+	if sysDB == "" { sysDB = os.Getenv("POSTGRES_DB") }
+	if sysDB == "" { sysDB = "novapilot_db" }
+
+	mcpHost := os.Getenv("MCP_REF_DB_HOST")
+	if mcpHost == "" { mcpHost = "localhost" }
+
+	mcpPort := os.Getenv("MCP_REF_DB_PORT")
+	if mcpPort == "" { mcpPort = "5432" }
+
+	mcpUser := os.Getenv("MCP_REF_DB_USER")
+	if mcpUser == "" { mcpUser = "postgres" }
+
+	mcpDB := os.Getenv("MCP_REF_DB_NAME")
+	if mcpDB == "" { mcpDB = "novapilot_db" }
+
+	c.JSON(http.StatusOK, gin.H{
+		"system_db": gin.H{
+			"name":    "Database Internal Sistem",
+			"driver":  "PostgreSQL 18 / lib/pq",
+			"host":    sysHost,
+			"port":    sysPort,
+			"user":    sysUser,
+			"dbname":  sysDB,
+			"sslmode": "disable",
+			"status":  sysStatus,
+			"purpose": "Antrean Tiket, Audit Trail, Sesi, Inbound Messages, Learned Patterns",
+			"tables":  []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"},
+		},
+		"mcp_ref_db": gin.H{
+			"name":    "Database Referensi MCP",
+			"driver":  "Enterprise Data Source (PostgreSQL / ERP)",
+			"host":    mcpHost,
+			"port":    mcpPort,
+			"user":    mcpUser,
+			"dbname":  mcpDB,
+			"sslmode": "disable",
+			"status":  mcpStatus,
+			"purpose": "Sumber Data Referensi Faktur & Pelanggan yang diakses oleh Tool MCP",
+			"tables":  []string{"invoices", "customer_master", "branches"},
+		},
+	})
+}
+
+type DBTestRequest struct {
+	Target   string `json:"target"`
+	Driver   string `json:"driver"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	DBName   string `json:"dbname"`
+	SSLMode  string `json:"sslmode"`
+}
+
+func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
+	var req DBTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	if req.Host == "" { req.Host = "localhost" }
+	if req.Port == "" { req.Port = "5432" }
+	if req.User == "" { req.User = "postgres" }
+	if req.DBName == "" { req.DBName = "novapilot_db" }
+	if req.SSLMode == "" { req.SSLMode = "disable" }
+
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
+		req.Host, req.Port, req.User, req.Password, req.DBName, req.SSLMode)
+
+	start := time.Now()
+	testDB, err := sql.Open("postgres", connStr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal membuka driver: %v", err)})
+		return
+	}
+	defer testDB.Close()
+
+	if err := testDB.Ping(); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":    false,
+			"error": fmt.Sprintf("Gagal ping database (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err),
+		})
+		return
+	}
+
+	latency := time.Since(start).Milliseconds()
+	c.JSON(http.StatusOK, gin.H{
+		"ok":         true,
+		"latency_ms": latency,
+		"message":    fmt.Sprintf("Koneksi berhasil terverifikasi! Host: %s:%s | DB: %s | Roundtrip: %dms", req.Host, req.Port, req.DBName, latency),
+	})
 }
 

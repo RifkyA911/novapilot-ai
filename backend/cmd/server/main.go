@@ -122,8 +122,39 @@ func main() {
 
 		// Document / Attachment File Upload
 		api.POST("/upload", apiHandler.UploadDocument)
+
+		// Database Configuration & Connectivity
+		api.GET("/database/config", apiHandler.GetDatabaseConfig)
+		api.POST("/database/test", apiHandler.TestDatabaseConnection)
 	}
 
+	// Optional: Connect MCP Reference Database if distinct configuration provided
+	mcpHost := os.Getenv("MCP_REF_DB_HOST")
+	mcpPort := os.Getenv("MCP_REF_DB_PORT")
+	mcpUser := os.Getenv("MCP_REF_DB_USER")
+	mcpPass := os.Getenv("MCP_REF_DB_PASSWORD")
+	mcpDBName := os.Getenv("MCP_REF_DB_NAME")
+	mcpSSL := os.Getenv("MCP_REF_DB_SSLMODE")
+	if mcpSSL == "" {
+		mcpSSL = "disable"
+	}
+
+	if mcpHost != "" && mcpDBName != "" {
+		mcpDB, err := postgres.NewConnection(postgres.Config{
+			Host:     mcpHost,
+			Port:     mcpPort,
+			User:     mcpUser,
+			Password: mcpPass,
+			DBName:   mcpDBName,
+			SSLMode:  mcpSSL,
+		})
+		if err == nil {
+			apiHandler.SetMCPRefDB(mcpDB)
+			log.Printf("[MCP-DB] Connected to MCP Reference Database at %s:%s/%s", mcpHost, mcpPort, mcpDBName)
+		} else {
+			log.Printf("[MCP-DB] Standby (could not auto-connect: %v)", err)
+		}
+	}
 
 	log.Printf("[NOVAPILOT] Core Backend running at http://0.0.0.0:%s", port)
 	if err := router.Run(":" + port); err != nil && err != http.ErrServerClosed {
