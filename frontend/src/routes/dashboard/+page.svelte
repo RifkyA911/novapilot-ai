@@ -250,116 +250,101 @@
 	});
 </script>
 
-<div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-7 font-sans">
-	<!-- VibeUI Command Header (Clean Light & Dark Mode) -->
-	<div class="p-6 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-5 transition-all">
-		<!-- User Identity Card -->
-		<div class="flex items-center gap-4">
-			<div class="relative">
-				<img
-					src={currentUser.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + encodeURIComponent(currentUser.name)}
-					alt="On-Call Engineer Avatar"
-					class="h-12 w-12 rounded-2xl bg-secondary border border-border/80 shadow-inner"
-				/>
-				<span class="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-card"></span>
+<div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
+	<!-- Guardrail Assurance Engine & Telemetry Command Bar (Consolidated & Clean) -->
+	<div class="p-5 rounded-2xl bg-card border border-emerald-500/30 shadow-sm space-y-4 transition-all">
+		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+			<!-- Left: Guardrail Title & Security Posture -->
+			<div class="flex items-center gap-3">
+				<div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-sm flex-shrink-0">
+					<ShieldCheck class="h-5 w-5" />
+				</div>
+				<div>
+					<div class="font-bold text-sm text-foreground flex items-center gap-2">
+						<span>Guardrail Assurance Engine</span>
+						<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
+							Enforcing Zero Raw SQL
+						</span>
+					</div>
+					<p class="text-xs text-muted-foreground mt-0.5">Automated validation of incoming WhatsApp mutations against unparameterized queries and schema constraints.</p>
+				</div>
 			</div>
-			<div>
-				<div class="flex items-center gap-2">
-					<h2 class="text-base font-bold text-foreground tracking-tight">{currentUser.name}</h2>
-					<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-						{currentUser.role === 'oncall_engineer' ? 'ON-CALL ENGINEER' : currentUser.role.toUpperCase()}
+
+			<!-- Right: Unified Telemetry Toolbar (LAN IP, DB Engine, SSE Stream & Controls) -->
+			<div class="flex items-center gap-2 flex-wrap">
+				<!-- Search Bar -->
+				<div class="relative w-40 sm:w-52">
+					<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search tickets, doc #…"
+						class="h-8.5 w-full rounded-xl border border-border/80 bg-background pl-8 pr-8 text-xs outline-none transition-colors focus:border-foreground/40 font-mono shadow-xs"
+					/>
+					<kbd class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border bg-secondary px-1.5 py-0.2 text-[9px] font-mono text-muted-foreground">/</kbd>
+				</div>
+
+				<!-- LAN IP Badge -->
+				<div class="px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs font-mono text-muted-foreground shadow-xs">
+					<span class="text-foreground font-semibold">LAN:</span> 192.168.1.104
+				</div>
+
+				<!-- DB Engine Badge -->
+				<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs shadow-xs">
+					<ServerStack class="h-3.5 w-3.5 text-primary" />
+					<span class="text-muted-foreground text-[11px]">DB:</span>
+					<span class="font-semibold text-foreground text-[11px] font-mono">PostgreSQL 18</span>
+				</div>
+
+				<!-- SSE Stream Pulse Badge -->
+				<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs shadow-xs">
+					<span class="relative flex h-2 w-2">
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full {sseConnected ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75'}"></span>
+						<span class="relative inline-flex rounded-full h-2 w-2 {sseConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+					</span>
+					<span class="text-muted-foreground text-[11px]">SSE:</span>
+					<span class="font-semibold text-[11px] font-mono {sseConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
+						{sseConnected ? "Live Stream" : "Reconnecting"}
 					</span>
 				</div>
-				<p class="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-					<span>{currentUser.email}</span>
-					<span>•</span>
-					<span>Weekend Plant Operations</span>
-					<span>•</span>
-					<span class="font-mono text-[11px]">LAN IP: 192.168.1.104</span>
-				</p>
+
+				<!-- Refresh Queue Button -->
+				<button
+					onclick={fetchTickets}
+					class="p-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border/70 shadow-xs"
+					title="Refresh On-Call Queue"
+				>
+					<ArrowPath class="h-4 w-4 {loading ? 'animate-spin' : ''}" />
+				</button>
+
+				<!-- Theme Toggle -->
+				<ThemeToggle />
 			</div>
 		</div>
 
-		<!-- Toolbar: Search, Telemetry & Theme Toggle -->
-		<div class="flex items-center gap-2.5 flex-wrap">
-			<!-- Search Bar -->
-			<div class="relative w-44 sm:w-60">
-				<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-				<input
-					type="text"
-					bind:value={searchQuery}
-					placeholder="Search tickets, doc #…"
-					class="h-9 w-full rounded-xl border border-border/80 bg-background pl-8 pr-8 text-xs outline-none transition-colors focus:border-foreground/40 font-mono shadow-sm"
-				/>
-				<kbd class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border bg-secondary px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">/</kbd>
-			</div>
-
-			<!-- DB Badge -->
-			<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border/70 text-xs shadow-sm">
-				<ServerStack class="h-3.5 w-3.5 text-primary" />
-				<span class="text-muted-foreground text-[11px]">DB:</span>
-				<span class="font-semibold text-foreground text-[11px]">PostgreSQL 18</span>
-			</div>
-
-			<!-- SSE Pulse -->
-			<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border/70 text-xs shadow-sm">
-				<span class="relative flex h-2 w-2">
-					<span class="animate-ping absolute inline-flex h-full w-full rounded-full {sseConnected ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75'}"></span>
-					<span class="relative inline-flex rounded-full h-2 w-2 {sseConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+		<!-- Bottom Sub-Telemetry Badges -->
+		<div class="pt-3 border-t border-border/40 flex items-center justify-between gap-3 flex-wrap text-xs">
+			<div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
+				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+					<span>Session: Verified</span>
 				</span>
-				<span class="text-muted-foreground text-[11px]">SSE:</span>
-				<span class="font-semibold text-[11px] {sseConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
-					{sseConnected ? "Streaming" : "Reconnecting"}
+				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+					<span>SQL: Parameterized Only</span>
+				</span>
+				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+					<span>State: Anti-Tamper Lock</span>
+				</span>
+				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+					<span>Audit: SHA-256 Trail</span>
 				</span>
 			</div>
 
-			<!-- Refresh -->
-			<button
-				onclick={fetchTickets}
-				class="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border/70 shadow-sm"
-				title="Refresh Queue"
-			>
-				<ArrowPath class="h-4 w-4 {loading ? 'animate-spin' : ''}" />
-			</button>
-
-			<!-- Theme Toggle Component (Light / Dark) -->
-			<ThemeToggle />
-		</div>
-	</div>
-
-	<!-- Guardrail Assurance Banner (VibeUI High-Contrast Light & Dark) -->
-	<div class="p-4 rounded-2xl bg-card border border-emerald-500/30 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
-		<div class="flex items-center gap-3">
-			<div class="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-sm">
-				<ShieldCheck class="h-4 w-4" />
-			</div>
-			<div>
-				<div class="font-bold text-foreground flex items-center gap-2">
-					<span>Guardrail Assurance Engine</span>
-					<span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
-						Enforcing
-					</span>
-				</div>
-				<p class="text-[11px] text-muted-foreground">Every incoming mutation is protected against unparameterized SQL, state tampering, and unauthorized bypass.</p>
-			</div>
-		</div>
-
-		<div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
-			<span class="px-2.5 py-1 rounded-lg bg-secondary border border-border text-foreground flex items-center gap-1.5 shadow-sm">
-				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-				<span>Session: Verified</span>
-			</span>
-			<span class="px-2.5 py-1 rounded-lg bg-secondary border border-border text-foreground flex items-center gap-1.5 shadow-sm">
-				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-				<span>SQL: Parameterized Only</span>
-			</span>
-			<span class="px-2.5 py-1 rounded-lg bg-secondary border border-border text-foreground flex items-center gap-1.5 shadow-sm">
-				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-				<span>State: Anti-Tamper Lock</span>
-			</span>
-			<span class="px-2.5 py-1 rounded-lg bg-secondary border border-border text-foreground flex items-center gap-1.5 shadow-sm">
-				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-				<span>Audit: SHA-256 Log</span>
+			<span class="text-[11px] font-mono text-muted-foreground">
+				Active Plant Duty • Port :8088
 			</span>
 		</div>
 	</div>

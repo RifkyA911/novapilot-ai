@@ -10,14 +10,16 @@
 		CpuChip,
 		ComputerDesktop,
 		GlobeAlt,
-		DevicePhoneMobile,
-		CodeBracket
+		CodeBracket,
+		ServerStack,
+		LockClosed,
+		ChatBubbleLeftRight
 	} from "svelte-heros-v2";
 
 	// Selected Client Tab
 	let activeClient = $state<"ferdium" | "rambox" | "browser" | "desktop">("ferdium");
 	let isSimulating = $state(false);
-	let simulationStep = $state(0); // 0: idle, 1: intercept, 2: extract, 3: post, 4: dashboard
+	let simulationStep = $state(0); // 0: idle, 1: client trigger, 2: hook extract, 3: novapilot core & db, 4: human sign-off, 5: loopback confirmation
 
 	const clients = [
 		{
@@ -25,10 +27,11 @@
 			name: "Ferdium App",
 			subtitle: "Electron Recipe webview.js",
 			badge: "ACTIVE HOOK",
+			logoUrl: "https://avatars.githubusercontent.com/u/102928503?s=200&v=4",
 			color: "text-purple-600 dark:text-purple-400",
 			bgColor: "bg-purple-500/10 border-purple-500/30",
 			dotColor: "#a855f7",
-			yPos: 65,
+			yPos: 55,
 			snippet: `// C:\\Users\\USER\\AppData\\Roaming\\Ferdium\\recipes\\whatsapp\\webview.js
 Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`
 		},
@@ -37,10 +40,11 @@ Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`
 			name: "Rambox App",
 			subtitle: "Service Advanced Custom JS",
 			badge: "READY",
+			logoUrl: "https://avatars.githubusercontent.com/u/19875476?s=200&v=4",
 			color: "text-blue-600 dark:text-blue-400",
 			bgColor: "bg-blue-500/10 border-blue-500/30",
 			dotColor: "#3b82f6",
-			yPos: 145,
+			yPos: 135,
 			snippet: `// Paste into Rambox -> WhatsApp -> Advanced -> "Inject JavaScript code"
 (function() {
     // NovaPilot DOM Hook for Rambox
@@ -53,10 +57,11 @@ Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`
 			name: "Web Browser",
 			subtitle: "Chrome / Edge / Firefox Userscript",
 			badge: "ONE-CLICK",
+			logoUrl: "https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png",
 			color: "text-emerald-600 dark:text-emerald-400",
 			bgColor: "bg-emerald-500/10 border-emerald-500/30",
 			dotColor: "#10b981",
-			yPos: 225,
+			yPos: 215,
 			snippet: `// ==UserScript==
 // @name         NovaPilot AI — WhatsApp Web Ingestion Hook
 // @match        https://web.whatsapp.com/*
@@ -68,10 +73,11 @@ Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`
 			name: "PC WA Desktop",
 			subtitle: "Windows WebView2 / CDP Bridge",
 			badge: "STANDALONE",
+			logoUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
 			color: "text-amber-600 dark:text-amber-400",
 			bgColor: "bg-amber-500/10 border-amber-500/30",
-			dotColor: "#f59e0b",
-			yPos: 305,
+			dotColor: "#22c55e",
+			yPos: 295,
 			snippet: `// Launch PC WA with remote debugging port:
 Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 // novapilot-desktop-bridge.js auto-attaches CDP session`
@@ -84,16 +90,19 @@ Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 		simulationStep = 1;
 
 		setTimeout(() => {
-			simulationStep = 2;
+			simulationStep = 2; // Ingestion / DOM Hook
 			setTimeout(() => {
-				simulationStep = 3;
+				simulationStep = 3; // NovaPilot Go Core & DB Pre-check
 				setTimeout(() => {
-					simulationStep = 4;
+					simulationStep = 4; // On-Call Sign-off
 					setTimeout(() => {
-						isSimulating = false;
-						simulationStep = 0;
-					}, 2000);
-				}, 1000);
+						simulationStep = 5; // Return Loopback to Client
+						setTimeout(() => {
+							isSimulating = false;
+							simulationStep = 0;
+						}, 1800);
+					}, 1200);
+				}, 1200);
 			}, 1000);
 		}, 800);
 	}
@@ -106,11 +115,11 @@ Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 			<div class="flex items-center gap-2">
 				<h3 class="text-base font-bold text-foreground">Universal WhatsApp Hooks Ecosystem</h3>
 				<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/20 uppercase">
-					Cross-Platform Engine
+					Connected to NovaPilot AI
 				</span>
 			</div>
 			<p class="text-xs text-muted-foreground mt-1">
-				Real-time animated visualization of how incoming WhatsApp requests from Ferdium, Rambox, Browsers, and PC WhatsApp Desktop are hooked and forwarded to NovaPilot AI.
+				Real-time animated visualization of how incoming WhatsApp requests from Ferdium, Rambox, Browsers, and PC WhatsApp Desktop are hooked and processed by the NovaPilot Gatekeeper.
 			</p>
 		</div>
 
@@ -126,38 +135,92 @@ Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 		</button>
 	</div>
 
-	<!-- Interactive Client Selector Pills -->
-	<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+	<!-- Interactive Client Selector Pills with Real Web Logos -->
+	<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 		{#each clients as client}
 			<button
 				type="button"
 				onclick={() => activeClient = client.id}
-				class="p-3 rounded-xl border text-left transition-all duration-200 {activeClient === client.id ? `${client.bgColor} ring-2 ring-primary/40 shadow-sm` : 'bg-secondary/30 border-border/60 hover:bg-secondary/60'}"
+				class="p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-3 {activeClient === client.id ? `${client.bgColor} ring-2 ring-primary/40 shadow-sm` : 'bg-secondary/30 border-border/60 hover:bg-secondary/60'}"
 			>
-				<div class="flex items-center justify-between">
-					<span class="text-xs font-bold {activeClient === client.id ? client.color : 'text-foreground'}">
-						{client.name}
-					</span>
-					<span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-background border border-border/60">
+				<img
+					src={client.logoUrl}
+					alt={client.name}
+					class="w-8 h-8 rounded-lg object-contain bg-background p-1 border border-border/60 flex-shrink-0 shadow-xs"
+				/>
+				<div class="min-w-0 flex-1">
+					<div class="flex items-center justify-between">
+						<span class="text-xs font-bold truncate {activeClient === client.id ? client.color : 'text-foreground'}">
+							{client.name}
+						</span>
+					</div>
+					<p class="text-[10px] text-muted-foreground truncate font-mono">
 						{client.badge}
-					</span>
+					</p>
 				</div>
-				<p class="text-[10px] text-muted-foreground truncate mt-0.5 font-mono">
-					{client.subtitle}
-				</p>
 			</button>
 		{/each}
 	</div>
 
-	<!-- ANIMATED SVG PROCESS PIPELINE -->
-	<div class="relative w-full rounded-2xl bg-secondary/20 dark:bg-black/30 border border-border/70 p-4 overflow-hidden">
+	<!-- ANIMATED SVG PROCESS PIPELINE (ENHANCED CONNECTIVITY & FLOWING WIRES) -->
+	<div class="relative w-full rounded-2xl bg-secondary/20 dark:bg-black/40 border border-border/70 p-4 overflow-hidden">
 		<!-- SVG Canvas -->
 		<svg
-			viewBox="0 0 920 370"
+			viewBox="0 0 980 380"
 			class="w-full h-auto select-none overflow-visible"
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>
+				<!-- Custom SVG Keyframes for Flowing Lines & RGB Outer Border Glow -->
+				<style>
+					@keyframes flowWire {
+						from { stroke-dashoffset: 0; }
+						to { stroke-dashoffset: -28; }
+					}
+					@keyframes flowWireReturn {
+						from { stroke-dashoffset: 0; }
+						to { stroke-dashoffset: 28; }
+					}
+					@keyframes rgbGlowPulse {
+						0% {
+							stroke: #ef4444;
+							filter: drop-shadow(0 0 7px #ef4444) drop-shadow(0 0 14px rgba(239, 68, 68, 0.5));
+						}
+						25% {
+							stroke: #f59e0b;
+							filter: drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 14px rgba(245, 158, 11, 0.5));
+						}
+						50% {
+							stroke: #10b981;
+							filter: drop-shadow(0 0 7px #10b981) drop-shadow(0 0 14px rgba(16, 185, 129, 0.5));
+						}
+						75% {
+							stroke: #3b82f6;
+							filter: drop-shadow(0 0 7px #3b82f6) drop-shadow(0 0 14px rgba(59, 130, 246, 0.5));
+						}
+						100% {
+							stroke: #a855f7;
+							filter: drop-shadow(0 0 7px #a855f7) drop-shadow(0 0 14px rgba(168, 85, 247, 0.5));
+						}
+					}
+					.flowing-path {
+						stroke-dasharray: 8 5;
+						animation: flowWire 1s linear infinite;
+					}
+					.flowing-path-fast {
+						stroke-dasharray: 8 5;
+						animation: flowWire 0.65s linear infinite;
+					}
+					.flowing-path-return {
+						stroke-dasharray: 6 4;
+						animation: flowWireReturn 0.9s linear infinite;
+					}
+					.rgb-border-glow {
+						animation: rgbGlowPulse 1.6s linear infinite;
+						stroke-width: 3px !important;
+					}
+				</style>
+
 				<!-- Linear Gradients -->
 				<linearGradient id="gradFerdium" x1="0%" y1="0%" x2="100%" y2="0%">
 					<stop offset="0%" stop-color="#a855f7" />
@@ -172,217 +235,266 @@ Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 					<stop offset="100%" stop-color="#10b981" />
 				</linearGradient>
 				<linearGradient id="gradDesktop" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#f59e0b" />
+					<stop offset="0%" stop-color="#22c55e" />
 					<stop offset="100%" stop-color="#10b981" />
 				</linearGradient>
-				<linearGradient id="gradCore" x1="0%" y1="0%" x2="100%" y2="0%">
+				<linearGradient id="gradNovaPilot" x1="0%" y1="0%" x2="100%" y2="0%">
 					<stop offset="0%" stop-color="#10b981" />
 					<stop offset="100%" stop-color="#3b82f6" />
 				</linearGradient>
+				<linearGradient id="gradLoopback" x1="100%" y1="0%" x2="0%" y2="0%">
+					<stop offset="0%" stop-color="#10b981" />
+					<stop offset="100%" stop-color="#a855f7" />
+				</linearGradient>
 
-				<!-- Glow Filter -->
-				<filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-					<feGaussianBlur stdDeviation="3" result="blur" />
+				<!-- Particle Glow Filter -->
+				<filter id="particleGlow" x="-30%" y="-30%" width="160%" height="160%">
+					<feGaussianBlur stdDeviation="3.5" result="blur" />
 					<feComposite in="SourceGraphic" in2="blur" operator="over" />
 				</filter>
 			</defs>
 
-			<!-- 1. LEFT LAYER: 4 WhatsApp Clients -->
+			<!-- 1. LEFT LAYER: 4 WhatsApp Clients (With Web Images) -->
 			<!-- Ferdium Box -->
-			<g class="cursor-pointer transition-opacity {activeClient === 'ferdium' ? 'opacity-100' : 'opacity-40'}" onclick={() => activeClient = 'ferdium'}>
-				<rect x="20" y="35" width="160" height="60" rx="12" fill="currentColor" class="text-card stroke-purple-500/50" stroke-width="1.5" />
-				<circle cx="45" cy="65" r="14" fill="#a855f7" fill-opacity="0.15" />
-				<text x="45" y="70" font-family="system-ui" font-size="13" font-weight="bold" fill="#a855f7" text-anchor="middle">F</text>
-				<text x="70" y="58" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Ferdium App</text>
-				<text x="70" y="74" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">webview.js</text>
+			<g
+				role="button"
+				tabindex="0"
+				class="cursor-pointer transition-opacity {activeClient === 'ferdium' ? 'opacity-100' : 'opacity-40'}"
+				onclick={() => activeClient = 'ferdium'}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'ferdium'; } }}
+			>
+				<rect
+					x="20" y="25" width="160" height="60" rx="12"
+					fill="currentColor"
+					class="text-card stroke-purple-500/50 {simulationStep === 1 && activeClient === 'ferdium' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+				/>
+				<image href="https://avatars.githubusercontent.com/u/102928503?s=200&v=4" x="32" y="37" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
+				<text x="76" y="48" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Ferdium App</text>
+				<text x="76" y="65" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">webview.js Hook</text>
 			</g>
 
 			<!-- Rambox Box -->
-			<g class="cursor-pointer transition-opacity {activeClient === 'rambox' ? 'opacity-100' : 'opacity-40'}" onclick={() => activeClient = 'rambox'}>
-				<rect x="20" y="115" width="160" height="60" rx="12" fill="currentColor" class="text-card stroke-blue-500/50" stroke-width="1.5" />
-				<circle cx="45" cy="145" r="14" fill="#3b82f6" fill-opacity="0.15" />
-				<text x="45" y="150" font-family="system-ui" font-size="13" font-weight="bold" fill="#3b82f6" text-anchor="middle">R</text>
-				<text x="70" y="138" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Rambox App</text>
-				<text x="70" y="154" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Custom JS</text>
+			<g
+				role="button"
+				tabindex="0"
+				class="cursor-pointer transition-opacity {activeClient === 'rambox' ? 'opacity-100' : 'opacity-40'}"
+				onclick={() => activeClient = 'rambox'}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'rambox'; } }}
+			>
+				<rect
+					x="20" y="105" width="160" height="60" rx="12"
+					fill="currentColor"
+					class="text-card stroke-blue-500/50 {simulationStep === 1 && activeClient === 'rambox' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+				/>
+				<image href="https://avatars.githubusercontent.com/u/19875476?s=200&v=4" x="32" y="117" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
+				<text x="76" y="128" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Rambox App</text>
+				<text x="76" y="145" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Custom JS Code</text>
 			</g>
 
 			<!-- Web Browser Box -->
-			<g class="cursor-pointer transition-opacity {activeClient === 'browser' ? 'opacity-100' : 'opacity-40'}" onclick={() => activeClient = 'browser'}>
-				<rect x="20" y="195" width="160" height="60" rx="12" fill="currentColor" class="text-card stroke-emerald-500/50" stroke-width="1.5" />
-				<circle cx="45" cy="225" r="14" fill="#10b981" fill-opacity="0.15" />
-				<text x="45" y="230" font-family="system-ui" font-size="13" font-weight="bold" fill="#10b981" text-anchor="middle">W</text>
-				<text x="70" y="218" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Web Browser</text>
-				<text x="70" y="234" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Tampermonkey</text>
+			<g
+				role="button"
+				tabindex="0"
+				class="cursor-pointer transition-opacity {activeClient === 'browser' ? 'opacity-100' : 'opacity-40'}"
+				onclick={() => activeClient = 'browser'}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'browser'; } }}
+			>
+				<rect
+					x="20" y="185" width="160" height="60" rx="12"
+					fill="currentColor"
+					class="text-card stroke-emerald-500/50 {simulationStep === 1 && activeClient === 'browser' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+				/>
+				<image href="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" x="32" y="197" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
+				<text x="76" y="208" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Web Browser</text>
+				<text x="76" y="225" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Userscript Hook</text>
 			</g>
 
 			<!-- PC WA Box -->
-			<g class="cursor-pointer transition-opacity {activeClient === 'desktop' ? 'opacity-100' : 'opacity-40'}" onclick={() => activeClient = 'desktop'}>
-				<rect x="20" y="275" width="160" height="60" rx="12" fill="currentColor" class="text-card stroke-amber-500/50" stroke-width="1.5" />
-				<circle cx="45" cy="305" r="14" fill="#f59e0b" fill-opacity="0.15" />
-				<text x="45" y="310" font-family="system-ui" font-size="13" font-weight="bold" fill="#f59e0b" text-anchor="middle">P</text>
-				<text x="70" y="298" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">PC WhatsApp</text>
-				<text x="70" y="314" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">WebView2 / CDP</text>
+			<g
+				role="button"
+				tabindex="0"
+				class="cursor-pointer transition-opacity {activeClient === 'desktop' ? 'opacity-100' : 'opacity-40'}"
+				onclick={() => activeClient = 'desktop'}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'desktop'; } }}
+			>
+				<rect
+					x="20" y="265" width="160" height="60" rx="12"
+					fill="currentColor"
+					class="text-card stroke-amber-500/50 {simulationStep === 1 && activeClient === 'desktop' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+				/>
+				<image href="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" x="32" y="277" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
+				<text x="76" y="288" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">PC WhatsApp</text>
+				<text x="76" y="305" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">WebView2 / CDP</text>
 			</g>
 
-			<!-- 2. ANIMATED CONNECTING PATHS TO INTERCEPTOR -->
+			<!-- 2. ANIMATED CONNECTOR BORDERS (FLOWING DASHES FROM CLIENTS TO DOM HOOK) -->
 			<!-- Path from Ferdium -->
 			<path
-				id="pathFerdium"
-				d="M 180 65 C 240 65, 260 185, 320 185"
+				d="M 180 55 C 235 55, 255 175, 305 175"
 				fill="none"
 				stroke={activeClient === 'ferdium' ? 'url(#gradFerdium)' : '#94a3b8'}
 				stroke-width={activeClient === 'ferdium' ? '2.5' : '1'}
 				stroke-opacity={activeClient === 'ferdium' ? '0.9' : '0.2'}
-				stroke-dasharray={activeClient === 'ferdium' ? '6 3' : 'none'}
-				class={activeClient === 'ferdium' ? 'animate-[dash_1s_linear_infinite]' : ''}
+				class={activeClient === 'ferdium' ? 'flowing-path-fast' : 'flowing-path'}
 			/>
 
 			<!-- Path from Rambox -->
 			<path
-				id="pathRambox"
-				d="M 180 145 C 230 145, 270 185, 320 185"
+				d="M 180 135 C 230 135, 260 175, 305 175"
 				fill="none"
 				stroke={activeClient === 'rambox' ? 'url(#gradRambox)' : '#94a3b8'}
 				stroke-width={activeClient === 'rambox' ? '2.5' : '1'}
 				stroke-opacity={activeClient === 'rambox' ? '0.9' : '0.2'}
-				stroke-dasharray={activeClient === 'rambox' ? '6 3' : 'none'}
-				class={activeClient === 'rambox' ? 'animate-[dash_1s_linear_infinite]' : ''}
+				class={activeClient === 'rambox' ? 'flowing-path-fast' : 'flowing-path'}
 			/>
 
 			<!-- Path from Browser -->
 			<path
-				id="pathBrowser"
-				d="M 180 225 C 230 225, 270 185, 320 185"
+				d="M 180 215 C 230 215, 260 175, 305 175"
 				fill="none"
 				stroke={activeClient === 'browser' ? 'url(#gradBrowser)' : '#94a3b8'}
 				stroke-width={activeClient === 'browser' ? '2.5' : '1'}
 				stroke-opacity={activeClient === 'browser' ? '0.9' : '0.2'}
-				stroke-dasharray={activeClient === 'browser' ? '6 3' : 'none'}
-				class={activeClient === 'browser' ? 'animate-[dash_1s_linear_infinite]' : ''}
+				class={activeClient === 'browser' ? 'flowing-path-fast' : 'flowing-path'}
 			/>
 
 			<!-- Path from Desktop -->
 			<path
-				id="pathDesktop"
-				d="M 180 305 C 240 305, 260 185, 320 185"
+				d="M 180 295 C 235 295, 255 175, 305 175"
 				fill="none"
 				stroke={activeClient === 'desktop' ? 'url(#gradDesktop)' : '#94a3b8'}
 				stroke-width={activeClient === 'desktop' ? '2.5' : '1'}
 				stroke-opacity={activeClient === 'desktop' ? '0.9' : '0.2'}
-				stroke-dasharray={activeClient === 'desktop' ? '6 3' : 'none'}
-				class={activeClient === 'desktop' ? 'animate-[dash_1s_linear_infinite]' : ''}
+				class={activeClient === 'desktop' ? 'flowing-path-fast' : 'flowing-path'}
 			/>
 
-			<!-- Moving Data Packet Simulation -->
-			{#if isSimulating}
-				<circle r="5" fill="#10b981" filter="url(#glow)">
+			<!-- Animated Pulse Packet from Client to Hook -->
+			{#if isSimulating && simulationStep === 1}
+				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
 					<animateMotion
 						dur="0.8s"
 						repeatCount="1"
 						path={
-							activeClient === 'ferdium' ? "M 180 65 C 240 65, 260 185, 320 185" :
-							activeClient === 'rambox' ? "M 180 145 C 230 145, 270 185, 320 185" :
-							activeClient === 'browser' ? "M 180 225 C 230 225, 270 185, 320 185" :
-							"M 180 305 C 240 305, 260 185, 320 185"
+							activeClient === 'ferdium' ? "M 180 55 C 235 55, 255 175, 305 175" :
+							activeClient === 'rambox' ? "M 180 135 C 230 135, 260 175, 305 175" :
+							activeClient === 'browser' ? "M 180 215 C 230 215, 260 175, 305 175" :
+							"M 180 295 C 235 295, 255 175, 305 175"
 						}
 					/>
 				</circle>
 			{/if}
 
-			<!-- 3. CENTER LAYER: DOM Observer & Extraction Engine -->
-			<g transform="translate(320, 125)">
+			<!-- 3. CENTER-LEFT: DOM Ingestion Hook Box -->
+			<g transform="translate(305, 115)">
 				<rect
-					x="0"
-					y="0"
-					width="170"
-					height="120"
-					rx="14"
+					x="0" y="0" width="165" height="120" rx="14"
 					fill="currentColor"
-					class="text-card stroke-emerald-500/60 {simulationStep === 2 ? 'stroke-emerald-400 stroke-[2.5px] filter drop-shadow-md' : 'stroke-[1.5px]'}"
+					class="text-card stroke-emerald-500/60 {simulationStep === 2 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
 				/>
 				<!-- Title -->
-				<text x="18" y="28" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">DOM Ingestion Hook</text>
-				<text x="18" y="44" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">MutationObserver Active</text>
+				<text x="16" y="26" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">DOM Ingestion Hook</text>
+				<text x="16" y="42" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">MutationObserver Active</text>
 				
 				<!-- Inner Process Specs -->
-				<rect x="15" y="55" width="140" height="52" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="24" y="72" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">⚡ RegEx: INV/\d{4}/\d{3}</text>
-				<text x="24" y="86" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">🔍 Intent: UPDATE_NAME</text>
-				<text x="24" y="99" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">✓ Badge: Ingested</text>
+				<rect x="12" y="52" width="141" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
+				<text x="20" y="68" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">⚡ RegEx: INV/\d{4}/\d{3}</text>
+				<text x="20" y="82" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">🔍 Intent: UPDATE_NAME</text>
+				<text x="20" y="96" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">✓ Badge: Ingested</text>
 			</g>
 
-			<!-- Path from Interceptor to Go API Core -->
+			<!-- Flowing Line from Hook to NovaPilot AI Core -->
 			<path
-				d="M 490 185 L 570 185"
+				d="M 470 175 L 530 175"
 				fill="none"
-				stroke="url(#gradCore)"
+				stroke="url(#gradNovaPilot)"
 				stroke-width="2.5"
-				stroke-dasharray="6 3"
-				class="animate-[dash_1s_linear_infinite]"
+				class="flowing-path-fast"
 			/>
 
-			{#if isSimulating && simulationStep >= 2}
-				<circle r="5" fill="#3b82f6" filter="url(#glow)">
-					<animateMotion dur="0.6s" repeatCount="1" path="M 490 185 L 570 185" />
+			{#if isSimulating && simulationStep === 2}
+				<circle r="6" fill="#3b82f6" filter="url(#particleGlow)">
+					<animateMotion dur="0.6s" repeatCount="1" path="M 470 175 L 530 175" />
 				</circle>
 			{/if}
 
-			<!-- 4. RIGHT LAYER 1: NovaPilot Go Backend API Core (:8088) -->
-			<g transform="translate(570, 115)">
+			<!-- 4. CENTER-RIGHT: NOVAPILOT AI CORE GATEKEEPER & DB (PROMINENT CENTERPIECE) -->
+			<g transform="translate(530, 85)">
+				<!-- Main NovaPilot Core Box -->
 				<rect
-					x="0"
-					y="0"
-					width="160"
-					height="140"
-					rx="14"
+					x="0" y="0" width="220" height="180" rx="16"
 					fill="currentColor"
-					class="text-card stroke-primary/70 {simulationStep === 3 ? 'stroke-primary stroke-[2.5px] filter drop-shadow-md' : 'stroke-[1.5px]'}"
+					class="text-card stroke-primary/80 {simulationStep === 3 ? 'rgb-border-glow' : 'stroke-[2px]'}"
 				/>
-				<text x="18" y="28" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">NovaPilot Go Core</text>
-				<text x="18" y="44" font-family="monospace" font-size="9" fill="#3b82f6" font-weight="bold">Port :8088 / Clean Arch</text>
+				<!-- Brand Header -->
+				<rect x="0" y="0" width="220" height="38" rx="16" fill="#10b981" fill-opacity="0.12" />
+				<text x="18" y="24" font-family="system-ui" font-size="13" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
+				<text x="140" y="24" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">:8088 / Go</text>
 
-				<rect x="15" y="55" width="130" height="72" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="24" y="72" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">🔒 Pre-Check Query</text>
-				<text x="24" y="86" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">🛡️ Prepared Statement</text>
-				<text x="24" y="100" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">📦 Rollback Script</text>
-				<text x="24" y="114" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">📡 SSE Broadcast</text>
+				<!-- Engine Features -->
+				<g transform="translate(14, 48)">
+					<rect x="0" y="0" width="192" height="60" rx="8" fill="currentColor" class="text-secondary/60" />
+					<text x="12" y="18" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">1. Pre-Check: SELECT inv_no</text>
+					<text x="12" y="32" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">2. Safety: Enforce OPEN status</text>
+					<text x="12" y="46" font-family="monospace" font-size="9" fill="#3b82f6" font-weight="bold">3. Prepared SQL + Rollback</text>
+				</g>
+
+				<!-- Database Adapter Sub-Box -->
+				<g transform="translate(14, 116)">
+					<rect x="0" y="0" width="192" height="50" rx="8" fill="currentColor" class="text-secondary/80 stroke-border/70" stroke-width="1" />
+					<text x="12" y="20" font-family="system-ui" font-size="10" font-weight="bold" fill="currentColor" class="text-foreground">🗄️ Database Adapter</text>
+					<text x="12" y="38" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">PostgreSQL 18 • Oracle 11g TNS</text>
+				</g>
 			</g>
 
-			<!-- Path from Go Core to Dashboard Gatekeeper -->
+			<!-- Flowing Line from NovaPilot to On-Call Cockpit -->
 			<path
-				d="M 730 185 L 780 185"
+				d="M 750 175 L 810 175"
 				fill="none"
 				stroke="#10b981"
 				stroke-width="2.5"
-				stroke-dasharray="6 3"
-				class="animate-[dash_1s_linear_infinite]"
+				class="flowing-path-fast"
 			/>
 
-			{#if isSimulating && simulationStep >= 3}
-				<circle r="5" fill="#10b981" filter="url(#glow)">
-					<animateMotion dur="0.5s" repeatCount="1" path="M 730 185 L 780 185" />
+			{#if isSimulating && simulationStep === 3}
+				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
+					<animateMotion dur="0.5s" repeatCount="1" path="M 750 175 L 810 175" />
 				</circle>
 			{/if}
 
-			<!-- 5. RIGHT LAYER 2: On-Call Human Gatekeeper -->
-			<g transform="translate(780, 125)">
+			<!-- 5. RIGHT LAYER: On-Call Human Cockpit -->
+			<g transform="translate(810, 115)">
 				<rect
-					x="0"
-					y="0"
-					width="120"
-					height="120"
-					rx="14"
+					x="0" y="0" width="150" height="120" rx="14"
 					fill="currentColor"
-					class="text-card stroke-emerald-500/70 {simulationStep === 4 ? 'stroke-emerald-400 stroke-[2.5px] filter drop-shadow-md' : 'stroke-[1.5px]'}"
+					class="text-card stroke-emerald-500/70 {simulationStep === 4 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
 				/>
-				<text x="16" y="28" font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">On-Call Staff</text>
-				<text x="16" y="44" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">Port :3000 WebUI</text>
+				<text x="16" y="26" font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">On-Call Sign-Off</text>
+				<text x="16" y="42" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">Port :3000 Dashboard</text>
 
-				<rect x="12" y="55" width="96" height="52" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="20" y="74" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">👤 John Doe</text>
-				<text x="20" y="89" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">✓ Sign-Off</text>
-				<text x="20" y="100" font-family="monospace" font-size="8" fill="#10b981" font-weight="bold">Zero Raw SQL</text>
+				<rect x="12" y="52" width="126" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
+				<text x="20" y="70" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">👤 John Doe</text>
+				<text x="20" y="84" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">✓ 1-Click Approve</text>
+				<text x="20" y="98" font-family="monospace" font-size="8.5" fill="currentColor" class="text-muted-foreground">Zero Raw SQL Guard</text>
 			</g>
+
+			<!-- 6. RETURN LOOPBACK WIRE (Automated Receipt dispatched back to WhatsApp client) -->
+			<path
+				d="M 885 235 C 885 360, 450 360, 100 335"
+				fill="none"
+				stroke="url(#gradLoopback)"
+				stroke-width={simulationStep === 5 ? "3" : "1.5"}
+				stroke-opacity={simulationStep === 5 ? "1" : "0.3"}
+				class="flowing-path-return"
+			/>
+			<text x="500" y="352" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold" text-anchor="middle">
+				↺ ChatOps Confirmation Receipt Delivered Back to WhatsApp Chat
+			</text>
+
+			{#if isSimulating && simulationStep === 5}
+				<circle r="6" fill="#a855f7" filter="url(#particleGlow)">
+					<animateMotion dur="1.2s" repeatCount="1" path="M 885 235 C 885 360, 450 360, 100 335" />
+				</circle>
+			{/if}
 		</svg>
 	</div>
 
@@ -412,11 +524,3 @@ Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
 		</div>
 	</div>
 </div>
-
-<style>
-	@keyframes dash {
-		to {
-			stroke-dashoffset: -18;
-		}
-	}
-</style>

@@ -116,10 +116,20 @@
 				<span class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background"></span>
 			</div>
 
-			<!-- User Name (Desktop) -->
-			<span class="hidden sm:inline-block text-xs font-medium text-foreground group-hover:text-primary transition-colors">
-				{activeUser.name}
-			</span>
+			<!-- User Name & On-Call Shift Info (Desktop) -->
+			<div class="hidden sm:flex flex-col text-left">
+				<div class="flex items-center gap-1.5 leading-tight">
+					<span class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+						{activeUser.name}
+					</span>
+					<span class="text-[9px] px-1 py-0.2 rounded font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+						{activeUser.role === 'oncall_engineer' ? 'ON-CALL' : activeUser.role}
+					</span>
+				</div>
+				<span class="text-[10px] text-muted-foreground font-mono leading-tight truncate">
+					{activeUser.email} • Weekend Ops
+				</span>
+			</div>
 
 			<!-- Dropdown Chevron -->
 			<ChevronDown class="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-transform duration-200 {isMenuOpen ? 'rotate-180 text-primary' : ''}" />
