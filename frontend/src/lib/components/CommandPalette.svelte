@@ -14,6 +14,7 @@
 		PaperAirplane,
 		ArrowRight
 	} from "svelte-heros-v2";
+	import { cockpit } from "$lib/cockpit.svelte";
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
@@ -279,7 +280,7 @@
 					<span>•</span>
 					<span><kbd class="px-1.5 rounded bg-muted border border-border">↵</kbd> to select</span>
 				</div>
-				<span class="text-emerald-500 font-semibold">WhatsApp ChatOps Active</span>
+				<span class="text-emerald-500 font-semibold">{cockpit.platformStatuses[cockpit.chatPlatform].name} ({cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'Live' : 'Standby'})</span>
 			</div>
 		</div>
 	</div>

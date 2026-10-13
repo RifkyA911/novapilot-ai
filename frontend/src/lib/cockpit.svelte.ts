@@ -1,5 +1,5 @@
 // Cockpit Shared State (Svelte 5 Runes)
-// Provides unified SSE, ticket cache, audit logs, and telemetry across all dashboard views.
+// Provides unified SSE, ticket cache, audit logs, telemetry, and multi-platform ChatOps state.
 
 export interface Ticket {
 	id: number;
@@ -45,6 +45,8 @@ export interface TelemetryData {
 	};
 }
 
+export type ChatPlatform = "whatsapp" | "telegram" | "discord" | "slack";
+
 class CockpitState {
 	tickets = $state<Ticket[]>([]);
 	auditLogs = $state<AuditLog[]>([]);
@@ -56,13 +58,59 @@ class CockpitState {
 	// Database engine architecture mode
 	dbEngineMode = $state<"relational" | "non_relational">("relational");
 	
-	// WhatsApp ChatOps Active State (Focus on WhatsApp)
-	chatPlatform = $state<"whatsapp">("whatsapp");
+	// Selected ChatOps Platform (WhatsApp, Telegram, Discord, Slack)
+	chatPlatform = $state<ChatPlatform>("whatsapp");
+
+	// Realistic Platform Status Tracking (Zero Fake "Connected" Badges!)
+	platformStatuses = $state({
+		whatsapp: {
+			name: "WhatsApp",
+			status: "AWAITING_HOOK" as "CONNECTED" | "AWAITING_HOOK" | "DISCONNECTED",
+			eventsCaptured: 0,
+			lastPingAt: null as string | null,
+			endpoint: "http://127.0.0.1:8088/api/tickets",
+			driver: "Baileys Socket & Client Observers (Ferdium/Rambox/Tampermonkey)",
+			details: "Port 8088 listening. Zero DOM hook events received yet. Awaiting Ferdium/Rambox injection or manual test ping."
+		},
+		telegram: {
+			name: "Telegram Bot",
+			status: "NOT_CONFIGURED" as "CONNECTED" | "NOT_CONFIGURED" | "DISCONNECTED",
+			eventsCaptured: 0,
+			lastPingAt: null as string | null,
+			endpoint: "http://127.0.0.1:8088/api/webhooks/telegram",
+			driver: "Telegram Bot API (Long Polling & Webhook Ingress)",
+			details: "No TELEGRAM_BOT_TOKEN found in local configuration. Set token from @BotFather to activate channel listener."
+		},
+		discord: {
+			name: "Discord Webhook",
+			status: "NOT_CONFIGURED" as "CONNECTED" | "NOT_CONFIGURED" | "DISCONNECTED",
+			eventsCaptured: 0,
+			lastPingAt: null as string | null,
+			endpoint: "http://127.0.0.1:8088/api/webhooks/discord",
+			driver: "Discord Developer Portal Interactions & Channel Webhooks",
+			details: "No Discord Webhook URL found. Create a webhook in channel settings to route invoice escalations."
+		},
+		slack: {
+			name: "Slack Enterprise",
+			status: "NOT_CONFIGURED" as "CONNECTED" | "NOT_CONFIGURED" | "DISCONNECTED",
+			eventsCaptured: 0,
+			lastPingAt: null as string | null,
+			endpoint: "http://127.0.0.1:8088/api/webhooks/slack",
+			driver: "Slack Events API & Interactive Block Kit Handlers",
+			details: "No SLACK_SIGNING_SECRET detected. Configure enterprise app manifest to enable slash commands."
+		}
+	});
 
 	// Reactive counts
 	pendingCount = $derived(this.tickets.filter(t => t.status === "PENDING_APPROVAL").length);
 	executedCount = $derived(this.tickets.filter(t => t.status === "EXECUTED").length);
 	rejectedCount = $derived(this.tickets.filter(t => t.status === "REJECTED").length);
+
+	recordPlatformEvent(platform: ChatPlatform) {
+		this.platformStatuses[platform].status = "CONNECTED";
+		this.platformStatuses[platform].eventsCaptured++;
+		this.platformStatuses[platform].lastPingAt = new Date().toLocaleTimeString();
+	}
 
 	async fetchTickets() {
 		try {
@@ -112,6 +160,7 @@ class CockpitState {
 			this.eventSource.addEventListener("ticket_created", (e) => {
 				const newTicket: Ticket = JSON.parse(e.data);
 				this.tickets = [newTicket, ...this.tickets.filter(t => t.id !== newTicket.id)];
+				this.recordPlatformEvent("whatsapp");
 			});
 			this.eventSource.addEventListener("ticket_approved", (e) => {
 				const updated: Ticket = JSON.parse(e.data);

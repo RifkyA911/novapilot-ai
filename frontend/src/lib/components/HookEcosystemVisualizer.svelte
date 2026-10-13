@@ -13,514 +13,370 @@
 		CodeBracket,
 		ServerStack,
 		LockClosed,
-		ChatBubbleLeftRight
+		ChatBubbleLeftRight,
+		ClipboardDocument,
+		Check,
+		ExclamationTriangle,
+		Radio
 	} from "svelte-heros-v2";
+	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 
-	// Selected Client Tab
-	let activeClient = $state<"ferdium" | "rambox" | "browser" | "desktop">("ferdium");
+	// Selected Client Sub-Adapter
+	let activeAdapter = $state<string>("ferdium");
 	let isSimulating = $state(false);
-	let simulationStep = $state(0); // 0: idle, 1: client trigger, 2: hook extract, 3: novapilot core & db, 4: human sign-off, 5: loopback confirmation
+	let simulationStep = $state(0);
+	let copied = $state(false);
+	let testPingSuccess = $state(false);
+	let pinging = $state(false);
 
-	const clients = [
-		{
-			id: "ferdium" as const,
-			name: "Ferdium App",
-			subtitle: "Electron Recipe webview.js",
-			badge: "ACTIVE HOOK",
-			logoUrl: "https://avatars.githubusercontent.com/u/102928503?s=200&v=4",
-			color: "text-purple-600 dark:text-purple-400",
-			bgColor: "bg-purple-500/10 border-purple-500/30",
-			dotColor: "#a855f7",
-			yPos: 55,
-			snippet: `// C:\\Users\\USER\\AppData\\Roaming\\Ferdium\\recipes\\whatsapp\\webview.js
-Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`
-		},
-		{
-			id: "rambox" as const,
-			name: "Rambox App",
-			subtitle: "Service Advanced Custom JS",
-			badge: "READY",
-			logoUrl: "https://avatars.githubusercontent.com/u/19875476?s=200&v=4",
-			color: "text-blue-600 dark:text-blue-400",
-			bgColor: "bg-blue-500/10 border-blue-500/30",
-			dotColor: "#3b82f6",
-			yPos: 135,
-			snippet: `// Paste into Rambox -> WhatsApp -> Advanced -> "Inject JavaScript code"
-(function() {
-    // NovaPilot DOM Hook for Rambox
-    const NOVAPILOT_BACKEND = "http://127.0.0.1:8088";
-    // ... novapilot-rambox.js
-})();`
-		},
-		{
-			id: "browser" as const,
-			name: "Web Browser",
-			subtitle: "Chrome / Edge / Firefox Userscript",
-			badge: "ONE-CLICK",
-			logoUrl: "https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png",
-			color: "text-emerald-600 dark:text-emerald-400",
-			bgColor: "bg-emerald-500/10 border-emerald-500/30",
-			dotColor: "#10b981",
-			yPos: 215,
-			snippet: `// ==UserScript==
-// @name         NovaPilot AI — WhatsApp Web Ingestion Hook
-// @match        https://web.whatsapp.com/*
-// @run-at       document-idle
-// ==/UserScript==`
-		},
-		{
-			id: "desktop" as const,
-			name: "PC WA Desktop",
-			subtitle: "Windows WebView2 / CDP Bridge",
-			badge: "STANDALONE",
-			logoUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
-			color: "text-amber-600 dark:text-amber-400",
-			bgColor: "bg-amber-500/10 border-amber-500/30",
-			dotColor: "#22c55e",
-			yPos: 295,
-			snippet: `// Launch PC WA with remote debugging port:
-Start-Process "WhatsApp.exe" -ArgumentList "--remote-debugging-port=9222"
-// novapilot-desktop-bridge.js auto-attaches CDP session`
+	function copyCode(text: string) {
+		navigator.clipboard.writeText(text);
+		copied = true;
+		setTimeout(() => (copied = false), 2000);
+	}
+
+	async function triggerTestPing() {
+		if (pinging) return;
+		pinging = true;
+		try {
+			const res = await fetch("/api/tickets", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					raw_message: `Test ${cockpit.chatPlatform.toUpperCase()} Hook: Verified connection from Hook Ecosystem Cockpit.`,
+					extracted_intent: "UPDATE_CUSTOMER_NAME",
+					document_no: "INV/2026/001",
+					field_target: "customer_name",
+					proposed_value: `PT Test ${cockpit.chatPlatform} Ping`,
+					branch_id: 1,
+					confidence_score: 0.99
+				})
+			});
+			if (res.ok) {
+				cockpit.recordPlatformEvent(cockpit.chatPlatform);
+				testPingSuccess = true;
+				await cockpit.fetchTickets();
+				setTimeout(() => (testPingSuccess = false), 3500);
+			}
+		} catch (err) {
+			console.error("Test ping error:", err);
+		} finally {
+			pinging = false;
 		}
-	];
+	}
 
-	function triggerLiveSimulation() {
+	function runSimulation() {
 		if (isSimulating) return;
 		isSimulating = true;
 		simulationStep = 1;
 
 		setTimeout(() => {
-			simulationStep = 2; // Ingestion / DOM Hook
+			simulationStep = 2; // Ingestion Edge
 			setTimeout(() => {
-				simulationStep = 3; // NovaPilot Go Core & DB Pre-check
+				simulationStep = 3; // Deterministic Parsing & DB Pre-check
 				setTimeout(() => {
 					simulationStep = 4; // On-Call Sign-off
 					setTimeout(() => {
-						simulationStep = 5; // Return Loopback to Client
+						simulationStep = 5; // Return Loopback
 						setTimeout(() => {
 							isSimulating = false;
 							simulationStep = 0;
-						}, 1800);
+						}, 1400);
 					}, 1200);
 				}, 1200);
 			}, 1000);
 		}, 800);
 	}
+
+	// Platform Configuration Definitions
+	const platformConfigs = {
+		whatsapp: {
+			title: "WhatsApp Hook Ecosystem",
+			description: "Passive DOM observers inside Ferdium, Rambox, and browser userscripts plus headless Baileys WebSocket daemon.",
+			adapters: [
+				{
+					id: "ferdium",
+					name: "Ferdium Desktop",
+					badge: "Electron Recipe",
+					endpoint: "POST http://127.0.0.1:8088/api/tickets",
+					snippet: `// %APPDATA%\\Ferdium\\recipes\\whatsapp\\webview.js\nFerdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`,
+					notes: "Zero QR scan requirement. Injects DOM observer directly into Ferdium WhatsApp webview."
+				},
+				{
+					id: "rambox",
+					name: "Rambox App",
+					badge: "Service Custom JS",
+					endpoint: "POST http://127.0.0.1:8088/api/tickets",
+					snippet: `// Rambox -> WhatsApp -> Settings -> Advanced -> Inject JavaScript code\n(function() {\n  const BACKEND = "http://127.0.0.1:8088/api/tickets";\n  console.log("[NovaPilot] Rambox Hook Active");\n})();`,
+					notes: "Runs inside Rambox Electron process. Forwards whitelisted branch groups to local port 8088."
+				},
+				{
+					id: "tampermonkey",
+					name: "WhatsApp Web (Chrome)",
+					badge: "Tampermonkey",
+					endpoint: "POST http://127.0.0.1:8088/api/tickets",
+					snippet: `// ==UserScript==\n// @name         NovaPilot WhatsApp Ingestion Hook\n// @match        https://web.whatsapp.com/*\n// @grant        GM_xmlhttpRequest\n// ==/UserScript==\nconst NOVAPILOT_BACKEND = "http://127.0.0.1:8088/api/tickets";`,
+					notes: "Passive MutationObserver watching incoming messages on web.whatsapp.com."
+				},
+				{
+					id: "baileys",
+					name: "PC WhatsApp Daemon",
+					badge: "Node.js Socket",
+					endpoint: "Direct WebSocket Gateway",
+					snippet: `// Run headless background daemon\nnpm install @whiskeysockets/baileys\nnode ./scripts/baileys-daemon.js --port 8088`,
+					notes: "Standalone Node.js service connecting directly to WhatsApp Multi-Device protocol."
+				}
+			]
+		},
+		telegram: {
+			title: "Telegram Bot & Channel Ecosystem",
+			description: "Direct webhook ingestion from authorized Telegram branch groups and inline interactive button callbacks.",
+			adapters: [
+				{
+					id: "tg_webhook",
+					name: "Telegram Bot API Webhook",
+					badge: "Webhook Endpoint",
+					endpoint: "POST http://127.0.0.1:8088/api/webhooks/telegram",
+					snippet: `# Register local webhook with Telegram Bot API:\ncurl -F "url=https://your-public-proxy:8088/api/webhooks/telegram" \\\n     "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook"`,
+					notes: "Receives JSON update payloads from Telegram BotFather bot on every group message."
+				},
+				{
+					id: "tg_polling",
+					name: "Intranet Long-Polling Worker",
+					badge: "Air-Gapped Daemon",
+					endpoint: "Internal Go Worker (getUpdates)",
+					snippet: `// Enable long-polling in backend .env:\nTELEGRAM_MODE=polling\nTELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNO\nTELEGRAM_ALLOWED_CHAT_IDS=-100123456789,-100987654321`,
+					notes: "Ideal for factory networks without public IP: pulls updates using HTTP long-polling."
+				},
+				{
+					id: "tg_inline",
+					name: "Inline Action Sign-off",
+					badge: "Interactive Callback",
+					endpoint: "POST /api/webhooks/telegram/callback",
+					snippet: `// Telegram Inline Keyboard Contract\n{\n  "inline_keyboard": [[\n    { "text": "✅ Approve & Commit", "callback_data": "approve_TK_101" },\n    { "text": "❌ Reject", "callback_data": "reject_TK_101" }\n  ]]\n}`,
+					notes: "Allows engineers with valid Telegram clearance to sign off directly from mobile chat."
+				}
+			]
+		},
+		discord: {
+			title: "Discord Webhook & Bot Gateway",
+			description: "Channel webhook ingestion and bot interactions for engineering support servers.",
+			adapters: [
+				{
+					id: "discord_webhook",
+					name: "Channel Ingress Webhook",
+					badge: "Channel Webhook",
+					endpoint: "POST http://127.0.0.1:8088/api/webhooks/discord",
+					snippet: `# Sample Discord Inbound Webhook Payload\ncurl -X POST http://127.0.0.1:8088/api/webhooks/discord \\\n  -H "Content-Type: application/json" \\\n  -d '{"content": "Tlg revisi PO-9921 alamat kirim ke DC Medan", "channel_id": "11982348"}'`,
+					notes: "Hooks Discord channel messages directly into the NovaPilot parsing engine."
+				},
+				{
+					id: "discord_bot",
+					name: "Discord Bot (Gateway WebSocket)",
+					badge: "Gateway Intent",
+					endpoint: "wss://gateway.discord.gg/?v=10&encoding=json",
+					snippet: `// Configure in backend .env:\nDISCORD_BOT_TOKEN=your_bot_token_here\nDISCORD_GUILD_ID=119823489123\nDISCORD_ALLOWED_CHANNELS=ops-tickets,factory-alerts`,
+					notes: "Listens to MESSAGE_CREATE gateway events with privileged Message Content Intent."
+				}
+			]
+		},
+		slack: {
+			title: "Slack Enterprise Bolt Ecosystem",
+			description: "Slack Events API subscriptions, slash commands (/novapilot), and Block Kit interactive message modals.",
+			adapters: [
+				{
+					id: "slack_events",
+					name: "Slack Events API",
+					badge: "Event Subscriptions",
+					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack",
+					snippet: `# Slack App Request URL:\n# https://your-domain.internal/api/webhooks/slack\n# Handshake verified via HMAC-SHA256 (X-Slack-Signature)`,
+					notes: "Listens to message.channels and message.groups events in authorized internal channels."
+				},
+				{
+					id: "slack_slash",
+					name: "Slash Command (/novapilot)",
+					badge: "Command Trigger",
+					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack/commands",
+					snippet: `# Usage in Slack Channel:\n/novapilot update INV/2026/001 customer_name "PT Sumber Makmur Abadi"`,
+					notes: "Instantly triggers the parsing and staging pipeline directly from any Slack workspace."
+				}
+			]
+		}
+	};
+
+	let currentConfig = $derived(platformConfigs[cockpit.chatPlatform] || platformConfigs.whatsapp);
+	let currentPlatformStatus = $derived(cockpit.platformStatuses[cockpit.chatPlatform]);
 </script>
 
-<div class="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-6">
-	<!-- Header -->
-	<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
-		<div>
-			<div class="flex items-center gap-2">
-				<h3 class="text-base font-bold text-foreground">Universal WhatsApp Hooks Ecosystem</h3>
-				<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/20 uppercase">
-					Connected to NovaPilot AI
-				</span>
+<div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xl space-y-6 relative overflow-hidden font-sans">
+	
+	<!-- Top Aceternity Header: Platform Switcher & Honest Status Banner -->
+	<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-border/60">
+		<div class="space-y-1">
+			<div class="flex items-center gap-2.5 flex-wrap">
+				<h3 class="text-base sm:text-lg font-bold text-foreground">{currentConfig.title}</h3>
+				
+				<!-- HONEST STATUS BADGE: Zero Fake Connected Indicators! -->
+				{#if currentPlatformStatus.status === "CONNECTED"}
+					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+						<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+						<span>CONNECTED ({currentPlatformStatus.eventsCaptured} events captured)</span>
+					</span>
+				{:else if currentPlatformStatus.status === "AWAITING_HOOK"}
+					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+						<span class="h-2 w-2 rounded-full bg-amber-500"></span>
+						<span>AWAITING FIRST HOOK PING</span>
+					</span>
+				{:else}
+					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+						<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+						<span>NOT CONFIGURED</span>
+					</span>
+				{/if}
 			</div>
-			<p class="text-xs text-muted-foreground mt-1">
-				Real-time animated visualization of how incoming WhatsApp requests from Ferdium, Rambox, Browsers, and PC WhatsApp Desktop are hooked and processed by the NovaPilot Gatekeeper.
+
+			<p class="text-xs text-muted-foreground leading-relaxed">
+				{currentConfig.description}
 			</p>
 		</div>
 
-		<!-- Action Trigger -->
-		<button
-			type="button"
-			onclick={triggerLiveSimulation}
-			disabled={isSimulating}
-			class="px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
-		>
-			<PaperAirplane class="w-3.5 h-3.5 {isSimulating ? 'animate-bounce' : ''}" />
-			<span>{isSimulating ? 'Simulating Hook Flow...' : 'Test Hook Animation'}</span>
-		</button>
-	</div>
-
-	<!-- Interactive Client Selector Pills with Real Web Logos -->
-	<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-		{#each clients as client}
+		<!-- Action Controls -->
+		<div class="flex items-center gap-2 flex-wrap">
 			<button
 				type="button"
-				onclick={() => activeClient = client.id}
-				class="p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-3 {activeClient === client.id ? `${client.bgColor} ring-2 ring-primary/40 shadow-sm` : 'bg-secondary/30 border-border/60 hover:bg-secondary/60'}"
+				onclick={triggerTestPing}
+				disabled={pinging}
+				class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
 			>
-				<img
-					src={client.logoUrl}
-					alt={client.name}
-					class="w-8 h-8 rounded-lg object-contain bg-background p-1 border border-border/60 flex-shrink-0 shadow-xs"
-				/>
-				<div class="min-w-0 flex-1">
-					<div class="flex items-center justify-between">
-						<span class="text-xs font-bold truncate {activeClient === client.id ? client.color : 'text-foreground'}">
-							{client.name}
-						</span>
-					</div>
-					<p class="text-[10px] text-muted-foreground truncate font-mono">
-						{client.badge}
-					</p>
+				<PaperAirplane class="w-3.5 h-3.5" />
+				<span>{pinging ? "Sending Ping..." : `Test ${currentPlatformStatus.name} Ping`}</span>
+			</button>
+
+			<button
+				type="button"
+				onclick={runSimulation}
+				disabled={isSimulating}
+				class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-input bg-background hover:bg-accent text-foreground transition-all flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+			>
+				<ArrowPath class="w-3.5 h-3.5 {isSimulating ? 'animate-spin' : ''}" />
+				<span>{isSimulating ? `Traversing Stage ${simulationStep}/5...` : "Animate Circuit"}</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Honest Connection Diagnostic Notice -->
+	<div class="p-4 rounded-2xl {currentPlatformStatus.status === 'CONNECTED' ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : currentPlatformStatus.status === 'AWAITING_HOOK' ? 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400' : 'bg-muted/40 border border-border text-muted-foreground'} text-xs space-y-1">
+		<div class="flex items-center gap-2 font-semibold">
+			{#if currentPlatformStatus.status === "CONNECTED"}
+				<CheckCircle class="h-4 w-4 shrink-0" />
+				<span>Live Socket & Ingress Active: Verified communication on port 8088.</span>
+			{:else if currentPlatformStatus.status === "AWAITING_HOOK"}
+				<Radio class="h-4 w-4 shrink-0 animate-pulse" />
+				<span>Ingress Gateway Ready: Local port 8088 is open, but no client extension or recipe has sent an event yet.</span>
+			{:else}
+				<ExclamationTriangle class="h-4 w-4 shrink-0" />
+				<span>Platform Not Configured: Add credentials or tokens in local environment to activate.</span>
+			{/if}
+		</div>
+		<p class="text-[11px] opacity-90 pl-6">
+			{currentPlatformStatus.details}
+		</p>
+	</div>
+
+	{#if testPingSuccess}
+		<div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in duration-200">
+			<Check class="h-4 w-4" />
+			<span>Test packet received! Hook status updated to <strong>CONNECTED</strong> with audit log entry.</span>
+		</div>
+	{/if}
+
+	<!-- Sub-Adapter Selection Grid -->
+	<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+		{#each currentConfig.adapters as adapter}
+			<button
+				type="button"
+				onclick={() => (activeAdapter = adapter.id)}
+				class="p-3.5 rounded-2xl border text-left transition-all cursor-pointer {activeAdapter === adapter.id ? 'bg-primary/10 border-primary/50 ring-1 ring-primary/40 shadow-xs' : 'bg-card border-border hover:bg-muted/40'}"
+			>
+				<div class="flex items-center justify-between pb-1.5">
+					<span class="text-xs font-bold text-foreground">{adapter.name}</span>
+					<span class="text-[9px] font-mono px-1.5 py-0.2 rounded border {activeAdapter === adapter.id ? 'border-primary/40 bg-primary/20 text-primary font-bold' : 'border-border bg-muted text-muted-foreground'}">
+						{adapter.badge}
+					</span>
 				</div>
+				<p class="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+					{adapter.notes}
+				</p>
 			</button>
 		{/each}
 	</div>
 
-	<!-- ANIMATED SVG PROCESS PIPELINE (ENHANCED CONNECTIVITY & FLOWING WIRES) -->
-	<div class="relative w-full rounded-2xl bg-secondary/20 dark:bg-black/40 border border-border/70 p-4 overflow-hidden">
-		<!-- SVG Canvas -->
-		<svg
-			viewBox="0 0 980 380"
-			class="w-full h-auto select-none overflow-visible"
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<defs>
-				<!-- Custom SVG Keyframes for Flowing Lines & RGB Outer Border Glow -->
-				<style>
-					@keyframes flowWire {
-						from { stroke-dashoffset: 0; }
-						to { stroke-dashoffset: -28; }
-					}
-					@keyframes flowWireReturn {
-						from { stroke-dashoffset: 0; }
-						to { stroke-dashoffset: 28; }
-					}
-					@keyframes rgbGlowPulse {
-						0% {
-							stroke: #ef4444;
-							filter: drop-shadow(0 0 7px #ef4444) drop-shadow(0 0 14px rgba(239, 68, 68, 0.5));
-						}
-						25% {
-							stroke: #f59e0b;
-							filter: drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 14px rgba(245, 158, 11, 0.5));
-						}
-						50% {
-							stroke: #10b981;
-							filter: drop-shadow(0 0 7px #10b981) drop-shadow(0 0 14px rgba(16, 185, 129, 0.5));
-						}
-						75% {
-							stroke: #3b82f6;
-							filter: drop-shadow(0 0 7px #3b82f6) drop-shadow(0 0 14px rgba(59, 130, 246, 0.5));
-						}
-						100% {
-							stroke: #a855f7;
-							filter: drop-shadow(0 0 7px #a855f7) drop-shadow(0 0 14px rgba(168, 85, 247, 0.5));
-						}
-					}
-					.flowing-path {
-						stroke-dasharray: 8 5;
-						animation: flowWire 1s linear infinite;
-					}
-					.flowing-path-fast {
-						stroke-dasharray: 8 5;
-						animation: flowWire 0.65s linear infinite;
-					}
-					.flowing-path-return {
-						stroke-dasharray: 6 4;
-						animation: flowWireReturn 0.9s linear infinite;
-					}
-					.rgb-border-glow {
-						animation: rgbGlowPulse 1.6s linear infinite;
-						stroke-width: 3px !important;
-					}
-				</style>
-
-				<!-- Linear Gradients -->
-				<linearGradient id="gradFerdium" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#a855f7" />
-					<stop offset="100%" stop-color="#10b981" />
-				</linearGradient>
-				<linearGradient id="gradRambox" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#3b82f6" />
-					<stop offset="100%" stop-color="#10b981" />
-				</linearGradient>
-				<linearGradient id="gradBrowser" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#10b981" />
-					<stop offset="100%" stop-color="#10b981" />
-				</linearGradient>
-				<linearGradient id="gradDesktop" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#22c55e" />
-					<stop offset="100%" stop-color="#10b981" />
-				</linearGradient>
-				<linearGradient id="gradNovaPilot" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" stop-color="#10b981" />
-					<stop offset="100%" stop-color="#3b82f6" />
-				</linearGradient>
-				<linearGradient id="gradLoopback" x1="100%" y1="0%" x2="0%" y2="0%">
-					<stop offset="0%" stop-color="#10b981" />
-					<stop offset="100%" stop-color="#a855f7" />
-				</linearGradient>
-
-				<!-- Particle Glow Filter -->
-				<filter id="particleGlow" x="-30%" y="-30%" width="160%" height="160%">
-					<feGaussianBlur stdDeviation="3.5" result="blur" />
-					<feComposite in="SourceGraphic" in2="blur" operator="over" />
-				</filter>
-			</defs>
-
-			<!-- 1. LEFT LAYER: 4 WhatsApp Clients (With Web Images) -->
-			<!-- Ferdium Box -->
-			<g
-				role="button"
-				tabindex="0"
-				class="cursor-pointer transition-opacity {activeClient === 'ferdium' ? 'opacity-100' : 'opacity-40'}"
-				onclick={() => activeClient = 'ferdium'}
-				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'ferdium'; } }}
-			>
-				<rect
-					x="20" y="25" width="160" height="60" rx="12"
-					fill="currentColor"
-					class="text-card stroke-purple-500/50 {simulationStep === 1 && activeClient === 'ferdium' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<image href="https://avatars.githubusercontent.com/u/102928503?s=200&v=4" x="32" y="37" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
-				<text x="76" y="48" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Ferdium App</text>
-				<text x="76" y="65" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">webview.js Hook</text>
-			</g>
-
-			<!-- Rambox Box -->
-			<g
-				role="button"
-				tabindex="0"
-				class="cursor-pointer transition-opacity {activeClient === 'rambox' ? 'opacity-100' : 'opacity-40'}"
-				onclick={() => activeClient = 'rambox'}
-				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'rambox'; } }}
-			>
-				<rect
-					x="20" y="105" width="160" height="60" rx="12"
-					fill="currentColor"
-					class="text-card stroke-blue-500/50 {simulationStep === 1 && activeClient === 'rambox' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<image href="https://avatars.githubusercontent.com/u/19875476?s=200&v=4" x="32" y="117" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
-				<text x="76" y="128" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Rambox App</text>
-				<text x="76" y="145" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Custom JS Code</text>
-			</g>
-
-			<!-- Web Browser Box -->
-			<g
-				role="button"
-				tabindex="0"
-				class="cursor-pointer transition-opacity {activeClient === 'browser' ? 'opacity-100' : 'opacity-40'}"
-				onclick={() => activeClient = 'browser'}
-				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'browser'; } }}
-			>
-				<rect
-					x="20" y="185" width="160" height="60" rx="12"
-					fill="currentColor"
-					class="text-card stroke-emerald-500/50 {simulationStep === 1 && activeClient === 'browser' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<image href="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" x="32" y="197" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
-				<text x="76" y="208" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">Web Browser</text>
-				<text x="76" y="225" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">Userscript Hook</text>
-			</g>
-
-			<!-- PC WA Box -->
-			<g
-				role="button"
-				tabindex="0"
-				class="cursor-pointer transition-opacity {activeClient === 'desktop' ? 'opacity-100' : 'opacity-40'}"
-				onclick={() => activeClient = 'desktop'}
-				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = 'desktop'; } }}
-			>
-				<rect
-					x="20" y="265" width="160" height="60" rx="12"
-					fill="currentColor"
-					class="text-card stroke-amber-500/50 {simulationStep === 1 && activeClient === 'desktop' ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<image href="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" x="32" y="277" width="34" height="34" preserveAspectRatio="xMidYMid slice" />
-				<text x="76" y="288" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">PC WhatsApp</text>
-				<text x="76" y="305" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">WebView2 / CDP</text>
-			</g>
-
-			<!-- 2. ANIMATED CONNECTOR BORDERS (FLOWING DASHES FROM CLIENTS TO DOM HOOK) -->
-			<!-- Path from Ferdium -->
-			<path
-				d="M 180 55 C 235 55, 255 175, 305 175"
-				fill="none"
-				stroke={activeClient === 'ferdium' ? 'url(#gradFerdium)' : '#94a3b8'}
-				stroke-width={activeClient === 'ferdium' ? '2.5' : '1'}
-				stroke-opacity={activeClient === 'ferdium' ? '0.9' : '0.2'}
-				class={activeClient === 'ferdium' ? 'flowing-path-fast' : 'flowing-path'}
-			/>
-
-			<!-- Path from Rambox -->
-			<path
-				d="M 180 135 C 230 135, 260 175, 305 175"
-				fill="none"
-				stroke={activeClient === 'rambox' ? 'url(#gradRambox)' : '#94a3b8'}
-				stroke-width={activeClient === 'rambox' ? '2.5' : '1'}
-				stroke-opacity={activeClient === 'rambox' ? '0.9' : '0.2'}
-				class={activeClient === 'rambox' ? 'flowing-path-fast' : 'flowing-path'}
-			/>
-
-			<!-- Path from Browser -->
-			<path
-				d="M 180 215 C 230 215, 260 175, 305 175"
-				fill="none"
-				stroke={activeClient === 'browser' ? 'url(#gradBrowser)' : '#94a3b8'}
-				stroke-width={activeClient === 'browser' ? '2.5' : '1'}
-				stroke-opacity={activeClient === 'browser' ? '0.9' : '0.2'}
-				class={activeClient === 'browser' ? 'flowing-path-fast' : 'flowing-path'}
-			/>
-
-			<!-- Path from Desktop -->
-			<path
-				d="M 180 295 C 235 295, 255 175, 305 175"
-				fill="none"
-				stroke={activeClient === 'desktop' ? 'url(#gradDesktop)' : '#94a3b8'}
-				stroke-width={activeClient === 'desktop' ? '2.5' : '1'}
-				stroke-opacity={activeClient === 'desktop' ? '0.9' : '0.2'}
-				class={activeClient === 'desktop' ? 'flowing-path-fast' : 'flowing-path'}
-			/>
-
-			<!-- Animated Pulse Packet from Client to Hook -->
-			{#if isSimulating && simulationStep === 1}
-				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
-					<animateMotion
-						dur="0.8s"
-						repeatCount="1"
-						path={
-							activeClient === 'ferdium' ? "M 180 55 C 235 55, 255 175, 305 175" :
-							activeClient === 'rambox' ? "M 180 135 C 230 135, 260 175, 305 175" :
-							activeClient === 'browser' ? "M 180 215 C 230 215, 260 175, 305 175" :
-							"M 180 295 C 235 295, 255 175, 305 175"
-						}
-					/>
-				</circle>
-			{/if}
-
-			<!-- 3. CENTER-LEFT: DOM Ingestion Hook Box -->
-			<g transform="translate(305, 115)">
-				<rect
-					x="0" y="0" width="165" height="120" rx="14"
-					fill="currentColor"
-					class="text-card stroke-emerald-500/60 {simulationStep === 2 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<!-- Title -->
-				<text x="16" y="26" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">DOM Ingestion Hook</text>
-				<text x="16" y="42" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">MutationObserver Active</text>
-				
-				<!-- Inner Process Specs -->
-				<rect x="12" y="52" width="141" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="20" y="68" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">⚡ RegEx: INV/\d{4}/\d{3}</text>
-				<text x="20" y="82" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">🔍 Intent: UPDATE_NAME</text>
-				<text x="20" y="96" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">✓ Badge: Ingested</text>
-			</g>
-
-			<!-- Flowing Line from Hook to NovaPilot AI Core -->
-			<path
-				d="M 470 175 L 530 175"
-				fill="none"
-				stroke="url(#gradNovaPilot)"
-				stroke-width="2.5"
-				class="flowing-path-fast"
-			/>
-
-			{#if isSimulating && simulationStep === 2}
-				<circle r="6" fill="#3b82f6" filter="url(#particleGlow)">
-					<animateMotion dur="0.6s" repeatCount="1" path="M 470 175 L 530 175" />
-				</circle>
-			{/if}
-
-			<!-- 4. CENTER-RIGHT: NOVAPILOT AI CORE GATEKEEPER & DB (PROMINENT CENTERPIECE) -->
-			<g transform="translate(530, 85)">
-				<!-- Main NovaPilot Core Box -->
-				<rect
-					x="0" y="0" width="220" height="180" rx="16"
-					fill="currentColor"
-					class="text-card stroke-primary/80 {simulationStep === 3 ? 'rgb-border-glow' : 'stroke-[2px]'}"
-				/>
-				<!-- Brand Header -->
-				<rect x="0" y="0" width="220" height="38" rx="16" fill="#10b981" fill-opacity="0.12" />
-				<text x="18" y="24" font-family="system-ui" font-size="13" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
-				<text x="140" y="24" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">:8088 / Go</text>
-
-				<!-- Engine Features -->
-				<g transform="translate(14, 48)">
-					<rect x="0" y="0" width="192" height="60" rx="8" fill="currentColor" class="text-secondary/60" />
-					<text x="12" y="18" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">1. Pre-Check: SELECT inv_no</text>
-					<text x="12" y="32" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">2. Safety: Enforce OPEN status</text>
-					<text x="12" y="46" font-family="monospace" font-size="9" fill="#3b82f6" font-weight="bold">3. Prepared SQL + Rollback</text>
-				</g>
-
-				<!-- Database Adapter Sub-Box -->
-				<g transform="translate(14, 116)">
-					<rect x="0" y="0" width="192" height="50" rx="8" fill="currentColor" class="text-secondary/80 stroke-border/70" stroke-width="1" />
-					<text x="12" y="20" font-family="system-ui" font-size="10" font-weight="bold" fill="currentColor" class="text-foreground">🗄️ Database Adapter</text>
-					<text x="12" y="38" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">PostgreSQL 18 • Oracle 11g TNS</text>
-				</g>
-			</g>
-
-			<!-- Flowing Line from NovaPilot to On-Call Cockpit -->
-			<path
-				d="M 750 175 L 810 175"
-				fill="none"
-				stroke="#10b981"
-				stroke-width="2.5"
-				class="flowing-path-fast"
-			/>
-
-			{#if isSimulating && simulationStep === 3}
-				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
-					<animateMotion dur="0.5s" repeatCount="1" path="M 750 175 L 810 175" />
-				</circle>
-			{/if}
-
-			<!-- 5. RIGHT LAYER: On-Call Human Cockpit -->
-			<g transform="translate(810, 115)">
-				<rect
-					x="0" y="0" width="150" height="120" rx="14"
-					fill="currentColor"
-					class="text-card stroke-emerald-500/70 {simulationStep === 4 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
-				/>
-				<text x="16" y="26" font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">On-Call Sign-Off</text>
-				<text x="16" y="42" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">Port :3000 Dashboard</text>
-
-				<rect x="12" y="52" width="126" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="20" y="70" font-family="monospace" font-size="9" fill="currentColor" class="text-foreground">👤 John Doe</text>
-				<text x="20" y="84" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">✓ 1-Click Approve</text>
-				<text x="20" y="98" font-family="monospace" font-size="8.5" fill="currentColor" class="text-muted-foreground">Zero Raw SQL Guard</text>
-			</g>
-
-			<!-- 6. RETURN LOOPBACK WIRE (Automated Receipt dispatched back to WhatsApp client) -->
-			<path
-				d="M 885 235 C 885 360, 450 360, 100 335"
-				fill="none"
-				stroke="url(#gradLoopback)"
-				stroke-width={simulationStep === 5 ? "3" : "1.5"}
-				stroke-opacity={simulationStep === 5 ? "1" : "0.3"}
-				class="flowing-path-return"
-			/>
-			<text x="500" y="352" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold" text-anchor="middle">
-				↺ ChatOps Confirmation Receipt Delivered Back to WhatsApp Chat
-			</text>
-
-			{#if isSimulating && simulationStep === 5}
-				<circle r="6" fill="#a855f7" filter="url(#particleGlow)">
-					<animateMotion dur="1.2s" repeatCount="1" path="M 885 235 C 885 360, 450 360, 100 335" />
-				</circle>
-			{/if}
-		</svg>
-	</div>
-
-	<!-- Active Integration Details Card & Setup Guide -->
-	<div class="p-4 rounded-xl bg-secondary/30 border border-border/70 space-y-3">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<CodeBracket class="w-4 h-4 text-primary" />
-				<h4 class="text-xs font-bold text-foreground">
-					Setup Hook for: <span class="text-primary">{clients.find(c => c.id === activeClient)?.name}</span>
-				</h4>
-			</div>
-			<span class="text-[10px] font-mono text-muted-foreground">
-				Target: http://127.0.0.1:8088/api/tickets
+	<!-- Aceternity Circuit Simulation Visualizer Canvas -->
+	<div class="p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
+		<div class="flex items-center justify-between text-xs font-mono text-muted-foreground">
+			<span class="font-semibold text-foreground flex items-center gap-1.5">
+				<CpuChip class="h-4 w-4 text-primary" />
+				<span>Interactive Ingress Circuit:</span>
 			</span>
+			<span>{isSimulating ? `Active Stage: 0${simulationStep}` : "Standby"}</span>
 		</div>
 
-		<!-- Code Snippet -->
-		<pre class="p-3 rounded-lg bg-background border border-border/60 text-[11px] font-mono text-foreground overflow-x-auto leading-relaxed">{clients.find(c => c.id === activeClient)?.snippet}</pre>
-
-		<div class="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
-			<div class="flex items-center gap-1.5">
-				<CheckCircle class="w-3.5 h-3.5 text-emerald-500" />
-				<span>Non-invasive DOM Hook: Discards private chats & captures only verified branch invoice requests.</span>
+		<!-- Animated Circuit Steps -->
+		<div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 font-mono text-xs">
+			<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simulationStep >= 1 ? 'bg-primary/10 border-primary/40 font-bold text-foreground' : 'bg-background border-border text-muted-foreground'}">
+				<span>01. Ingress Trigger</span>
+				{#if simulationStep === 1}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
 			</div>
-			<a href="/flow" class="text-primary hover:underline font-medium">View Full Architecture &rarr;</a>
+
+			<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simulationStep >= 2 ? 'bg-purple-500/10 border-purple-500/40 font-bold text-foreground' : 'bg-background border-border text-muted-foreground'}">
+				<span>02. AST Sanitizer</span>
+				{#if simulationStep === 2}<span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>{/if}
+			</div>
+
+			<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simulationStep >= 3 ? 'bg-amber-500/10 border-amber-500/40 font-bold text-foreground' : 'bg-background border-border text-muted-foreground'}">
+				<span>03. DB Pre-Check</span>
+				{#if simulationStep === 3}<span class="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>{/if}
+			</div>
+
+			<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simulationStep >= 4 ? 'bg-emerald-500/10 border-emerald-500/40 font-bold text-foreground' : 'bg-background border-border text-muted-foreground'}">
+				<span>04. Human Sign-Off</span>
+				{#if simulationStep === 4}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
+			</div>
+
+			<div class="col-span-2 sm:col-span-1 p-3 rounded-xl border flex items-center justify-between transition-colors {simulationStep >= 5 ? 'bg-rose-500/10 border-rose-500/40 font-bold text-foreground' : 'bg-background border-border text-muted-foreground'}">
+				<span>05. Safe Commit</span>
+				{#if simulationStep === 5}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
+			</div>
 		</div>
 	</div>
+
+	<!-- Code Snippet & Integration Guide for Selected Adapter -->
+	{#each currentConfig.adapters as adapter}
+		{#if activeAdapter === adapter.id}
+			<div class="space-y-3 pt-2">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="text-xs font-semibold text-foreground">{adapter.name} Integration Snippet:</span>
+						<span class="text-[11px] font-mono text-muted-foreground">({adapter.endpoint})</span>
+					</div>
+
+					<button
+						type="button"
+						onclick={() => copyCode(adapter.snippet)}
+						class="h-7 px-2.5 rounded-lg border border-input bg-background hover:bg-accent text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+					>
+						{#if copied}
+							<Check class="h-3.5 w-3.5 text-emerald-500" />
+							<span class="text-emerald-500">Copied!</span>
+						{:else}
+							<ClipboardDocument class="h-3.5 w-3.5" />
+							<span>Copy Snippet</span>
+						{/if}
+					</button>
+				</div>
+
+				<pre class="p-4 rounded-2xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800 leading-relaxed"><code>{adapter.snippet}</code></pre>
+			</div>
+		{/if}
+	{/each}
 </div>

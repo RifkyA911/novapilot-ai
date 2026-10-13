@@ -176,7 +176,7 @@
 				<div class="px-3 py-2 rounded-lg border flex items-center justify-between transition-colors bg-muted/40 border-border text-muted-foreground">
 					<div class="flex items-center gap-2">
 						<Radio class="h-3.5 w-3.5 text-primary" />
-						<span>01. Ingest (WA)</span>
+						<span>01. Ingest ({cockpit.chatPlatform === 'whatsapp' ? 'WA' : cockpit.chatPlatform === 'telegram' ? 'TG' : cockpit.chatPlatform === 'discord' ? 'Discord' : 'Slack'})</span>
 					</div>
 				</div>
 
@@ -220,10 +220,10 @@
 				<div class="p-3.5 rounded-xl bg-muted/30 border border-border space-y-1">
 					<div class="font-semibold text-foreground flex items-center gap-1.5">
 						<Radio class="h-3.5 w-3.5 text-primary" />
-						<span>WhatsApp Gateway Layer</span>
+						<span>{cockpit.platformStatuses[cockpit.chatPlatform].name} Gateway Layer</span>
 					</div>
 					<p class="text-muted-foreground text-[11px] leading-relaxed">
-						Passive WhatsApp observers inside Ferdium, Rambox, and Chrome Tampermonkey with zero token drop filter.
+						{cockpit.platformStatuses[cockpit.chatPlatform].driver}. Drops unauthorized traffic with zero token waste.
 					</p>
 				</div>
 
@@ -449,12 +449,12 @@
 				<div class="min-w-0 flex-1">
 					<div class="flex items-center justify-between">
 						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Client Hook Flows</span>
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-							WA Active
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+							{cockpit.chatPlatform}
 						</span>
 					</div>
 					<p class="text-xs text-muted-foreground mt-1 line-clamp-2">
-						WhatsApp Web DOM observers, Tampermonkey scripts, and Ferdium recipe hooks.
+						{cockpit.platformStatuses[cockpit.chatPlatform].driver}
 					</p>
 					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
 						/dashboard/hooks &rarr;
@@ -462,7 +462,7 @@
 				</div>
 			</a>
 
-			<!-- Menu 6: WhatsApp Simulator -->
+			<!-- Menu 6: ChatOps Simulator -->
 			<a
 				href="/dashboard/simulator"
 				class="p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-start gap-3.5 group shadow-xs"
@@ -472,10 +472,10 @@
 				</div>
 				<div class="min-w-0 flex-1">
 					<div class="flex items-center justify-between">
-						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">WhatsApp Simulator</span>
+						<span class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{cockpit.platformStatuses[cockpit.chatPlatform].name} Simulator</span>
 					</div>
 					<p class="text-xs text-muted-foreground mt-1 line-clamp-2">
-						End-to-end interactive simulation of WhatsApp chat ingestion and AI extraction.
+						Interactive simulation of branch chat ingestion and entity extraction.
 					</p>
 					<span class="text-[11px] font-mono text-primary font-medium mt-2 inline-flex items-center gap-1">
 						/dashboard/simulator &rarr;

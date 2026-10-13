@@ -91,48 +91,29 @@
 
 <div class="relative" bind:this={dropdownRef}>
 	{#if user}
-		<!-- Authenticated Calm Profile Trigger -->
+		<!-- Compact Circular Avatar Trigger (Simplified & Space-Efficient) -->
 		<button
 			type="button"
 			onclick={toggleMenu}
-			class="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full hover:bg-secondary/70 border border-transparent hover:border-border/60 transition-all duration-150 focus:outline-none group text-left"
+			class="relative p-0.5 rounded-full hover:ring-2 hover:ring-primary/40 focus:outline-none transition-all cursor-pointer flex items-center justify-center"
 			aria-expanded={isMenuOpen}
 			aria-haspopup="true"
+			aria-label="User Account Menu"
+			title="{activeUser.name} ({activeUser.email})"
 		>
-			<!-- User Avatar with calm status ring -->
-			<div class="relative flex-shrink-0">
-				{#if activeUser.avatar}
-					<img
-						src={activeUser.avatar}
-						alt={activeUser.name}
-						class="w-7 h-7 rounded-full object-cover ring-1 ring-border group-hover:ring-primary/40 bg-card transition-all"
-					/>
-				{:else}
-					<div class="w-7 h-7 rounded-full bg-secondary text-foreground font-medium text-xs flex items-center justify-center ring-1 ring-border">
-						{getInitials(activeUser.name)}
-					</div>
-				{/if}
-				<!-- Calm status dot (no ping) -->
-				<span class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background"></span>
-			</div>
-
-			<!-- User Name & On-Call Shift Info (Desktop) -->
-			<div class="hidden sm:flex flex-col text-left">
-				<div class="flex items-center gap-1.5 leading-tight">
-					<span class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-						{activeUser.name}
-					</span>
-					<span class="text-[9px] px-1 py-0.2 rounded font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-						{activeUser.role === 'oncall_engineer' ? 'ON-CALL' : activeUser.role}
-					</span>
+			{#if activeUser.avatar}
+				<img
+					src={activeUser.avatar}
+					alt={activeUser.name}
+					class="w-8 h-8 rounded-full object-cover ring-1 ring-border hover:ring-primary/40 bg-card transition-all shadow-xs"
+				/>
+			{:else}
+				<div class="w-8 h-8 rounded-full bg-secondary text-foreground font-semibold text-xs flex items-center justify-center ring-1 ring-border">
+					{getInitials(activeUser.name)}
 				</div>
-				<span class="text-[10px] text-muted-foreground font-mono leading-tight truncate">
-					{activeUser.email} • Weekend Ops
-				</span>
-			</div>
-
-			<!-- Dropdown Chevron -->
-			<ChevronDown class="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-transform duration-200 {isMenuOpen ? 'rotate-180 text-primary' : ''}" />
+			{/if}
+			<!-- Calm online status dot -->
+			<span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background"></span>
 		</button>
 	{:else}
 		<!-- Guest / Unauthenticated Mode with calm Login CTA -->

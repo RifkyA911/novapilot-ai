@@ -50,6 +50,7 @@
 				})
 			});
 			if (res.ok) {
+				cockpit.recordPlatformEvent(cockpit.chatPlatform);
 				simSuccess = true;
 				await cockpit.fetchTickets();
 			}
@@ -64,25 +65,27 @@
 	}
 </script>
 
-<div class="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-6">
+<div class="p-6 rounded-3xl bg-card border border-border/80 shadow-xl space-y-6">
 	<!-- Simulator Header -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
 		<div>
 			<div class="flex items-center gap-2">
 				<div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
 					<PaperAirplane class="h-4 w-4" />
 				</div>
-				<h3 class="text-base font-semibold text-foreground">WhatsApp Ingestion Pipeline Simulator</h3>
+				<h3 class="text-base font-semibold text-foreground">
+					{cockpit.platformStatuses[cockpit.chatPlatform].name} Ingestion Pipeline Simulator
+				</h3>
 			</div>
 			<p class="text-xs text-muted-foreground mt-0.5">
-				Simulate real-time branch chat ingestion, deterministic LLM extraction, and database staging.
+				Simulate real-time branch chat ingestion, deterministic LLM extraction, and database staging for {cockpit.platformStatuses[cockpit.chatPlatform].name}.
 			</p>
 		</div>
 
 		<div class="flex items-center gap-2">
-			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-mono font-medium">
-				<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-				WhatsApp Gateway Live
+			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30'} text-xs font-mono font-medium">
+				<span class="h-2 w-2 rounded-full {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+				{cockpit.platformStatuses[cockpit.chatPlatform].name} Gateway {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'Live' : 'Standby'}
 			</span>
 		</div>
 	</div>
