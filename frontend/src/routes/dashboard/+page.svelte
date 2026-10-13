@@ -8,6 +8,7 @@
 		CodeBracket, Eye, InformationCircle
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import { timeAgo } from "$lib/utils";
 	import type { PageData } from "./$types";
 
@@ -57,8 +58,8 @@
 	let eventSource = $state<EventSource | null>(null);
 	let searchQuery = $state("");
 
-	// Active tab: 'pending' | 'simulator' | 'connectivity' | 'history'
-	let activeTab = $state<"pending" | "simulator" | "connectivity" | "history">("pending");
+	// Active tab: 'pending' | 'simulator' | 'hooks' | 'connectivity' | 'history'
+	let activeTab = $state<"pending" | "simulator" | "hooks" | "connectivity" | "history">("pending");
 
 	// Inspected Ticket State (Transparency & Explainability)
 	let inspectedTicketId = $state<number | null>(null);
@@ -510,6 +511,14 @@
 		</button>
 
 		<button
+			onclick={() => (activeTab = "hooks")}
+			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'hooks' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+		>
+			<CodeBracket class="h-3.5 w-3.5 text-purple-500" />
+			<span>Client Hooks (Ferdium, Rambox, Web)</span>
+		</button>
+
+		<button
 			onclick={() => (activeTab = "connectivity")}
 			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'connectivity' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
@@ -790,6 +799,10 @@
 				</button>
 			</form>
 		</div>
+
+	<!-- TAB: CLIENT HOOKS ECOSYSTEM VISUALIZER (SVG ANIMATED) -->
+	{:else if activeTab === "hooks"}
+		<HookEcosystemVisualizer />
 
 	<!-- TAB 3: SYSTEM CONNECTIVITY & INTEGRATIONS -->
 	{:else if activeTab === "connectivity"}

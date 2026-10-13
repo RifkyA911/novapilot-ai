@@ -50,8 +50,9 @@ All architectural specifications, security rules, and implementation blueprints 
 6. [**`docs/AI_SPECIFICATION_AND_TRAINING.md`**](./docs/AI_SPECIFICATION_AND_TRAINING.md) — Supported AI Models, Hyperparameters, and Active Learning Loop.
 7. [**`docs/WHATSAPP_GATEWAY_TUTORIAL.md`**](./docs/WHATSAPP_GATEWAY_TUTORIAL.md) — Complete Step-by-Step Guide for WhatsApp Baileys Gateway & Group Extractor.
 8. [**`docs/CHANGELOG_AND_PROGRESS.md`**](./docs/CHANGELOG_AND_PROGRESS.md) — Detailed Project Changelog, Phase Milestones, and Actionable Next Steps.
-9. [**`AGENT.md`**](./AGENT.md) — Official Agent Instructions and Coding Guidelines.
-10. [**`CLAUDE.md`**](./CLAUDE.md) — Quick CLI Commands and Developer Reference.
+9. [**`docs/UNIVERSAL_HOOKS_GUIDE.md`**](./docs/UNIVERSAL_HOOKS_GUIDE.md) — Universal WhatsApp Hooks for Ferdium, Rambox, Web Browsers, and PC WhatsApp Desktop.
+10. [**`AGENT.md`**](./AGENT.md) — Official Agent Instructions and Coding Guidelines.
+11. [**`CLAUDE.md`**](./CLAUDE.md) — Quick CLI Commands and Developer Reference.
 
 ---
 

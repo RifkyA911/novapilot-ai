@@ -4,6 +4,7 @@
 		DocumentText, Sparkles, CommandLine, Square3Stack3d, ArrowPath, ExclamationTriangle, 
 		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight
 	} from "svelte-heros-v2";
+	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 
 	let activeStage = 1;
 
@@ -383,6 +384,9 @@ if humanCorrectedValue != aiExtractedValue {
 			</div>
 		</div>
 	</div>
+
+	<!-- Universal Hooks Ecosystem Animated SVG Visualizer -->
+	<HookEcosystemVisualizer />
 
 	<!-- CTA Footer Banner -->
 	<div class="p-8 rounded-3xl bg-card border border-border/70 text-center space-y-4 shadow-xl relative z-10">
