@@ -6,7 +6,7 @@
 	} from "svelte-heros-v2";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 
-	let activeStage = 1;
+	let activeStage = $state(1);
 
 	const stages = [
 		{
@@ -163,23 +163,40 @@ if humanCorrectedValue != aiExtractedValue {
 }`
 		}
 	];
+	let isSimulating = $state(false);
+
+	function runSimulation() {
+		if (isSimulating) return;
+		isSimulating = true;
+		let step = 1;
+		activeStage = step;
+		const interval = setInterval(() => {
+			step++;
+			if (step > 6) {
+				clearInterval(interval);
+				isSimulating = false;
+			} else {
+				activeStage = step;
+			}
+		}, 1400);
+	}
 </script>
 
-<div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 space-y-12 relative overflow-hidden font-sans">
-	<!-- VibeUI Ambient Gradient Glow -->
+<div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-10 relative overflow-hidden font-sans">
+	<!-- Ambient Radial Glow -->
 	<span
 		aria-hidden="true"
 		class="pointer-events-none absolute -top-40 right-1/4 h-96 w-[600px] rounded-full opacity-25 blur-3xl"
 		style="background: radial-gradient(circle, #2FB479 0%, transparent 70%);"
 	></span>
 
-	<!-- Header -->
+	<!-- Header with Action Button -->
 	<div class="text-center space-y-4 max-w-3xl mx-auto relative z-10">
-		<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/80 border border-border/70 text-xs font-mono text-muted-foreground shadow-sm">
-			<span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-			<span>Microscopic Architecture Breakdown</span>
+		<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-secondary/80 border border-border/70 text-xs font-mono text-muted-foreground shadow-xs">
+			<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+			<span>WhatsApp ChatOps Engine Pipeline</span>
 			<span class="text-border">|</span>
-			<span class="text-foreground font-semibold">100% Explainable</span>
+			<span class="text-foreground font-semibold">100% Deterministic & Audited</span>
 		</div>
 		<h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
 			End-to-End System Flow
@@ -187,6 +204,65 @@ if humanCorrectedValue != aiExtractedValue {
 		<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
 			From raw WhatsApp chat message to safe prepared statement execution: how NovaPilot AI eliminates on-call burnout while preserving zero-error database governance.
 		</p>
+
+		<!-- Simulation Trigger Button -->
+		<div class="pt-2 flex justify-center">
+			<button
+				type="button"
+				onclick={runSimulation}
+				disabled={isSimulating}
+				class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-md hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-60"
+			>
+				<ArrowPath class="h-3.5 w-3.5 {isSimulating ? 'animate-spin' : ''}" />
+				<span>{isSimulating ? `Traversing Stage 0${activeStage}/06...` : 'Simulate Live Ingestion Flow'}</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Signature Animated Pipeline Circuit Canvas -->
+	<div class="p-5 rounded-3xl bg-card/60 backdrop-blur-md border border-border shadow-xl overflow-hidden relative">
+		<div class="flex items-center justify-between pb-3 border-b border-border/50 text-xs font-mono text-muted-foreground">
+			<span class="flex items-center gap-1.5 text-foreground font-semibold">
+				<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+				Active Circuit: Stage 0{activeStage} Processing
+			</span>
+			<span class="text-emerald-600 dark:text-emerald-400 font-medium">WhatsApp Socket &rarr; LLM &rarr; DB Commit</span>
+		</div>
+
+		<!-- SVG Circuit Path -->
+		<div class="py-4 relative overflow-x-auto">
+			<div class="min-w-[700px] h-20 relative flex items-center justify-between px-6">
+				<!-- Connecting SVG animated line -->
+				<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+					<line x1="8%" y1="50%" x2="92%" y2="50%" stroke="currentColor" class="text-border/50" stroke-width="2" stroke-dasharray="4 4" />
+					<line 
+						x1="8%" 
+						y1="50%" 
+						x2="{8 + (activeStage - 1) * 16.8}%" 
+						y2="50%" 
+						stroke="#10b981" 
+						stroke-width="3" 
+						class="transition-all duration-500 shadow-md"
+					/>
+				</svg>
+
+				<!-- 6 Interactive Circuit Node Badges -->
+				{#each stages as s}
+					<button
+						type="button"
+						onclick={() => (activeStage = s.id)}
+						class="relative z-10 flex flex-col items-center gap-1.5 transition-all group cursor-pointer focus:outline-none"
+					>
+						<div class="h-10 w-10 rounded-2xl flex items-center justify-center font-bold text-xs transition-all {activeStage === s.id ? 'bg-primary text-primary-foreground shadow-lg scale-110 ring-4 ring-primary/20' : activeStage > s.id ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40' : 'bg-muted text-muted-foreground border border-border group-hover:border-primary/50'}">
+							<s.icon class="h-4 w-4" />
+						</div>
+						<span class="text-[10px] font-mono font-medium truncate max-w-[90px] text-center {activeStage === s.id ? 'text-foreground font-bold' : 'text-muted-foreground'}">
+							0{s.id}. {s.title.split('. ')[1]?.split(' ')[0]}
+						</span>
+					</button>
+				{/each}
+			</div>
+		</div>
 	</div>
 
 	<!-- Interactive Stepper Bar -->
@@ -194,7 +270,7 @@ if humanCorrectedValue != aiExtractedValue {
 		{#each stages as s}
 			<button
 				onclick={() => (activeStage = s.id)}
-				class="p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-3 group {activeStage === s.id ? 'bg-card border-foreground/40 shadow-lg scale-[1.02]' : 'bg-card/40 border-border/50 hover:bg-card/70 hover:border-border'}"
+				class="p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-3 group cursor-pointer {activeStage === s.id ? 'bg-card border-foreground/40 shadow-lg scale-[1.02]' : 'bg-card/40 border-border/50 hover:bg-card/70 hover:border-border'}"
 			>
 				<div class="flex items-center justify-between">
 					<span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md {s.color}">

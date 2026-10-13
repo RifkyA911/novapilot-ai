@@ -31,7 +31,7 @@
 			name: "PostgreSQL Production Store",
 			engine: "postgres",
 			engineLabel: "PostgreSQL Relational",
-			versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
+			versionCompatibility: "v14 – v18+ (Enterprise LTS)",
 			paradigm: "relational",
 			host: "localhost",
 			port: 5432,
@@ -49,7 +49,7 @@
 			name: "Oracle ERP Enterprise Ledger",
 			engine: "oracle",
 			engineLabel: "Oracle Database Enterprise",
-			versionCompatibility: "11g R2 – 23ai (Long-Term Support)",
+			versionCompatibility: "11g R2 – 23ai (Enterprise LTS)",
 			paradigm: "relational",
 			host: "172.20.14.88",
 			port: 1521,
@@ -85,7 +85,7 @@
 			name: "MongoDB Document Collection",
 			engine: "mongodb",
 			engineLabel: "MongoDB Document Store",
-			versionCompatibility: "v5.0 – v7.0+ (2+ Yr Backward Compat)",
+			versionCompatibility: "v5.0 – v8.0+ (Enterprise LTS)",
 			paradigm: "non_relational",
 			host: "mongodb://127.0.0.1",
 			port: 27017,
@@ -317,7 +317,7 @@
 					<h3 class="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2 flex-wrap">
 						<span>Universal Database Connectors</span>
 						<span class="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400">
-							Version-Agnostic (2+ Yr LTS)
+							Universal Enterprise LTS
 						</span>
 					</h3>
 					<p class="text-xs sm:text-sm text-muted-foreground mt-0.5">
