@@ -11,6 +11,7 @@
 		name: string;
 		engine: "postgres" | "oracle" | "mysql" | "sqlite" | "mongodb" | "redis" | "mssql";
 		engineLabel: string;
+		versionCompatibility: string;
 		paradigm: "relational" | "non_relational" | "key_value";
 		host: string;
 		port: number | string;
@@ -27,9 +28,10 @@
 	let connectors = $state<DBConnector[]>([
 		{
 			id: "conn-pg-local",
-			name: "PostgreSQL 18 Local DC",
+			name: "PostgreSQL Production Store",
 			engine: "postgres",
-			engineLabel: "PostgreSQL 18.2",
+			engineLabel: "PostgreSQL Relational",
+			versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
 			paradigm: "relational",
 			host: "localhost",
 			port: 5432,
@@ -40,13 +42,14 @@
 			maxConns: 25,
 			idleConns: 10,
 			sslMode: "disable",
-			notes: "Primary development database with ACID transactions and foreign key enforcement."
+			notes: "Version-agnostic ANSI SQL-92/99 engine. Compatible with any PostgreSQL 14–18+ release running in factory DCs."
 		},
 		{
 			id: "conn-oracle-erp",
-			name: "Oracle 11g Enterprise ERP",
+			name: "Oracle ERP Enterprise Ledger",
 			engine: "oracle",
-			engineLabel: "Oracle Database 11g R2",
+			engineLabel: "Oracle Database Enterprise",
+			versionCompatibility: "11g R2 – 23ai (Long-Term Support)",
 			paradigm: "relational",
 			host: "172.20.14.88",
 			port: 1521,
@@ -57,13 +60,14 @@
 			maxConns: 50,
 			idleConns: 5,
 			sslMode: "tns_wallet",
-			notes: "Plant logistics core ERP ledger on factory on-prem intranet via TNS alias."
+			notes: "Core factory logistics ERP ledger. Supports legacy 11g R2 through 19c LTS and modern 23ai without syntax locks."
 		},
 		{
 			id: "conn-mysql-branch",
-			name: "MySQL 8.4 Regional Branch Store",
+			name: "MySQL / MariaDB Regional DC",
 			engine: "mysql",
-			engineLabel: "MySQL 8.4 LTS",
+			engineLabel: "MySQL / MariaDB Store",
+			versionCompatibility: "v8.0 – v8.4 LTS / MariaDB 10.6+",
 			paradigm: "relational",
 			host: "192.168.10.12",
 			port: 3306,
@@ -74,13 +78,14 @@
 			maxConns: 30,
 			idleConns: 8,
 			sslMode: "preferred",
-			notes: "Decentralized regional distribution center database replica."
+			notes: "Decentralized regional distribution center database. Fully compliant with MySQL 8.x and MariaDB 10.x LTS releases."
 		},
 		{
 			id: "conn-mongo-doc",
-			name: "MongoDB 7.0 Document Store",
+			name: "MongoDB Document Collection",
 			engine: "mongodb",
-			engineLabel: "MongoDB 7.0 Community",
+			engineLabel: "MongoDB Document Store",
+			versionCompatibility: "v5.0 – v7.0+ (2+ Yr Backward Compat)",
 			paradigm: "non_relational",
 			host: "mongodb://127.0.0.1",
 			port: 27017,
@@ -91,13 +96,14 @@
 			maxConns: 40,
 			idleConns: 12,
 			sslMode: "optional",
-			notes: "Schemaless document collection for unformatted branch attachments and raw JSON invoices."
+			notes: "Schemaless document collection for unformatted branch attachments and raw JSON invoices via standard BSON protocol."
 		},
 		{
 			id: "conn-redis-cache",
-			name: "Redis 7.2 Key-Value Stream",
+			name: "Redis Stream & State Store",
 			engine: "redis",
-			engineLabel: "Redis 7.2 In-Memory",
+			engineLabel: "Redis Key-Value & Streams",
+			versionCompatibility: "v6.2 – v7.4+ (LTS Supported)",
 			paradigm: "key_value",
 			host: "127.0.0.1",
 			port: 6379,
@@ -107,13 +113,14 @@
 			maxConns: 100,
 			idleConns: 20,
 			sslMode: "none",
-			notes: "Sub-millisecond rate limiter, session clearance store, and SSE broadcast buffer."
+			notes: "Sub-millisecond rate limiter, session clearance store, and SSE buffer using standard RESP2/RESP3 commands."
 		},
 		{
 			id: "conn-sqlite-edge",
 			name: "SQLite 3 Embedded Local",
 			engine: "sqlite",
-			engineLabel: "SQLite 3.45 (WAL Mode)",
+			engineLabel: "SQLite 3 (WAL Mode)",
+			versionCompatibility: "v3.35+ (Multi-Year Support)",
 			paradigm: "relational",
 			host: "file://./data/novapilot.db",
 			port: "local",
@@ -123,7 +130,7 @@
 			maxConns: 5,
 			idleConns: 2,
 			sslMode: "n/a",
-			notes: "Zero-configuration file-based database for air-gapped emergency edge shifts."
+			notes: "Zero-configuration file-based database for air-gapped emergency edge shifts with WAL mode durability."
 		}
 	]);
 
@@ -139,6 +146,7 @@
 		name: "",
 		engine: "postgres" as DBConnector["engine"],
 		paradigm: "relational" as DBConnector["paradigm"],
+		versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
 		host: "localhost",
 		port: 5432 as number | string,
 		databaseName: "",
@@ -203,26 +211,32 @@
 			newConnector.paradigm = "non_relational";
 			newConnector.port = 27017;
 			newConnector.host = "localhost";
+			newConnector.versionCompatibility = "v5.0 – v7.0+ (2+ Yr Backward Compat)";
 		} else if (engine === "redis") {
 			newConnector.paradigm = "key_value";
 			newConnector.port = 6379;
 			newConnector.host = "localhost";
+			newConnector.versionCompatibility = "v6.2 – v7.4+ (LTS Supported)";
 		} else if (engine === "oracle") {
 			newConnector.paradigm = "relational";
 			newConnector.port = 1521;
 			newConnector.host = "localhost";
+			newConnector.versionCompatibility = "11g R2 – 23ai (Long-Term Support)";
 		} else if (engine === "mysql") {
 			newConnector.paradigm = "relational";
 			newConnector.port = 3306;
 			newConnector.host = "localhost";
+			newConnector.versionCompatibility = "v8.0 – v8.4 LTS / MariaDB 10.6+";
 		} else if (engine === "sqlite") {
 			newConnector.paradigm = "relational";
 			newConnector.port = "local";
 			newConnector.host = "file://./data.db";
+			newConnector.versionCompatibility = "v3.35+ (Multi-Year Support)";
 		} else {
 			newConnector.paradigm = "relational";
 			newConnector.port = 5432;
 			newConnector.host = "localhost";
+			newConnector.versionCompatibility = "v14 – v18+ (2+ Yr LTS Support)";
 		}
 	}
 
@@ -233,10 +247,10 @@
 		}
 
 		let engineLabel = "PostgreSQL";
-		if (newConnector.engine === "oracle") engineLabel = "Oracle Database 11g";
-		else if (newConnector.engine === "mysql") engineLabel = "MySQL 8.4";
-		else if (newConnector.engine === "mongodb") engineLabel = "MongoDB 7.0";
-		else if (newConnector.engine === "redis") engineLabel = "Redis 7.2";
+		if (newConnector.engine === "oracle") engineLabel = "Oracle Database";
+		else if (newConnector.engine === "mysql") engineLabel = "MySQL / MariaDB";
+		else if (newConnector.engine === "mongodb") engineLabel = "MongoDB Document";
+		else if (newConnector.engine === "redis") engineLabel = "Redis Key-Value";
 		else if (newConnector.engine === "sqlite") engineLabel = "SQLite 3";
 
 		const newEntry: DBConnector = {
@@ -244,6 +258,7 @@
 			name: newConnector.name,
 			engine: newConnector.engine,
 			engineLabel,
+			versionCompatibility: newConnector.versionCompatibility || "Multi-Version (2+ Yr LTS)",
 			paradigm: newConnector.paradigm,
 			host: newConnector.host,
 			port: newConnector.port,
@@ -254,7 +269,7 @@
 			maxConns: newConnector.maxConns,
 			idleConns: newConnector.idleConns,
 			sslMode: newConnector.sslMode,
-			notes: newConnector.notes || "Custom user-configured database connector."
+			notes: newConnector.notes || "Custom version-agnostic database connector with standard ANSI/BSON compatibility."
 		};
 
 		connectors = [...connectors, newEntry];
@@ -265,6 +280,7 @@
 			name: "",
 			engine: "postgres",
 			paradigm: "relational",
+			versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
 			host: "localhost",
 			port: 5432,
 			databaseName: "",
@@ -298,14 +314,14 @@
 					<ServerStack class="h-5 w-5" />
 				</div>
 				<div>
-					<h3 class="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-						<span>Database Connectors & Storage Engines</span>
+					<h3 class="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2 flex-wrap">
+						<span>Universal Database Connectors</span>
 						<span class="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400">
-							Multi-Engine GUI
+							Version-Agnostic (2+ Yr LTS)
 						</span>
 					</h3>
 					<p class="text-xs sm:text-sm text-muted-foreground mt-0.5">
-						NovaPilot is not tied to a single database. Configure, test, and switch between Relational (SQL) and Non-Relational (NoSQL / Document) stores with zero downtime.
+						NovaPilot is not tied to a single database or rigid version. Seamlessly connect to PostgreSQL (v14–v18+), Oracle (11g–23ai), MySQL (8.0–8.4), MongoDB, Redis, or SQLite with zero proprietary syntax lock-in.
 					</p>
 				</div>
 			</div>
@@ -449,6 +465,10 @@
 						<span class="uppercase text-[10.5px] font-bold {conn.paradigm === 'relational' ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}">
 							{conn.paradigm.replace('_', ' ')}
 						</span>
+					</div>
+					<div class="flex items-center justify-between">
+						<span class="text-muted-foreground">Version Support:</span>
+						<span class="text-foreground font-semibold text-[11px] truncate max-w-[170px]">{conn.versionCompatibility}</span>
 					</div>
 					<div class="flex items-center justify-between">
 						<span class="text-muted-foreground">Pool Conns:</span>
@@ -664,6 +684,23 @@
 							class="h-9 w-full rounded-md border border-input bg-muted px-3 text-xs font-mono text-muted-foreground uppercase cursor-not-allowed"
 						/>
 					</div>
+				</div>
+
+				<!-- Version & Compatibility Range (2+ Year Support Standard) -->
+				<div>
+					<label for="conn-version" class="block font-medium mb-1 text-foreground text-xs flex items-center justify-between">
+						<span>Version Compatibility (2+ Year Support Standard)</span>
+						<span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">LTS Standard</span>
+					</label>
+					<input
+						id="conn-version"
+						type="text"
+						bind:value={newConnector.versionCompatibility}
+						placeholder="e.g. v14 - v18+ (2+ Yr LTS) or 11g - 23ai Enterprise"
+						class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+						required
+					/>
+					<p class="text-[11px] text-muted-foreground mt-1">Version-agnostic query engine. Compliant with standard ANSI-SQL prepared statements and generic BSON protocols.</p>
 				</div>
 
 				<!-- Host & Port -->
