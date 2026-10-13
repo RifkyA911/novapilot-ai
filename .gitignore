@@ -38,6 +38,8 @@ auth_info/
 whatsapp-gateway/.baileys_auth/
 whatsapp-gateway/.env
 baileys_store.json
+uploads/wa_attachments/
+uploads/whatsapp_qr.json
 
 # Local Databases & Logs
 *.db

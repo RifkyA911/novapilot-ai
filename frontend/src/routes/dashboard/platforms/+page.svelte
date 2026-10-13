@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { 
 		AdjustmentsHorizontal, 
 		Check, 
@@ -12,7 +13,12 @@
 		EyeSlash,
 		CodeBracket,
 		ClipboardDocumentCheck,
-		InformationCircle
+		InformationCircle,
+		QrCode,
+		GlobeAlt,
+		ComputerDesktop,
+		DevicePhoneMobile,
+		ArrowTopRightOnSquare
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 
@@ -157,6 +163,317 @@
 		copiedSnippet = true;
 		setTimeout(() => (copiedSnippet = false), 2500);
 	}
+
+	// WhatsApp Ingress Connection Options
+	type WAConnectMode = "gateway" | "browser" | "ferdium" | "rambox";
+	let waConnectMode = $state<WAConnectMode>("gateway");
+
+	let qrData = $state<{
+		status: "WAITING_SCAN" | "CONNECTED" | "DISCONNECTED" | "LOADING";
+		qr?: string;
+		qrDataUrl?: string;
+		updatedAt?: string;
+	}>({
+		status: "LOADING"
+	});
+	let isRefreshingQR = $state(false);
+	let qrPollingInterval: any = null;
+
+	async function fetchWAQR() {
+		try {
+			const res = await fetch("/uploads/whatsapp_qr.json?t=" + Date.now());
+			if (res.ok) {
+				const data = await res.json();
+				qrData = data;
+			} else {
+				qrData = { status: "DISCONNECTED" };
+			}
+		} catch (err) {
+			qrData = { status: "DISCONNECTED" };
+		}
+	}
+
+	async function manualRefreshQR() {
+		isRefreshingQR = true;
+		await fetchWAQR();
+		setTimeout(() => (isRefreshingQR = false), 600);
+	}
+
+	onMount(() => {
+		fetchWAQR();
+		qrPollingInterval = setInterval(() => {
+			if (cockpit.chatPlatform === "whatsapp" && waConnectMode === "gateway") {
+				fetchWAQR();
+			}
+		}, 3000);
+	});
+
+	onDestroy(() => {
+		if (qrPollingInterval) clearInterval(qrPollingInterval);
+	});
+
+	let copiedScriptType = $state<string | null>(null);
+	function copyIntegrationScript(type: string, text: string) {
+		navigator.clipboard.writeText(text);
+		copiedScriptType = type;
+		setTimeout(() => (copiedScriptType = null), 2500);
+	}
+
+	const browserUserscript = `// ==UserScript==
+// @name         NovaPilot AI — WhatsApp Web ChatOps Ingestion Hook
+// @namespace    https://github.com/RifkyA911/novapilot-ai
+// @version      1.0.0
+// @description  Automated ChatOps Hook for WhatsApp Web to NovaPilot On-Call Gatekeeper
+// @match        https://web.whatsapp.com/*
+// @grant        none
+// @run-at       document-idle
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    const NOVAPILOT_BACKEND = "http://127.0.0.1:8088";
+    const processedMessages = new Set();
+    console.log("%c[NovaPilot AI Userscript]%c Initialized on WhatsApp Web.", "background:#059669; color:#fff; font-weight:bold; padding:2px 5px; border-radius:3px;", "color:#059669; font-weight:bold;");
+
+    function parseMessage(text) {
+        const docMatch = text.match(/\\b(INV[\\/\\-]\\d{4}[\\/\\-]\\d{3}|NOTA[\\/\\-]\\d{4}[\\/\\-]\\d{3})\\b/i);
+        if (!docMatch) return null;
+        const documentNo = docMatch[1].toUpperCase().replace("-", "/");
+
+        let proposedValue = "";
+        const targetMatch = text.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\\s+['"]?([^,\\.\\n\\r"']+)['"]?/i);
+        if (targetMatch && targetMatch[1]) {
+            proposedValue = targetMatch[1].trim();
+        } else {
+            const corpMatch = text.match(/\\b(PT|CV|UD)\\s+([A-Za-z0-9\\s]{3,35})\\b/i);
+            if (corpMatch) proposedValue = \`\${corpMatch[1].toUpperCase()} \${corpMatch[2].trim()}\`;
+        }
+        if (!proposedValue) return null;
+
+        return { documentNo, proposedValue, fieldTarget: "customer_name", intent: "UPDATE_CUSTOMER_NAME", confidence: 0.98 };
+    }
+
+    async function forwardToNovaPilot(rawText, parsed) {
+        try {
+            const res = await fetch(\`\${NOVAPILOT_BACKEND}/api/tickets\`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    raw_message: rawText,
+                    extracted_intent: parsed.intent,
+                    document_no: parsed.documentNo,
+                    field_target: parsed.fieldTarget,
+                    proposed_value: parsed.proposedValue,
+                    branch_id: 1,
+                    confidence_score: parsed.confidence
+                })
+            });
+            if (res.ok) {
+                const ticket = await res.json();
+                console.log(\`[NovaPilot] Ticket \${ticket.ticket_no} created successfully via Userscript!\`);
+                return ticket;
+            }
+        } catch (err) {
+            console.error("[NovaPilot] Communication error:", err);
+        }
+        return null;
+    }
+
+    function observeWhatsAppMessages() {
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === 1) {
+                        const textNodes = node.querySelectorAll ? node.querySelectorAll(".selectable-text, [data-pre-plain-text]") : [];
+                        for (const el of textNodes) {
+                            const text = el.textContent || "";
+                            if (!text || processedMessages.has(text)) continue;
+                            const parsed = parseMessage(text);
+                            if (parsed) {
+                                processedMessages.add(text);
+                                forwardToNovaPilot(text, parsed);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    const checkInterval = setInterval(() => {
+        if (document.querySelector("#app") || document.querySelector("#pane-side")) {
+            clearInterval(checkInterval);
+            observeWhatsAppMessages();
+        }
+    }, 1500);
+})();`;
+
+	const ferdiumHookScript = `/**
+ * NovaPilot AI — Ferdium WhatsApp Web Integration Hook
+ * Paste into: Ferdium > Right Click WhatsApp Service > Edit > Advanced > Inject JavaScript code
+ */
+(function () {
+    const NOVAPILOT_BACKEND = "http://127.0.0.1:8088";
+    const processedMessages = new Set();
+    console.log("[NovaPilot AI] Ferdium ChatOps Hook initialized.");
+
+    function parseMessage(text) {
+        const docMatch = text.match(/\\b(INV[\\/\\-]\\d{4}[\\/\\-]\\d{3}|NOTA[\\/\\-]\\d{4}[\\/\\-]\\d{3})\\b/i);
+        if (!docMatch) return null;
+        const documentNo = docMatch[1].toUpperCase().replace("-", "/");
+
+        let proposedValue = "";
+        const targetMatch = text.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\\s+['"]?([^,\\.\\n\\r"']+)['"]?/i);
+        if (targetMatch && targetMatch[1]) {
+            proposedValue = targetMatch[1].trim();
+        } else {
+            const corpMatch = text.match(/\\b(PT|CV|UD)\\s+([A-Za-z0-9\\s]{3,35})\\b/i);
+            if (corpMatch) proposedValue = \`\${corpMatch[1].toUpperCase()} \${corpMatch[2].trim()}\`;
+        }
+        if (!proposedValue) return null;
+
+        return { documentNo, proposedValue, fieldTarget: "customer_name", intent: "UPDATE_CUSTOMER_NAME", confidence: 0.98 };
+    }
+
+    async function forwardToNovaPilot(rawText, parsed) {
+        try {
+            const res = await fetch(\`\${NOVAPILOT_BACKEND}/api/tickets\`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    raw_message: rawText,
+                    extracted_intent: parsed.intent,
+                    document_no: parsed.documentNo,
+                    field_target: parsed.fieldTarget,
+                    proposed_value: parsed.proposedValue,
+                    branch_id: 1,
+                    confidence_score: parsed.confidence
+                })
+            });
+            if (res.ok) {
+                const ticket = await res.json();
+                console.log(\`[NovaPilot] Ticket \${ticket.ticket_no} created successfully via Ferdium!\`);
+                return ticket;
+            }
+        } catch (err) {
+            console.error("[NovaPilot] Error:", err);
+        }
+        return null;
+    }
+
+    function observeWhatsAppMessages() {
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === 1) {
+                        const textNodes = node.querySelectorAll ? node.querySelectorAll(".selectable-text, [data-pre-plain-text]") : [];
+                        for (const el of textNodes) {
+                            const text = el.textContent || "";
+                            if (!text || processedMessages.has(text)) continue;
+                            const parsed = parseMessage(text);
+                            if (parsed) {
+                                processedMessages.add(text);
+                                forwardToNovaPilot(text, parsed);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    const checkInterval = setInterval(() => {
+        if (document.querySelector("#app") || document.querySelector("#pane-side")) {
+            clearInterval(checkInterval);
+            observeWhatsAppMessages();
+        }
+    }, 1500);
+})();`;
+
+	const ramboxHookScript = `/**
+ * NovaPilot AI — Rambox WhatsApp Service Injection Hook
+ * Paste into: Rambox > Right-click WhatsApp service tab > Edit > Advanced > Inject JavaScript code
+ */
+(function () {
+    const NOVAPILOT_BACKEND = "http://127.0.0.1:8088";
+    const processedMessages = new Set();
+    console.log("%c[NovaPilot AI]%c Rambox WhatsApp ChatOps Hook Active.", "background:#059669; color:#fff; padding:2px 4px; border-radius:3px; font-weight:bold;", "color:#059669;");
+
+    function parseMessage(text) {
+        const docMatch = text.match(/\\b(INV[\\/\\-]\\d{4}[\\/\\-]\\d{3}|NOTA[\\/\\-]\\d{4}[\\/\\-]\\d{3})\\b/i);
+        if (!docMatch) return null;
+        const documentNo = docMatch[1].toUpperCase().replace("-", "/");
+
+        let proposedValue = "";
+        const targetMatch = text.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\\s+['"]?([^,\\.\\n\\r"']+)['"]?/i);
+        if (targetMatch && targetMatch[1]) {
+            proposedValue = targetMatch[1].trim();
+        } else {
+            const corpMatch = text.match(/\\b(PT|CV|UD)\\s+([A-Za-z0-9\\s]{3,35})\\b/i);
+            if (corpMatch) proposedValue = \`\${corpMatch[1].toUpperCase()} \${corpMatch[2].trim()}\`;
+        }
+        if (!proposedValue) return null;
+
+        return { documentNo, proposedValue, fieldTarget: "customer_name", intent: "UPDATE_CUSTOMER_NAME", confidence: 0.98 };
+    }
+
+    async function forwardToNovaPilot(rawText, parsed) {
+        try {
+            const res = await fetch(\`\${NOVAPILOT_BACKEND}/api/tickets\`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    raw_message: rawText,
+                    extracted_intent: parsed.intent,
+                    document_no: parsed.documentNo,
+                    field_target: parsed.fieldTarget,
+                    proposed_value: parsed.proposedValue,
+                    branch_id: 1,
+                    confidence_score: parsed.confidence
+                })
+            });
+            if (res.ok) {
+                const ticket = await res.json();
+                console.log(\`[NovaPilot] Ticket \${ticket.ticket_no} created from Rambox!\`);
+                return ticket;
+            }
+        } catch (err) {
+            console.error("[NovaPilot] Error:", err);
+        }
+        return null;
+    }
+
+    function observeMessages() {
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === 1) {
+                        const textNodes = node.querySelectorAll ? node.querySelectorAll(".selectable-text, [data-pre-plain-text]") : [];
+                        for (const el of textNodes) {
+                            const text = el.textContent || "";
+                            if (!text || processedMessages.has(text)) continue;
+                            const parsed = parseMessage(text);
+                            if (parsed) {
+                                processedMessages.add(text);
+                                forwardToNovaPilot(text, parsed);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    const checkInterval = setInterval(() => {
+        if (document.querySelector("#app") || document.querySelector("#pane-side")) {
+            clearInterval(checkInterval);
+            observeMessages();
+        }
+    }, 1500);
+})();`;
 </script>
 
 <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full font-sans">
@@ -276,62 +593,296 @@
 
 				<!-- WHATSAPP SPECIFIC INPUTS -->
 				{#if cockpit.chatPlatform === "whatsapp"}
-					<div class="space-y-4 text-xs font-sans">
-						<div class="grid sm:grid-cols-2 gap-4">
-							<div class="space-y-1.5">
-								<label for="wa-port" class="font-medium text-foreground">Local Webhook Ingress Port</label>
-								<input
-									id="wa-port"
-									type="text"
-									bind:value={waConfig.port}
-									class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-								/>
-								<span class="text-[10px] text-muted-foreground">Endpoint: http://127.0.0.1:8088/api/tickets</span>
+					<div class="space-y-5 text-xs font-sans">
+						<!-- Connection Mode Selector Tabs -->
+						<div class="space-y-2">
+							<div class="flex items-center justify-between">
+								<span class="font-semibold text-foreground text-xs">Pilih Metode Ingress / Koneksi WhatsApp:</span>
+								<span class="text-[10px] text-muted-foreground font-mono">4 Jalur Terverifikasi</span>
 							</div>
-
-							<div class="space-y-1.5">
-								<label for="wa-debounce" class="font-medium text-foreground">Anti-Spam Debounce Delay (ms)</label>
-								<input
-									id="wa-debounce"
-									type="number"
-									bind:value={waConfig.rateLimitDebounceMs}
-									class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-								/>
-								<span class="text-[10px] text-muted-foreground">Prevents duplicate burst packets from users</span>
-							</div>
-						</div>
-
-						<div class="space-y-1.5">
-							<label for="wa-whitelist" class="font-medium text-foreground">Authorized Regional Group JIDs Whitelist</label>
-							<textarea
-								id="wa-whitelist"
-								rows="3"
-								bind:value={waConfig.whitelistedJids}
-								class="w-full rounded-xl border border-input bg-background p-2.5 font-mono text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
-							></textarea>
-							<span class="text-[10px] text-muted-foreground">Comma-separated WhatsApp group JIDs (e.g. 120363028391@g.us)</span>
-						</div>
-
-						<div class="space-y-1.5">
-							<label for="wa-token" class="font-medium text-foreground">Tampermonkey / Browser Hook Security Token</label>
-							<div class="relative">
-								<input
-									id="wa-token"
-									type={showSecrets.whatsapp ? "text" : "password"}
-									bind:value={waConfig.tampermonkeyToken}
-									class="w-full h-9 rounded-xl border border-input bg-background px-3 pr-10 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-								/>
+							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border">
 								<button
 									type="button"
-									onclick={() => toggleSecret("whatsapp")}
-									class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									onclick={() => waConnectMode = "gateway"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'gateway' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
-									{#if showSecrets.whatsapp}
-										<EyeSlash class="h-4 w-4" />
-									{:else}
-										<Eye class="h-4 w-4" />
-									{/if}
+									<QrCode class="h-3.5 w-3.5" />
+									<span>WA Gateway (QR)</span>
 								</button>
+								<button
+									type="button"
+									onclick={() => waConnectMode = "browser"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'browser' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+								>
+									<GlobeAlt class="h-3.5 w-3.5" />
+									<span>WhatsApp Web</span>
+								</button>
+								<button
+									type="button"
+									onclick={() => waConnectMode = "ferdium"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'ferdium' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+								>
+									<ComputerDesktop class="h-3.5 w-3.5" />
+									<span>Ferdium</span>
+								</button>
+								<button
+									type="button"
+									onclick={() => waConnectMode = "rambox"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'rambox' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+								>
+									<DevicePhoneMobile class="h-3.5 w-3.5" />
+									<span>Rambox</span>
+								</button>
+							</div>
+						</div>
+
+						<!-- TAB 1: WA MULTI-DEVICE GATEWAY (LIVE QR CODE) -->
+						{#if waConnectMode === "gateway"}
+							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
+								<div class="flex items-center justify-between flex-wrap gap-2">
+									<div class="flex items-center gap-2">
+										<div class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+											<QrCode class="h-4 w-4" />
+										</div>
+										<div>
+											<h4 class="text-xs font-bold text-foreground">Baileys Multi-Device QR Pairing</h4>
+											<p class="text-[11px] text-muted-foreground">Scan QR langsung dari aplikasi WhatsApp di smartphone Anda</p>
+										</div>
+									</div>
+									
+									<div class="flex items-center gap-2">
+										<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border {qrData.status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : qrData.status === 'WAITING_SCAN' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 animate-pulse' : 'bg-muted text-muted-foreground border-border'}">
+											{qrData.status === 'CONNECTED' ? 'CONNECTED' : qrData.status === 'WAITING_SCAN' ? 'WAITING FOR SCAN' : qrData.status === 'LOADING' ? 'LOADING...' : 'GATEWAY OFFLINE'}
+										</span>
+										<button
+											type="button"
+											onclick={manualRefreshQR}
+											disabled={isRefreshingQR}
+											class="h-7 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-[11px] font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+										>
+											<ArrowPath class="h-3 w-3 {isRefreshingQR ? 'animate-spin' : ''}" />
+											<span>Refresh QR</span>
+										</button>
+									</div>
+								</div>
+
+								{#if qrData.status === 'CONNECTED'}
+									<div class="p-6 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+										<div class="h-10 w-10 mx-auto rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+											<Check class="h-5 w-5" />
+										</div>
+										<div class="text-xs font-bold text-foreground">WhatsApp Multi-Device Terhubung!</div>
+										<p class="text-[11px] text-muted-foreground max-w-sm mx-auto">
+											Sesi socket Baileys aktif. Gateway sedang mendengarkan pesan masuk dari grup cabang yang telah terdaftar di whitelist.
+										</p>
+									</div>
+								{:else if qrData.status === 'WAITING_SCAN' && qrData.qrDataUrl}
+									<div class="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl bg-muted/20 border border-border/60">
+										<div class="bg-white p-3 rounded-2xl shadow-lg border border-border shrink-0 text-center">
+											<img src={qrData.qrDataUrl} alt="WhatsApp QR Code" class="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-lg mx-auto" />
+											<span class="text-[10px] text-zinc-500 font-mono mt-1 block">Auto-refreshed via Baileys</span>
+										</div>
+										<div class="space-y-3 text-xs w-full">
+											<div class="font-semibold text-foreground flex items-center gap-1.5">
+												<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+												<span>Langkah Tautkan WhatsApp di HP:</span>
+											</div>
+											<ol class="space-y-2 text-[11px] text-muted-foreground list-decimal list-inside leading-relaxed">
+												<li>Buka aplikasi <strong>WhatsApp</strong> di HP Anda.</li>
+												<li>Ketuk menu titik tiga (Android) atau <strong>Setelan</strong> (iPhone).</li>
+												<li>Pilih <strong>Perangkat Tertaut (Linked Devices)</strong>.</li>
+												<li>Pilih <strong>Tautkan Perangkat (Link a Device)</strong>.</li>
+												<li>Arahkan kamera ponsel ke kode QR di samping.</li>
+											</ol>
+											{#if qrData.updatedAt}
+												<div class="text-[10px] text-muted-foreground font-mono pt-1">
+													Sinkronisasi: {new Date(qrData.updatedAt).toLocaleTimeString()}
+												</div>
+											{/if}
+										</div>
+									</div>
+								{:else}
+									<div class="p-6 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-2">
+										<div class="text-xs font-bold text-amber-600 dark:text-amber-400">Menunggu Inisialisasi Gateway</div>
+										<p class="text-[11px] text-muted-foreground max-w-sm mx-auto">
+											Pastikan service gateway aktif: <code>bun run start</code> atau <code>npx tsx src/index.ts</code> di folder <code>whatsapp-gateway</code>.
+										</p>
+									</div>
+								{/if}
+							</div>
+
+						<!-- TAB 2: WHATSAPP WEB (BROWSER USERSCRIPT) -->
+						{:else if waConnectMode === "browser"}
+							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
+								<div class="flex items-center justify-between flex-wrap gap-2">
+									<div class="flex items-center gap-2">
+										<div class="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+											<GlobeAlt class="h-4 w-4" />
+										</div>
+										<div>
+											<h4 class="text-xs font-bold text-foreground">WhatsApp Web (Tampermonkey Hook)</h4>
+											<p class="text-[11px] text-muted-foreground">Pasif DOM observer pada tab web.whatsapp.com</p>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										onclick={() => copyIntegrationScript("browser", browserUserscript)}
+										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+									>
+										{#if copiedScriptType === "browser"}
+											<Check class="h-3 w-3" />
+											<span>Copied!</span>
+										{:else}
+											<CodeBracket class="h-3 w-3" />
+											<span>Copy Userscript</span>
+										{/if}
+									</button>
+								</div>
+
+								<div class="space-y-2">
+									<div class="text-[11px] text-muted-foreground leading-relaxed">
+										<strong>Cara Pasang:</strong> Pasang ekstensi <strong>Tampermonkey</strong> atau <strong>Violentmonkey</strong> di Chrome/Edge/Firefox, buat script baru, paste kode di bawah, lalu buka <strong>web.whatsapp.com</strong>.
+									</div>
+									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{browserUserscript}</code></pre>
+								</div>
+							</div>
+
+						<!-- TAB 3: FERDIUM DESKTOP -->
+						{:else if waConnectMode === "ferdium"}
+							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
+								<div class="flex items-center justify-between flex-wrap gap-2">
+									<div class="flex items-center gap-2">
+										<div class="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
+											<ComputerDesktop class="h-4 w-4" />
+										</div>
+										<div>
+											<h4 class="text-xs font-bold text-foreground">Ferdium Desktop Integration Hook</h4>
+											<p class="text-[11px] text-muted-foreground">Injeksi JavaScript ke dalam container service Ferdium WhatsApp</p>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										onclick={() => copyIntegrationScript("ferdium", ferdiumHookScript)}
+										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+									>
+										{#if copiedScriptType === "ferdium"}
+											<Check class="h-3 w-3" />
+											<span>Copied!</span>
+										{:else}
+											<CodeBracket class="h-3 w-3" />
+											<span>Copy Ferdium Hook</span>
+										{/if}
+									</button>
+								</div>
+
+								<div class="space-y-2">
+									<div class="text-[11px] text-muted-foreground leading-relaxed">
+										<strong>Cara Pasang:</strong> Buka Ferdium &gt; Klik kanan service WhatsApp &gt; <strong>Edit Service</strong> &gt; Menu <strong>Advanced</strong> &gt; Tempel kode pada input <strong>Custom Code (Inject JavaScript code)</strong> &gt; Simpan &amp; Reload.
+									</div>
+									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ferdiumHookScript}</code></pre>
+								</div>
+							</div>
+
+						<!-- TAB 4: RAMBOX DESKTOP -->
+						{:else if waConnectMode === "rambox"}
+							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
+								<div class="flex items-center justify-between flex-wrap gap-2">
+									<div class="flex items-center gap-2">
+										<div class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+											<DevicePhoneMobile class="h-4 w-4" />
+										</div>
+										<div>
+											<h4 class="text-xs font-bold text-foreground">Rambox Workspace Integration Hook</h4>
+											<p class="text-[11px] text-muted-foreground">Injeksi JavaScript custom ke dalam app WhatsApp di Rambox</p>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										onclick={() => copyIntegrationScript("rambox", ramboxHookScript)}
+										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+									>
+										{#if copiedScriptType === "rambox"}
+											<Check class="h-3 w-3" />
+											<span>Copied!</span>
+										{:else}
+											<CodeBracket class="h-3 w-3" />
+											<span>Copy Rambox Hook</span>
+										{/if}
+									</button>
+								</div>
+
+								<div class="space-y-2">
+									<div class="text-[11px] text-muted-foreground leading-relaxed">
+										<strong>Cara Pasang:</strong> Buka Rambox &gt; Klik kanan tab service WhatsApp &gt; <strong>Edit</strong> &gt; Buka tab <strong>Advanced</strong> &gt; Tempel kode ke kotak <strong>Inject JavaScript code</strong> &gt; Simpan.
+									</div>
+									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ramboxHookScript}</code></pre>
+								</div>
+							</div>
+						{/if}
+
+						<!-- Common Network & Filter Parameters -->
+						<div class="pt-3 border-t border-border/50 space-y-4">
+							<h5 class="text-xs font-bold text-foreground">Pengaturan Jaringan &amp; Whitelist Keamanan</h5>
+
+							<div class="grid sm:grid-cols-2 gap-4">
+								<div class="space-y-1.5">
+									<label for="wa-port" class="font-medium text-foreground">Local Webhook Ingress Port</label>
+									<input
+										id="wa-port"
+										type="text"
+										bind:value={waConfig.port}
+										class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+									/>
+									<span class="text-[10px] text-muted-foreground">Endpoint: http://127.0.0.1:8088/api/tickets</span>
+								</div>
+
+								<div class="space-y-1.5">
+									<label for="wa-debounce" class="font-medium text-foreground">Anti-Spam Debounce Delay (ms)</label>
+									<input
+										id="wa-debounce"
+										type="number"
+										bind:value={waConfig.rateLimitDebounceMs}
+										class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+									/>
+									<span class="text-[10px] text-muted-foreground">Mencegah dobel pesan burst dari user</span>
+								</div>
+							</div>
+
+							<div class="space-y-1.5">
+								<label for="wa-whitelist" class="font-medium text-foreground">Authorized Regional Group JIDs Whitelist</label>
+								<textarea
+									id="wa-whitelist"
+									rows="3"
+									bind:value={waConfig.whitelistedJids}
+									class="w-full rounded-xl border border-input bg-background p-2.5 font-mono text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
+								></textarea>
+								<span class="text-[10px] text-muted-foreground">Comma-separated WhatsApp group JIDs (e.g. 120363028391@g.us)</span>
+							</div>
+
+							<div class="space-y-1.5">
+								<label for="wa-token" class="font-medium text-foreground">Tampermonkey / Browser Hook Security Token</label>
+								<div class="relative">
+									<input
+										id="wa-token"
+										type={showSecrets.whatsapp ? "text" : "password"}
+										bind:value={waConfig.tampermonkeyToken}
+										class="w-full h-9 rounded-xl border border-input bg-background px-3 pr-10 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+									/>
+									<button
+										type="button"
+										onclick={() => toggleSecret("whatsapp")}
+										class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									>
+										{#if showSecrets.whatsapp}
+											<EyeSlash class="h-4 w-4" />
+										{:else}
+											<Eye class="h-4 w-4" />
+										{/if}
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>

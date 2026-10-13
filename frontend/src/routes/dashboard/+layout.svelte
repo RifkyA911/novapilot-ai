@@ -59,6 +59,7 @@
 	onMount(() => {
 		cockpit.setupSSE();
 		cockpit.fetchTickets();
+		cockpit.fetchInboundMessages();
 		cockpit.fetchAuditLogs();
 		cockpit.fetchTelemetry();
 	});
@@ -248,6 +249,25 @@
 						ChatOps Gateways
 					</div>
 				{/if}
+
+				<!-- Inbound Messages Feed -->
+				<a
+					href="/dashboard/messages"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/messages' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="Omnichannel Inbound Messages Feed"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<ChatBubbleLeftRight class="h-4 w-4 shrink-0 {currentPath === '/dashboard/messages' ? '' : 'text-emerald-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">Inbound Messages</span>
+						{/if}
+					</div>
+					{#if cockpit.needsReviewCount > 0}
+						<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 {currentPath === '/dashboard/messages' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
+							{cockpit.needsReviewCount}
+						</span>
+					{/if}
+				</a>
 
 				<!-- Client Hook Flows -->
 				<a
@@ -475,6 +495,22 @@
 							<CpuChip class="h-4 w-4 text-blue-500" />
 							<span>System Telemetry</span>
 						</span>
+					</a>
+
+					<a
+						href="/dashboard/messages"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/messages' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<ChatBubbleLeftRight class="h-4 w-4 text-emerald-500" />
+							<span>Inbound Messages</span>
+						</span>
+						{#if cockpit.needsReviewCount > 0}
+							<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500">
+								{cockpit.needsReviewCount}
+							</span>
+						{/if}
 					</a>
 
 					<a

@@ -5,7 +5,7 @@
 		XMark, ArrowUpTray, ArrowTopRightOnSquare, ChartBarSquare, 
 		MagnifyingGlass, Sparkles, CommandLine, CpuChip, Radio, LockClosed, 
 		CodeBracket, Eye, InformationCircle, ChevronDown, ChevronUp,
-		CircleStack, PaperAirplane, ArrowRight
+		CircleStack, PaperAirplane, ArrowRight, ExclamationTriangle, ChatBubbleLeftRight
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
 	import InspectModal from "$lib/components/InspectModal.svelte";
@@ -261,6 +261,32 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Inbound Messages Alert Banner -->
+	{#if cockpit.needsReviewCount > 0}
+		<div class="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+			<div class="flex items-center gap-3">
+				<div class="h-9 w-9 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+					<ExclamationTriangle class="h-5 w-5" />
+				</div>
+				<div>
+					<h4 class="text-xs font-bold text-foreground">
+						{cockpit.needsReviewCount} Inbound Message{cockpit.needsReviewCount > 1 ? 's' : ''} Require On-Call Review
+					</h4>
+					<p class="text-[11px] text-muted-foreground">
+						Incoming chats detected with company mutation requests (e.g. from photo attachment/nota) lacking explicit invoice numbers.
+					</p>
+				</div>
+			</div>
+			<a
+				href="/dashboard/messages"
+				class="h-8 px-3.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-xs transition-colors"
+			>
+				<span>Review & Stage Tickets</span>
+				<ArrowTopRightOnSquare class="h-3.5 w-3.5" />
+			</a>
+		</div>
+	{/if}
 
 	<!-- ========================================================================= -->
 	<!-- 2. DATABASE ARCHITECTURE & ENTERPRISE KPI CARDS                           -->

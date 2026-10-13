@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -72,19 +71,23 @@ func main() {
 	if _, err := os.Stat("uploads"); err == nil {
 		uploadDir = "uploads"
 	}
-	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, uploadDir, db)
+	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, repo, repo, sseHub, uploadDir, db)
 
 	// 4. Setup Gin HTTP Engine
 	router := gin.Default()
 
 	// CORS Configuration (Allow SvelteKit frontend on Bun)
-	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
 
 	// Serve uploaded files statically
 	router.Static("/uploads", uploadDir)
@@ -103,6 +106,16 @@ func main() {
 		api.POST("/tickets/:id/approve", apiHandler.ApproveTicket)
 		api.POST("/tickets/:id/reject", apiHandler.RejectTicket)
 
+		// Inbound Messages & Omnichannel Feed
+		api.GET("/inbound-messages", apiHandler.ListInboundMessages)
+		api.POST("/inbound-messages", apiHandler.CreateInboundMessage)
+		api.POST("/inbound-messages/:id/stage-ticket", apiHandler.StageTicketFromMessage)
+
+		// Learned Patterns (Self-Learning Loop)
+		api.GET("/learned-patterns", apiHandler.ListLearnedPatterns)
+		api.POST("/learned-patterns", apiHandler.CreateLearnedPattern)
+		api.DELETE("/learned-patterns/:id", apiHandler.DeleteLearnedPattern)
+
 		// Invoices & Audit
 		api.GET("/invoices", apiHandler.ListInvoices)
 		api.GET("/audit-logs", apiHandler.ListAuditLogs)
@@ -110,6 +123,7 @@ func main() {
 		// Document / Attachment File Upload
 		api.POST("/upload", apiHandler.UploadDocument)
 	}
+
 
 	log.Printf("[NOVAPILOT] Core Backend running at http://0.0.0.0:%s", port)
 	if err := router.Run(":" + port); err != nil && err != http.ErrServerClosed {

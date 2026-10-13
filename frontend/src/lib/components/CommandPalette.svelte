@@ -13,7 +13,8 @@
 		CodeBracket, 
 		PaperAirplane,
 		ArrowRight,
-		AdjustmentsHorizontal
+		AdjustmentsHorizontal,
+		ChatBubbleLeftRight
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 
@@ -124,6 +125,16 @@
 			icon: PaperAirplane,
 			badge: "Simulator",
 			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline"]
+		},
+		{
+			id: "messages",
+			title: "Omnichannel Inbound Messages",
+			description: "Live Stream of Incoming Chats (WhatsApp, Telegram, Discord, Slack) with 1-Click Ticket Staging",
+			category: "ChatOps & Hooks",
+			url: "/dashboard/messages",
+			icon: ChatBubbleLeftRight,
+			badge: "Live Feed",
+			keywords: ["messages", "inbound", "chat", "whatsapp", "telegram", "discord", "slack", "feed", "staging", "viewer"]
 		},
 		{
 			id: "platforms",

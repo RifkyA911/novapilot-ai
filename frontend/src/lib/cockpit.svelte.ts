@@ -47,8 +47,43 @@ export interface TelemetryData {
 
 export type ChatPlatform = "whatsapp" | "telegram" | "discord" | "slack";
 
+export interface InboundMessage {
+	id: number;
+	platform: "whatsapp" | "telegram" | "discord" | "slack";
+	sender_id: string;
+	sender_name: string;
+	raw_message: string;
+	media_type: "text" | "image" | "document" | "audio";
+	media_url?: string;
+	ocr_text?: string;
+	classification: "ACTIONABLE" | "NEEDS_REVIEW" | "CASUAL_BANTER";
+	extracted_doc?: string;
+	extracted_intent?: string;
+	extracted_target?: string;
+	ticket_id?: number;
+	ticket_no?: string;
+	created_at: string;
+}
+
+export interface LearnedPattern {
+	id: number;
+	pattern_name: string;
+	example_phrase: string;
+	regex_pattern: string;
+	target_intent: string;
+	classification: string;
+	confidence: number;
+	times_matched: number;
+	learned_by: string;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
 class CockpitState {
 	tickets = $state<Ticket[]>([]);
+	inboundMessages = $state<InboundMessage[]>([]);
+	learnedPatterns = $state<LearnedPattern[]>([]);
 	auditLogs = $state<AuditLog[]>([]);
 	telemetry = $state<TelemetryData | null>(null);
 	loading = $state(true);
@@ -105,6 +140,9 @@ class CockpitState {
 	pendingCount = $derived(this.tickets.filter(t => t.status === "PENDING_APPROVAL").length);
 	executedCount = $derived(this.tickets.filter(t => t.status === "EXECUTED").length);
 	rejectedCount = $derived(this.tickets.filter(t => t.status === "REJECTED").length);
+	actionableCount = $derived(this.inboundMessages.filter(m => m.classification === "ACTIONABLE").length);
+	needsReviewCount = $derived(this.inboundMessages.filter(m => m.classification === "NEEDS_REVIEW").length);
+	casualBanterCount = $derived(this.inboundMessages.filter(m => m.classification === "CASUAL_BANTER").length);
 
 	recordPlatformEvent(platform: ChatPlatform) {
 		this.platformStatuses[platform].status = "CONNECTED";
@@ -112,9 +150,32 @@ class CockpitState {
 		this.platformStatuses[platform].lastPingAt = new Date().toLocaleTimeString();
 	}
 
+	async checkWhatsAppGatewayStatus() {
+		try {
+			const res = await fetch("/uploads/whatsapp_qr.json?t=" + Date.now());
+			if (res.ok) {
+				const data = await res.json();
+				if (data.status === "CONNECTED") {
+					this.platformStatuses.whatsapp.status = "CONNECTED";
+					this.platformStatuses.whatsapp.details = "Baileys WhatsApp Multi-Device socket connected and actively listening for incoming branch messages.";
+					if (!this.platformStatuses.whatsapp.lastPingAt) {
+						this.platformStatuses.whatsapp.lastPingAt = new Date().toLocaleTimeString();
+					}
+				} else if (data.status === "WAITING_SCAN") {
+					this.platformStatuses.whatsapp.status = "AWAITING_HOOK";
+					this.platformStatuses.whatsapp.details = "WhatsApp QR Code generated. Awaiting device pairing scan in /dashboard/platforms.";
+				} else if (data.status === "DISCONNECTED") {
+					this.platformStatuses.whatsapp.status = "DISCONNECTED";
+					this.platformStatuses.whatsapp.details = "WhatsApp Gateway session disconnected. Reconnection in progress.";
+				}
+			}
+		} catch {}
+	}
+
 	async fetchTickets() {
 		try {
 			this.fetchTelemetry();
+			this.checkWhatsAppGatewayStatus();
 			const res = await fetch("/api/tickets");
 			if (res.ok) {
 				this.tickets = await res.json();
@@ -123,6 +184,95 @@ class CockpitState {
 			console.error("Failed to fetch tickets:", err);
 		} finally {
 			this.loading = false;
+		}
+	}
+
+	async fetchInboundMessages() {
+		try {
+			const res = await fetch("/api/inbound-messages");
+			if (res.ok) {
+				this.inboundMessages = await res.json();
+			}
+		} catch (err) {
+			console.error("Failed to fetch inbound messages:", err);
+		}
+	}
+
+	async fetchLearnedPatterns() {
+		try {
+			const res = await fetch("/api/learned-patterns");
+			if (res.ok) {
+				this.learnedPatterns = await res.json();
+			}
+		} catch (err) {
+			console.error("Failed to fetch learned patterns:", err);
+		}
+	}
+
+	async createLearnedPattern(input: {
+		pattern_name: string;
+		example_phrase: string;
+		regex_pattern?: string;
+		target_intent?: string;
+		classification?: string;
+		confidence?: number;
+		learned_by?: string;
+	}) {
+		try {
+			const res = await fetch("/api/learned-patterns", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(input)
+			});
+			if (res.ok) {
+				const pat = await res.json();
+				await this.fetchLearnedPatterns();
+				return { success: true, pattern: pat };
+			} else {
+				const err = await res.json();
+				return { success: false, error: err.error || "Failed to learn pattern" };
+			}
+		} catch (err: any) {
+			return { success: false, error: err.message };
+		}
+	}
+
+	async deleteLearnedPattern(id: number) {
+		try {
+			const res = await fetch(`/api/learned-patterns/${id}`, {
+				method: "DELETE"
+			});
+			if (res.ok) {
+				this.learnedPatterns = this.learnedPatterns.filter(p => p.id !== id);
+				return { success: true };
+			}
+		} catch (err) {
+			console.error("Failed to delete pattern:", err);
+		}
+		return { success: false };
+	}
+
+	async stageTicketFromMessage(messageId: number, documentNo: string, proposedValue?: string) {
+		try {
+			const res = await fetch(`/api/inbound-messages/${messageId}/stage-ticket`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					document_no: documentNo,
+					proposed_value: proposedValue
+				})
+			});
+			if (res.ok) {
+				const ticket = await res.json();
+				await this.fetchTickets();
+				await this.fetchInboundMessages();
+				return { success: true, ticket };
+			} else {
+				const err = await res.json();
+				return { success: false, error: err.error || "Failed to stage ticket" };
+			}
+		} catch (err: any) {
+			return { success: false, error: err.message };
 		}
 	}
 
@@ -139,6 +289,7 @@ class CockpitState {
 
 	async fetchTelemetry() {
 		try {
+			this.checkWhatsAppGatewayStatus();
 			const res = await fetch("/api/telemetry");
 			if (res.ok) {
 				this.telemetry = await res.json();
@@ -172,6 +323,19 @@ class CockpitState {
 				this.tickets = this.tickets.map(t => t.id === updated.id ? updated : t);
 				this.fetchAuditLogs();
 			});
+			this.eventSource.addEventListener("inbound_message", (e) => {
+				const newMsg: InboundMessage = JSON.parse(e.data);
+				this.inboundMessages = [newMsg, ...this.inboundMessages.filter(m => m.id !== newMsg.id)];
+				this.recordPlatformEvent(newMsg.platform as ChatPlatform);
+			});
+			this.eventSource.addEventListener("inbound_message_updated", (e) => {
+				const updatedMsg: InboundMessage = JSON.parse(e.data);
+				this.inboundMessages = this.inboundMessages.map(m => m.id === updatedMsg.id ? updatedMsg : m);
+			});
+			this.eventSource.addEventListener("pattern_learned", (e) => {
+				const pat: LearnedPattern = JSON.parse(e.data);
+				this.learnedPatterns = [pat, ...this.learnedPatterns.filter(p => p.id !== pat.id)];
+			});
 			this.eventSource.onerror = () => {
 				this.sseConnected = false;
 			};
@@ -179,6 +343,7 @@ class CockpitState {
 			console.error("SSE connection error:", err);
 		}
 	}
+
 
 	closeSSE() {
 		if (this.eventSource) {

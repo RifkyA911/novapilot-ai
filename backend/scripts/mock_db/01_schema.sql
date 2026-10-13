@@ -74,7 +74,26 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS inbound_messages (
+    id SERIAL PRIMARY KEY,
+    platform VARCHAR(50) NOT NULL, -- 'whatsapp', 'telegram', 'discord', 'slack'
+    sender_id VARCHAR(100) NOT NULL,
+    sender_name VARCHAR(100) DEFAULT '',
+    raw_message TEXT NOT NULL,
+    media_type VARCHAR(50) DEFAULT 'text', -- 'text', 'image', 'document', 'audio'
+    classification VARCHAR(50) NOT NULL, -- 'ACTIONABLE', 'NEEDS_REVIEW', 'CASUAL_BANTER'
+    extracted_doc VARCHAR(100) DEFAULT '',
+    extracted_intent VARCHAR(100) DEFAULT '',
+    extracted_target VARCHAR(255) DEFAULT '',
+    ticket_id INT REFERENCES tickets(id) ON DELETE SET NULL,
+    ticket_no VARCHAR(100) DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_invoices_no ON invoices(invoice_no);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
 CREATE INDEX IF NOT EXISTS idx_branches_wa ON branches(wa_group_id);
+CREATE INDEX IF NOT EXISTS idx_inbound_platform ON inbound_messages(platform);
+CREATE INDEX IF NOT EXISTS idx_inbound_classification ON inbound_messages(classification);
+

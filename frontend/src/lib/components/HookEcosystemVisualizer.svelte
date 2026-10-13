@@ -17,13 +17,26 @@
 		ClipboardDocument,
 		Check,
 		ExclamationTriangle,
-		Radio
+		Radio,
+		Eye,
+		Bolt,
+		CircleStack,
+		Photo,
+		DocumentText
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 
-	// Simulation states
+	// Simulation states (Steps 1 to 6)
 	let isSimulating = $state(false);
-	let simulationStep = $state(0); // 0: idle, 1: client trigger, 2: hook extract, 3: novapilot core & db, 4: human sign-off, 5: loopback confirmation
+	let simulationStep = $state(0); 
+	// 0: idle
+	// 1: Client Ingress (Chat/Foto)
+	// 2: Hook & Vision OCR (Tesseract)
+	// 3: Core & DB 1 Staging (PostgreSQL 18 Local)
+	// 4: Human-in-the-Loop Sign-off (:3000 Cockpit)
+	// 5: Enterprise MCP Connector (DB 2 Mutation)
+	// 6: Bi-directional Outbound Loopback Receipt
+
 	let copied = $state(false);
 	let testPingSuccess = $state(false);
 	let pinging = $state(false);
@@ -38,7 +51,7 @@
 		color: string;
 		bgColor: string;
 		dotColor: string;
-		yPos: number; // 55, 135, 215, 295
+		yPos: number;
 		path: string;
 		endpoint: string;
 		snippet: string;
@@ -56,11 +69,11 @@
 
 	const platformConfigs: Record<ChatPlatform, PlatformEcosystem> = {
 		whatsapp: {
-			title: "WhatsApp Hook Ecosystem",
-			description: "Passive DOM observers inside Ferdium, Rambox, and browser userscripts plus headless Baileys WebSocket daemon.",
-			hookName: "DOM Ingestion Hook",
-			hookSub: "MutationObserver Active",
-			hookTech: "Passive Webview Inject",
+			title: "WhatsApp Hook & Multi-Client Ecosystem",
+			description: "Passive DOM observers inside Ferdium, Rambox, and browser userscripts plus headless Baileys WebSocket daemon with Tesseract OCR.",
+			hookName: "DOM & Socket Hook",
+			hookSub: "MutationObserver & Baileys",
+			hookTech: "Passive Webview Inject + OCR",
 			adapters: [
 				{
 					id: "ferdium",
@@ -71,9 +84,9 @@
 					color: "text-purple-600 dark:text-purple-400",
 					bgColor: "bg-purple-500/10 border-purple-500/30",
 					dotColor: "#a855f7",
-					yPos: 55,
-					path: "M 180 55 C 235 55, 255 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/tickets",
+					yPos: 52,
+					path: "M 180 52 C 215 52, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
 					snippet: `// %APPDATA%\\Ferdium\\recipes\\whatsapp\\webview.js\nFerdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));`,
 					notes: "Zero QR scan requirement. Injects DOM observer directly into Ferdium WhatsApp webview."
 				},
@@ -86,10 +99,10 @@
 					color: "text-blue-600 dark:text-blue-400",
 					bgColor: "bg-blue-500/10 border-blue-500/30",
 					dotColor: "#3b82f6",
-					yPos: 135,
-					path: "M 180 135 C 230 135, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/tickets",
-					snippet: `// Rambox -> WhatsApp -> Settings -> Advanced -> Inject JavaScript code\n(function() {\n  const BACKEND = "http://127.0.0.1:8088/api/tickets";\n  console.log("[NovaPilot] Rambox Hook Active");\n})();`,
+					yPos: 116,
+					path: "M 180 116 C 210 116, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `// Rambox -> WhatsApp -> Settings -> Advanced -> Inject JavaScript code\n(function() {\n  const BACKEND = "http://127.0.0.1:8088/api/inbound-messages";\n  console.log("[NovaPilot] Rambox Hook Active");\n})();`,
 					notes: "Runs inside Rambox Electron process. Forwards whitelisted branch groups to local port 8088."
 				},
 				{
@@ -101,26 +114,26 @@
 					color: "text-emerald-600 dark:text-emerald-400",
 					bgColor: "bg-emerald-500/10 border-emerald-500/30",
 					dotColor: "#10b981",
-					yPos: 215,
-					path: "M 180 215 C 230 215, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/tickets",
-					snippet: `// ==UserScript==\n// @name         NovaPilot WhatsApp Ingestion Hook\n// @match        https://web.whatsapp.com/*\n// @grant        GM_xmlhttpRequest\n// ==/UserScript==\nconst NOVAPILOT_BACKEND = "http://127.0.0.1:8088/api/tickets";`,
+					yPos: 180,
+					path: "M 180 180 C 210 180, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `// ==UserScript==\n// @name         NovaPilot WhatsApp Ingestion Hook\n// @match        https://web.whatsapp.com/*\n// @grant        GM_xmlhttpRequest\n// ==/UserScript==\nconst NOVAPILOT_BACKEND = "http://127.0.0.1:8088/api/inbound-messages";`,
 					notes: "Passive MutationObserver watching incoming messages on web.whatsapp.com."
 				},
 				{
 					id: "baileys",
 					name: "PC WA Daemon",
-					subtitle: "Baileys Socket Gateway",
-					badge: "NODE.JS SERVICE",
+					subtitle: "Baileys Socket + OCR",
+					badge: "MULTI-DEVICE LIVE",
 					logoUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
 					color: "text-green-600 dark:text-green-400",
 					bgColor: "bg-green-500/10 border-green-500/30",
 					dotColor: "#22c55e",
-					yPos: 295,
-					path: "M 180 295 C 235 295, 255 175, 305 175",
-					endpoint: "Direct WebSocket Gateway :8088",
-					snippet: `// Run headless background daemon\nnpm install @whiskeysockets/baileys\nnode ./scripts/baileys-daemon.js --port 8088`,
-					notes: "Standalone Node.js service connecting directly to WhatsApp Multi-Device protocol."
+					yPos: 244,
+					path: "M 180 244 C 215 244, 215 158, 240 158",
+					endpoint: "Headless WebSocket Gateway :3002",
+					snippet: `// Headless Baileys Daemon with Tesseract OCR\nbun run src/index.ts --port 3002\n// Auto-downloads attachments & runs OCR vision pipeline`,
+					notes: "Direct WebSocket socket to WhatsApp servers with Tesseract OCR physical invoice parser."
 				}
 			]
 		},
@@ -140,10 +153,10 @@
 					color: "text-sky-600 dark:text-sky-400",
 					bgColor: "bg-sky-500/10 border-sky-500/30",
 					dotColor: "#0284c7",
-					yPos: 55,
-					path: "M 180 55 C 235 55, 255 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/telegram",
-					snippet: `# Forward chat messages from desktop bot webhook\ncurl -X POST http://127.0.0.1:8088/api/webhooks/telegram \\\n  -H "Content-Type: application/json" \\\n  -d '{"message": {"chat": {"id": -1001234}, "text": "Revisi PO-9921"}}'`,
+					yPos: 52,
+					path: "M 180 52 C 215 52, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `# Forward chat messages from desktop bot webhook\ncurl -X POST http://127.0.0.1:8088/api/inbound-messages \\\n  -H "Content-Type: application/json" \\\n  -d '{"platform":"telegram", "raw_message": "Revisi INV/2026/001 ke PT Maju"}'`,
 					notes: "Dispatches update messages from Telegram Desktop group chats to the intake engine."
 				},
 				{
@@ -155,9 +168,9 @@
 					color: "text-blue-600 dark:text-blue-400",
 					bgColor: "bg-blue-500/10 border-blue-500/30",
 					dotColor: "#3b82f6",
-					yPos: 135,
-					path: "M 180 135 C 230 135, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/telegram/callback",
+					yPos: 116,
+					path: "M 180 116 C 210 116, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
 					snippet: `// Telegram Mobile Inline Approval Contract\n{\n  "callback_query": {\n    "data": "approve_TK_101",\n    "from": { "id": 109283719, "username": "johndoe" }\n  }\n}`,
 					notes: "Allows plant engineers to sign off directly from Android/iOS Telegram notifications."
 				},
@@ -170,10 +183,10 @@
 					color: "text-cyan-600 dark:text-cyan-400",
 					bgColor: "bg-cyan-500/10 border-cyan-500/30",
 					dotColor: "#06b6d4",
-					yPos: 215,
-					path: "M 180 215 C 230 215, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/telegram",
-					snippet: `curl -F "url=https://factory.internal:8088/api/webhooks/telegram" \\\n     "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook"`,
+					yPos: 180,
+					path: "M 180 180 C 210 180, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `curl -F "url=https://factory.internal:8088/api/inbound-messages" \\\n     "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook"`,
 					notes: "Receives instant webhook callbacks on every branch group transaction message."
 				},
 				{
@@ -185,8 +198,8 @@
 					color: "text-indigo-600 dark:text-indigo-400",
 					bgColor: "bg-indigo-500/10 border-indigo-500/30",
 					dotColor: "#6366f1",
-					yPos: 295,
-					path: "M 180 295 C 235 295, 255 175, 305 175",
+					yPos: 244,
+					path: "M 180 244 C 215 244, 215 158, 240 158",
 					endpoint: "Internal Go Worker (getUpdates)",
 					snippet: `// .env configuration for air-gapped industrial LAN\nTELEGRAM_MODE=polling\nTELEGRAM_POLL_TIMEOUT=25s`,
 					notes: "Pulls updates over outbound HTTPS without requiring incoming port forwarding."
@@ -201,52 +214,22 @@
 			hookTech: "Discord.js / Webhook",
 			adapters: [
 				{
-					id: "dc_desktop",
-					name: "Discord Desktop",
-					subtitle: "Electron Client Channel",
-					badge: "DESKTOP GUILD",
+					id: "discord_channel",
+					name: "Discord Channel",
+					subtitle: "On-Call Incident Channel",
+					badge: "GUILD INGRESS",
 					logoUrl: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png",
 					color: "text-indigo-600 dark:text-indigo-400",
 					bgColor: "bg-indigo-500/10 border-indigo-500/30",
 					dotColor: "#6366f1",
-					yPos: 55,
-					path: "M 180 55 C 235 55, 255 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/discord",
-					snippet: `# Discord Channel Dispatch Payload\ncurl -X POST http://127.0.0.1:8088/api/webhooks/discord \\\n  -H "Content-Type: application/json" \\\n  -d '{"content": "Revisi PO-9921", "channel_id": "11928374928"}'`,
-					notes: "Hooks ops tickets posted by factory staff in #plant-operations directly into parser."
+					yPos: 52,
+					path: "M 180 52 C 215 52, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `// Discord Webhook Payload\n{\n  "content": "Mohon update nota INV/2026/001 ke PT Mandiri Perkasa"\n}`,
+					notes: "Receives events from engineering channels with zero bot server hosting."
 				},
 				{
-					id: "dc_webhook",
-					name: "Channel Webhook",
-					subtitle: "Incoming Ingress Webhook",
-					badge: "CHANNEL HOOK",
-					logoUrl: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png",
-					color: "text-blue-600 dark:text-blue-400",
-					bgColor: "bg-blue-500/10 border-blue-500/30",
-					dotColor: "#3b82f6",
-					yPos: 135,
-					path: "M 180 135 C 230 135, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/discord",
-					snippet: `// Discord Inbound Ingress Webhook Contract\n{\n  "content": "Update INV/2026/001 customer_name ke PT Maju Jaya",\n  "author": { "username": "Operator-Surabaya" }\n}`,
-					notes: "Zero authentication friction: forwards whitelisted Discord channel alerts directly."
-				},
-				{
-					id: "dc_bot",
-					name: "Gateway Bot Daemon",
-					subtitle: "WebSocket Event Loop",
-					badge: "WSS GATEWAY",
-					logoUrl: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png",
-					color: "text-purple-600 dark:text-purple-400",
-					bgColor: "bg-purple-500/10 border-purple-500/30",
-					dotColor: "#a855f7",
-					yPos: 215,
-					path: "M 180 215 C 230 215, 260 175, 305 175",
-					endpoint: "wss://gateway.discord.gg/?v=10&encoding=json",
-					snippet: `DISCORD_BOT_TOKEN=MTE5MjgzNzQ5MjgxOTIwMTk0.Gb819a...\nDISCORD_GUILD_ID=981273645129384756\nDISCORD_ALLOWED_CHANNELS=ops-tickets`,
-					notes: "Maintains full duplex gateway connection with Message Content privileged intent."
-				},
-				{
-					id: "dc_slash",
+					id: "discord_slash",
 					name: "Slash Commands",
 					subtitle: "Interactive ChatOps (/novapilot)",
 					badge: "SLASH BOT",
@@ -254,11 +237,41 @@
 					color: "text-violet-600 dark:text-violet-400",
 					bgColor: "bg-violet-500/10 border-violet-500/30",
 					dotColor: "#8b5cf6",
-					yPos: 295,
-					path: "M 180 295 C 235 295, 255 175, 305 175",
+					yPos: 116,
+					path: "M 180 116 C 210 116, 215 158, 240 158",
 					endpoint: "POST /api/webhooks/discord/interactions",
 					snippet: `/novapilot update doc_no:INV/2026/001 field:customer_name value:"PT Jaya"`,
 					notes: "Provides autocomplete and immediate modal confirmations inside Discord."
+				},
+				{
+					id: "discord_bot",
+					name: "Gateway Bot",
+					subtitle: "Discord Gateway Socket",
+					badge: "STANDALONE BOT",
+					logoUrl: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png",
+					color: "text-purple-600 dark:text-purple-400",
+					bgColor: "bg-purple-500/10 border-purple-500/30",
+					dotColor: "#a855f7",
+					yPos: 180,
+					path: "M 180 180 C 210 180, 215 158, 240 158",
+					endpoint: "Direct WebSocket Gateway",
+					snippet: `// Discord Bot Gateway client listener\nclient.on('messageCreate', async (msg) => { ... });`,
+					notes: "Real-time message subscription across multiple enterprise discord servers."
+				},
+				{
+					id: "discord_embed",
+					name: "Embed Buttons",
+					subtitle: "Interactive Approval Cards",
+					badge: "INTERACTIVE UI",
+					logoUrl: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png",
+					color: "text-sky-600 dark:text-sky-400",
+					bgColor: "bg-sky-500/10 border-sky-500/30",
+					dotColor: "#0284c7",
+					yPos: 244,
+					path: "M 180 244 C 215 244, 215 158, 240 158",
+					endpoint: "POST /api/webhooks/discord/interactions",
+					snippet: `// Interactive Embed with Approve / Reject Buttons`,
+					notes: "Renders interactive ticket cards with live action buttons directly inside Discord."
 				}
 			]
 		},
@@ -278,10 +291,10 @@
 					color: "text-amber-600 dark:text-amber-400",
 					bgColor: "bg-amber-500/10 border-amber-500/30",
 					dotColor: "#d97706",
-					yPos: 55,
-					path: "M 180 55 C 235 55, 255 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack",
-					snippet: `# Slack Event Subscription URL:\nhttps://gateway.factory.internal:8088/api/webhooks/slack`,
+					yPos: 52,
+					path: "M 180 52 C 215 52, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
+					snippet: `# Slack Event Subscription URL:\nhttps://gateway.factory.internal:8088/api/inbound-messages`,
 					notes: "Captures messages in authorized operational channels without manual export."
 				},
 				{
@@ -293,9 +306,9 @@
 					color: "text-emerald-600 dark:text-emerald-400",
 					bgColor: "bg-emerald-500/10 border-emerald-500/30",
 					dotColor: "#10b981",
-					yPos: 135,
-					path: "M 180 135 C 230 135, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack",
+					yPos: 116,
+					path: "M 180 116 C 210 116, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
 					snippet: `// X-Slack-Signature: v0=a2114d57b48eac39b9ad189dd8313238e7a471d6...\n{\n  "event": {\n    "type": "message",\n    "text": "Mohon update nama customer INV/2026/001"\n  }\n}`,
 					notes: "Cryptographically verified using Slack Signing Secret HMAC-SHA256."
 				},
@@ -308,9 +321,9 @@
 					color: "text-purple-600 dark:text-purple-400",
 					bgColor: "bg-purple-500/10 border-purple-500/30",
 					dotColor: "#a855f7",
-					yPos: 215,
-					path: "M 180 215 C 230 215, 260 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack/commands",
+					yPos: 180,
+					path: "M 180 180 C 210 180, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
 					snippet: `/novapilot update INV/2026/001 customer_name "PT Sumber Makmur"`,
 					notes: "Instantly initiates deterministic parsing and stages ticket into Approval Queue."
 				},
@@ -323,9 +336,9 @@
 					color: "text-rose-600 dark:text-rose-400",
 					bgColor: "bg-rose-500/10 border-rose-500/30",
 					dotColor: "#f43f5e",
-					yPos: 295,
-					path: "M 180 295 C 235 295, 255 175, 305 175",
-					endpoint: "POST http://127.0.0.1:8088/api/webhooks/slack/actions",
+					yPos: 244,
+					path: "M 180 244 C 215 244, 215 158, 240 158",
+					endpoint: "POST http://127.0.0.1:8088/api/inbound-messages",
 					snippet: `// Block Kit Action Payload\n{\n  "type": "block_actions",\n  "actions": [{ "action_id": "approve_mutation", "value": "TK-101" }]\n}`,
 					notes: "Enables multi-branch supervisor sign-off directly inside Slack message thread."
 				}
@@ -336,20 +349,83 @@
 	let currentConfig = $derived(platformConfigs[cockpit.chatPlatform] || platformConfigs.whatsapp);
 	let currentPlatformStatus = $derived(cockpit.platformStatuses[cockpit.chatPlatform]);
 
-	// Active selected client adapter within the current platform
-	let activeClient = $state<string>("ferdium");
+	// Active selected client adapter within current platform
+	let activeClient = $state<string>("baileys");
 
-	// Auto-select first adapter when platform changes
 	$effect(() => {
 		const adapters = currentConfig.adapters;
 		if (!adapters.some(a => a.id === activeClient)) {
-			activeClient = adapters[0]?.id || "ferdium";
+			activeClient = adapters[0]?.id || "baileys";
 		}
 	});
 
 	let activeAdapterObj = $derived(
 		currentConfig.adapters.find(a => a.id === activeClient) || currentConfig.adapters[0]
 	);
+
+	// Detailed Technical Explanation for each Phase (1-6)
+	const stepNarratives = [
+		{
+			step: 1,
+			title: "1. Client Ingress (Chat & Media Transmission)",
+			badge: "MULTI-CLIENT INGRESS",
+			color: "text-purple-500",
+			bgColor: "bg-purple-500/10 border-purple-500/30",
+			description: "Pesan teks atau foto fisik nota dikirimkan dari aplikasi WhatsApp, Ferdium, Rambox, atau Browser. Client tidak pernah memiliki akses jaringan langsung ke database manapun.",
+			dataFlow: "Chat Client / Mobile → Ingress Hook (HTTP / Socket)",
+			dbStatus: "Zero DB Exposure: Klien berjalan di sandbox terisolasi"
+		},
+		{
+			step: 2,
+			title: "2. Ingress Hook & Vision OCR Pipeline (Tesseract)",
+			badge: "PARSING & OCR ENGINE",
+			color: "text-blue-500",
+			bgColor: "bg-blue-500/10 border-blue-500/30",
+			description: "Hook mengekstrak body pesan dan mengunduh buffer gambar ke storage. Engine OCR Tesseract.js membaca teks nota fisik (INV/2026/001), sementara NLP regex mencocokkan intent dan target nama baru.",
+			dataFlow: "Baileys Socket / DOM → Tesseract OCR Engine → Entity Mapping",
+			dbStatus: "Memeriksa memory DB 1 (tabel learned_patterns) untuk mencocokkan gaya chat kasual"
+		},
+		{
+			step: 3,
+			title: "3. NovaPilot AI Core Gatekeeper & DB 1 Staging",
+			badge: "DB 1: OPERATIONAL SYSTEM STORE",
+			color: "text-emerald-500",
+			bgColor: "bg-emerald-500/10 border-emerald-500/30",
+			description: "Backend Go Core (:8088) mementaskan pesan ke DB 1 (PostgreSQL local :5432). Tiket baru (status PENDING_APPROVAL) dan immutable audit log dibuat secara atomik dengan rollback guard.",
+			dataFlow: "Go Core Engine (:8088) → PostgreSQL 18 Local (novapilot_db)",
+			dbStatus: "DB 1 AKTIF: Menyimpan tabel inbound_messages, tickets, audit_logs, learned_patterns"
+		},
+		{
+			step: 4,
+			title: "4. Human-in-the-Loop On-Call Sign-Off (Web Cockpit)",
+			badge: "ZERO-TRUST VERIFICATION",
+			color: "text-amber-500",
+			bgColor: "bg-amber-500/10 border-amber-500/30",
+			description: "Engineer on-call membuka dashboard (/dashboard/queue), memeriksa bukti foto nota asli, memvalidasi perbandingan nilai lama vs baru, lalu menekan tombol '1-Click Approve'.",
+			dataFlow: "Web Dashboard (:3000) → POST /api/tickets/:id/approve",
+			dbStatus: "DB 1 DIPERBARUI: Status tiket diubah menjadi APPROVED; log pengesahan dicatat"
+		},
+		{
+			step: 5,
+			title: "5. Enterprise MCP Data Connector (DB 2 Mutation)",
+			badge: "DB 2: TARGET BUSINESS DATA SOURCE",
+			color: "text-cyan-500",
+			bgColor: "bg-cyan-500/10 border-cyan-500/30",
+			description: "Core memanggil Model Context Protocol (MCP) Tool Server untuk memutasi data bisnis pada DB 2 (Oracle 19c Enterprise / ERP / SAP). Hanya parameterized prepared statement yang dieksekusi (Zero Raw SQL).",
+			dataFlow: "Core Engine → MCP Tool Server → DB 2 Enterprise Data Source (Oracle/ERP)",
+			dbStatus: "DB 2 DIMUTASI: Tabel faktur bisnis resmi (invoices) diperbarui secara transaksional"
+		},
+		{
+			step: 6,
+			title: "6. Bi-directional Outbound Receipt Loopback",
+			badge: "REAL-TIME CONFIRMATION",
+			color: "text-rose-500",
+			bgColor: "bg-rose-500/10 border-rose-500/30",
+			description: "Event SSE ticket_updated disiarkan secara real-time ke WhatsApp Gateway. Bot otomatis mengirimkan bukti tanda terima resmi beserta nomor tiket kembali ke grup/chat pengirim asli.",
+			dataFlow: "SSE Stream (:8088/api/events) → WhatsApp Socket → Chat Group",
+			dbStatus: "DB 1 LENGKAP: Waktu eksekusi, ID petugas, dan status akhir tersimpan permanen"
+		}
+	];
 
 	function copyCode(text: string) {
 		navigator.clipboard.writeText(text);
@@ -361,23 +437,25 @@
 		if (pinging) return;
 		pinging = true;
 		try {
-			const res = await fetch("/api/tickets", {
+			const res = await fetch("/api/inbound-messages", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					raw_message: `Test ${cockpit.chatPlatform.toUpperCase()} Hook [${activeAdapterObj.name}]: Verified connection from Hook Ecosystem Cockpit.`,
+					platform: cockpit.chatPlatform,
+					sender_id: `test_${activeAdapterObj.id}`,
+					sender_name: `${activeAdapterObj.name} Test Runner`,
+					raw_message: `Ping Test Hook [${activeAdapterObj.name}]: Verifikasi aliran dari Hook Ecosystem Cockpit.`,
+					media_type: "text",
+					classification: "ACTIONABLE",
+					extracted_doc: "INV/2026/001",
 					extracted_intent: "UPDATE_CUSTOMER_NAME",
-					document_no: "INV/2026/001",
-					field_target: "customer_name",
-					proposed_value: `PT Test ${cockpit.chatPlatform.toUpperCase()} Active`,
-					branch_id: 1,
-					confidence_score: 0.99
+					extracted_target: `PT Test ${cockpit.chatPlatform.toUpperCase()} Ingress`
 				})
 			});
 			if (res.ok) {
 				cockpit.recordPlatformEvent(cockpit.chatPlatform);
 				testPingSuccess = true;
-				await cockpit.fetchTickets();
+				await cockpit.fetchInboundMessages();
 				setTimeout(() => (testPingSuccess = false), 3500);
 			}
 		} catch (err) {
@@ -393,33 +471,42 @@
 		simulationStep = 1;
 
 		setTimeout(() => {
-			simulationStep = 2; // Ingestion / DOM Hook
+			simulationStep = 2; // Ingestion & Vision OCR
 			setTimeout(() => {
-				simulationStep = 3; // NovaPilot Go Core & DB Pre-check
+				simulationStep = 3; // Core & DB 1 Staging (Postgres)
 				setTimeout(() => {
-					simulationStep = 4; // On-Call Sign-off
+					simulationStep = 4; // Human Sign-off (Web Cockpit)
 					setTimeout(() => {
-						simulationStep = 5; // Return Loopback to Client
+						simulationStep = 5; // Enterprise MCP Connector (DB 2)
 						setTimeout(() => {
-							isSimulating = false;
-							simulationStep = 0;
-						}, 1800);
-					}, 1200);
-				}, 1200);
-			}, 1000);
-		}, 800);
+							simulationStep = 6; // Outbound Receipt Loopback
+							setTimeout(() => {
+								isSimulating = false;
+							}, 2800);
+						}, 1400);
+					}, 1400);
+				}, 1300);
+			}, 1300);
+		}, 1000);
 	}
 </script>
 
-<div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xl space-y-6 relative overflow-hidden font-sans">
+<div class="rounded-3xl border border-border/80 bg-card p-4 sm:p-6 shadow-xl space-y-6 relative overflow-hidden font-sans">
 	
-	<!-- Top Aceternity Header: Platform Switcher & Honest Status Banner -->
+	<!-- ========================================================================= -->
+	<!-- 1. HEADER & PLATFORM SWITCHER                                             -->
+	<!-- ========================================================================= -->
 	<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-border/60">
-		<div class="space-y-1">
+		<div class="space-y-1.5">
 			<div class="flex items-center gap-2.5 flex-wrap">
-				<h3 class="text-base sm:text-lg font-bold text-foreground">{currentConfig.title}</h3>
+				<h3 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+					{currentConfig.title}
+					<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+						DUAL DB + MCP ARCHITECTURE
+					</span>
+				</h3>
 				
-				<!-- HONEST STATUS BADGE: Zero Fake Connected Indicators! -->
+				<!-- Live Connection Status -->
 				{#if currentPlatformStatus.status === "CONNECTED"}
 					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
 						<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -431,75 +518,59 @@
 						<span>AWAITING FIRST HOOK PING</span>
 					</span>
 				{:else}
-					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-						<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+					<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-muted text-muted-foreground border border-border">
+						<span class="h-2 w-2 rounded-full bg-muted-foreground"></span>
 						<span>NOT CONFIGURED</span>
 					</span>
 				{/if}
 			</div>
 
-			<p class="text-xs text-muted-foreground leading-relaxed">
-				{currentConfig.description}
+			<p class="text-xs text-muted-foreground leading-relaxed max-w-3xl">
+				Arsitektur isolasi 2 database: <strong>DB 1 (PostgreSQL)</strong> sebagai penampung operasional (tiket, log, dan memory AI), dan <strong>DB 2 (Oracle/ERP via MCP)</strong> sebagai sumber data bisnis eksternal yang dimutasi secara aman tanpa ekspos SQL mentah.
 			</p>
 		</div>
 
 		<!-- Action Controls -->
-		<div class="flex items-center gap-2 flex-wrap">
+		<div class="flex items-center gap-2.5 flex-wrap self-start lg:self-auto">
 			<button
 				type="button"
 				onclick={triggerTestPing}
 				disabled={pinging}
-				class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+				class="h-9 px-3.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
 			>
-				<PaperAirplane class="w-3.5 h-3.5 {pinging ? 'animate-bounce' : ''}" />
-				<span>{pinging ? "Sending Ping..." : `Test ${currentPlatformStatus.name} Ping`}</span>
+				{#if pinging}
+					<ArrowPath class="h-3.5 w-3.5 animate-spin text-primary" />
+					<span>Pinging Hook...</span>
+				{:else if testPingSuccess}
+					<Check class="h-3.5 w-3.5 text-emerald-500" />
+					<span class="text-emerald-500 font-bold">Hook Ingested!</span>
+				{:else}
+					<Bolt class="h-3.5 w-3.5 text-primary" />
+					<span>Ping Test Hook</span>
+				{/if}
 			</button>
 
 			<button
 				type="button"
 				onclick={triggerLiveSimulation}
 				disabled={isSimulating}
-				class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-input bg-background hover:bg-accent text-foreground transition-all flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+				class="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
 			>
-				<ArrowPath class="w-3.5 h-3.5 {isSimulating ? 'animate-spin' : ''}" />
-				<span>{isSimulating ? `Traversing Stage 0${simulationStep}/05...` : "Test Hook Animation"}</span>
+				<Sparkles class="h-3.5 w-3.5 {isSimulating ? 'animate-spin' : ''}" />
+				<span>{isSimulating ? `Simulasi Tahap ${simulationStep}/6...` : "▶ Jalankan Simulasi End-to-End"}</span>
 			</button>
 		</div>
 	</div>
 
-	<!-- Honest Connection Diagnostic Notice -->
-	<div class="p-4 rounded-2xl {currentPlatformStatus.status === 'CONNECTED' ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : currentPlatformStatus.status === 'AWAITING_HOOK' ? 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400' : 'bg-muted/40 border border-border text-muted-foreground'} text-xs space-y-1">
-		<div class="flex items-center gap-2 font-semibold">
-			{#if currentPlatformStatus.status === "CONNECTED"}
-				<CheckCircle class="h-4 w-4 shrink-0" />
-				<span>Live Socket & Ingress Active: Verified communication on port 8088.</span>
-			{:else if currentPlatformStatus.status === "AWAITING_HOOK"}
-				<Radio class="h-4 w-4 shrink-0 animate-pulse" />
-				<span>Ingress Gateway Ready: Local port 8088 is open, but no client extension or recipe has sent an event yet.</span>
-			{:else}
-				<ExclamationTriangle class="h-4 w-4 shrink-0" />
-				<span>Platform Not Configured: Add credentials or tokens in Platform Settings to activate.</span>
-			{/if}
-		</div>
-		<p class="text-[11px] opacity-90 pl-6">
-			{currentPlatformStatus.details}
-		</p>
-	</div>
-
-	{#if testPingSuccess}
-		<div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in duration-200">
-			<Check class="h-4 w-4" />
-			<span>Test packet received! Hook status updated to <strong>CONNECTED</strong> with audit log entry.</span>
-		</div>
-	{/if}
-
-	<!-- Interactive Client Selector Pills with Real Web Logos -->
-	<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+	<!-- ========================================================================= -->
+	<!-- 2. CLIENT ADAPTERS SELECTOR TABS                                          -->
+	<!-- ========================================================================= -->
+	<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 		{#each currentConfig.adapters as client}
 			<button
 				type="button"
 				onclick={() => activeClient = client.id}
-				class="p-3 rounded-2xl border text-left transition-all duration-200 flex items-center gap-3 cursor-pointer {activeClient === client.id ? `${client.bgColor} ring-2 ring-primary/40 shadow-sm` : 'bg-secondary/30 border-border/60 hover:bg-secondary/60'}"
+				class="p-3 rounded-2xl border text-left transition-all duration-200 flex items-center gap-3 cursor-pointer {activeClient === client.id ? `${client.bgColor} ring-2 ring-primary/40 shadow-xs` : 'bg-secondary/30 border-border/60 hover:bg-secondary/60'}"
 			>
 				<img
 					src={client.logoUrl}
@@ -521,13 +592,13 @@
 	</div>
 
 	<!-- ========================================================================= -->
-	<!-- ANIMATED SVG PROCESS PIPELINE (ENHANCED CONNECTIVITY & FLOWING WIRES)       -->
+	<!-- 3. ANIMATED SVG PROCESS PIPELINE (DUAL DB + MCP ARCHITECTURE)              -->
 	<!-- ========================================================================= -->
-	<div class="relative w-full rounded-2xl bg-secondary/20 dark:bg-black/40 border border-border/70 p-4 overflow-hidden">
+	<div class="relative w-full rounded-2xl bg-secondary/20 dark:bg-black/50 border border-border/70 p-3 sm:p-5 overflow-x-auto">
 		<!-- SVG Canvas -->
 		<svg
-			viewBox="0 0 980 380"
-			class="w-full h-auto select-none overflow-visible"
+			viewBox="0 0 1180 480"
+			class="w-full min-w-[900px] h-auto select-none overflow-visible"
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>
@@ -541,31 +612,14 @@
 						from { stroke-dashoffset: 0; }
 						to { stroke-dashoffset: 28; }
 					}
-					@keyframes rgbGlowPulse {
-						0% {
-							stroke: #ef4444;
-							filter: drop-shadow(0 0 7px #ef4444) drop-shadow(0 0 14px rgba(239, 68, 68, 0.5));
-						}
-						25% {
-							stroke: #f59e0b;
-							filter: drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 14px rgba(245, 158, 11, 0.5));
-						}
-						50% {
-							stroke: #10b981;
-							filter: drop-shadow(0 0 7px #10b981) drop-shadow(0 0 14px rgba(16, 185, 129, 0.5));
-						}
-						75% {
-							stroke: #3b82f6;
-							filter: drop-shadow(0 0 7px #3b82f6) drop-shadow(0 0 14px rgba(59, 130, 246, 0.5));
-						}
-						100% {
-							stroke: #a855f7;
-							filter: drop-shadow(0 0 7px #a855f7) drop-shadow(0 0 14px rgba(168, 85, 247, 0.5));
-						}
+					@keyframes activeGlowPulse {
+						0% { stroke: #10b981; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.7)); }
+						50% { stroke: #3b82f6; filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8)); }
+						100% { stroke: #10b981; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.7)); }
 					}
 					.flowing-path {
 						stroke-dasharray: 8 5;
-						animation: flowWire 1s linear infinite;
+						animation: flowWire 1.1s linear infinite;
 					}
 					.flowing-path-fast {
 						stroke-dasharray: 8 5;
@@ -575,28 +629,44 @@
 						stroke-dasharray: 6 4;
 						animation: flowWireReturn 0.9s linear infinite;
 					}
-					.rgb-border-glow {
-						animation: rgbGlowPulse 1.6s linear infinite;
-						stroke-width: 3px !important;
+					.active-box-glow {
+						animation: activeGlowPulse 1.4s ease-in-out infinite;
+						stroke-width: 2.5px !important;
 					}
 				</style>
 
-				<!-- Linear Gradients for 4 Client Adapters -->
+				<!-- Gradients -->
 				{#each currentConfig.adapters as adapter}
 					<linearGradient id="grad_{adapter.id}" x1="0%" y1="0%" x2="100%" y2="0%">
 						<stop offset="0%" stop-color={adapter.dotColor} />
-						<stop offset="100%" stop-color="#10b981" />
+						<stop offset="100%" stop-color="#3b82f6" />
 					</linearGradient>
 				{/each}
 
-				<linearGradient id="gradNovaPilot" x1="0%" y1="0%" x2="100%" y2="0%">
+				<linearGradient id="gradCoreToDB1" x1="0%" y1="0%" x2="0%" y2="100%">
 					<stop offset="0%" stop-color="#10b981" />
-					<stop offset="100%" stop-color="#3b82f6" />
+					<stop offset="100%" stop-color="#059669" />
 				</linearGradient>
 
-				<linearGradient id="gradLoopback" x1="100%" y1="0%" x2="0%" y2="0%">
+				<linearGradient id="gradCoreToCockpit" x1="0%" y1="0%" x2="100%" y2="0%">
 					<stop offset="0%" stop-color="#10b981" />
-					<stop offset="100%" stop-color="#a855f7" />
+					<stop offset="100%" stop-color="#f59e0b" />
+				</linearGradient>
+
+				<linearGradient id="gradCockpitToMCP" x1="0%" y1="0%" x2="100%" y2="0%">
+					<stop offset="0%" stop-color="#f59e0b" />
+					<stop offset="100%" stop-color="#06b6d4" />
+				</linearGradient>
+
+				<linearGradient id="gradMCPToDB2" x1="0%" y1="0%" x2="0%" y2="100%">
+					<stop offset="0%" stop-color="#06b6d4" />
+					<stop offset="100%" stop-color="#2563eb" />
+				</linearGradient>
+
+				<linearGradient id="gradLoopbackFull" x1="100%" y1="0%" x2="0%" y2="0%">
+					<stop offset="0%" stop-color="#06b6d4" />
+					<stop offset="50%" stop-color="#a855f7" />
+					<stop offset="100%" stop-color="#10b981" />
 				</linearGradient>
 
 				<!-- Particle Glow Filter -->
@@ -606,7 +676,9 @@
 				</filter>
 			</defs>
 
-			<!-- 1. LEFT LAYER: 4 Client Adapters (With Web Images) -->
+			<!-- ============================================================= -->
+			<!-- LAYER 1: CLIENT ADAPTERS (x=20 to 180)                        -->
+			<!-- ============================================================= -->
 			{#each currentConfig.adapters as client, idx}
 				<g
 					role="button"
@@ -616,17 +688,17 @@
 					onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activeClient = client.id; } }}
 				>
 					<rect
-						x="20" y={25 + (idx * 80)} width="160" height="60" rx="12"
+						x="20" y={25 + (idx * 64)} width="160" height="54" rx="12"
 						fill="currentColor"
-						class="text-card stroke-border/70 {simulationStep === 1 && activeClient === client.id ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+						class="text-card stroke-border/70 {simulationStep === 1 && activeClient === client.id ? 'active-box-glow' : 'stroke-[1.5px]'}"
 					/>
-					<image href={client.logoUrl} x="32" y={37 + (idx * 80)} width="34" height="34" preserveAspectRatio="xMidYMid slice" />
-					<text x="76" y={48 + (idx * 80)} font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">{client.name}</text>
-					<text x="76" y={65 + (idx * 80)} font-family="monospace" font-size="8.5" fill="currentColor" class="text-muted-foreground">{client.badge}</text>
+					<image href={client.logoUrl} x="30" y={35 + (idx * 64)} width="32" height="32" preserveAspectRatio="xMidYMid slice" />
+					<text x="72" y={47 + (idx * 64)} font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">{client.name}</text>
+					<text x="72" y={64 + (idx * 64)} font-family="monospace" font-size="8.5" fill="currentColor" class="text-muted-foreground">{client.badge}</text>
 				</g>
 			{/each}
 
-			<!-- 2. CONNECTING BEZIER CURVES: From 4 Clients to Hook Node -->
+			<!-- CONNECTING BEZIER CURVES: From 4 Clients to Ingress Hook Node -->
 			{#each currentConfig.adapters as client}
 				<path
 					d={client.path}
@@ -638,138 +710,393 @@
 				/>
 			{/each}
 
-			<!-- Animated Pulse Packet from Active Client to Hook (Stage 1) -->
+			<!-- Simulation Packet: Step 1 (Client -> Ingress Hook) -->
 			{#if isSimulating && simulationStep === 1}
-				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
-					<animateMotion
-						dur="0.8s"
-						repeatCount="1"
-						path={activeAdapterObj.path}
-					/>
+				<circle r="6" fill="#a855f7" filter="url(#particleGlow)">
+					<animateMotion dur="0.9s" repeatCount="1" path={activeAdapterObj.path} />
 				</circle>
 			{/if}
 
-			<!-- 3. CENTER-LEFT: Ingestion Hook Box -->
-			<g transform="translate(305, 115)">
+			<!-- ============================================================= -->
+			<!-- LAYER 2: INGRESS HOOK & VISION OCR PIPELINE (x=240 to 415)    -->
+			<!-- ============================================================= -->
+			<g transform="translate(240, 50)">
 				<rect
-					x="0" y="0" width="165" height="120" rx="14"
+					x="0" y="0" width="175" height="230" rx="14"
 					fill="currentColor"
-					class="text-card stroke-emerald-500/60 {simulationStep === 2 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+					class="text-card stroke-blue-500/70 {simulationStep === 2 ? 'active-box-glow' : 'stroke-[1.5px]'}"
 				/>
-				<!-- Title -->
-				<text x="16" y="26" font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">{currentConfig.hookName}</text>
-				<text x="16" y="42" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">{currentConfig.hookSub}</text>
-				
-				<!-- Inner Process Specs -->
-				<rect x="12" y="52" width="141" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="20" y="68" font-family="monospace" font-size="8.5" fill="currentColor" class="text-foreground">⚡ Ingress: {currentConfig.hookTech}</text>
-				<text x="20" y="82" font-family="monospace" font-size="8.5" fill="currentColor" class="text-foreground">🔍 Intent: UPDATE_NAME</text>
-				<text x="20" y="96" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">✓ Badge: Ingested</text>
+				<!-- Title Banner -->
+				<rect x="0" y="0" width="175" height="34" rx="14" fill="#3b82f6" fill-opacity="0.12" />
+				<text x="14" y="22" font-family="system-ui" font-size="11" font-weight="bold" fill="#3b82f6">📥 Ingress Hook &amp; OCR</text>
+
+				<!-- Hook Sub-Engine Modules -->
+				<g transform="translate(10, 42)">
+					<!-- Module A: Text & Socket Extractor -->
+					<rect x="0" y="0" width="155" height="48" rx="8" fill="currentColor" class="text-secondary/60 border" />
+					<text x="10" y="16" font-family="monospace" font-size="8.5" font-weight="bold" fill="currentColor" class="text-foreground">⚡ Socket / DOM Parser</text>
+					<text x="10" y="30" font-family="monospace" font-size="8" fill="currentColor" class="text-muted-foreground">Unwrap Ephemeral/ViewOnce</text>
+					<text x="10" y="42" font-family="monospace" font-size="8" fill="#10b981">✓ Status: Realtime Hook</text>
+				</g>
+
+				<g transform="translate(10, 96)">
+					<!-- Module B: Tesseract OCR Engine -->
+					<rect x="0" y="0" width="155" height="64" rx="8" fill="#3b82f6" fill-opacity="0.08" stroke="#3b82f6" stroke-opacity="0.3" stroke-width="1" />
+					<text x="10" y="16" font-family="system-ui" font-size="9" font-weight="bold" fill="#3b82f6">📷 Tesseract OCR Engine</text>
+					<text x="10" y="30" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">Doc: INV/2026/001</text>
+					<text x="10" y="44" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">Bilingual: ind + eng</text>
+					<text x="10" y="56" font-family="monospace" font-size="7.5" fill="#3b82f6" font-weight="bold">Extract physical nota/faktur</text>
+				</g>
+
+				<g transform="translate(10, 166)">
+					<!-- Module C: Self-Learning Pattern Engine -->
+					<rect x="0" y="0" width="155" height="52" rx="8" fill="#a855f7" fill-opacity="0.08" stroke="#a855f7" stroke-opacity="0.3" stroke-width="1" />
+					<text x="10" y="16" font-family="system-ui" font-size="9" font-weight="bold" fill="#a855f7">🧠 Pattern Learning Matcher</text>
+					<text x="10" y="30" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">Target: UPDATE_NAME</text>
+					<text x="10" y="44" font-family="monospace" font-size="7.5" fill="#a855f7">Learned Regex from Postgres</text>
+				</g>
 			</g>
 
-			<!-- Flowing Line from Hook to NovaPilot AI Core -->
+			<!-- Connecting Wire: Ingress Hook -> NovaPilot Core -->
 			<path
-				d="M 470 175 L 530 175"
+				d="M 415 158 C 435 158, 435 110, 460 110"
 				fill="none"
-				stroke="url(#gradNovaPilot)"
+				stroke="#3b82f6"
 				stroke-width="2.5"
 				class="flowing-path-fast"
 			/>
 
+			<!-- Simulation Packet: Step 2 (Hook -> Core) -->
 			{#if isSimulating && simulationStep === 2}
 				<circle r="6" fill="#3b82f6" filter="url(#particleGlow)">
-					<animateMotion dur="0.6s" repeatCount="1" path="M 470 175 L 530 175" />
+					<animateMotion dur="0.6s" repeatCount="1" path="M 415 158 C 435 158, 435 110, 460 110" />
 				</circle>
 			{/if}
 
-			<!-- 4. CENTER-RIGHT: NOVAPILOT AI CORE GATEKEEPER & DB (PROMINENT CENTERPIECE) -->
-			<g transform="translate(530, 85)">
-				<!-- Main NovaPilot Core Box -->
+			<!-- ============================================================= -->
+			<!-- LAYER 3: NOVAPILOT AI CORE + DB 1 OPERATIONAL STORE           -->
+			<!-- ============================================================= -->
+			<!-- Top Box: NovaPilot AI Core (:8088 Go) -->
+			<g transform="translate(460, 30)">
 				<rect
-					x="0" y="0" width="220" height="180" rx="16"
+					x="0" y="0" width="230" height="155" rx="16"
 					fill="currentColor"
-					class="text-card stroke-primary/80 {simulationStep === 3 ? 'rgb-border-glow' : 'stroke-[2px]'}"
+					class="text-card stroke-emerald-500/80 {simulationStep === 3 ? 'active-box-glow' : 'stroke-[2px]'}"
 				/>
-				<!-- Brand Header -->
-				<rect x="0" y="0" width="220" height="38" rx="16" fill="#10b981" fill-opacity="0.12" />
-				<text x="18" y="24" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
-				<text x="145" y="24" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">:8088 / Go</text>
+				<rect x="0" y="0" width="230" height="34" rx="16" fill="#10b981" fill-opacity="0.14" />
+				<text x="16" y="22" font-family="system-ui" font-size="11.5" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
+				<text x="165" y="22" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold">:8088 / Go</text>
 
-				<!-- Engine Features -->
-				<g transform="translate(14, 48)">
-					<rect x="0" y="0" width="192" height="60" rx="8" fill="currentColor" class="text-secondary/60" />
-					<text x="12" y="18" font-family="monospace" font-size="8.5" fill="currentColor" class="text-foreground">1. Pre-Check: SELECT inv_no</text>
-					<text x="12" y="32" font-family="monospace" font-size="8.5" fill="currentColor" class="text-foreground">2. Safety: Enforce OPEN status</text>
-					<text x="12" y="46" font-family="monospace" font-size="8.5" fill="#3b82f6" font-weight="bold">3. Prepared SQL + Rollback</text>
+				<!-- Core Capabilities -->
+				<g transform="translate(12, 42)">
+					<rect x="0" y="0" width="206" height="50" rx="8" fill="currentColor" class="text-secondary/60" />
+					<text x="10" y="16" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">1. Heuristic Validator &amp; Tokenizer</text>
+					<text x="10" y="30" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">2. Prepared SQL + Rollback Guard</text>
+					<text x="10" y="42" font-family="monospace" font-size="8" fill="#10b981" font-weight="bold">3. SSE Event Bus (/api/events)</text>
 				</g>
 
-				<!-- Database Adapter Sub-Box -->
-				<g transform="translate(14, 116)">
-					<rect x="0" y="0" width="192" height="50" rx="8" fill="currentColor" class="text-secondary/80 stroke-border/70" stroke-width="1" />
-					<text x="12" y="20" font-family="system-ui" font-size="9.5" font-weight="bold" fill="currentColor" class="text-foreground">🗄️ Database Adapter</text>
-					<text x="12" y="38" font-family="monospace" font-size="8" fill="#10b981" font-weight="bold">PostgreSQL 18 • Oracle 11g • LTS</text>
+				<!-- Intake Staging Status -->
+				<g transform="translate(12, 98)">
+					<rect x="0" y="0" width="206" height="46" rx="8" fill="#10b981" fill-opacity="0.08" stroke="#10b981" stroke-opacity="0.25" stroke-width="1" />
+					<text x="10" y="16" font-family="monospace" font-size="8.5" font-weight="bold" fill="#10b981">✓ Intake Packet Verified</text>
+					<text x="10" y="30" font-family="monospace" font-size="8" fill="currentColor" class="text-muted-foreground">Confidence: 96% • Zero SQL Injection</text>
 				</g>
 			</g>
 
-			<!-- Flowing Line from NovaPilot to On-Call Cockpit -->
+			<!-- Downward Wire: Core -> DB 1 System Store -->
 			<path
-				d="M 750 175 L 810 175"
+				d="M 575 185 L 575 220"
 				fill="none"
-				stroke="#10b981"
+				stroke="url(#gradCoreToDB1)"
 				stroke-width="2.5"
 				class="flowing-path-fast"
 			/>
 
+			<!-- Bottom Box: DB 1 (PostgreSQL 18 System Store Local) -->
+			<g transform="translate(460, 220)">
+				<rect
+					x="0" y="0" width="230" height="110" rx="14"
+					fill="currentColor"
+					class="text-card stroke-emerald-600/90 {simulationStep === 3 ? 'active-box-glow' : 'stroke-[2px]'}"
+				/>
+				<!-- Title Banner -->
+				<rect x="0" y="0" width="230" height="30" rx="14" fill="#10b981" fill-opacity="0.16" />
+				<text x="14" y="20" font-family="system-ui" font-size="10.5" font-weight="bold" fill="#059669">🗄️ DB 1: System Store (PostgreSQL 18)</text>
+
+				<!-- Tables List -->
+				<g transform="translate(12, 38)">
+					<text x="6" y="14" font-family="monospace" font-size="8" font-weight="bold" fill="currentColor" class="text-foreground">Tabel Operasional Internal (:5432):</text>
+					<text x="6" y="28" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• inbound_messages (Staging Feed)</text>
+					<text x="6" y="41" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• tickets (Pending Approval Queue)</text>
+					<text x="6" y="54" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• audit_logs (Immutable Historical Trail)</text>
+					<text x="6" y="66" font-family="monospace" font-size="7.5" fill="#10b981" font-weight="bold">• learned_patterns (AI Memory Loop)</text>
+				</g>
+			</g>
+
+			<!-- Connecting Wire: NovaPilot Core -> Human On-Call Cockpit -->
+			<path
+				d="M 690 110 L 735 110"
+				fill="none"
+				stroke="url(#gradCoreToCockpit)"
+				stroke-width="2.5"
+				class="flowing-path-fast"
+			/>
+
+			<!-- Simulation Packet: Step 3 -> 4 (Core -> Human Cockpit) -->
 			{#if isSimulating && simulationStep === 3}
 				<circle r="6" fill="#10b981" filter="url(#particleGlow)">
-					<animateMotion dur="0.5s" repeatCount="1" path="M 750 175 L 810 175" />
+					<animateMotion dur="0.5s" repeatCount="1" path="M 690 110 L 735 110" />
 				</circle>
 			{/if}
 
-			<!-- 5. RIGHT LAYER: On-Call Human Cockpit -->
-			<g transform="translate(810, 115)">
+			<!-- ============================================================= -->
+			<!-- LAYER 4: HUMAN-IN-THE-LOOP ON-CALL COCKPIT (x=735 to 900)     -->
+			<!-- ============================================================= -->
+			<g transform="translate(735, 50)">
 				<rect
-					x="0" y="0" width="150" height="120" rx="14"
+					x="0" y="0" width="165" height="230" rx="14"
 					fill="currentColor"
-					class="text-card stroke-emerald-500/70 {simulationStep === 4 ? 'rgb-border-glow' : 'stroke-[1.5px]'}"
+					class="text-card stroke-amber-500/70 {simulationStep === 4 ? 'active-box-glow' : 'stroke-[1.5px]'}"
 				/>
-				<text x="16" y="26" font-family="system-ui" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">On-Call Sign-Off</text>
-				<text x="16" y="42" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">Port :3000 Dashboard</text>
+				<!-- Title Banner -->
+				<rect x="0" y="0" width="165" height="34" rx="14" fill="#f59e0b" fill-opacity="0.12" />
+				<text x="12" y="22" font-family="system-ui" font-size="11" font-weight="bold" fill="#f59e0b">👤 On-Call Cockpit</text>
+				<text x="122" y="22" font-family="monospace" font-size="8.5" fill="#f59e0b">:3000</text>
 
-				<rect x="12" y="52" width="126" height="56" rx="8" fill="currentColor" class="text-secondary/60" />
-				<text x="20" y="70" font-family="monospace" font-size="8.5" fill="currentColor" class="text-foreground">👤 John Doe</text>
-				<text x="20" y="84" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">✓ 1-Click Approve</text>
-				<text x="20" y="98" font-family="monospace" font-size="8" fill="currentColor" class="text-muted-foreground">Zero Raw SQL Guard</text>
+				<!-- Sign-off Features -->
+				<g transform="translate(10, 44)">
+					<rect x="0" y="0" width="145" height="42" rx="8" fill="currentColor" class="text-secondary/60" />
+					<text x="8" y="16" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">Engineer: John Doe</text>
+					<text x="8" y="28" font-family="monospace" font-size="8" fill="currentColor" class="text-foreground">Session: Verified Admin</text>
+					<text x="8" y="38" font-family="monospace" font-size="7.5" fill="#f59e0b">Queue: /dashboard/queue</text>
+				</g>
+
+				<g transform="translate(10, 94)">
+					<rect x="0" y="0" width="145" height="72" rx="8" fill="#f59e0b" fill-opacity="0.08" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="1" />
+					<text x="8" y="16" font-family="monospace" font-size="8" font-weight="bold" fill="currentColor" class="text-foreground">Diff Inspector:</text>
+					<text x="8" y="28" font-family="monospace" font-size="7.5" fill="#ef4444">- PT WOKWPWKW</text>
+					<text x="8" y="40" font-family="monospace" font-size="7.5" fill="#10b981">+ PT HAHAHAHA</text>
+					<text x="8" y="54" font-family="monospace" font-size="8" font-weight="bold" fill="#f59e0b">✓ 1-Click Approve</text>
+					<text x="8" y="66" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">Audit Log Signed</text>
+				</g>
+
+				<g transform="translate(10, 174)">
+					<rect x="0" y="0" width="145" height="44" rx="8" fill="currentColor" class="text-secondary/80" />
+					<text x="8" y="16" font-family="monospace" font-size="8" font-weight="bold" fill="currentColor" class="text-foreground">Zero Direct Access</text>
+					<text x="8" y="28" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">Petugas tidak pernah</text>
+					<text x="8" y="38" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">mengetik query manual!</text>
+				</g>
 			</g>
 
-			<!-- 6. RETURN LOOPBACK WIRE (Automated Receipt dispatched back to chat client) -->
+			<!-- Connecting Wire: Cockpit -> Enterprise MCP Connector -->
 			<path
-				d="M 885 235 C 885 360, 450 360, 100 335"
+				d="M 900 110 L 945 110"
 				fill="none"
-				stroke="url(#gradLoopback)"
-				stroke-width={simulationStep === 5 ? "3" : "1.5"}
-				stroke-opacity={simulationStep === 5 ? "1" : "0.3"}
+				stroke="url(#gradCockpitToMCP)"
+				stroke-width="2.5"
+				class="flowing-path-fast"
+			/>
+
+			<!-- Simulation Packet: Step 4 -> 5 (Cockpit -> MCP) -->
+			{#if isSimulating && simulationStep === 4}
+				<circle r="6" fill="#f59e0b" filter="url(#particleGlow)">
+					<animateMotion dur="0.5s" repeatCount="1" path="M 900 110 L 945 110" />
+				</circle>
+			{/if}
+
+			<!-- ============================================================= -->
+			<!-- LAYER 5: ENTERPRISE MCP DATA CONNECTOR + DB 2 BUSINESS STORE  -->
+			<!-- ============================================================= -->
+			<!-- Top Box: Enterprise MCP Multiplatform Data Connector -->
+			<g transform="translate(945, 30)">
+				<rect
+					x="0" y="0" width="215" height="155" rx="16"
+					fill="currentColor"
+					class="text-card stroke-cyan-500/80 {simulationStep === 5 ? 'active-box-glow' : 'stroke-[2px]'}"
+				/>
+				<rect x="0" y="0" width="215" height="34" rx="16" fill="#06b6d4" fill-opacity="0.14" />
+				<text x="14" y="22" font-family="system-ui" font-size="11.5" font-weight="bold" fill="#06b6d4">🔌 Enterprise MCP Connector</text>
+
+				<!-- MCP Features -->
+				<g transform="translate(10, 42)">
+					<rect x="0" y="0" width="195" height="52" rx="8" fill="currentColor" class="text-secondary/60" />
+					<text x="8" y="16" font-family="monospace" font-size="8" font-weight="bold" fill="currentColor" class="text-foreground">Model Context Protocol</text>
+					<text x="8" y="28" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">Tool: mutate_invoice_record()</text>
+					<text x="8" y="40" font-family="monospace" font-size="7.5" fill="#06b6d4">Standard Multiplatform Schema</text>
+				</g>
+
+				<g transform="translate(10, 100)">
+					<rect x="0" y="0" width="195" height="44" rx="8" fill="#06b6d4" fill-opacity="0.08" stroke="#06b6d4" stroke-opacity="0.25" stroke-width="1" />
+					<text x="8" y="16" font-family="monospace" font-size="8" font-weight="bold" fill="#06b6d4">✓ Zero Raw SQL Execution</text>
+					<text x="8" y="28" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">Only parameterized mutations</text>
+					<text x="8" y="38" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">forwarded to enterprise DB</text>
+				</g>
+			</g>
+
+			<!-- Downward Wire: MCP -> DB 2 Business Store -->
+			<path
+				d="M 1052 185 L 1052 220"
+				fill="none"
+				stroke="url(#gradMCPToDB2)"
+				stroke-width="2.5"
+				class="flowing-path-fast"
+			/>
+
+			<!-- Simulation Packet: Step 5 (MCP -> DB 2) -->
+			{#if isSimulating && simulationStep === 5}
+				<circle r="6" fill="#06b6d4" filter="url(#particleGlow)">
+					<animateMotion dur="0.5s" repeatCount="1" path="M 1052 185 L 1052 220" />
+				</circle>
+			{/if}
+
+			<!-- Bottom Box: DB 2 (Target Enterprise Business Store via MCP) -->
+			<g transform="translate(945, 220)">
+				<rect
+					x="0" y="0" width="215" height="110" rx="14"
+					fill="currentColor"
+					class="text-card stroke-blue-600/90 {simulationStep === 5 ? 'active-box-glow' : 'stroke-[2px]'}"
+				/>
+				<!-- Title Banner -->
+				<rect x="0" y="0" width="215" height="30" rx="14" fill="#2563eb" fill-opacity="0.16" />
+				<text x="14" y="20" font-family="system-ui" font-size="10.5" font-weight="bold" fill="#2563eb">🏢 DB 2: Target Business DB</text>
+
+				<!-- Tables List -->
+				<g transform="translate(10, 38)">
+					<text x="6" y="14" font-family="monospace" font-size="8" font-weight="bold" fill="currentColor" class="text-foreground">Sistem Enterprise Eksternal:</text>
+					<text x="6" y="28" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• Oracle 19c Enterprise Database</text>
+					<text x="6" y="41" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• PostgreSQL Enterprise ERP / Billing</text>
+					<text x="6" y="54" font-family="monospace" font-size="7.5" fill="currentColor" class="text-muted-foreground">• SAP / Multiplatform CRM Master</text>
+					<text x="6" y="66" font-family="monospace" font-size="7.5" fill="#2563eb" font-weight="bold">• Tabel Bisnis: invoices, customers</text>
+				</g>
+			</g>
+
+			<!-- ============================================================= -->
+			<!-- LAYER 6: BI-DIRECTIONAL OUTBOUND LOOPBACK CONFIRMATION WIRE   -->
+			<!-- ============================================================= -->
+			<path
+				d="M 1052 330 C 1052 445, 550 445, 100 300"
+				fill="none"
+				stroke="url(#gradLoopbackFull)"
+				stroke-width={simulationStep === 6 ? "3.5" : "1.8"}
+				stroke-opacity={simulationStep === 6 ? "1" : "0.35"}
 				class="flowing-path-return"
 			/>
-			<text x="500" y="352" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold" text-anchor="middle">
-				↺ ChatOps Confirmation Receipt Delivered Back to {currentPlatformStatus.name} Client
-			</text>
 
-			{#if isSimulating && simulationStep === 5}
-				<circle r="6" fill="#a855f7" filter="url(#particleGlow)">
-					<animateMotion dur="1.2s" repeatCount="1" path="M 885 235 C 885 360, 450 360, 100 335" />
+			<!-- Loopback Annotation Label -->
+			<g transform="translate(580, 440)">
+				<rect x="-240" y="-14" width="480" height="26" rx="6" fill="currentColor" class="text-card stroke-border/70" stroke-width="1" />
+				<text x="0" y="3" font-family="monospace" font-size="9" fill="#10b981" font-weight="bold" text-anchor="middle">
+					↺ Bukti Tanda Terima Eksekusi Resmi Disiarkan Kembali ke WhatsApp / Chat Client
+				</text>
+			</g>
+
+			<!-- Simulation Packet: Step 6 (Loopback to Client) -->
+			{#if isSimulating && simulationStep === 6}
+				<circle r="7" fill="#10b981" filter="url(#particleGlow)">
+					<animateMotion dur="1.4s" repeatCount="1" path="M 1052 330 C 1052 445, 550 445, 100 300" />
 				</circle>
 			{/if}
 		</svg>
 	</div>
 
-	<!-- Active Integration Details Card & Setup Guide -->
+	<!-- ========================================================================= -->
+	<!-- 4. INTERACTIVE STEP-BY-STEP SIMULATION TIMELINE & EXPLANATION CARD       -->
+	<!-- ========================================================================= -->
+	<div class="space-y-3">
+		<!-- Step Selector Pills -->
+		<div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+			{#each stepNarratives as sn}
+				<button
+					type="button"
+					onclick={() => simulationStep = sn.step}
+					class="px-3 py-1.5 rounded-xl border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 {simulationStep === sn.step ? `${sn.bgColor} ${sn.color} font-bold ring-1 ring-current` : 'border-border/60 bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground'}"
+				>
+					<span class="h-1.5 w-1.5 rounded-full {simulationStep === sn.step ? 'bg-current animate-pulse' : 'bg-muted-foreground'}"></span>
+					<span>Tahap {sn.step}: {sn.badge}</span>
+				</button>
+			{/each}
+		</div>
+
+		<!-- Active Step Technical Details Card -->
+		{#if simulationStep > 0 && simulationStep <= 6}
+			{@const activeSn = stepNarratives[simulationStep - 1]}
+			<div class="p-4 rounded-2xl border transition-all {activeSn.bgColor} space-y-2.5 animate-in fade-in-50">
+				<div class="flex items-center justify-between flex-wrap gap-2">
+					<div class="flex items-center gap-2">
+						<span class="text-xs font-bold font-mono uppercase {activeSn.color} bg-background/80 px-2.5 py-0.5 rounded-lg border border-current/30">
+							{activeSn.badge}
+						</span>
+						<h4 class="text-sm font-bold text-foreground">{activeSn.title}</h4>
+					</div>
+					<span class="text-[11px] font-mono font-medium text-muted-foreground">
+						Alur Data: <span class="font-bold text-foreground">{activeSn.dataFlow}</span>
+					</span>
+				</div>
+
+				<p class="text-xs text-foreground/90 leading-relaxed font-sans">
+					{activeSn.description}
+				</p>
+
+				<div class="p-2.5 rounded-xl bg-background/60 border border-border/50 text-[11px] font-mono flex items-center justify-between flex-wrap gap-2">
+					<span class="text-muted-foreground">Peran Database:</span>
+					<span class="font-bold {activeSn.color}">{activeSn.dbStatus}</span>
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<!-- ========================================================================= -->
+	<!-- 5. DUAL DATABASE ARCHITECTURE BREAKDOWN (DB 1 vs DB 2)                   -->
+	<!-- ========================================================================= -->
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+		<!-- DB 1 Card -->
+		<div class="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
+			<div class="flex items-center gap-2">
+				<div class="h-7 w-7 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+					<CircleStack class="h-4 w-4" />
+				</div>
+				<div>
+					<h4 class="text-xs font-bold text-foreground">DB 1: Operational System Store</h4>
+					<p class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">PostgreSQL 18 Local (:5432)</p>
+				</div>
+			</div>
+			<p class="text-xs text-muted-foreground leading-relaxed">
+				Menyimpan seluruh state operasional NovaPilot: staging chat omnichannel (<code class="text-emerald-600 font-mono">inbound_messages</code>), antrean tiket pending (<code class="text-emerald-600 font-mono">tickets</code>), immutable audit trail (<code class="text-emerald-600 font-mono">audit_logs</code>), dan memory AI (<code class="text-emerald-600 font-mono">learned_patterns</code>).
+			</p>
+			<div class="text-[10px] font-mono text-muted-foreground bg-background/50 p-2 rounded-lg border border-emerald-500/10">
+				Hak Akses: Read/Write Eksklusif Core Backend Go (:8088).
+			</div>
+		</div>
+
+		<!-- DB 2 Card -->
+		<div class="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+			<div class="flex items-center gap-2">
+				<div class="h-7 w-7 rounded-lg bg-cyan-500/20 text-cyan-500 flex items-center justify-center">
+					<ServerStack class="h-4 w-4" />
+				</div>
+				<div>
+					<h4 class="text-xs font-bold text-foreground">DB 2: Target Business Data Sources</h4>
+					<p class="text-[10px] font-mono text-cyan-600 dark:text-cyan-400">Oracle 19c / ERP / Multiplatform via MCP</p>
+				</div>
+			</div>
+			<p class="text-xs text-muted-foreground leading-relaxed">
+				Sumber data bisnis korporat yang sebenarnya (tabel <code class="text-cyan-600 font-mono">invoices</code>, billing master, dsb). Hanya dimutasi setelah human verification sign-off melalui Model Context Protocol (MCP) tool server dengan parameterized prepared statement.
+			</p>
+			<div class="text-[10px] font-mono text-muted-foreground bg-background/50 p-2 rounded-lg border border-cyan-500/10">
+				Hak Akses: Terisolasi via MCP Server (Zero Raw SQL Injection).
+			</div>
+		</div>
+	</div>
+
+	<!-- ========================================================================= -->
+	<!-- 6. SETUP GUIDE & CODE SNIPPET                                             -->
+	<!-- ========================================================================= -->
 	<div class="p-4 sm:p-5 rounded-2xl bg-secondary/30 border border-border/70 space-y-3">
 		<div class="flex items-center justify-between flex-wrap gap-2">
 			<div class="flex items-center gap-2">
 				<CodeBracket class="w-4 h-4 text-primary" />
 				<h4 class="text-xs font-bold text-foreground">
-					Setup Hook for: <span class="text-primary">{activeAdapterObj.name}</span>
+					Konfigurasi Ingress Hook: <span class="text-primary">{activeAdapterObj.name}</span>
 				</h4>
 			</div>
 			<span class="text-[10px] font-mono text-muted-foreground">
@@ -799,7 +1126,7 @@
 						<span>Copy Snippet</span>
 					{/if}
 				</button>
-				<a href="/flow" class="text-primary hover:underline font-medium text-xs">View Full Architecture &rarr;</a>
+				<a href="/flow" class="text-primary hover:underline font-medium text-xs">Lihat Diagram Full-Screen &rarr;</a>
 			</div>
 		</div>
 	</div>

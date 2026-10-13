@@ -1,15 +1,19 @@
+import "dotenv/config";
 import { 
     makeWASocket, 
     DisconnectReason, 
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
+    downloadMediaMessage,
     proto
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
+import QRCode from "qrcode";
 import pino from "pino";
 import EventSource from "eventsource";
 import fs from "fs";
 import path from "path";
+import Tesseract from "tesseract.js";
 
 // 1. Load Configurations
 const BACKEND_URL = process.env.NOVAPILOT_BACKEND_URL || "http://127.0.0.1:8088";
@@ -17,6 +21,16 @@ const WHITELISTED_GROUPS = (process.env.WHITELISTED_GROUPS || "").split(",").map
 const AUTO_REPLY = process.env.AUTO_REPLY_ENABLED !== "false";
 const IS_SIMULATION = process.argv.includes("--mock") || process.env.SIMULATION_MODE === "true";
 const AUTH_DIR = path.join(process.cwd(), ".baileys_auth");
+const UPLOAD_DIR = path.resolve(process.cwd(), "..", "uploads");
+const WA_ATTACHMENTS_DIR = path.join(UPLOAD_DIR, "wa_attachments");
+const QR_FILE = path.join(UPLOAD_DIR, "whatsapp_qr.json");
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+if (!fs.existsSync(WA_ATTACHMENTS_DIR)) {
+    fs.mkdirSync(WA_ATTACHMENTS_DIR, { recursive: true });
+}
 
 const logger = pino({ level: "info" });
 
@@ -111,6 +125,48 @@ async function submitTicketToBackend(rawMessage: string, extracted: ExtractionRe
     }
 }
 
+interface InboundPayload {
+    platform: string;
+    sender_id: string;
+    sender_name: string;
+    raw_message: string;
+    media_type: string;
+    media_url?: string;
+    ocr_text?: string;
+    classification: string;
+    extracted_doc?: string;
+    extracted_intent?: string;
+    extracted_target?: string;
+}
+
+async function fetchLearnedPatterns(): Promise<any[]> {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/learned-patterns`);
+        if (res.ok) {
+            return await res.json();
+        }
+    } catch {}
+    return [];
+}
+
+async function submitInboundMessage(payload: InboundPayload) {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/inbound-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            console.log(`[INBOUND STORED] Message #${data.id} recorded in Omnichannel Feed (${payload.classification})`);
+            return data;
+        }
+    } catch (err: any) {
+        console.error(`[INBOUND STORE ERROR]`, err.message);
+    }
+    return null;
+}
+
 // 4. Listen to Backend SSE Events to Dispatch WhatsApp Replies
 function startSSEListener(sendMessageFn: (jid: string, text: string) => Promise<void>) {
     const sseUrl = `${BACKEND_URL}/api/events`;
@@ -203,19 +259,53 @@ async function startLiveGateway() {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
-            console.log("\n[ACTION REQUIRED] Scan this QR Code using WhatsApp (Linked Devices):");
-            qrcode.generate(qr, { small: true });
-            console.log("Waiting for scan...\n");
+            QRCode.toDataURL(qr, { width: 320, margin: 2 }).then((dataUrl) => {
+                try {
+                    fs.writeFileSync(QR_FILE, JSON.stringify({
+                        status: "WAITING_SCAN",
+                        qr,
+                        qrDataUrl: dataUrl,
+                        updatedAt: new Date().toISOString()
+                    }, null, 2));
+                    console.log("[WHATSAPP QR] Fresh QR code generated and synced to Web Dashboard (/uploads/whatsapp_qr.json)");
+                } catch (err: any) {
+                    console.error("[WHATSAPP QR SAVE ERROR]", err.message);
+                }
+            }).catch((err) => {
+                console.error("[QR GENERATION ERROR]", err);
+            });
         }
 
         if (connection === "close") {
-            const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log(`[WHATSAPP] Connection closed. Reconnecting: ${shouldReconnect}`);
+            const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            console.log(`[WHATSAPP] Connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
+            
+            try {
+                fs.writeFileSync(QR_FILE, JSON.stringify({
+                    status: "DISCONNECTED",
+                    statusCode,
+                    updatedAt: new Date().toISOString()
+                }, null, 2));
+            } catch {}
+
             if (shouldReconnect) {
+                startLiveGateway();
+            } else {
+                console.log("[WHATSAPP] Session logged out or expired. Resetting auth directory for a fresh QR scan...");
+                try {
+                    fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+                } catch {}
                 startLiveGateway();
             }
         } else if (connection === "open") {
             console.log("✅ [WHATSAPP READY] Multi-Device session connected successfully!");
+            try {
+                fs.writeFileSync(QR_FILE, JSON.stringify({
+                    status: "CONNECTED",
+                    updatedAt: new Date().toISOString()
+                }, null, 2));
+            } catch {}
             console.log("Listening for incoming branch chat requests...\n");
         }
     });
@@ -233,21 +323,155 @@ async function startLiveGateway() {
                 continue; // Discard: Zero token waste, zero noise
             }
 
+            // Unwrap nested message contents (Ephemeral, ViewOnce, DocumentWithCaption)
+            const msgContent = 
+                msg.message?.ephemeralMessage?.message ||
+                msg.message?.viewOnceMessage?.message ||
+                msg.message?.viewOnceMessageV2?.message ||
+                msg.message?.documentWithCaptionMessage?.message ||
+                msg.message;
+
+            // Check media types
+            const isImage = !!msgContent?.imageMessage;
+            const isDocument = !!msgContent?.documentMessage;
+            let mediaType = "text";
+            if (isImage) mediaType = "image";
+            if (isDocument) mediaType = "document";
+
+            let mediaUrl = "";
+            let ocrText = "";
+
+            if (isImage || isDocument) {
+                try {
+                    console.log(`[ATTACHMENT DETECTED] Downloading ${mediaType} from ${msg.pushName || fromJid}...`);
+                    const downloadTarget = {
+                        key: msg.key,
+                        message: msgContent
+                    };
+                    const buffer = await downloadMediaMessage(
+                        downloadTarget as any,
+                        "buffer",
+                        {},
+                        {
+                            logger: pino({ level: "silent" }),
+                            reuploadRequest: sock.updateMediaMessage
+                        }
+                    );
+
+                    if (buffer && Buffer.isBuffer(buffer)) {
+                        const ext = isImage ? "jpg" : (msgContent?.documentMessage?.fileName?.split(".").pop() || "bin");
+                        const filename = `wa_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+                        const filePath = path.join(WA_ATTACHMENTS_DIR, filename);
+                        fs.writeFileSync(filePath, buffer);
+                        mediaUrl = `/uploads/wa_attachments/${filename}`;
+                        console.log(`[ATTACHMENT SAVED] Stored at ${mediaUrl}`);
+
+                        // Run OCR if it is an image
+                        if (isImage) {
+                            console.log(`[OCR PIPELINE] Running Tesseract on image attachment...`);
+                            const ocrResult = await Tesseract.recognize(buffer, "eng+ind");
+                            ocrText = (ocrResult.data?.text || "").trim();
+                            console.log(`[OCR SUCCESS] Extracted ${ocrText.length} characters from attachment.`);
+                        }
+                    }
+                } catch (mediaErr: any) {
+                    console.error(`[MEDIA DOWNLOAD/OCR ERROR]:`, mediaErr.message);
+                }
+            }
+
             // Extract text body
-            const body = 
-                msg.message.conversation ||
-                msg.message.extendedTextMessage?.text ||
-                msg.message.imageMessage?.caption ||
+            let body = 
+                msgContent?.conversation ||
+                msgContent?.extendedTextMessage?.text ||
+                msgContent?.imageMessage?.caption ||
+                msgContent?.documentMessage?.caption ||
                 "";
 
-            if (!body) continue;
+            if (!body && (isImage || isDocument)) {
+                body = isImage ? "[Lampiran Gambar Faktur/Nota]" : "[Lampiran Dokumen PDF]";
+            }
 
-            console.log(`[INCOMING CHAT from ${fromJid}]: ${body}`);
+            if (!body && !ocrText) continue;
 
-            // Semantic & Regex Intent Extraction
-            const extracted = extractTicketData(body);
+            const senderName = msg.pushName || fromJid.split("@")[0] || "Branch Staff";
+            console.log(`[INCOMING CHAT from ${fromJid} (${senderName})]: ${body}`);
+            if (ocrText) {
+                console.log(`[OCR EXTRACTED TEXT]: ${ocrText.replace(/\s+/g, ' ').substring(0, 100)}...`);
+            }
+
+            // Combine chat body + OCR text for unified semantic extraction
+            const combinedText = `${body} ${ocrText}`.trim();
+            const extracted = extractTicketData(combinedText);
+
+            // Classification & heuristic detection for messages without full invoice pattern
+            let classification = "CASUAL_BANTER";
+            let fallbackIntent = "";
+            let fallbackTarget = "";
+
+            if (extracted) {
+                classification = "ACTIONABLE";
+            } else {
+                // Check against learned patterns from backend (Self-Learning Loop)
+                const learnedPatterns = await fetchLearnedPatterns();
+                let patternMatched = false;
+                for (const pat of learnedPatterns) {
+                    if (!pat.is_active || !pat.regex_pattern) continue;
+                    try {
+                        const regex = new RegExp(pat.regex_pattern, "i");
+                        if (regex.test(combinedText)) {
+                            classification = pat.classification || "NEEDS_REVIEW";
+                            fallbackIntent = pat.target_intent || "UPDATE_CUSTOMER_NAME";
+                            patternMatched = true;
+                            console.log(`[SELF-LEARNING MATCH] Matched learned pattern "${pat.pattern_name}"!`);
+                            break;
+                        }
+                    } catch {}
+                }
+
+                if (!patternMatched) {
+                    const lower = combinedText.toLowerCase();
+                    const hasMutationKeyword = lower.includes("ubah") || lower.includes("ganti") || lower.includes("revisi") || lower.includes("koreksi") || lower.includes("bisa diubah");
+                    const hasCompanyKeyword = /\b(pt|cv|ud)\b/i.test(combinedText);
+                    const hasImageRef = isImage || lower.includes("gambar") || lower.includes("foto") || lower.includes("lampiran");
+
+                    if (hasMutationKeyword || (hasCompanyKeyword && hasImageRef)) {
+                        classification = "NEEDS_REVIEW";
+                        fallbackIntent = "UPDATE_CUSTOMER_NAME";
+                    }
+                }
+
+                const targetMatch = combinedText.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\s+['"]?([^,\.\n\r"']+)['"]?/i);
+                if (targetMatch && targetMatch[1]) {
+                    fallbackTarget = targetMatch[1].trim();
+                } else {
+                    const corpMatch = combinedText.match(/\b(PT|CV|UD)\s+([A-Za-z0-9\s]{3,35})\b/i);
+                    if (corpMatch) {
+                        fallbackTarget = `${corpMatch[1].toUpperCase()} ${corpMatch[2].trim()}`;
+                    }
+                }
+            }
+
+            // Ingest to Omnichannel Feed (Real-Time Ingestion for Dashboard Viewers)
+            await submitInboundMessage({
+                platform: "whatsapp",
+                sender_id: fromJid,
+                sender_name: senderName,
+                raw_message: body,
+                media_type: mediaType,
+                media_url: mediaUrl,
+                ocr_text: ocrText,
+                classification: classification,
+                extracted_doc: extracted?.documentNo || "",
+                extracted_intent: extracted?.intent || fallbackIntent,
+                extracted_target: extracted?.proposedValue || fallbackTarget
+            });
+
             if (!extracted) {
-                // Not an actionable invoice or database update request
+                if (classification === "NEEDS_REVIEW") {
+                    console.log(`[NEEDS REVIEW]: "${body}" contains mutation intent (${fallbackTarget || 'unknown'}) without full invoice number. Synced to Dashboard Feed for 1-click Staging.`);
+                } else {
+                    console.log(`[CASUAL BANTER]: "${body}" marked as general conversation.`);
+                }
                 continue;
             }
 
