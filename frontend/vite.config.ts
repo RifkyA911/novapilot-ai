@@ -17,5 +17,8 @@ export default defineConfig({
 			'/uploads': 'http://127.0.0.1:8088'
 			// NOTE: /api/auth is NOT proxied — handled directly by SvelteKit & Better Auth
 		}
+	},
+	ssr: {
+		noExternal: ['@tanstack/svelte-table', '@tanstack/table-core']
 	}
 });
