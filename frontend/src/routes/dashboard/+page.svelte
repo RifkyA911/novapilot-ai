@@ -5,7 +5,7 @@
 		ServerStack, DocumentText, ArrowRight, ArrowPath, PaperAirplane, Check, 
 		XMark, ArrowUpTray, User, ArrowTopRightOnSquare, ChartBarSquare, 
 		MagnifyingGlass, Sparkles, CommandLine, CpuChip, Radio, LockClosed, 
-		CodeBracket, Eye, InformationCircle
+		CodeBracket, Eye, InformationCircle, ChevronDown, ChevronUp
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
@@ -57,6 +57,7 @@
 	let sseConnected = $state(false);
 	let eventSource = $state<EventSource | null>(null);
 	let searchQuery = $state("");
+	let isPipelineFolded = $state(true);
 
 	// Active tab: 'pending' | 'simulator' | 'hooks' | 'connectivity' | 'history'
 	let activeTab = $state<"pending" | "simulator" | "hooks" | "connectivity" | "history">("pending");
@@ -251,67 +252,66 @@
 </script>
 
 <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
-	<!-- Guardrail Assurance Engine & Telemetry Command Bar (Consolidated & Clean) -->
-	<div class="p-5 rounded-2xl bg-card border border-emerald-500/30 shadow-sm space-y-4 transition-all">
+	<!-- Guardrail Assurance & Real-Time Intake Engine (Unified Foldable Card) -->
+	<div class="p-5 sm:p-6 rounded-2xl bg-card border border-emerald-500/30 shadow-sm space-y-4 transition-all">
+		<!-- Top Bar: Clean, simplified header with controls -->
 		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-			<!-- Left: Guardrail Title & Security Posture -->
+			<!-- Left: Title & Status -->
 			<div class="flex items-center gap-3">
 				<div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-sm flex-shrink-0">
 					<ShieldCheck class="h-5 w-5" />
 				</div>
 				<div>
-					<div class="font-bold text-sm text-foreground flex items-center gap-2">
-						<span>Guardrail Assurance Engine</span>
-						<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
-							Enforcing Zero Raw SQL
+					<div class="font-bold text-base text-foreground flex items-center gap-2.5">
+						<span>Guardrail Assurance & Intake Engine</span>
+						<span class="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
+							Active Guard
 						</span>
 					</div>
-					<p class="text-xs text-muted-foreground mt-0.5">Automated validation of incoming WhatsApp mutations against unparameterized queries and schema constraints.</p>
+					<p class="text-xs sm:text-sm text-muted-foreground mt-0.5">Automated validation of incoming mutations against schema constraints and zero raw SQL policy.</p>
 				</div>
 			</div>
 
-			<!-- Right: Unified Telemetry Toolbar (LAN IP, DB Engine, SSE Stream & Controls) -->
+			<!-- Right: Simplified Telemetry Bar -->
 			<div class="flex items-center gap-2 flex-wrap">
 				<!-- Search Bar -->
-				<div class="relative w-40 sm:w-52">
-					<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+				<div class="relative w-44 sm:w-56">
+					<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 					<input
 						type="text"
 						bind:value={searchQuery}
 						placeholder="Search tickets, doc #…"
-						class="h-8.5 w-full rounded-xl border border-border/80 bg-background pl-8 pr-8 text-xs outline-none transition-colors focus:border-foreground/40 font-mono shadow-xs"
+						class="h-9 w-full rounded-xl border border-border/80 bg-background pl-9 pr-8 text-xs sm:text-sm outline-none transition-colors focus:border-foreground/40 font-mono shadow-xs"
 					/>
-					<kbd class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border bg-secondary px-1.5 py-0.2 text-[9px] font-mono text-muted-foreground">/</kbd>
+					<kbd class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">/</kbd>
 				</div>
 
-				<!-- LAN IP Badge -->
-				<div class="px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs font-mono text-muted-foreground shadow-xs">
+				<!-- LAN IP -->
+				<div class="px-3 py-1.5 rounded-xl bg-secondary border border-border/70 text-xs sm:text-sm font-mono text-muted-foreground shadow-xs">
 					<span class="text-foreground font-semibold">LAN:</span> 192.168.1.104
 				</div>
 
-				<!-- DB Engine Badge -->
-				<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs shadow-xs">
-					<ServerStack class="h-3.5 w-3.5 text-primary" />
-					<span class="text-muted-foreground text-[11px]">DB:</span>
-					<span class="font-semibold text-foreground text-[11px] font-mono">PostgreSQL 18</span>
+				<!-- DB Badge -->
+				<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary border border-border/70 text-xs sm:text-sm shadow-xs font-mono">
+					<ServerStack class="h-4 w-4 text-primary" />
+					<span class="font-semibold text-foreground">PostgreSQL 18</span>
 				</div>
 
-				<!-- SSE Stream Pulse Badge -->
-				<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-secondary border border-border/70 text-xs shadow-xs">
-					<span class="relative flex h-2 w-2">
+				<!-- SSE Pulse -->
+				<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary border border-border/70 text-xs sm:text-sm shadow-xs font-mono">
+					<span class="relative flex h-2.5 w-2.5">
 						<span class="animate-ping absolute inline-flex h-full w-full rounded-full {sseConnected ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75'}"></span>
-						<span class="relative inline-flex rounded-full h-2 w-2 {sseConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+						<span class="relative inline-flex rounded-full h-2.5 w-2.5 {sseConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
 					</span>
-					<span class="text-muted-foreground text-[11px]">SSE:</span>
-					<span class="font-semibold text-[11px] font-mono {sseConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
-						{sseConnected ? "Live Stream" : "Reconnecting"}
+					<span class="font-semibold {sseConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
+						{sseConnected ? "Live" : "Offline"}
 					</span>
 				</div>
 
-				<!-- Refresh Queue Button -->
+				<!-- Refresh -->
 				<button
 					onclick={fetchTickets}
-					class="p-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border/70 shadow-xs"
+					class="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border/70 shadow-xs"
 					title="Refresh On-Call Queue"
 				>
 					<ArrowPath class="h-4 w-4 {loading ? 'animate-spin' : ''}" />
@@ -322,154 +322,206 @@
 			</div>
 		</div>
 
-		<!-- Bottom Sub-Telemetry Badges -->
-		<div class="pt-3 border-t border-border/40 flex items-center justify-between gap-3 flex-wrap text-xs">
-			<div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
-				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-					<span>Session: Verified</span>
-				</span>
-				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-					<span>SQL: Parameterized Only</span>
-				</span>
-				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-					<span>State: Anti-Tamper Lock</span>
-				</span>
-				<span class="px-2.5 py-0.5 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-					<span>Audit: SHA-256 Trail</span>
+		<!-- Middle Divider & Foldable Pipeline Header -->
+		<div class="pt-3 border-t border-border/40 flex items-center justify-between gap-3 flex-wrap">
+			<div class="flex items-center gap-2 text-xs sm:text-sm font-mono text-muted-foreground">
+				<CpuChip class="h-4 w-4 text-primary" />
+				<span class="font-bold text-foreground">Real-Time Ingestion Pipeline:</span>
+				<span class="text-xs px-2 py-0.5 rounded bg-secondary border border-border/60">
+					{simStep === 0 ? "Standby" : `Step 0${simStep} Processing`}
 				</span>
 			</div>
 
-			<span class="text-[11px] font-mono text-muted-foreground">
-				Active Plant Duty • Port :8088
-			</span>
-		</div>
-	</div>
-
-	<!-- Real-Time Visual Pipeline (Explainable Dataflow) -->
-	<div class="p-6 rounded-2xl bg-card border border-border/80 shadow-sm space-y-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2.5">
-				<div class="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
-					<CpuChip class="h-4 w-4" />
-				</div>
-				<div>
-					<h3 class="text-xs font-bold uppercase tracking-wider font-mono text-foreground">Real-Time Data Extraction Pipeline</h3>
-					<p class="text-[11px] text-muted-foreground">Deterministic progression from raw WhatsApp message to prepared statement commit.</p>
-				</div>
-			</div>
-			<span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-secondary text-muted-foreground border border-border/60">
-				Zero Black Box (100% Explainable)
-			</span>
+			<!-- Fold / Unfold Toggle Button -->
+			<button
+				onclick={() => isPipelineFolded = !isPipelineFolded}
+				class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-all border border-border/70 cursor-pointer shadow-xs"
+				title={isPipelineFolded ? "Expand full pipeline cards" : "Collapse to step view"}
+			>
+				<span>{isPipelineFolded ? "Expand Pipeline Details" : "Fold to Steps View"}</span>
+				{#if isPipelineFolded}
+					<ChevronDown class="h-3.5 w-3.5 text-muted-foreground" />
+				{:else}
+					<ChevronUp class="h-3.5 w-3.5 text-muted-foreground" />
+				{/if}
+			</button>
 		</div>
 
-		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1">
-			<!-- Stage 1 -->
-			<div class="p-4 rounded-xl border transition-all {simStep >= 1 ? 'bg-primary/5 border-primary/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
-				<div class="flex items-center justify-between text-[11px] font-mono">
-					<span class="font-bold text-muted-foreground">01. INGEST</span>
-					{#if simStep === 1}<span class="animate-pulse text-emerald-600 dark:text-emerald-400 font-bold">Active</span>{/if}
+		<!-- When FOLDED: Show only the sleek horizontal steps line directly! -->
+		{#if isPipelineFolded}
+			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 pt-1 font-mono text-xs sm:text-sm">
+				<div class="px-3 py-2 rounded-xl border flex items-center justify-between transition-colors {simStep >= 1 ? 'bg-primary/10 border-primary/40 font-bold text-foreground' : 'bg-secondary/40 border-border/60 text-muted-foreground'}">
+					<div class="flex items-center gap-2">
+						<Radio class="h-3.5 w-3.5 {simStep === 1 ? 'text-emerald-500 animate-pulse' : 'text-primary'}" />
+						<span>01. Ingest (WA)</span>
+					</div>
+					{#if simStep === 1}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
 				</div>
-				<div class="text-xs font-bold text-foreground mt-1.5 flex items-center gap-1.5">
-					<Radio class="h-3.5 w-3.5 text-primary" />
-					<span>WhatsApp Chat</span>
-				</div>
-				<p class="text-[10px] text-muted-foreground mt-1 leading-relaxed">Whitelisted regional branch channel</p>
-			</div>
 
-			<!-- Stage 2 -->
-			<div class="p-4 rounded-xl border transition-all {simStep >= 2 ? 'bg-purple-500/5 border-purple-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
-				<div class="flex items-center justify-between text-[11px] font-mono">
-					<span class="font-bold text-muted-foreground">02. EXTRACT</span>
-					{#if simStep === 2}<span class="animate-pulse text-purple-600 dark:text-purple-400 font-bold">Parsing...</span>{/if}
+				<div class="px-3 py-2 rounded-xl border flex items-center justify-between transition-colors {simStep >= 2 ? 'bg-purple-500/10 border-purple-500/40 font-bold text-foreground' : 'bg-secondary/40 border-border/60 text-muted-foreground'}">
+					<div class="flex items-center gap-2">
+						<CpuChip class="h-3.5 w-3.5 text-purple-500" />
+						<span>02. Extract (LLM)</span>
+					</div>
+					{#if simStep === 2}<span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>{/if}
 				</div>
-				<div class="text-xs font-bold text-foreground mt-1.5 flex items-center gap-1.5">
-					<CpuChip class="h-3.5 w-3.5 text-purple-500" />
-					<span>LLM Entity Parser</span>
-				</div>
-				<p class="text-[10px] text-muted-foreground mt-1 leading-relaxed">Structured JSON + Few-shot prompt</p>
-			</div>
 
-			<!-- Stage 3 -->
-			<div class="p-4 rounded-xl border transition-all {simStep >= 3 ? 'bg-amber-500/5 border-amber-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
-				<div class="flex items-center justify-between text-[11px] font-mono">
-					<span class="font-bold text-muted-foreground">03. PRE-CHECK</span>
-					{#if simStep === 3}<span class="animate-pulse text-amber-600 dark:text-amber-400 font-bold">Verifying...</span>{/if}
+				<div class="px-3 py-2 rounded-xl border flex items-center justify-between transition-colors {simStep >= 3 ? 'bg-amber-500/10 border-amber-500/40 font-bold text-foreground' : 'bg-secondary/40 border-border/60 text-muted-foreground'}">
+					<div class="flex items-center gap-2">
+						<ServerStack class="h-3.5 w-3.5 text-amber-500" />
+						<span>03. Pre-Check</span>
+					</div>
+					{#if simStep === 3}<span class="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>{/if}
 				</div>
-				<div class="text-xs font-bold text-foreground mt-1.5 flex items-center gap-1.5">
-					<ServerStack class="h-3.5 w-3.5 text-amber-500" />
-					<span>Database Pre-Check</span>
-				</div>
-				<p class="text-[10px] text-muted-foreground mt-1 leading-relaxed">Read-only SELECT & period lock check</p>
-			</div>
 
-			<!-- Stage 4 -->
-			<div class="p-4 rounded-xl border transition-all {simStep >= 4 ? 'bg-emerald-500/5 border-emerald-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
-				<div class="flex items-center justify-between text-[11px] font-mono">
-					<span class="font-bold text-muted-foreground">04. APPROVAL</span>
-					{#if pendingCount > 0}<span class="text-emerald-600 dark:text-emerald-400 font-bold">{pendingCount} Waiting</span>{/if}
+				<div class="px-3 py-2 rounded-xl border flex items-center justify-between transition-colors {simStep >= 4 ? 'bg-emerald-500/10 border-emerald-500/40 font-bold text-foreground' : 'bg-secondary/40 border-border/60 text-muted-foreground'}">
+					<div class="flex items-center gap-2">
+						<ShieldCheck class="h-3.5 w-3.5 text-emerald-500" />
+						<span>04. Gatekeeper</span>
+					</div>
+					{#if pendingCount > 0}<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">{pendingCount}</span>{/if}
 				</div>
-				<div class="text-xs font-bold text-foreground mt-1.5 flex items-center gap-1.5">
-					<ShieldCheck class="h-3.5 w-3.5 text-emerald-500" />
-					<span>Human Gatekeeper</span>
-				</div>
-				<p class="text-[10px] text-muted-foreground mt-1 leading-relaxed">1-click review in on-call WebUI</p>
-			</div>
 
-			<!-- Stage 5 -->
-			<div class="p-4 rounded-xl border bg-secondary/40 border-border/60">
-				<div class="flex items-center justify-between text-[11px] font-mono">
-					<span class="font-bold text-muted-foreground">05. COMMIT</span>
-					<span class="text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">Prepared SQL</span>
+				<div class="col-span-2 sm:col-span-1 px-3 py-2 rounded-xl border flex items-center justify-between transition-colors bg-secondary/40 border-border/60 text-muted-foreground">
+					<div class="flex items-center gap-2">
+						<LockClosed class="h-3.5 w-3.5 text-rose-500" />
+						<span>05. Commit (SQL)</span>
+					</div>
+					<span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Atomic</span>
 				</div>
-				<div class="text-xs font-bold text-foreground mt-1.5 flex items-center gap-1.5">
-					<LockClosed class="h-3.5 w-3.5 text-rose-500" />
-					<span>Atomic Transaction</span>
-				</div>
-				<p class="text-[10px] text-muted-foreground mt-1 leading-relaxed">Prepared statement + Audit Log</p>
 			</div>
-		</div>
+		{:else}
+			<!-- When UNFOLDED (EXPANDED): Show detailed cards with full descriptions & telemetry sub-badges -->
+			<div class="space-y-4 pt-1 transition-all">
+				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+					<!-- Stage 1 -->
+					<div class="p-4 rounded-xl border transition-all {simStep >= 1 ? 'bg-primary/5 border-primary/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
+						<div class="flex items-center justify-between text-xs font-mono">
+							<span class="font-bold text-muted-foreground">01. INGEST</span>
+							{#if simStep === 1}<span class="animate-pulse text-emerald-600 dark:text-emerald-400 font-bold">Active</span>{/if}
+						</div>
+						<div class="text-sm font-bold text-foreground mt-1.5 flex items-center gap-1.5">
+							<Radio class="h-4 w-4 text-primary" />
+							<span>WhatsApp Chat</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-1 leading-relaxed">Whitelisted regional branch channel</p>
+					</div>
+
+					<!-- Stage 2 -->
+					<div class="p-4 rounded-xl border transition-all {simStep >= 2 ? 'bg-purple-500/5 border-purple-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
+						<div class="flex items-center justify-between text-xs font-mono">
+							<span class="font-bold text-muted-foreground">02. EXTRACT</span>
+							{#if simStep === 2}<span class="animate-pulse text-purple-600 dark:text-purple-400 font-bold">Parsing...</span>{/if}
+						</div>
+						<div class="text-sm font-bold text-foreground mt-1.5 flex items-center gap-1.5">
+							<CpuChip class="h-4 w-4 text-purple-500" />
+							<span>LLM Entity Parser</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-1 leading-relaxed">Structured JSON + Few-shot prompt</p>
+					</div>
+
+					<!-- Stage 3 -->
+					<div class="p-4 rounded-xl border transition-all {simStep >= 3 ? 'bg-amber-500/5 border-amber-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
+						<div class="flex items-center justify-between text-xs font-mono">
+							<span class="font-bold text-muted-foreground">03. PRE-CHECK</span>
+							{#if simStep === 3}<span class="animate-pulse text-amber-600 dark:text-amber-400 font-bold">Verifying...</span>{/if}
+						</div>
+						<div class="text-sm font-bold text-foreground mt-1.5 flex items-center gap-1.5">
+							<ServerStack class="h-4 w-4 text-amber-500" />
+							<span>Database Pre-Check</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-1 leading-relaxed">Read-only SELECT & period lock check</p>
+					</div>
+
+					<!-- Stage 4 -->
+					<div class="p-4 rounded-xl border transition-all {simStep >= 4 ? 'bg-emerald-500/5 border-emerald-500/50 shadow-sm' : 'bg-secondary/40 border-border/60'}">
+						<div class="flex items-center justify-between text-xs font-mono">
+							<span class="font-bold text-muted-foreground">04. APPROVAL</span>
+							{#if pendingCount > 0}<span class="text-emerald-600 dark:text-emerald-400 font-bold">{pendingCount} Waiting</span>{/if}
+						</div>
+						<div class="text-sm font-bold text-foreground mt-1.5 flex items-center gap-1.5">
+							<ShieldCheck class="h-4 w-4 text-emerald-500" />
+							<span>Human Gatekeeper</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-1 leading-relaxed">1-click review in on-call WebUI</p>
+					</div>
+
+					<!-- Stage 5 -->
+					<div class="p-4 rounded-xl border bg-secondary/40 border-border/60">
+						<div class="flex items-center justify-between text-xs font-mono">
+							<span class="font-bold text-muted-foreground">05. COMMIT</span>
+							<span class="text-emerald-600 dark:text-emerald-400 font-mono text-xs">Prepared SQL</span>
+						</div>
+						<div class="text-sm font-bold text-foreground mt-1.5 flex items-center gap-1.5">
+							<LockClosed class="h-4 w-4 text-rose-500" />
+							<span>Atomic Transaction</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-1 leading-relaxed">Prepared statement + Audit Log</p>
+					</div>
+				</div>
+
+				<!-- Telemetry Sub-Badges in Expanded View -->
+				<div class="pt-2 flex items-center justify-between gap-3 flex-wrap text-xs sm:text-sm font-mono text-muted-foreground">
+					<div class="flex items-center gap-2 flex-wrap">
+						<span class="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+							<span>Session: Verified</span>
+						</span>
+						<span class="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+							<span>SQL: Parameterized Only</span>
+						</span>
+						<span class="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+							<span>State: Anti-Tamper Lock</span>
+						</span>
+						<span class="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/60 text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+							<span>Audit: SHA-256 Trail</span>
+						</span>
+					</div>
+					<span>Active Plant Duty • Port :8088</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Bento Stat Metrics -->
 	<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 		<div class="p-5 rounded-2xl bg-card border border-border/80 shadow-sm space-y-1.5 hover:border-amber-500/40 transition-colors">
-			<div class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-mono">Pending Sign-Off</div>
-			<div class="text-3xl font-extrabold font-mono text-amber-500 flex items-center justify-between">
+			<div class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono">Pending Sign-Off</div>
+			<div class="text-3xl sm:text-4xl font-extrabold font-mono text-amber-500 flex items-center justify-between">
 				<span>{pendingCount}</span>
-				<Clock class="h-5 w-5 text-amber-500/50" />
+				<Clock class="h-6 w-6 text-amber-500/50" />
 			</div>
-			<div class="text-[11px] text-muted-foreground">Awaiting on-call approval</div>
+			<div class="text-xs sm:text-sm text-muted-foreground">Awaiting on-call approval</div>
 		</div>
 
 		<div class="p-5 rounded-2xl bg-card border border-border/80 shadow-sm space-y-1.5 hover:border-emerald-500/40 transition-colors">
-			<div class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-mono">Mutated Today</div>
-			<div class="text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+			<div class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono">Mutated Today</div>
+			<div class="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
 				<span>{executedCount}</span>
-				<CheckCircle class="h-5 w-5 text-emerald-500/50" />
+				<CheckCircle class="h-6 w-6 text-emerald-500/50" />
 			</div>
-			<div class="text-[11px] text-muted-foreground">Committed with audit log</div>
+			<div class="text-xs sm:text-sm text-muted-foreground">Committed with audit log</div>
 		</div>
 
 		<div class="p-5 rounded-2xl bg-card border border-border/80 shadow-sm space-y-1.5 hover:border-destructive/40 transition-colors">
-			<div class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-mono">Policy Rejected</div>
-			<div class="text-3xl font-extrabold font-mono text-foreground flex items-center justify-between">
+			<div class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono">Policy Rejected</div>
+			<div class="text-3xl sm:text-4xl font-extrabold font-mono text-foreground flex items-center justify-between">
 				<span>{rejectedCount}</span>
-				<XCircle class="h-5 w-5 text-muted-foreground" />
+				<XCircle class="h-6 w-6 text-muted-foreground" />
 			</div>
-			<div class="text-[11px] text-muted-foreground">Closed invoices or errors</div>
+			<div class="text-xs sm:text-sm text-muted-foreground">Closed invoices or errors</div>
 		</div>
 
 		<div class="p-5 rounded-2xl bg-card border border-border/80 shadow-sm space-y-1.5 hover:border-primary/40 transition-colors">
-			<div class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-mono">Security Rating</div>
-			<div class="text-3xl font-extrabold font-mono text-primary flex items-center justify-between">
+			<div class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono">Security Rating</div>
+			<div class="text-3xl sm:text-4xl font-extrabold font-mono text-primary flex items-center justify-between">
 				<span>100%</span>
-				<ShieldCheck class="h-5 w-5 text-primary/50" />
+				<ShieldCheck class="h-6 w-6 text-primary/50" />
 			</div>
-			<div class="text-[11px] text-muted-foreground">Zero Unsanitized SQL Queries</div>
+			<div class="text-xs sm:text-sm text-muted-foreground">Zero Unsanitized SQL Queries</div>
 		</div>
 	</div>
 
@@ -477,11 +529,11 @@
 	<div class="flex items-center gap-1.5 p-1 rounded-2xl bg-secondary/60 border border-border/70 flex-wrap">
 		<button
 			onclick={() => (activeTab = "pending")}
-			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'pending' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+			class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'pending' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
 			<span>Approval Queue</span>
 			{#if pendingCount > 0}
-				<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">
+				<span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">
 					{pendingCount}
 				</span>
 			{/if}
@@ -489,33 +541,33 @@
 
 		<button
 			onclick={() => (activeTab = "simulator")}
-			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'simulator' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+			class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'simulator' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
-			<PaperAirplane class="h-3.5 w-3.5" />
+			<PaperAirplane class="h-4 w-4" />
 			<span>Simulate WhatsApp Ingestion</span>
 		</button>
 
 		<button
 			onclick={() => (activeTab = "hooks")}
-			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'hooks' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+			class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'hooks' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
-			<CodeBracket class="h-3.5 w-3.5 text-purple-500" />
+			<CodeBracket class="h-4 w-4 text-purple-500" />
 			<span>Client Hooks (Ferdium, Rambox, Web)</span>
 		</button>
 
 		<button
 			onclick={() => (activeTab = "connectivity")}
-			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'connectivity' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+			class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'connectivity' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
-			<CpuChip class="h-3.5 w-3.5" />
+			<CpuChip class="h-4 w-4" />
 			<span>System Connectivity (AI, WA & MCP)</span>
 		</button>
 
 		<button
 			onclick={() => (activeTab = "history")}
-			class="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'history' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+			class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 {activeTab === 'history' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
 		>
-			<ChartBarSquare class="h-3.5 w-3.5" />
+			<ChartBarSquare class="h-4 w-4" />
 			<span>Execution History & Audit</span>
 		</button>
 	</div>
@@ -552,61 +604,61 @@
 							<!-- Header of Ticket Card -->
 							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
 								<div class="flex items-center gap-2.5">
-									<span class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+									<span class="font-mono text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
 										#{ticket.ticket_no}
 									</span>
-									<span class="text-xs font-bold text-foreground">
+									<span class="text-xs sm:text-sm font-bold text-foreground">
 										{ticket.branch_name || "Authorized Regional Hub"}
 									</span>
 									<span class="text-border">|</span>
-									<span class="text-xs text-muted-foreground font-mono">
+									<span class="text-xs sm:text-sm text-muted-foreground font-mono">
 										Invoice: {ticket.document_no}
 									</span>
 								</div>
-								<div class="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-									<span class="text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono flex items-center gap-1">
-										<ShieldCheck class="h-3 w-3" />
+								<div class="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+									<span class="text-xs px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono flex items-center gap-1 font-semibold">
+										<ShieldCheck class="h-3.5 w-3.5" />
 										<span>Guardrails Verified</span>
 									</span>
 									<span class="flex items-center gap-1">
-										<Clock class="h-3 w-3" />
+										<Clock class="h-3.5 w-3.5" />
 										{timeAgo(ticket.created_at)}
 									</span>
-									<span class="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-semibold">
+									<span class="text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold">
 										AI Confidence: {Math.round(ticket.confidence_score * 100)}%
 									</span>
 								</div>
 							</div>
 
 							<!-- WhatsApp Raw Message Bubble -->
-							<div class="p-3.5 rounded-xl bg-secondary/50 border border-border/60 text-xs text-foreground space-y-1">
-								<div class="text-[10px] font-mono text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-									<Radio class="h-3 w-3 text-emerald-500" />
+							<div class="p-4 rounded-xl bg-secondary/50 border border-border/60 text-xs sm:text-sm text-foreground space-y-1.5">
+								<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+									<Radio class="h-3.5 w-3.5 text-emerald-500" />
 									<span>Incoming Branch WhatsApp Message:</span>
 								</div>
-								<p class="italic text-foreground/90 font-medium">"{ticket.raw_message}"</p>
+								<p class="italic text-foreground/90 font-medium text-sm sm:text-base">"{ticket.raw_message}"</p>
 							</div>
 
 							<!-- High-Contrast Side-by-Side Diff -->
 							<div class="grid sm:grid-cols-2 gap-3 pt-1">
 								<!-- Current in Database -->
 								<div class="p-4 rounded-xl bg-destructive/5 border border-destructive/20 space-y-1">
-									<div class="text-[10px] uppercase font-mono font-bold text-destructive flex items-center gap-1.5">
-										<XCircle class="h-3.5 w-3.5" />
+									<div class="text-xs uppercase font-mono font-bold text-destructive flex items-center gap-1.5">
+										<XCircle class="h-4 w-4" />
 										<span>Current Database Record (Read-Only)</span>
 									</div>
-									<div class="font-mono text-sm font-semibold text-foreground line-through opacity-80">
+									<div class="font-mono text-sm sm:text-base font-semibold text-foreground line-through opacity-80">
 										{ticket.current_value || "(Empty / Unverified)"}
 									</div>
 								</div>
 
 								<!-- Proposed Value to Mutate -->
 								<div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-1">
-									<div class="text-[10px] uppercase font-mono font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-										<CheckCircle class="h-3.5 w-3.5" />
+									<div class="text-xs uppercase font-mono font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+										<CheckCircle class="h-4 w-4" />
 										<span>Proposed Value from AI Extraction</span>
 									</div>
-									<div class="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+									<div class="font-mono text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
 										{ticket.proposed_value}
 									</div>
 								</div>
@@ -614,7 +666,7 @@
 
 							<!-- Transparent Explainable AI & SQL Drawer (ZERO NDUKUN!) -->
 							{#if inspectedTicketId === ticket.id}
-								<div class="p-4 rounded-xl bg-secondary/70 border border-border/70 space-y-3 text-xs transition-all">
+								<div class="p-4 rounded-xl bg-secondary/70 border border-border/70 space-y-3 text-xs sm:text-sm transition-all">
 									<div class="flex items-center justify-between border-b border-border/50 pb-2">
 										<span class="font-bold font-mono text-foreground flex items-center gap-1.5">
 											<CodeBracket class="h-4 w-4 text-primary" />
@@ -622,38 +674,38 @@
 										</span>
 										<button
 											onclick={() => (inspectedTicketId = null)}
-											class="text-muted-foreground hover:text-foreground text-xs font-medium"
+											class="text-muted-foreground hover:text-foreground text-xs sm:text-sm font-medium"
 										>
 											Close Plan
 										</button>
 									</div>
 
-									<div class="grid md:grid-cols-2 gap-3 text-[11px] font-mono">
+									<div class="grid md:grid-cols-2 gap-3 text-xs sm:text-sm font-mono">
 										<!-- Step A: Database Pre-check Query -->
-										<div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-sm">
-											<div class="text-amber-500 font-bold uppercase">1. Verification Query (Read-Only):</div>
-											<code class="text-foreground/90 block">
+										<div class="p-3.5 rounded-lg bg-card border border-border/80 space-y-1.5 shadow-sm">
+											<div class="text-amber-500 font-bold uppercase text-xs">1. Verification Query (Read-Only):</div>
+											<code class="text-foreground/90 block text-xs sm:text-sm">
 												SELECT customer_name, status FROM invoices WHERE invoice_no = '{ticket.document_no}';
 											</code>
-											<div class="text-muted-foreground pt-1">
+											<div class="text-muted-foreground pt-1 text-xs">
 												Status: <span class="text-emerald-600 dark:text-emerald-400 font-bold">OPEN (Eligible for mutation)</span>
 											</div>
 										</div>
 
 										<!-- Step B: Prepared Statement Mutation Plan -->
-										<div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-sm">
-											<div class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">2. Prepared Mutation Statement:</div>
-											<code class="text-foreground/90 block">
+										<div class="p-3.5 rounded-lg bg-card border border-border/80 space-y-1.5 shadow-sm">
+											<div class="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-xs">2. Prepared Mutation Statement:</div>
+											<code class="text-foreground/90 block text-xs sm:text-sm">
 												UPDATE invoices SET customer_name = $1, updated_at = NOW() WHERE invoice_no = $2;
 											</code>
-											<div class="text-muted-foreground pt-1">
+											<div class="text-muted-foreground pt-1 text-xs">
 												Params: <span class="text-foreground">$1="{ticket.proposed_value}", $2="{ticket.document_no}"</span>
 											</div>
 										</div>
 									</div>
 
-									<div class="text-[11px] text-muted-foreground flex items-center gap-2">
-										<InformationCircle class="h-3.5 w-3.5 text-primary shrink-0" />
+									<div class="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+										<InformationCircle class="h-4 w-4 text-primary shrink-0" />
 										<span>Safe Rollback Guarantee: In case of error, <code>UPDATE invoices SET customer_name = '{ticket.current_value}' WHERE invoice_no = '{ticket.document_no}';</code> is prepared.</span>
 									</div>
 								</div>
@@ -661,19 +713,19 @@
 
 							<!-- Attached Documents from MCP / Chat -->
 							{#if ticket.documents && ticket.documents.length > 0}
-								<div class="flex items-center gap-2 pt-1 text-xs">
+								<div class="flex items-center gap-2 pt-1 text-xs sm:text-sm">
 									<span class="text-muted-foreground flex items-center gap-1">
-										<DocumentText class="h-3.5 w-3.5" />
+										<DocumentText class="h-4 w-4" />
 										<span>Proof Attachments:</span>
 									</span>
 									{#each ticket.documents as doc}
 										<a
 											href={doc.file_path}
 											target="_blank"
-											class="text-xs text-primary underline flex items-center gap-1 hover:text-primary/80 font-mono"
+											class="text-xs sm:text-sm text-primary underline flex items-center gap-1 hover:text-primary/80 font-mono"
 										>
 											<span>{doc.file_name}</span>
-											<ArrowTopRightOnSquare class="h-3 w-3" />
+											<ArrowTopRightOnSquare class="h-3.5 w-3.5" />
 										</a>
 									{/each}
 								</div>
@@ -683,9 +735,9 @@
 							<div class="flex items-center justify-between gap-3 pt-2">
 								<button
 									onclick={() => (inspectedTicketId = inspectedTicketId === ticket.id ? null : ticket.id)}
-									class="text-xs text-muted-foreground hover:text-foreground font-mono flex items-center gap-1.5 transition-colors"
+									class="text-xs sm:text-sm text-muted-foreground hover:text-foreground font-mono flex items-center gap-1.5 transition-colors"
 								>
-									<Eye class="h-3.5 w-3.5" />
+									<Eye class="h-4 w-4" />
 									<span>{inspectedTicketId === ticket.id ? "Hide SQL Plan" : "Inspect AI Reasoning & SQL Plan"}</span>
 								</button>
 
@@ -693,18 +745,18 @@
 									<button
 										onclick={() => (selectedTicketForReject = ticket)}
 										disabled={processingAction}
-										class="px-4 py-2 rounded-xl bg-secondary text-destructive hover:bg-destructive/10 text-xs font-semibold border border-border/70 transition-colors flex items-center gap-1.5 shadow-sm"
+										class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-secondary text-destructive hover:bg-destructive/10 text-xs sm:text-sm font-semibold border border-border/70 transition-colors flex items-center gap-1.5 shadow-sm"
 									>
-										<XMark class="h-3.5 w-3.5" />
+										<XMark class="h-4 w-4" />
 										<span>Reject Request</span>
 									</button>
 
 									<button
 										onclick={() => handleApprove(ticket)}
 										disabled={processingAction}
-										class="px-5 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+										class="px-5 py-2 sm:px-6 sm:py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm font-bold shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
 									>
-										<Check class="h-3.5 w-3.5" />
+										<Check class="h-4 w-4" />
 										<span>Approve & Mutate Database</span>
 									</button>
 								</div>
@@ -719,41 +771,41 @@
 	{:else if activeTab === "simulator"}
 		<div class="max-w-2xl mx-auto p-8 rounded-2xl bg-card border border-border/80 shadow-sm space-y-6">
 			<div>
-				<h3 class="text-base font-bold text-foreground">Simulate WhatsApp Branch Ingestion</h3>
-				<p class="text-xs text-muted-foreground mt-1">
+				<h3 class="text-lg font-bold text-foreground">Simulate WhatsApp Branch Ingestion</h3>
+				<p class="text-sm text-muted-foreground mt-1">
 					Test AI intent extraction, database pre-check policy validation, and real-time SSE push dispatch.
 				</p>
 			</div>
 
-			<form onsubmit={(e) => { e.preventDefault(); handleSimulateSubmit(); }} class="space-y-4 text-xs">
+			<form onsubmit={(e) => { e.preventDefault(); handleSimulateSubmit(); }} class="space-y-4 text-sm">
 				<div>
-					<label for="sim-raw-chat" class="block font-medium mb-1 text-foreground">Raw WhatsApp Chat Message</label>
+					<label for="sim-raw-chat" class="block font-medium mb-1.5 text-foreground">Raw WhatsApp Chat Message</label>
 					<textarea
 						id="sim-raw-chat"
 						bind:value={simMessage}
 						rows="3"
 						required
-						class="w-full p-3.5 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:border-foreground/40 font-sans shadow-sm"
+						class="w-full p-3.5 rounded-xl bg-background border border-border text-foreground text-sm sm:text-base focus:outline-none focus:border-foreground/40 font-sans shadow-sm"
 					></textarea>
 				</div>
 
 				<div class="grid grid-cols-2 gap-3">
 					<div>
-						<label for="sim-invoice-no" class="block font-medium mb-1 text-foreground">Invoice Number</label>
+						<label for="sim-invoice-no" class="block font-medium mb-1.5 text-foreground">Invoice Number</label>
 						<input
 							id="sim-invoice-no"
 							type="text"
 							bind:value={simDocNo}
 							required
-							class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm font-mono focus:outline-none focus:border-foreground/40 shadow-sm"
+							class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm sm:text-base font-mono focus:outline-none focus:border-foreground/40 shadow-sm"
 						/>
 					</div>
 					<div>
-						<label for="sim-branch-id" class="block font-medium mb-1 text-foreground">Branch Regional Hub</label>
+						<label for="sim-branch-id" class="block font-medium mb-1.5 text-foreground">Branch Regional Hub</label>
 						<select
 							id="sim-branch-id"
 							bind:value={simBranchId}
-							class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:border-foreground/40 shadow-sm"
+							class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm sm:text-base focus:outline-none focus:border-foreground/40 shadow-sm"
 						>
 							<option value={1}>1 - East Java (Surabaya Hub)</option>
 							<option value={2}>2 - North Sumatra (Medan Hub)</option>
@@ -764,20 +816,20 @@
 				</div>
 
 				<div>
-					<label for="sim-customer-name" class="block font-medium mb-1 text-foreground">Requested Customer Entity Name</label>
+					<label for="sim-customer-name" class="block font-medium mb-1.5 text-foreground">Requested Customer Entity Name</label>
 					<input
 						id="sim-customer-name"
 						type="text"
 						bind:value={simProposed}
 						required
-						class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:border-foreground/40 shadow-sm"
+						class="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm sm:text-base focus:outline-none focus:border-foreground/40 shadow-sm"
 					/>
 				</div>
 
 				<button
 					type="submit"
 					disabled={simLoading}
-					class="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-primary/20"
+					class="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-primary/20"
 				>
 					<PaperAirplane class="h-4 w-4" />
 					<span>{simLoading ? "Processing Ingestion & Pre-check..." : "Dispatch to On-Call Ingestion Queue"}</span>
@@ -799,11 +851,11 @@
 							<CpuChip class="h-5 w-5" />
 						</div>
 						<div>
-							<h3 class="text-base font-bold text-foreground">AI & Ingestion Gateway Integrations</h3>
-							<p class="text-xs text-muted-foreground">Live telemetry and health status across all internal on-call connections.</p>
+							<h3 class="text-base sm:text-lg font-bold text-foreground">AI & Ingestion Gateway Integrations</h3>
+							<p class="text-xs sm:text-sm text-muted-foreground">Live telemetry and health status across all internal on-call connections.</p>
 						</div>
 					</div>
-					<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs border border-emerald-500/20 font-bold">
+					<span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs border border-emerald-500/20 font-bold">
 						All Engines Online
 					</span>
 				</div>
@@ -812,13 +864,13 @@
 					<!-- Integration 1: AI Provider -->
 					<div class="p-5 rounded-2xl bg-secondary/40 border border-border/60 space-y-3">
 						<div class="flex items-center justify-between">
-							<span class="font-bold text-sm text-foreground flex items-center gap-2">
+							<span class="font-bold text-base text-foreground flex items-center gap-2">
 								<Sparkles class="h-4 w-4 text-purple-500" />
 								<span>AI LLM Engine</span>
 							</span>
-							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>
+							<span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>
 						</div>
-						<div class="text-xs text-muted-foreground space-y-1 font-mono text-[11px]">
+						<div class="text-xs sm:text-sm text-muted-foreground space-y-1.5 font-mono">
 							<div>Provider: Google Gemini API / Antigravity CLI</div>
 							<div>Model: <code>gemini-1.5-flash</code> (Latency: 280ms)</div>
 							<div>In-Context Memory: Active Learning Few-Shot Ground Truth</div>
@@ -829,13 +881,13 @@
 					<!-- Integration 2: WhatsApp Scraper Gateway -->
 					<div class="p-5 rounded-2xl bg-secondary/40 border border-border/60 space-y-3">
 						<div class="flex items-center justify-between">
-							<span class="font-bold text-sm text-foreground flex items-center gap-2">
+							<span class="font-bold text-base text-foreground flex items-center gap-2">
 								<Radio class="h-4 w-4 text-blue-500" />
 								<span>WhatsApp Gateway / Scraper</span>
 							</span>
-							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">CONNECTED</span>
+							<span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">CONNECTED</span>
 						</div>
-						<div class="text-xs text-muted-foreground space-y-1 font-mono text-[11px]">
+						<div class="text-xs sm:text-sm text-muted-foreground space-y-1.5 font-mono">
 							<div>Session: CORP-WA-HUB-01 (Multi-Device Baileys)</div>
 							<div>Whitelisted Channels: 24 Regional Branch Groups</div>
 							<div>Anti-Ban Filter: Passive Listener (Zero Cold Messaging)</div>
@@ -846,13 +898,13 @@
 					<!-- Integration 3: Database Storage -->
 					<div class="p-5 rounded-2xl bg-secondary/40 border border-border/60 space-y-3">
 						<div class="flex items-center justify-between">
-							<span class="font-bold text-sm text-foreground flex items-center gap-2">
+							<span class="font-bold text-base text-foreground flex items-center gap-2">
 								<ServerStack class="h-4 w-4 text-emerald-500" />
 								<span>Database Adapter</span>
 							</span>
-							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">HEALTHY</span>
+							<span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">HEALTHY</span>
 						</div>
-						<div class="text-xs text-muted-foreground space-y-1 font-mono text-[11px]">
+						<div class="text-xs sm:text-sm text-muted-foreground space-y-1.5 font-mono">
 							<div>Prototyping: PostgreSQL 18 Local (Port 5432)</div>
 							<div>Production Driver: Oracle 11g Enterprise (via TNS Alias)</div>
 							<div>Pool Health: 10 Idle Conns, 2 Active, 25 Max</div>
@@ -863,13 +915,13 @@
 					<!-- Integration 4: Model Context Protocol (MCP) -->
 					<div class="p-5 rounded-2xl bg-secondary/40 border border-border/60 space-y-3">
 						<div class="flex items-center justify-between">
-							<span class="font-bold text-sm text-foreground flex items-center gap-2">
+							<span class="font-bold text-base text-foreground flex items-center gap-2">
 								<CommandLine class="h-4 w-4 text-amber-500" />
 								<span>Custom MCP Server</span>
 							</span>
-							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">STANDALONE</span>
+							<span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">STANDALONE</span>
 						</div>
-						<div class="text-xs text-muted-foreground space-y-1 font-mono text-[11px]">
+						<div class="text-xs sm:text-sm text-muted-foreground space-y-1.5 font-mono">
 							<div>Binary: <code>mcp-server/src/index.ts</code> (Bun Stdio)</div>
 							<div>Tools: <code>check_invoice</code>, <code>stage_invoice_update</code>, <code>upload_document</code></div>
 							<div>Resources: <code>novapilot://sop/factory-rules</code>, <code>branches/directory</code></div>
@@ -884,13 +936,13 @@
 	{:else if activeTab === "history"}
 		<div class="space-y-6">
 			<div class="rounded-2xl bg-card border border-border/80 overflow-hidden shadow-sm">
-				<div class="p-4 border-b border-border/60 font-semibold text-sm flex items-center justify-between">
+				<div class="p-4 border-b border-border/60 font-semibold text-sm sm:text-base flex items-center justify-between">
 					<span>Processed Tickets & Mutation Audit Trail</span>
-					<span class="text-xs text-muted-foreground font-mono">{tickets.filter(t => t.status !== "PENDING_APPROVAL").length} records</span>
+					<span class="text-xs sm:text-sm text-muted-foreground font-mono">{tickets.filter(t => t.status !== "PENDING_APPROVAL").length} records</span>
 				</div>
 				<div class="overflow-x-auto">
-					<table class="w-full text-left text-xs">
-						<thead class="bg-secondary/60 text-muted-foreground uppercase font-mono text-[10px]">
+					<table class="w-full text-left text-xs sm:text-sm">
+						<thead class="bg-secondary/60 text-muted-foreground uppercase font-mono text-xs">
 							<tr>
 								<th class="p-3.5">Ticket</th>
 								<th class="p-3.5">Document No</th>
@@ -908,11 +960,11 @@
 									<td class="p-3.5 font-medium">{t.proposed_value}</td>
 									<td class="p-3.5">
 										{#if t.status === "EXECUTED"}
-											<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+											<span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
 												EXECUTED
 											</span>
 										{:else}
-											<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+											<span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-destructive/10 text-destructive border border-destructive/20">
 												REJECTED
 											</span>
 										{/if}
@@ -934,13 +986,13 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans">
 		<div class="w-full max-w-md bg-card p-6 rounded-2xl border border-border shadow-2xl space-y-4">
 			<div class="flex items-center justify-between">
-				<h3 class="text-sm font-bold text-foreground">Reject Ticket #{selectedTicketForReject.ticket_no}</h3>
+				<h3 class="text-base font-bold text-foreground">Reject Ticket #{selectedTicketForReject.ticket_no}</h3>
 				<button onclick={() => (selectedTicketForReject = null)} class="text-muted-foreground hover:text-foreground">
 					<XMark class="h-4 w-4" />
 				</button>
 			</div>
 
-			<p class="text-xs text-muted-foreground">
+			<p class="text-xs sm:text-sm text-muted-foreground">
 				Specify the corporate SOP violation or operational reason for rejecting this branch revision. This note is permanently recorded in the audit trail.
 			</p>
 
@@ -951,21 +1003,21 @@
 					bind:value={rejectionReason}
 					rows="3"
 					placeholder="e.g. Invoice has already been closed for the current fiscal period. Requires Supervisor override."
-					class="w-full p-3.5 rounded-xl bg-background border border-border text-foreground text-xs focus:outline-none focus:border-destructive shadow-sm"
+					class="w-full p-3.5 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:border-destructive shadow-sm"
 				></textarea>
 			</div>
 
 			<div class="flex items-center justify-end gap-2 pt-2">
 				<button
 					onclick={() => (selectedTicketForReject = null)}
-					class="px-4 py-2 rounded-xl bg-secondary text-foreground text-xs font-medium border border-border/70"
+					class="px-4 py-2 rounded-xl bg-secondary text-foreground text-xs sm:text-sm font-medium border border-border/70"
 				>
 					Cancel
 				</button>
 				<button
 					onclick={submitReject}
 					disabled={processingAction || !rejectionReason.trim()}
-					class="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground text-xs font-semibold hover:bg-destructive/90 disabled:opacity-50 shadow-sm"
+					class="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground text-xs sm:text-sm font-semibold hover:bg-destructive/90 disabled:opacity-50 shadow-sm"
 				>
 					Confirm Rejection
 				</button>

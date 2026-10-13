@@ -5,7 +5,7 @@ export default {
 	theme: {
 		extend: {
 			fontFamily: {
-				sans: ['"Geist Sans"', '"Geist"', 'sans-serif'],
+				sans: ['"Geist"', '"Geist Sans"', '"Inter"', 'sans-serif'],
 				mono: ['"Geist Mono"', 'monospace']
 			},
 			colors: {
