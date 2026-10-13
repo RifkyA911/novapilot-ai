@@ -23,6 +23,7 @@
     "vite": "^5.4.11"
   },
   "dependencies": {
+    "@tanstack/svelte-table": "^9.3.1",
     "better-auth": "^1.1.0",
     "clsx": "^2.1.1",
     "heroicons": "^2.2.0",
