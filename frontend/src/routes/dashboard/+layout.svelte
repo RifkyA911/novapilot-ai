@@ -18,11 +18,13 @@
 		Square3Stack3d, 
 		ArrowRightOnRectangle,
 		ArrowTopRightOnSquare,
-		ChatBubbleLeftRight
+		ChatBubbleLeftRight,
+		AdjustmentsHorizontal
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
 	import CommandPalette from "$lib/components/CommandPalette.svelte";
+	import PlatformSelect from "$lib/components/PlatformSelect.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import type { LayoutData } from "./$types";
 
@@ -279,61 +281,25 @@
 						{/if}
 					</div>
 				</a>
-			</div>
 
-			<!-- Group 4: ACTIVE CHATOPS PLATFORM SELECTOR (Interactive Channel Switcher) -->
-			<div class="space-y-2 pt-2 border-t border-border/40">
-				{#if !sidebarCollapsed}
-					<div class="px-2 flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						<span>ChatOps Platform</span>
-						<span class="text-[9px] px-1.5 py-0.2 rounded font-bold {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}">
-							{cockpit.chatPlatform.toUpperCase()}
+				<!-- Platform Settings & Logic Flows -->
+				<a
+					href="/dashboard/platforms"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/platforms' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="ChatOps Platform Settings & Logic Flows"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<AdjustmentsHorizontal class="h-4 w-4 shrink-0 {currentPath === '/dashboard/platforms' ? '' : 'text-sky-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">Platform Settings</span>
+						{/if}
+					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/platforms' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary border border-primary/20'}">
+							Config
 						</span>
-					</div>
-
-					<div class="grid grid-cols-2 gap-1.5 px-0.5">
-						{#each [
-							{ id: 'whatsapp', label: 'WhatsApp', sub: 'Baileys/Hook' },
-							{ id: 'telegram', label: 'Telegram', sub: 'Bot/API' },
-							{ id: 'discord', label: 'Discord', sub: 'Webhook/Bot' },
-							{ id: 'slack', label: 'Slack', sub: 'Events/Bolt' }
-						] as p}
-							<button
-								type="button"
-								onclick={() => cockpit.chatPlatform = p.id as ChatPlatform}
-								class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-left flex flex-col justify-between cursor-pointer {cockpit.chatPlatform === p.id ? 'bg-primary text-primary-foreground font-semibold shadow-xs ring-1 ring-primary/40' : 'bg-secondary/40 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/40'}"
-								title="Switch active platform to {p.label}"
-							>
-								<div class="flex items-center justify-between w-full">
-									<span class="truncate">{p.label}</span>
-									{#if cockpit.chatPlatform === p.id}
-										<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-									{/if}
-								</div>
-								<span class="text-[9px] font-mono opacity-80 mt-0.5">{p.sub}</span>
-							</button>
-						{/each}
-					</div>
-				{:else}
-					<!-- Collapsed Platform Switcher Buttons -->
-					<div class="flex flex-col items-center gap-1.5 py-1">
-						{#each [
-							{ id: 'whatsapp', code: 'WA' },
-							{ id: 'telegram', code: 'TG' },
-							{ id: 'discord', code: 'DC' },
-							{ id: 'slack', code: 'SL' }
-						] as p}
-							<button
-								type="button"
-								onclick={() => cockpit.chatPlatform = p.id as ChatPlatform}
-								class="h-7 w-7 rounded-md text-[10px] font-mono font-bold flex items-center justify-center transition-all cursor-pointer {cockpit.chatPlatform === p.id ? 'bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/40' : 'bg-muted text-muted-foreground hover:text-foreground'}"
-								title="Switch platform to {p.id.toUpperCase()}"
-							>
-								{p.code}
-							</button>
-						{/each}
-					</div>
-				{/if}
+					{/if}
+				</a>
 			</div>
 		</div>
 
@@ -370,8 +336,8 @@
 	<div class="flex-1 flex flex-col min-w-0 min-h-screen">
 		<!-- Top Dashboard Header Bar -->
 		<header class="sticky top-0 z-30 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 sm:px-6 gap-3 transition-colors">
-			<!-- Left: Mobile Brand & Toggle -->
-			<div class="flex items-center gap-2 shrink-0">
+			<!-- Left: Mobile Brand & Toggle + Shadcn Platform Selector (To the left of Search Input) -->
+			<div class="flex items-center gap-2.5 shrink-0">
 				<!-- Mobile Hamburger Button -->
 				<button
 					type="button"
@@ -391,8 +357,11 @@
 					<div class="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
 						<ShieldCheck class="h-4 w-4" />
 					</div>
-					<span class="font-bold text-sm tracking-tight text-foreground">NovaPilot AI</span>
+					<span class="font-bold text-sm tracking-tight text-foreground hidden sm:inline">NovaPilot</span>
 				</a>
+
+				<!-- Shadcn Platform Select Component (Positioned to the left of Search Bar) -->
+				<PlatformSelect />
 			</div>
 
 			<!-- Center: CENTERED SEARCH MENU COMMAND PALETTE BUTTON (⌘K) -->
@@ -414,26 +383,8 @@
 				</button>
 			</div>
 
-			<!-- Right: CLEAN CHATOPS PLATFORM SELECTOR, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
+			<!-- Right: THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
 			<div class="flex items-center gap-2 sm:gap-3 shrink-0">
-				<!-- Clean Platform Selector Dropdown (No emojis/distracting icons) -->
-				<div class="flex items-center gap-1.5">
-					<label for="platform-select-top" class="text-[11px] font-mono font-medium text-muted-foreground uppercase hidden xl:inline">
-						Platform:
-					</label>
-					<select
-						id="platform-select-top"
-						bind:value={cockpit.chatPlatform}
-						class="h-8 rounded-lg border border-input bg-background px-2.5 text-xs font-semibold text-foreground shadow-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
-						title="Select Active ChatOps Ingestion Platform"
-					>
-						<option value="whatsapp">WhatsApp</option>
-						<option value="telegram">Telegram</option>
-						<option value="discord">Discord</option>
-						<option value="slack">Slack</option>
-					</select>
-				</div>
-
 				<!-- Theme Toggle -->
 				<ThemeToggle />
 
@@ -454,10 +405,10 @@
 						bind:value={cockpit.chatPlatform}
 						class="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs font-semibold text-foreground shadow-xs"
 					>
-						<option value="whatsapp">💬 WhatsApp (Live Hook)</option>
-						<option value="telegram">✈️ Telegram Bot</option>
-						<option value="discord">🎮 Discord Webhook</option>
-						<option value="slack">💼 Slack Enterprise</option>
+						<option value="whatsapp">WhatsApp (Live Hook)</option>
+						<option value="telegram">Telegram Bot</option>
+						<option value="discord">Discord Webhook</option>
+						<option value="slack">Slack Enterprise</option>
 					</select>
 				</div>
 
@@ -546,6 +497,18 @@
 							<PaperAirplane class="h-4 w-4" />
 							<span>ChatOps Simulator</span>
 						</span>
+					</a>
+
+					<a
+						href="/dashboard/platforms"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/platforms' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<AdjustmentsHorizontal class="h-4 w-4 text-sky-500" />
+							<span>Platform Settings</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary">Config</span>
 					</a>
 
 					<div class="pt-2 px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Public Website</div>

@@ -12,7 +12,8 @@
 		CpuChip, 
 		CodeBracket, 
 		PaperAirplane,
-		ArrowRight
+		ArrowRight,
+		AdjustmentsHorizontal
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 
@@ -123,6 +124,16 @@
 			icon: PaperAirplane,
 			badge: "Simulator",
 			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline"]
+		},
+		{
+			id: "platforms",
+			title: "ChatOps Platform Settings & Logic Flows",
+			description: "Credentials, Webhook Tokens, Filters, Whitelists & Ingestion Flows (WhatsApp, Telegram, Discord, Slack)",
+			category: "ChatOps & Hooks",
+			url: "/dashboard/platforms",
+			icon: AdjustmentsHorizontal,
+			badge: "Config",
+			keywords: ["platform", "settings", "whatsapp", "telegram", "discord", "slack", "config", "token", "bot", "webhook", "credentials"]
 		}
 	];
 
