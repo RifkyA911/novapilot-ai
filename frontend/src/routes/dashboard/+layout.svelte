@@ -22,7 +22,10 @@
 		AdjustmentsHorizontal,
 		Sparkles,
 		UserGroup,
-		DocumentText
+		DocumentText,
+		Cube,
+		InformationCircle,
+		Cog6Tooth
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
@@ -234,7 +237,7 @@
 				<a
 					href="/dashboard/connectors"
 					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/connectors' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Universal DB Connectors (Multi-Engine Enterprise LTS)"
+					title="Universal DB Connectors (Dual-DB Cockpit & Pool Telemetry)"
 				>
 					<div class="flex items-center gap-2.5 min-w-0">
 						<CircleStack class="h-4 w-4 shrink-0 {currentPath === '/dashboard/connectors' ? '' : 'text-amber-500'}" />
@@ -244,7 +247,26 @@
 					</div>
 					{#if !sidebarCollapsed}
 						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/connectors' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}">
-							LTS
+							DUAL-DB
+						</span>
+					{/if}
+				</a>
+
+				<!-- MCP Knowledge Base & Tools -->
+				<a
+					href="/dashboard/mcp"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/mcp' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="Model Context Protocol (MCP) Knowledge Base & Dual-DB Specification"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<Cube class="h-4 w-4 shrink-0 {currentPath === '/dashboard/mcp' ? '' : 'text-cyan-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">MCP Knowledge</span>
+						{/if}
+					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/mcp' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'}">
+							SPEC
 						</span>
 					{/if}
 				</a>
@@ -348,11 +370,11 @@
 					{/if}
 				</a>
 
-				<!-- ChatOps Simulator -->
+				<!-- ChatOps Simulator (Experimental) -->
 				<a
 					href="/dashboard/simulator"
 					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/simulator' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="ChatOps Ingestion Simulator"
+					title="ChatOps Ingestion Simulator [EXPERIMENTAL]"
 				>
 					<div class="flex items-center gap-2.5 min-w-0">
 						<PaperAirplane class="h-4 w-4 shrink-0" />
@@ -360,6 +382,11 @@
 							<span class="truncate">Simulator</span>
 						{/if}
 					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold uppercase tracking-wider {currentPath === '/dashboard/simulator' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
+							EXP
+						</span>
+					{/if}
 				</a>
 
 				<!-- Platform Settings & Logic Flows -->
@@ -371,12 +398,54 @@
 					<div class="flex items-center gap-2.5 min-w-0">
 						<AdjustmentsHorizontal class="h-4 w-4 shrink-0 {currentPath === '/dashboard/platforms' ? '' : 'text-sky-500'}" />
 						{#if !sidebarCollapsed}
-							<span class="truncate">Platform Settings</span>
+							<span class="truncate">Platform Flows</span>
 						{/if}
 					</div>
 					{#if !sidebarCollapsed}
 						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/platforms' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary border border-primary/20'}">
-							Config
+							Flows
+						</span>
+					{/if}
+				</a>
+			</div>
+
+			<!-- Group 4: SYSTEM & PREFERENCES -->
+			<div class="space-y-1">
+				{#if !sidebarCollapsed}
+					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+						System &amp; Config
+					</div>
+				{/if}
+
+				<!-- System Settings -->
+				<a
+					href="/dashboard/settings"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/settings' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="System Settings & Gatekeeper Policies"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<Cog6Tooth class="h-4 w-4 shrink-0 {currentPath === '/dashboard/settings' ? '' : 'text-zinc-400'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">Settings</span>
+						{/if}
+					</div>
+				</a>
+
+				<!-- About & Repo -->
+				<a
+					href="/dashboard/about"
+					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/about' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					title="About NovaPilot AI & Creator"
+				>
+					<div class="flex items-center gap-2.5 min-w-0">
+						<InformationCircle class="h-4 w-4 shrink-0 {currentPath === '/dashboard/about' ? '' : 'text-purple-500'}" />
+						{#if !sidebarCollapsed}
+							<span class="truncate">About &amp; Repo</span>
+						{/if}
+					</div>
+					{#if !sidebarCollapsed}
+						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/about' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'}">
+							v1.0
 						</span>
 					{/if}
 				</a>
@@ -483,12 +552,12 @@
 					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">ChatOps Platform</div>
 					<select
 						bind:value={cockpit.chatPlatform}
-						class="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs font-semibold text-foreground shadow-xs"
+						class="w-full h-9 rounded-lg border border-input bg-card dark:bg-zinc-900 px-3 text-xs font-semibold text-foreground shadow-xs focus:ring-1 focus:ring-ring"
 					>
-						<option value="whatsapp">WhatsApp (Live Hook)</option>
-						<option value="telegram">Telegram Bot</option>
-						<option value="discord">Discord Webhook</option>
-						<option value="slack">Slack Enterprise</option>
+						<option class="bg-white dark:bg-zinc-900 text-foreground" value="whatsapp">WhatsApp (Live Hook)</option>
+						<option class="bg-white dark:bg-zinc-900 text-foreground" value="telegram">Telegram Bot</option>
+						<option class="bg-white dark:bg-zinc-900 text-foreground" value="discord">Discord Webhook</option>
+						<option class="bg-white dark:bg-zinc-900 text-foreground" value="slack">Slack Enterprise</option>
 					</select>
 				</div>
 
@@ -554,8 +623,20 @@
 					>
 						<span class="flex items-center gap-2">
 							<CircleStack class="h-4 w-4 text-amber-500" />
-							<span>DB Connectors (LTS)</span>
+							<span>DB Connectors (Dual-DB)</span>
 						</span>
+					</a>
+
+					<a
+						href="/dashboard/mcp"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/mcp' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<Cube class="h-4 w-4 text-cyan-500" />
+							<span>MCP Knowledge</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-500">SPEC</span>
 					</a>
 
 					<a
@@ -629,6 +710,7 @@
 							<PaperAirplane class="h-4 w-4" />
 							<span>ChatOps Simulator</span>
 						</span>
+						<span class="font-mono text-[8.5px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">EXPERIMENTAL</span>
 					</a>
 
 					<a
@@ -638,9 +720,32 @@
 					>
 						<span class="flex items-center gap-2">
 							<AdjustmentsHorizontal class="h-4 w-4 text-sky-500" />
-							<span>Platform Settings</span>
+							<span>Platform Flows</span>
 						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary">Config</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary">Flows</span>
+					</a>
+
+					<a
+						href="/dashboard/settings"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/settings' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<Cog6Tooth class="h-4 w-4 text-zinc-400" />
+							<span>Settings</span>
+						</span>
+					</a>
+
+					<a
+						href="/dashboard/about"
+						onclick={closeMobileMenu}
+						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/about' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+					>
+						<span class="flex items-center gap-2">
+							<InformationCircle class="h-4 w-4 text-purple-500" />
+							<span>About &amp; Repo</span>
+						</span>
+						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400">v1.0</span>
 					</a>
 
 					<div class="pt-2 px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Public Website</div>

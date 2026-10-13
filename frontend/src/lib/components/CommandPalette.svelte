@@ -17,7 +17,10 @@
 		ChatBubbleLeftRight,
 		Sparkles,
 		UserGroup,
-		DocumentText
+		DocumentText,
+		Cube,
+		InformationCircle,
+		Cog6Tooth
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 
@@ -150,14 +153,24 @@
 			keywords: ["hooks", "extension", "tampermonkey", "whatsapp", "script", "observer", "baileys", "client"]
 		},
 		{
+			id: "mcp",
+			title: "MCP Knowledge Base & Dual-DB",
+			description: "Model Context Protocol JSON-RPC Specification, Dual-DB Isolation & Real Tool Inspector",
+			category: "Databases & Telemetry",
+			url: "/dashboard/mcp",
+			icon: Cube,
+			badge: "MCP v1.0",
+			keywords: ["mcp", "model context protocol", "dual-db", "oracle", "sap", "erp", "tools", "resources", "specification"]
+		},
+		{
 			id: "simulator",
 			title: "WhatsApp ChatOps Simulator",
 			description: "Step-by-Step Interactive Pipeline: Ingest, Parse, Validate, and Stage Inbound Tickets",
 			category: "ChatOps & Hooks",
 			url: "/dashboard/simulator",
 			icon: PaperAirplane,
-			badge: "Simulator",
-			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline"]
+			badge: "Experimental",
+			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline", "experimental"]
 		},
 		{
 			id: "messages",
@@ -176,8 +189,28 @@
 			category: "ChatOps & Hooks",
 			url: "/dashboard/platforms",
 			icon: AdjustmentsHorizontal,
-			badge: "Config",
+			badge: "Flows",
 			keywords: ["platform", "settings", "whatsapp", "telegram", "discord", "slack", "config", "token", "bot", "webhook", "credentials"]
+		},
+		{
+			id: "settings",
+			title: "System Settings & Gatekeeper Policies",
+			description: "Configure Ingestion Policies, High-Value Thresholds, Auto-Reply & Dual-DB Pools",
+			category: "Operations",
+			url: "/dashboard/settings",
+			icon: Cog6Tooth,
+			badge: "Settings",
+			keywords: ["settings", "preferences", "threshold", "gatekeeper", "guardrails", "policies", "config"]
+		},
+		{
+			id: "about",
+			title: "Tentang Kreator & Repositori GitHub",
+			description: "Profil Kreator Rifky (@RifkyA911), Arsitektur Manifesto, dan Link Repositori GitHub",
+			category: "Core Navigation",
+			url: "/dashboard/about",
+			icon: InformationCircle,
+			badge: "About",
+			keywords: ["about", "author", "creator", "rifky", "github", "repo", "manifesto", "tentangku"]
 		}
 	];
 

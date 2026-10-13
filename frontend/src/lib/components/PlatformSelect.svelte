@@ -96,11 +96,11 @@
 	<!-- Shadcn-style Popover Menu -->
 	{#if isOpen}
 		<div
-			class="absolute left-0 mt-1.5 w-56 rounded-xl bg-popover border border-border/80 text-popover-foreground shadow-xl p-1 z-50 animate-in fade-in-80 zoom-in-95 duration-150 backdrop-blur-xl"
+			class="absolute left-0 mt-1.5 w-60 rounded-xl bg-card dark:bg-zinc-900 border border-border/80 text-card-foreground shadow-2xl p-1.5 z-50 animate-in fade-in-80 zoom-in-95 duration-150 ring-1 ring-black/10 dark:ring-white/10"
 			role="listbox"
 			tabindex="-1"
 		>
-			<div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40 mb-1">
+			<div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1">
 				ChatOps Ingress Platform
 			</div>
 

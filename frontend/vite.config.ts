@@ -17,7 +17,13 @@ export default defineConfig({
 			'/api/upload': 'http://127.0.0.1:8088',
 			'/api/inbound-messages': 'http://127.0.0.1:8088',
 			'/api/learned-patterns': 'http://127.0.0.1:8088',
-			'/uploads': 'http://127.0.0.1:8088'
+			'/uploads': 'http://127.0.0.1:8088',
+			// WhatsApp Gateway daemon exec & logs (Bun on port 3002)
+			'/api/wa-gateway': {
+				target: 'http://127.0.0.1:3002',
+				changeOrigin: true,
+				rewrite: (path: string) => path.replace(/^\/api\/wa-gateway/, '/api')
+			}
 			// NOTE: /api/auth is NOT proxied — handled directly by SvelteKit & Better Auth
 		}
 	},

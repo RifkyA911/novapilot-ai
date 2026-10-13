@@ -88,6 +88,7 @@ To guarantee total transaction safety, **NovaPilot AI enforces a strict physical
 - **Interactive Client Hook Ecosystem:** High-resolution animated SVG visualizer with **Pan & Zoom controls** (drag, wheel zoom, reset), realistic status indicators, and accurate flowing paths only for connected adapters.
 - **Real-Time Omnichannel Inbound Feed:** Live message feed across WhatsApp, Telegram, Discord, and Slack with Server-Sent Events (SSE) and 2.5s auto-polling fallback.
 - **Self-Adapting Learning Loop:** Corrections made by engineers in the UI persist into `learned_patterns` in DB 1, adapting regex heuristics in real-time.
+- **WA Gateway Exec Terminal:** Real-time interactive terminal popup communicating directly with WhatsApp Baileys daemon on port 3002 with live stdout log streaming and CLI commands (`ping`, `status`, `test_log`, `clear`).
 - **Streaming System Logs:** Interactive daemon terminal log viewer with level filtering (INFO, WARN, ERROR, DEBUG), auto-scroll, and JSON export.
 - **Whitelisted Group Directory:** Directory of branch WhatsApp groups, Telegram alert channels, and authorized admins with 1-click test simulation.
 
@@ -101,14 +102,17 @@ To guarantee total transaction safety, **NovaPilot AI enforces a strict physical
 | [`/dashboard/cockpit`](http://localhost:3000/dashboard/cockpit) | **Cockpit Overview** | Deep AI analytics: Intent classification distribution, OCR accuracy, and token metrics `[PREVIEW]`. |
 | [`/dashboard/queue`](http://localhost:3000/dashboard/queue) | **Approval Queue** | Pending ChatOps mutation tickets, side-by-side semantic diff inspector, and 1-click approval. |
 | [`/dashboard/history`](http://localhost:3000/dashboard/history) | **Execution History** | Immutable audit log trail with compensating rollback scripts. |
-| [`/dashboard/connectors`](http://localhost:3000/dashboard/connectors) | **Universal DB Connectors** | Multi-engine database GUI (PostgreSQL, Oracle, MySQL, Mongo, Redis, SQLite). |
+| [`/dashboard/connectors`](http://localhost:3000/dashboard/connectors) | **Dual-DB Connectors** | Real Go database pool telemetry, genuine diagnostic ping roundtrip, and schema catalog. |
+| [`/dashboard/mcp`](http://localhost:3000/dashboard/mcp) | **MCP Knowledge Base** | Model Context Protocol JSON-RPC specification, Dual-DB separation, and interactive tool tester. |
 | [`/dashboard/connectivity`](http://localhost:3000/dashboard/connectivity) | **System Telemetry** | LAN IP probes, Go runtime memory metrics, and Ferdium/Rambox health probes. |
 | [`/dashboard/logs`](http://localhost:3000/dashboard/logs) | **System Logs** | Real-time streaming daemon terminal logs from Core :8088, DB 1 :5432, and WA Gateway. |
-| [`/dashboard/messages`](http://localhost:3000/dashboard/messages) | **Inbound Messages** | Real-time omnichannel feed with OCR attachment preview and 1-click ticket staging. |
+| [`/dashboard/messages`](http://localhost:3000/dashboard/messages) | **Inbound Messages** | Real-time omnichannel feed with OCR attachment preview, 1-click ticket staging, and Exec Terminal. |
 | [`/dashboard/hooks`](http://localhost:3000/dashboard/hooks) | **Client Hook Flows** | Interactive Pan & Zoom SVG pipeline for WhatsApp, Ferdium, Rambox, and Baileys. |
 | [`/dashboard/contacts`](http://localhost:3000/dashboard/contacts) | **Group Contacts** | Directory of whitelisted regional branch WhatsApp groups and authorized admins `[PREVIEW]`. |
-| [`/dashboard/simulator`](http://localhost:3000/dashboard/simulator) | **ChatOps Simulator** | Step-by-step interactive simulator: Ingest, Parse, Validate, and Stage tickets. |
-| [`/dashboard/platforms`](http://localhost:3000/dashboard/platforms) | **Platform Settings** | ChatOps credentials, webhook endpoints, and channel whitelist configuration. |
+| [`/dashboard/simulator`](http://localhost:3000/dashboard/simulator) | **ChatOps Simulator** | Step-by-step interactive simulator: Ingest, Parse, Validate, and Stage tickets `[EXPERIMENTAL]`. |
+| [`/dashboard/platforms`](http://localhost:3000/dashboard/platforms) | **Platform Flows** | ChatOps credentials, webhook endpoints, and channel whitelist configuration. |
+| [`/dashboard/settings`](http://localhost:3000/dashboard/settings) | **System Settings** | Gatekeeper policies, high-value transaction approval thresholds, and Dual-DB connection pools. |
+| [`/dashboard/about`](http://localhost:3000/dashboard/about) | **About & Creator** | Creator profile (Rifky / @RifkyA911), architectural manifesto, and official GitHub repository links. |
 
 ---
 

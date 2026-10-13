@@ -73,8 +73,11 @@
 				<div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
 					<PaperAirplane class="h-4 w-4" />
 				</div>
-				<h3 class="text-base font-semibold text-foreground">
+				<h3 class="text-base font-semibold text-foreground flex items-center gap-2 flex-wrap">
 					{cockpit.platformStatuses[cockpit.chatPlatform].name} Ingestion Pipeline Simulator
+					<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+						EXPERIMENTAL
+					</span>
 				</h3>
 			</div>
 			<p class="text-xs text-muted-foreground mt-0.5">

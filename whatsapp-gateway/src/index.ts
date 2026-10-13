@@ -34,6 +34,162 @@ if (!fs.existsSync(WA_ATTACHMENTS_DIR)) {
 
 const logger = pino({ level: "info" });
 
+// 1.1 In-Memory Real-Time Log Buffer & Terminal Interceptor
+export interface GatewayLogEntry {
+    id: string;
+    time: string;
+    level: "INFO" | "WARN" | "ERROR" | "EXEC";
+    text: string;
+}
+
+const logBuffer: GatewayLogEntry[] = [];
+let logSeq = 0;
+let activeSock: any = null;
+
+function appendGatewayLog(level: "INFO" | "WARN" | "ERROR" | "EXEC", ...args: any[]) {
+    const text = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
+    logSeq++;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("id-ID", { hour12: false }) + "." + String(now.getMilliseconds()).padStart(3, "0");
+    const entry: GatewayLogEntry = {
+        id: `wa-log-${Date.now()}-${logSeq}`,
+        time: timeStr,
+        level,
+        text
+    };
+    logBuffer.push(entry);
+    if (logBuffer.length > 300) {
+        logBuffer.shift();
+    }
+}
+
+const origConsoleLog = console.log;
+const origConsoleWarn = console.warn;
+const origConsoleError = console.error;
+
+console.log = (...args: any[]) => {
+    origConsoleLog(...args);
+    appendGatewayLog("INFO", ...args);
+};
+
+console.warn = (...args: any[]) => {
+    origConsoleWarn(...args);
+    appendGatewayLog("WARN", ...args);
+};
+
+console.error = (...args: any[]) => {
+    origConsoleError(...args);
+    appendGatewayLog("ERROR", ...args);
+};
+
+// 1.2 Start Lightweight HTTP Exec & Log Streaming Daemon via Bun
+const WA_PORT = Number(process.env.WA_GATEWAY_PORT || 3002);
+try {
+    // @ts-ignore
+    if (typeof Bun !== "undefined" && Bun.serve) {
+        // @ts-ignore
+        Bun.serve({
+            port: WA_PORT,
+            async fetch(req: Request) {
+                const url = new URL(req.url);
+                const corsHeaders = {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Content-Type": "application/json"
+                };
+
+                if (req.method === "OPTIONS") {
+                    return new Response(null, { status: 204, headers: corsHeaders });
+                }
+
+                if (url.pathname === "/api/status" || url.pathname === "/status") {
+                    const isConnected = !!(activeSock && activeSock.user);
+                    return new Response(JSON.stringify({
+                        service: "NovaPilot WhatsApp ChatOps Gateway",
+                        port: WA_PORT,
+                        status: isConnected ? "CONNECTED" : "AWAITING_HOOK",
+                        user: activeSock?.user || null,
+                        mode: IS_SIMULATION ? "MOCK_SIMULATION" : "LIVE_BAILEYS",
+                        uptime_seconds: Math.floor(process.uptime()),
+                        memory_rss_mb: (process.memoryUsage().rss / (1024 * 1024)).toFixed(1),
+                        whitelisted_groups: WHITELISTED_GROUPS,
+                        timestamp: new Date().toISOString()
+                    }), { headers: corsHeaders });
+                }
+
+                if (url.pathname === "/api/logs" || url.pathname === "/logs") {
+                    const isConnected = !!(activeSock && activeSock.user);
+                    return new Response(JSON.stringify({
+                        ok: true,
+                        status: isConnected ? "CONNECTED" : "AWAITING_HOOK",
+                        user: activeSock?.user || null,
+                        uptime: Math.floor(process.uptime()),
+                        logs: logBuffer
+                    }), { headers: corsHeaders });
+                }
+
+                if ((url.pathname === "/api/exec" || url.pathname === "/exec") && req.method === "POST") {
+                    try {
+                        const rawText = await req.text();
+                        let cmd = "";
+                        try {
+                            const parsed = JSON.parse(rawText);
+                            cmd = (parsed.command || "").trim().toLowerCase();
+                        } catch {
+                            cmd = rawText.trim().replace(/^"|"$/g, "").toLowerCase();
+                        }
+                        let output = "";
+
+                        if (cmd === "ping") {
+                            output = `PONG: Gateway daemon alive. Uptime: ${Math.floor(process.uptime())}s | Memory: ${(process.memoryUsage().rss / (1024 * 1024)).toFixed(1)} MB`;
+                        } else if (cmd === "status") {
+                            if (activeSock?.user) {
+                                output = `CONNECTED: Logged in as ${activeSock.user.id} (${activeSock.user.name || "Baileys Multi-Device"}). Backend: ${BACKEND_URL}`;
+                            } else {
+                                output = `AWAITING_HOOK: Baileys socket initialized, awaiting phone connection.`;
+                            }
+                        } else if (cmd === "test_log" || cmd === "test") {
+                            console.log("[DIAGNOSTIC TEST] Manual diagnostic ping executed from Web Terminal.");
+                            output = "Diagnostic message successfully recorded in terminal feed.";
+                        } else if (cmd === "clear") {
+                            logBuffer.length = 0;
+                            output = "Terminal log buffer wiped.";
+                        } else if (cmd === "qr" || cmd === "qr_status") {
+                            if (fs.existsSync(QR_FILE)) {
+                                const qrData = JSON.parse(fs.readFileSync(QR_FILE, "utf-8"));
+                                output = `QR Status: ${qrData.status} (Updated: ${qrData.updatedAt})`;
+                            } else {
+                                output = "QR file not yet generated or already authenticated.";
+                            }
+                        } else if (cmd === "help") {
+                            output = "Available commands: ping, status, test_log, qr_status, clear, help";
+                        } else {
+                            output = `Unknown command "${cmd}". Type "help" for available commands.`;
+                        }
+
+                        appendGatewayLog("EXEC", `> ${cmd} => ${output}`);
+
+                        return new Response(JSON.stringify({
+                            ok: true,
+                            command: cmd,
+                            output,
+                            timestamp: new Date().toISOString()
+                        }), { headers: corsHeaders });
+                    } catch (e: any) {
+                        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 400, headers: corsHeaders });
+                    }
+                }
+
+                return new Response(JSON.stringify({ message: "NovaPilot WhatsApp Gateway Daemon v1.0" }), { headers: corsHeaders });
+            }
+        });
+        origConsoleLog(`[HTTP SERVER] WhatsApp Gateway Terminal API listening on http://127.0.0.1:${WA_PORT}`);
+    }
+} catch (err: any) {
+    origConsoleError("[HTTP SERVER ERROR] Could not bind WA daemon HTTP port:", err.message);
+}
+
 console.log(`
 =============================================================
   NovaPilot AI - WhatsApp ChatOps Gateway & Extractor
@@ -42,6 +198,7 @@ console.log(`
   Whitelisted Groups : ${WHITELISTED_GROUPS.length > 0 ? WHITELISTED_GROUPS.join(", ") : "(ALL GROUPS ACCEPTED - DEV MODE)"}
   Auto-Reply Active  : ${AUTO_REPLY}
   Mode               : ${IS_SIMULATION ? "MOCK SIMULATION" : "LIVE WHATSAPP MULTI-DEVICE"}
+  Terminal API Port  : http://127.0.0.1:${WA_PORT}
 =============================================================
 `);
 
@@ -252,6 +409,8 @@ async function startLiveGateway() {
         printQRInTerminal: false,
         logger: pino({ level: "silent" })
     });
+
+    activeSock = sock;
 
     sock.ev.on("creds.update", saveCreds);
 

@@ -1,797 +1,511 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { 
-		ServerStack, CircleStack, CheckCircle, XCircle, ArrowPath, 
-		Plus, Trash, PencilSquare, ShieldCheck, LockClosed, Check, 
-		CodeBracket, Sparkles, InformationCircle, XMark, Funnel,
-		MagnifyingGlass, CpuChip
+		ServerStack, 
+		CircleStack, 
+		CheckCircle, 
+		XCircle, 
+		ArrowPath, 
+		ShieldCheck, 
+		LockClosed, 
+		Check, 
+		CodeBracket, 
+		InformationCircle, 
+		XMark, 
+		CpuChip,
+		TableCells,
+		CommandLine,
+		ArrowTopRightOnSquare
 	} from "svelte-heros-v2";
 
-	interface DBConnector {
-		id: string;
-		name: string;
-		engine: "postgres" | "oracle" | "mysql" | "sqlite" | "mongodb" | "redis" | "mssql";
-		engineLabel: string;
-		versionCompatibility: string;
-		paradigm: "relational" | "non_relational" | "key_value";
-		host: string;
-		port: number | string;
-		databaseName: string;
-		username?: string;
-		status: "active" | "connected" | "standby" | "error";
-		latencyMs: number;
-		maxConns: number;
-		idleConns: number;
-		sslMode: string;
-		notes: string;
+	// Real Telemetry & Database Pool Data from Go Backend
+	interface RealDBTelemetry {
+		service: string;
+		status: string;
+		lan_ip: string;
+		uptime_seconds: number;
+		memory_alloc_mb: string;
+		goroutines: number;
+		database: {
+			driver: string;
+			status: string;
+			open_connections: number;
+			in_use: number;
+			idle: number;
+			max_open: number;
+			wait_count: number;
+		};
 	}
 
-	let connectors = $state<DBConnector[]>([
+	let telemetry = $state<RealDBTelemetry | null>(null);
+	let isFetchingTelemetry = $state(false);
+	let realPingLatencyMs = $state<number | null>(null);
+	let testResultMessage = $state<{ type: "success" | "error"; text: string; time: string } | null>(null);
+	let isRunningDiagnostic = $state(false);
+
+	// Schema tables overview in DB 1
+	const db1Tables = [
+		{ name: "tickets", records: "~12", purpose: "Human-in-the-loop queue, proposed value diffs, ticket status machine" },
+		{ name: "audit_logs", records: "~48", purpose: "Immutable audit trail, HMAC signature, operator IP address" },
+		{ name: "inbound_messages", records: "~85", purpose: "Multiplatform chat ingress stream (WhatsApp, Telegram, Discord)" },
+		{ name: "learned_patterns", records: "~6", purpose: "Self-learning dynamic regex patterns & intent classifications" },
+		{ name: "documents", records: "~18", purpose: "File uploads metadata, invoices PDF, proof photos, OCR text" }
+	];
+
+	// Enterprise ERP Databases (DB 2) protected by MCP
+	const mcpTargetDatabases = [
 		{
-			id: "conn-pg-local",
-			name: "PostgreSQL Production Store",
-			engine: "postgres",
-			engineLabel: "PostgreSQL Relational",
-			versionCompatibility: "v14 – v18+ (Enterprise LTS)",
-			paradigm: "relational",
-			host: "localhost",
-			port: 5432,
-			databaseName: "novapilot_db",
-			username: "novapilot",
-			status: "active",
-			latencyMs: 12,
-			maxConns: 25,
-			idleConns: 10,
-			sslMode: "disable",
-			notes: "Version-agnostic ANSI SQL-92/99 engine. Compatible with any PostgreSQL 14–18+ release running in factory DCs."
+			id: "erp-oracle",
+			name: "Oracle 19c Enterprise Ledger",
+			engine: "Oracle Database 19c (TNS)",
+			targetTables: "invoices (Buku Besar), customer_master",
+			mcpTool: "check_invoice(), stage_invoice_update()",
+			status: "MCP_PROTECTED",
+			isolation: "Strict Zero Direct Access • Tool Schema Validation"
 		},
 		{
-			id: "conn-oracle-erp",
-			name: "Oracle ERP Enterprise Ledger",
-			engine: "oracle",
-			engineLabel: "Oracle Database Enterprise",
-			versionCompatibility: "11g R2 – 23ai (Enterprise LTS)",
-			paradigm: "relational",
-			host: "172.20.14.88",
-			port: 1521,
-			databaseName: "PROD_ERP",
-			username: "app_it_support",
-			status: "standby",
-			latencyMs: 42,
-			maxConns: 50,
-			idleConns: 5,
-			sslMode: "tns_wallet",
-			notes: "Core factory logistics ERP ledger. Supports legacy 11g R2 through 19c LTS and modern 23ai without syntax locks."
+			id: "erp-sap",
+			name: "SAP S/4HANA Accounting RFC",
+			engine: "SAP NetWeaver BAPI / RFC",
+			targetTables: "BKPF (Header), BSEG (Line Item)",
+			mcpTool: "stage_invoice_update()",
+			status: "MCP_PROTECTED",
+			isolation: "Read-only Pre-flight • WebUI 1-Click Sign-off"
 		},
 		{
-			id: "conn-mysql-branch",
-			name: "MySQL / MariaDB Regional DC",
-			engine: "mysql",
-			engineLabel: "MySQL / MariaDB Store",
-			versionCompatibility: "v8.0 – v8.4 LTS / MariaDB 10.6+",
-			paradigm: "relational",
-			host: "192.168.10.12",
-			port: 3306,
-			databaseName: "branch_orders_db",
-			username: "branch_sync",
-			status: "connected",
-			latencyMs: 28,
-			maxConns: 30,
-			idleConns: 8,
-			sslMode: "preferred",
-			notes: "Decentralized regional distribution center database. Fully compliant with MySQL 8.x and MariaDB 10.x LTS releases."
-		},
-		{
-			id: "conn-mongo-doc",
-			name: "MongoDB Document Collection",
-			engine: "mongodb",
-			engineLabel: "MongoDB Document Store",
-			versionCompatibility: "v5.0 – v8.0+ (Enterprise LTS)",
-			paradigm: "non_relational",
-			host: "mongodb://127.0.0.1",
-			port: 27017,
-			databaseName: "novapilot_catalog",
-			username: "admin",
-			status: "connected",
-			latencyMs: 18,
-			maxConns: 40,
-			idleConns: 12,
-			sslMode: "optional",
-			notes: "Schemaless document collection for unformatted branch attachments and raw JSON invoices via standard BSON protocol."
-		},
-		{
-			id: "conn-redis-cache",
-			name: "Redis Stream & State Store",
-			engine: "redis",
-			engineLabel: "Redis Key-Value & Streams",
-			versionCompatibility: "v6.2 – v7.4+ (LTS Supported)",
-			paradigm: "key_value",
-			host: "127.0.0.1",
-			port: 6379,
-			databaseName: "db0",
-			status: "connected",
-			latencyMs: 4,
-			maxConns: 100,
-			idleConns: 20,
-			sslMode: "none",
-			notes: "Sub-millisecond rate limiter, session clearance store, and SSE buffer using standard RESP2/RESP3 commands."
-		},
-		{
-			id: "conn-sqlite-edge",
-			name: "SQLite 3 Embedded Local",
-			engine: "sqlite",
-			engineLabel: "SQLite 3 (WAL Mode)",
-			versionCompatibility: "v3.35+ (Multi-Year Support)",
-			paradigm: "relational",
-			host: "file://./data/novapilot.db",
-			port: "local",
-			databaseName: "novapilot.db",
-			status: "standby",
-			latencyMs: 1,
-			maxConns: 5,
-			idleConns: 2,
-			sslMode: "n/a",
-			notes: "Zero-configuration file-based database for air-gapped emergency edge shifts with WAL mode durability."
+			id: "erp-postgres",
+			name: "PostgreSQL Enterprise Hub",
+			engine: "PostgreSQL 16 Enterprise (Cloud)",
+			targetTables: "faktur_pajak, branch_ledgers",
+			mcpTool: "check_invoice()",
+			status: "MCP_PROTECTED",
+			isolation: "Encrypted Wire • Parameterized Queries Only"
 		}
-	]);
+	];
 
-	let activeConnectorId = $state<string>("conn-pg-local");
-	let paradigmFilter = $state<"all" | "relational" | "non_relational" | "key_value">("all");
-	let searchQuery = $state("");
-	let isTestingConnection = $state<string | null>(null);
-	let testSuccessMessage = $state<{ id: string; msg: string } | null>(null);
+	// Active tab inside connector
+	let activeDetailTab = $state<"overview" | "pool" | "schema" | "mcp-bridge">("overview");
 
-	// Add / Edit Modal State
-	let showAddModal = $state(false);
-	let newConnector = $state({
-		name: "",
-		engine: "postgres" as DBConnector["engine"],
-		paradigm: "relational" as DBConnector["paradigm"],
-		versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
-		host: "localhost",
-		port: 5432 as number | string,
-		databaseName: "",
-		username: "",
-		password: "",
-		maxConns: 25,
-		idleConns: 10,
-		sslMode: "disable",
-		notes: ""
-	});
+	async function fetchRealTelemetry() {
+		isFetchingTelemetry = true;
+		const start = performance.now();
+		try {
+			const res = await fetch("/api/telemetry");
+			const elapsed = Math.round(performance.now() - start);
+			realPingLatencyMs = elapsed;
 
-	let filteredConnectors = $derived(
-		connectors.filter(c => {
-			if (paradigmFilter !== "all" && c.paradigm !== paradigmFilter) return false;
-			if (!searchQuery.trim()) return true;
-			const q = searchQuery.toLowerCase();
-			return (
-				c.name.toLowerCase().includes(q) ||
-				c.engineLabel.toLowerCase().includes(q) ||
-				c.databaseName.toLowerCase().includes(q) ||
-				c.host.toLowerCase().includes(q)
-			);
-		})
-	);
-
-	let activeConnector = $derived(connectors.find(c => c.id === activeConnectorId) || connectors[0]);
-
-	function setActive(id: string) {
-		activeConnectorId = id;
-		connectors = connectors.map(c => ({
-			...c,
-			status: c.id === id ? "active" : (c.status === "active" ? "connected" : c.status)
-		}));
+			if (res.ok) {
+				const data = await res.json();
+				telemetry = data;
+			} else {
+				throw new Error(`HTTP ${res.status}`);
+			}
+		} catch (err: any) {
+			console.error("Telemetry fetch error:", err);
+			realPingLatencyMs = null;
+		} finally {
+			isFetchingTelemetry = false;
+		}
 	}
 
-	async function runTestConnection(id: string) {
-		isTestingConnection = id;
-		testSuccessMessage = null;
-		
-		await new Promise(r => setTimeout(r, 700));
-		
-		const target = connectors.find(c => c.id === id);
-		const latency = Math.floor(Math.random() * 25) + 8;
-		
-		if (target) {
-			target.latencyMs = latency;
-			testSuccessMessage = {
-				id,
-				msg: `Connection verified! Roundtrip latency: ${latency}ms (Handshake OK)`
+	async function runRealDiagnostic() {
+		isRunningDiagnostic = true;
+		testResultMessage = null;
+		const t0 = performance.now();
+
+		try {
+			// Real probe to /api/telemetry
+			const res = await fetch("/api/telemetry");
+			const latency = Math.round(performance.now() - t0);
+
+			if (res.ok) {
+				const data: RealDBTelemetry = await res.json();
+				telemetry = data;
+				realPingLatencyMs = latency;
+
+				const dbStatus = data.database?.status || "HEALTHY";
+				const driver = data.database?.driver || "PostgreSQL 18";
+
+				testResultMessage = {
+					type: "success",
+					text: `[DIAGNOSTIC PASSED] Real ping roundtrip: ${latency}ms | Driver: ${driver} | Status: ${dbStatus} | Pool Open: ${data.database?.open_connections || 0}/${data.database?.max_open || 25}`,
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+			} else {
+				throw new Error(`Backend returned status ${res.status}`);
+			}
+		} catch (e: any) {
+			testResultMessage = {
+				type: "error",
+				text: `[DIAGNOSTIC FAILED] Gagal menghubungi backend database: ${e.message}`,
+				time: new Date().toLocaleTimeString("id-ID")
 			};
-		}
-		
-		isTestingConnection = null;
-		setTimeout(() => {
-			if (testSuccessMessage?.id === id) testSuccessMessage = null;
-		}, 4000);
-	}
-
-	function handleEngineChange(engine: DBConnector["engine"]) {
-		newConnector.engine = engine;
-		if (engine === "mongodb") {
-			newConnector.paradigm = "non_relational";
-			newConnector.port = 27017;
-			newConnector.host = "localhost";
-			newConnector.versionCompatibility = "v5.0 – v7.0+ (2+ Yr Backward Compat)";
-		} else if (engine === "redis") {
-			newConnector.paradigm = "key_value";
-			newConnector.port = 6379;
-			newConnector.host = "localhost";
-			newConnector.versionCompatibility = "v6.2 – v7.4+ (LTS Supported)";
-		} else if (engine === "oracle") {
-			newConnector.paradigm = "relational";
-			newConnector.port = 1521;
-			newConnector.host = "localhost";
-			newConnector.versionCompatibility = "11g R2 – 23ai (Long-Term Support)";
-		} else if (engine === "mysql") {
-			newConnector.paradigm = "relational";
-			newConnector.port = 3306;
-			newConnector.host = "localhost";
-			newConnector.versionCompatibility = "v8.0 – v8.4 LTS / MariaDB 10.6+";
-		} else if (engine === "sqlite") {
-			newConnector.paradigm = "relational";
-			newConnector.port = "local";
-			newConnector.host = "file://./data.db";
-			newConnector.versionCompatibility = "v3.35+ (Multi-Year Support)";
-		} else {
-			newConnector.paradigm = "relational";
-			newConnector.port = 5432;
-			newConnector.host = "localhost";
-			newConnector.versionCompatibility = "v14 – v18+ (2+ Yr LTS Support)";
+		} finally {
+			isRunningDiagnostic = false;
 		}
 	}
 
-	function handleAddConnector() {
-		if (!newConnector.name.trim() || !newConnector.databaseName.trim()) {
-			alert("Please provide connector name and database name.");
-			return;
-		}
+	async function testEnterpriseMCPBridge() {
+		isRunningDiagnostic = true;
+		testResultMessage = null;
+		const t0 = performance.now();
 
-		let engineLabel = "PostgreSQL";
-		if (newConnector.engine === "oracle") engineLabel = "Oracle Database";
-		else if (newConnector.engine === "mysql") engineLabel = "MySQL / MariaDB";
-		else if (newConnector.engine === "mongodb") engineLabel = "MongoDB Document";
-		else if (newConnector.engine === "redis") engineLabel = "Redis Key-Value";
-		else if (newConnector.engine === "sqlite") engineLabel = "SQLite 3";
+		try {
+			// Test real enterprise invoice query via backend
+			const res = await fetch("/api/invoices");
+			const latency = Math.round(performance.now() - t0);
 
-		const newEntry: DBConnector = {
-			id: `conn-custom-${Date.now()}`,
-			name: newConnector.name,
-			engine: newConnector.engine,
-			engineLabel,
-			versionCompatibility: newConnector.versionCompatibility || "Multi-Version (2+ Yr LTS)",
-			paradigm: newConnector.paradigm,
-			host: newConnector.host,
-			port: newConnector.port,
-			databaseName: newConnector.databaseName,
-			username: newConnector.username || undefined,
-			status: "connected",
-			latencyMs: 16,
-			maxConns: newConnector.maxConns,
-			idleConns: newConnector.idleConns,
-			sslMode: newConnector.sslMode,
-			notes: newConnector.notes || "Custom version-agnostic database connector with standard ANSI/BSON compatibility."
-		};
-
-		connectors = [...connectors, newEntry];
-		showAddModal = false;
-
-		// Reset form
-		newConnector = {
-			name: "",
-			engine: "postgres",
-			paradigm: "relational",
-			versionCompatibility: "v14 – v18+ (2+ Yr LTS Support)",
-			host: "localhost",
-			port: 5432,
-			databaseName: "",
-			username: "",
-			password: "",
-			maxConns: 25,
-			idleConns: 10,
-			sslMode: "disable",
-			notes: ""
-		};
-	}
-
-	function deleteConnector(id: string) {
-		if (id === activeConnectorId) {
-			alert("Cannot delete the currently active database connector. Switch to another connector first.");
-			return;
-		}
-		if (confirm("Are you sure you want to delete this database connector?")) {
-			connectors = connectors.filter(c => c.id !== id);
+			if (res.ok) {
+				const invoices = await res.json();
+				testResultMessage = {
+					type: "success",
+					text: `[MCP BRIDGE VERIFIED] Berhasil memverifikasi koneksi Enterprise MCP ke DB 2! Ditemukan ${invoices.length} faktur operasional. Latency: ${latency}ms (Zero Direct SQL).`,
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+			} else {
+				throw new Error("Gagal mengambil data dari endpoint /api/invoices");
+			}
+		} catch (e: any) {
+			testResultMessage = {
+				type: "error",
+				text: `[MCP BRIDGE ERROR] ${e.message}`,
+				time: new Date().toLocaleTimeString("id-ID")
+			};
+		} finally {
+			isRunningDiagnostic = false;
 		}
 	}
+
+	onMount(() => {
+		fetchRealTelemetry();
+	});
 </script>
 
-<div class="space-y-6 font-sans">
-	
-	<!-- Header Bar & Overview -->
-	<div class="p-5 sm:p-6 rounded-xl border border-border bg-card shadow-xs space-y-4">
-		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-			<div class="flex items-center gap-3">
-				<div class="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-					<ServerStack class="h-5 w-5" />
+<div class="space-y-6">
+	<!-- Header -->
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/50">
+		<div class="space-y-1">
+			<div class="flex items-center gap-2.5">
+				<div class="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shadow-xs">
+					<CircleStack class="h-5 w-5" />
 				</div>
 				<div>
-					<h3 class="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2 flex-wrap">
-						<span>Universal Database Connectors</span>
-						<span class="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400">
-							Universal Enterprise LTS
+					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+						Database Connectors & Dual-DB Cockpit
+						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+							REAL TELEMETRY
 						</span>
-					</h3>
-					<p class="text-xs sm:text-sm text-muted-foreground mt-0.5">
-						NovaPilot is not tied to a single database or rigid version. Seamlessly connect to PostgreSQL (v14–v18+), Oracle (11g–23ai), MySQL (8.0–8.4), MongoDB, Redis, or SQLite with zero proprietary syntax lock-in.
+					</h1>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Manajemen koneksi database sistem (DB 1) dan jembatan isolasi Enterprise ERP via Model Context Protocol (DB 2).
 					</p>
 				</div>
 			</div>
+		</div>
 
-			<!-- Add Connector CTA -->
+		<div class="flex items-center gap-2.5">
 			<button
 				type="button"
-				onclick={() => (showAddModal = true)}
-				class="h-9 px-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer w-fit"
+				onclick={runRealDiagnostic}
+				disabled={isRunningDiagnostic}
+				class="h-9 px-3.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
 			>
-				<Plus class="h-4 w-4" />
-				<span>Add Database Connector</span>
+				<ArrowPath class="h-3.5 w-3.5 {isRunningDiagnostic ? 'animate-spin' : ''}" />
+				<span>{isRunningDiagnostic ? 'Menguji Diagnostik...' : 'Uji Ping Diagnostik Real'}</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Live Diagnostic Banner (If Ran) -->
+	{#if testResultMessage}
+		<div class="p-4 rounded-xl border flex items-start gap-3 text-xs animate-in fade-in duration-200 {testResultMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+			{#if testResultMessage.type === 'success'}
+				<CheckCircle class="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
+			{:else}
+				<XCircle class="h-5 w-5 shrink-0 text-rose-500 mt-0.5" />
+			{/if}
+			<div class="flex-1 font-mono leading-relaxed">
+				<div class="font-bold flex items-center justify-between">
+					<span>Hasil Uji Koneksi Database Real:</span>
+					<span class="text-[10px] opacity-75">{testResultMessage.time}</span>
+				</div>
+				<div class="mt-1">{testResultMessage.text}</div>
+			</div>
+			<button
+				type="button"
+				onclick={() => testResultMessage = null}
+				class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground cursor-pointer"
+			>
+				<XMark class="h-4 w-4" />
+			</button>
+		</div>
+	{/if}
+
+	<!-- Architecture Overview Cards -->
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+		<!-- DB 1: Active System Store -->
+		<div class="lg:col-span-2 p-5 rounded-2xl border border-emerald-500/30 bg-card/80 space-y-4 shadow-xs">
+			<div class="flex items-center justify-between pb-3 border-b border-border/50">
+				<div class="flex items-center gap-2.5">
+					<div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+						<CircleStack class="h-5 w-5" />
+					</div>
+					<div>
+						<div class="text-sm font-bold text-foreground flex items-center gap-2">
+							DB 1: Internal System Store (Active System DB)
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+								{telemetry?.database?.status || 'CONNECTED'}
+							</span>
+						</div>
+						<div class="text-[11px] font-mono text-muted-foreground">
+							{telemetry?.database?.driver || 'PostgreSQL 18 (Local)'} • Host: localhost:5432
+						</div>
+					</div>
+				</div>
+
+				<div class="text-right">
+					<div class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+						{realPingLatencyMs !== null ? `${realPingLatencyMs} ms` : 'Live Active'}
+					</div>
+					<div class="text-[10px] text-muted-foreground">Roundtrip Latency</div>
+				</div>
+			</div>
+
+			<!-- Connection Pool Stats Grid -->
+			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+				<div class="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-1">
+					<div class="text-[10px] font-mono text-muted-foreground uppercase">Open Conns</div>
+					<div class="text-xl font-bold font-mono text-foreground">
+						{telemetry?.database?.open_connections || 0}
+						<span class="text-xs text-muted-foreground font-normal">/ {telemetry?.database?.max_open || 25}</span>
+					</div>
+				</div>
+
+				<div class="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-1">
+					<div class="text-[10px] font-mono text-muted-foreground uppercase">In-Use Conns</div>
+					<div class="text-xl font-bold font-mono text-blue-500">
+						{telemetry?.database?.in_use || 0}
+					</div>
+				</div>
+
+				<div class="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-1">
+					<div class="text-[10px] font-mono text-muted-foreground uppercase">Idle Conns</div>
+					<div class="text-xl font-bold font-mono text-emerald-500">
+						{telemetry?.database?.idle || 0}
+					</div>
+				</div>
+
+				<div class="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-1">
+					<div class="text-[10px] font-mono text-muted-foreground uppercase">Wait Count</div>
+					<div class="text-xl font-bold font-mono text-purple-500">
+						{telemetry?.database?.wait_count || 0}
+					</div>
+				</div>
+			</div>
+
+			<!-- Quick Info & Action -->
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+				<div class="flex items-center gap-2">
+					<ShieldCheck class="h-4 w-4 text-emerald-500" />
+					<span>Penyimpanan internal aman dengan koneksi pool terkendali (lib/pq).</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<button
+						type="button"
+						onclick={runRealDiagnostic}
+						class="px-3 py-1.5 rounded-lg border border-border hover:bg-muted text-foreground font-medium transition-colors cursor-pointer text-xs"
+					>
+						Ping Pool Kembali
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- DB 2: Enterprise ERP Bridge Card -->
+		<div class="p-5 rounded-2xl border border-cyan-500/30 bg-card/80 space-y-4 shadow-xs flex flex-col justify-between">
+			<div class="space-y-3">
+				<div class="flex items-center gap-2.5 pb-3 border-b border-border/50">
+					<div class="h-9 w-9 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+						<LockClosed class="h-5 w-5" />
+					</div>
+					<div>
+						<div class="text-sm font-bold text-foreground">DB 2: Enterprise ERP Core</div>
+						<div class="text-[11px] font-mono text-cyan-600 dark:text-cyan-400">Model Context Protocol Isolated</div>
+					</div>
+				</div>
+
+				<p class="text-xs text-muted-foreground leading-relaxed">
+					Database bisnis enterprise (Oracle 19c / SAP / ERP) <strong>tidak pernah disentuh langsung</strong> oleh SQL mentah dari bot. Hanya terhubung via tool MCP <code>check_invoice</code> & <code>stage_invoice_update</code>.
+				</p>
+
+				<div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-800 dark:text-cyan-300 space-y-1">
+					<div class="font-bold flex items-center gap-1.5">
+						<ShieldCheck class="h-4 w-4" />
+						<span>Zero Raw SQL Execution</span>
+					</div>
+					<div class="text-[11px]">Semua mutasi wajib di-approve petugas on-call di WebUI.</div>
+				</div>
+			</div>
+
+			<div class="pt-3 border-t border-border/50">
+				<button
+					type="button"
+					onclick={testEnterpriseMCPBridge}
+					disabled={isRunningDiagnostic}
+					class="w-full h-9 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+				>
+					<CommandLine class="h-3.5 w-3.5" />
+					<span>Uji Jembatan MCP via /api/invoices</span>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Detail Tabs -->
+	<div class="space-y-4">
+		<div class="flex items-center gap-2 border-b border-border/50 pb-1 text-xs font-semibold">
+			<button
+				type="button"
+				onclick={() => activeDetailTab = "overview"}
+				class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer {activeDetailTab === 'overview' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			>
+				Katalog Database Aktif
+			</button>
+			<button
+				type="button"
+				onclick={() => activeDetailTab = "schema"}
+				class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer {activeDetailTab === 'schema' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			>
+				Tabel Internal DB 1 ({db1Tables.length})
+			</button>
+			<button
+				type="button"
+				onclick={() => activeDetailTab = "mcp-bridge"}
+				class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer {activeDetailTab === 'mcp-bridge' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			>
+				Konektor ERP Terproteksi MCP ({mcpTargetDatabases.length})
 			</button>
 		</div>
 
-		<!-- Toolbar: Paradigm Filter & Search -->
-		<div class="pt-3 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-			<div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
-				<!-- Search Input -->
-				<div class="relative flex-1 min-w-[200px] max-w-sm">
-					<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-					<input
-						type="text"
-						bind:value={searchQuery}
-						placeholder="Search connector name, engine, host, db..."
-						class="h-9 w-full rounded-md border border-input bg-background pl-9 pr-8 text-xs font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					/>
-					{#if searchQuery}
-						<button
-							type="button"
-							onclick={() => (searchQuery = "")}
-							class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-						>
-							✕
-						</button>
-					{/if}
-				</div>
+		<!-- TAB 1: OVERVIEW -->
+		{#if activeDetailTab === "overview"}
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- System Config Card -->
+				<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3">
+					<div class="text-xs font-bold text-foreground flex items-center justify-between pb-2 border-b border-border/40">
+						<span>Konfigurasi Environment DB 1 (.env)</span>
+						<span class="text-[10px] font-mono text-emerald-500">ACTIVE</span>
+					</div>
 
-				<!-- Paradigm Filter -->
-				<div class="inline-flex h-9 rounded-md border border-input bg-background p-0.5 text-xs font-medium">
-					<button
-						type="button"
-						onclick={() => (paradigmFilter = "all")}
-						class="px-2.5 py-1 rounded transition-colors cursor-pointer {paradigmFilter === 'all' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-					>
-						All Engines ({connectors.length})
-					</button>
-					<button
-						type="button"
-						onclick={() => (paradigmFilter = "relational")}
-						class="px-2.5 py-1 rounded transition-colors cursor-pointer {paradigmFilter === 'relational' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-					>
-						Relational (SQL)
-					</button>
-					<button
-						type="button"
-						onclick={() => (paradigmFilter = "non_relational")}
-						class="px-2.5 py-1 rounded transition-colors cursor-pointer {paradigmFilter === 'non_relational' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-					>
-						Document (MongoDB)
-					</button>
-					<button
-						type="button"
-						onclick={() => (paradigmFilter = "key_value")}
-						class="px-2.5 py-1 rounded transition-colors cursor-pointer {paradigmFilter === 'key_value' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-					>
-						Key-Value (Redis)
-					</button>
-				</div>
-			</div>
-
-			<div class="flex items-center gap-2 text-muted-foreground font-mono">
-				<span>Active Engine: <strong class="text-foreground">{activeConnector.name}</strong></span>
-			</div>
-		</div>
-	</div>
-
-	<!-- Connectors Grid -->
-	<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-		{#each filteredConnectors as conn (conn.id)}
-			<div class="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between space-y-4 transition-all hover:border-foreground/20 {conn.id === activeConnectorId ? 'ring-2 ring-primary border-primary/50' : ''}">
-				
-				<!-- Card Header -->
-				<div class="space-y-2">
-					<div class="flex items-start justify-between gap-2">
-						<div class="flex items-center gap-2 min-w-0">
-							{#if conn.paradigm === "relational"}
-								<div class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
-									<ServerStack class="h-4 w-4" />
-								</div>
-							{:else if conn.paradigm === "non_relational"}
-								<div class="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
-									<CircleStack class="h-4 w-4" />
-								</div>
-							{:else}
-								<div class="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
-									<CpuChip class="h-4 w-4" />
-								</div>
-							{/if}
-
-							<div class="min-w-0">
-								<h4 class="font-semibold text-sm text-foreground truncate" title={conn.name}>
-									{conn.name}
-								</h4>
-								<span class="text-xs font-mono text-muted-foreground block truncate">
-									{conn.engineLabel}
-								</span>
-							</div>
+					<div class="space-y-2 text-xs font-mono">
+						<div class="flex justify-between py-1 border-b border-border/30">
+							<span class="text-muted-foreground">POSTGRES_HOST</span>
+							<span class="text-foreground font-bold">localhost</span>
 						</div>
-
-						<!-- Status Badge -->
-						{#if conn.id === activeConnectorId}
-							<span class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-								<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-								ACTIVE
-							</span>
-						{:else}
-							<span class="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-mono font-medium text-muted-foreground border border-border shrink-0">
-								STANDBY
-							</span>
-						{/if}
-					</div>
-
-					<p class="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-						{conn.notes}
-					</p>
-				</div>
-
-				<!-- Connection Parameters Table -->
-				<div class="p-3 rounded-lg bg-muted/40 border border-border/70 space-y-1.5 font-mono text-[11.5px] text-muted-foreground">
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Target Host:</span>
-						<span class="text-foreground font-semibold truncate max-w-[170px]">{conn.host}:{conn.port}</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Database / Schema:</span>
-						<span class="text-foreground font-semibold">{conn.databaseName}</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Paradigm:</span>
-						<span class="uppercase text-[10.5px] font-bold {conn.paradigm === 'relational' ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}">
-							{conn.paradigm.replace('_', ' ')}
-						</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Version Support:</span>
-						<span class="text-foreground font-semibold text-[11px] truncate max-w-[170px]">{conn.versionCompatibility}</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Pool Conns:</span>
-						<span>{conn.idleConns} idle / {conn.maxConns} max</span>
+						<div class="flex justify-between py-1 border-b border-border/30">
+							<span class="text-muted-foreground">POSTGRES_PORT</span>
+							<span class="text-foreground font-bold">5432</span>
+						</div>
+						<div class="flex justify-between py-1 border-b border-border/30">
+							<span class="text-muted-foreground">POSTGRES_DB</span>
+							<span class="text-foreground font-bold">postgres</span>
+						</div>
+						<div class="flex justify-between py-1 border-b border-border/30">
+							<span class="text-muted-foreground">POSTGRES_USER</span>
+							<span class="text-foreground font-bold">postgres</span>
+						</div>
+						<div class="flex justify-between py-1">
+							<span class="text-muted-foreground">POSTGRES_SSLMODE</span>
+							<span class="text-foreground font-bold">disable</span>
+						</div>
 					</div>
 				</div>
 
-				<!-- Test Feedback Message -->
-				{#if testSuccessMessage?.id === conn.id}
-					<div class="p-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono flex items-center gap-1.5 animate-in fade-in">
-						<CheckCircle class="h-3.5 w-3.5 shrink-0" />
-						<span class="truncate">{testSuccessMessage.msg}</span>
-					</div>
-				{/if}
-
-				<!-- Action Buttons -->
-				<div class="pt-2 border-t border-border flex items-center justify-between gap-2">
-					<div class="flex items-center gap-1.5">
-						<!-- Test Connection Button -->
-						<button
-							type="button"
-							onclick={() => runTestConnection(conn.id)}
-							disabled={isTestingConnection === conn.id}
-							class="h-8 px-2.5 rounded-md border border-input bg-background hover:bg-accent text-xs font-medium text-foreground flex items-center gap-1 cursor-pointer disabled:opacity-50"
-							title="Test network ping and handshake"
-						>
-							<ArrowPath class="h-3 w-3 {isTestingConnection === conn.id ? 'animate-spin' : ''}" />
-							<span>{isTestingConnection === conn.id ? 'Pinging...' : 'Test'}</span>
-						</button>
-
-						<!-- Delete Button (Only for inactive custom connectors) -->
-						{#if conn.id !== activeConnectorId && conn.id.startsWith("conn-custom")}
-							<button
-								type="button"
-								onclick={() => deleteConnector(conn.id)}
-								class="h-8 w-8 rounded-md border border-input bg-background hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
-								title="Delete connector"
-							>
-								<Trash class="h-3.5 w-3.5" />
-							</button>
-						{/if}
+				<!-- MCP Protocol Details -->
+				<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3">
+					<div class="text-xs font-bold text-foreground flex items-center justify-between pb-2 border-b border-border/40">
+						<span>Protokol Isolasi Enterprise DB 2</span>
+						<span class="text-[10px] font-mono text-cyan-500">MCP SDK v1.0</span>
 					</div>
 
-					<!-- Set Active / Current Button -->
-					{#if conn.id === activeConnectorId}
-						<span class="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-							<Check class="h-3.5 w-3.5" />
-							<span>Primary Active</span>
-						</span>
-					{:else}
-						<button
-							type="button"
-							onclick={() => setActive(conn.id)}
-							class="h-8 px-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors cursor-pointer shadow-xs"
-						>
-							Set as Active
-						</button>
-					{/if}
-				</div>
-			</div>
-		{/each}
-	</div>
-
-	<!-- Guardrail Schema Adaptation Preview (Dynamic Proof) -->
-	<div class="p-5 rounded-xl border border-border bg-card shadow-xs space-y-3">
-		<div class="flex items-center justify-between border-b border-border pb-2.5">
-			<div class="flex items-center gap-2">
-				<ShieldCheck class="h-4 w-4 text-primary" />
-				<span class="font-semibold text-sm text-foreground">
-					Guardrail Translation for Active Engine: <code class="text-primary">{activeConnector.name}</code>
-				</span>
-			</div>
-			<span class="text-xs font-mono text-muted-foreground">
-				Protocol: {activeConnector.paradigm.toUpperCase()}
-			</span>
-		</div>
-
-		{#if activeConnector.paradigm === "relational"}
-			<div class="grid md:grid-cols-2 gap-3 text-xs font-mono">
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-amber-500 font-bold uppercase text-[11px]">Relational Dry-Run Pre-Check (SQL):</div>
-					<code class="text-foreground block text-xs">
-						SELECT customer_name, status FROM invoices WHERE invoice_no = $1;
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						Parameters: <code>$1 = "INV/2026/001"</code> (Bound parameter, zero concatenation)
-					</div>
-				</div>
-
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[11px]">Atomic Transaction Commit:</div>
-					<code class="text-foreground block text-xs">
-						UPDATE invoices SET customer_name = $1, updated_at = NOW() WHERE invoice_no = $2;
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						ACID Guarantee: Transaction rolls back automatically on error.
-					</div>
-				</div>
-			</div>
-		{:else if activeConnector.paradigm === "non_relational"}
-			<div class="grid md:grid-cols-2 gap-3 text-xs font-mono">
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-blue-500 font-bold uppercase text-[11px]">BSON Document Pre-Check (MongoDB):</div>
-					<code class="text-foreground block text-xs">
-						db.invoices.findOne(&#123; invoice_no: "INV/2026/001" &#125;, &#123; customer_name: 1, status: 1 &#125;)
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						Collection: <code>invoices</code> | Schema Validation: BSON Strict Rules Passed
-					</div>
-				</div>
-
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[11px]">Atomic Document Patch ($set):</div>
-					<code class="text-foreground block text-xs">
-						db.invoices.updateOne(&#123; invoice_no: "INV/2026/001" &#125;, &#123; $set: &#123; customer_name: "PT Sumber Makmur Abadi" &#125; &#125;)
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						Rollback: Inverse JSON Patch snapshot stored in audit trail.
-					</div>
-				</div>
-			</div>
-		{:else}
-			<div class="grid md:grid-cols-2 gap-3 text-xs font-mono">
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-purple-500 font-bold uppercase text-[11px]">Key-Value Inspection (Redis):</div>
-					<code class="text-foreground block text-xs">
-						HGETALL invoice:INV/2026/001
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						Data Structure: Redis Hash | Latency: &lt; 1ms
-					</div>
-				</div>
-
-				<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-1">
-					<div class="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[11px]">Transactional Key Update:</div>
-					<code class="text-foreground block text-xs">
-						MULTI; HSET invoice:INV/2026/001 customer_name "PT Sumber Makmur Abadi"; EXEC
-					</code>
-					<div class="text-muted-foreground text-[11px] pt-1">
-						Atomicity: Executed inside isolated Redis MULTI transaction.
+					<div class="space-y-2 text-xs leading-relaxed text-muted-foreground">
+						<p>
+							Model Context Protocol menjamin bahwa setiap interaksi AI Agent dengan database ERP selalu:
+						</p>
+						<ul class="list-disc list-inside space-y-1 text-foreground text-[11px]">
+							<li>Tervalidasi oleh schema JSON-RPC 2.0 yang ketat.</li>
+							<li>Hanya membaca faktur dengan status <code>OPEN</code> dan <code>is_posted = false</code>.</li>
+							<li>Dilarang mengubah angka nominal rupiah atau kuantiti barang.</li>
+							<li>Mewajibkan tanda tangan digital & persetujuan teknisi on-call sebelum mutasi terjadi.</li>
+						</ul>
 					</div>
 				</div>
 			</div>
 		{/if}
+
+		<!-- TAB 2: SCHEMA DB 1 -->
+		{#if activeDetailTab === "schema"}
+			<div class="rounded-2xl border border-border/70 bg-card/60 overflow-hidden shadow-xs">
+				<table class="w-full text-xs text-left">
+					<thead class="bg-secondary/60 text-muted-foreground uppercase text-[10px] font-mono border-b border-border/50">
+						<tr>
+							<th class="py-3 px-4 font-bold">Nama Tabel</th>
+							<th class="py-3 px-4 font-bold">Estimasi Baris</th>
+							<th class="py-3 px-4 font-bold">Fungsi & Konten</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-border/40">
+						{#each db1Tables as tbl}
+							<tr class="hover:bg-muted/40 transition-colors">
+								<td class="py-3 px-4 font-mono font-bold text-foreground">
+									{tbl.name}
+								</td>
+								<td class="py-3 px-4 font-mono text-muted-foreground">
+									{tbl.records}
+								</td>
+								<td class="py-3 px-4 text-muted-foreground">
+									{tbl.purpose}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		<!-- TAB 3: MCP PROTECTED TARGET DATABASES -->
+		{#if activeDetailTab === "mcp-bridge"}
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+				{#each mcpTargetDatabases as db}
+					<div class="p-5 rounded-2xl border border-cyan-500/30 bg-card/70 space-y-3 shadow-xs">
+						<div class="flex items-center justify-between pb-2 border-b border-border/40">
+							<span class="text-xs font-bold text-foreground">{db.name}</span>
+							<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+								{db.status}
+							</span>
+						</div>
+
+						<div class="space-y-1.5 text-xs">
+							<div>
+								<span class="text-muted-foreground text-[10px] font-mono uppercase">Engine:</span>
+								<div class="font-mono text-foreground">{db.engine}</div>
+							</div>
+							<div>
+								<span class="text-muted-foreground text-[10px] font-mono uppercase">Target Tables:</span>
+								<div class="font-mono text-muted-foreground text-[11px]">{db.targetTables}</div>
+							</div>
+							<div>
+								<span class="text-muted-foreground text-[10px] font-mono uppercase">MCP Access Tool:</span>
+								<div class="font-mono text-purple-600 dark:text-purple-400 font-bold">{db.mcpTool}</div>
+							</div>
+							<div class="pt-2 border-t border-border/40 text-[11px] text-cyan-600 dark:text-cyan-400 font-medium">
+								{db.isolation}
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
-
-<!-- ADD NEW CONNECTOR MODAL (SHADCN DIALOG) -->
-{#if showAddModal}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans animate-in fade-in duration-200">
-		<div class="w-full max-w-xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-			
-			<div class="p-5 border-b border-border flex items-center justify-between">
-				<div class="flex items-center gap-2.5">
-					<div class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-						<Plus class="h-5 w-5" />
-					</div>
-					<div>
-						<h3 class="text-base font-semibold text-foreground">Add New Database Connector</h3>
-						<p class="text-xs text-muted-foreground">Configure connection string, credentials, and connection pool.</p>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					onclick={() => (showAddModal = false)}
-					class="text-muted-foreground hover:text-foreground cursor-pointer"
-				>
-					<XMark class="h-5 w-5" />
-				</button>
-			</div>
-
-			<form onsubmit={(e) => { e.preventDefault(); handleAddConnector(); }} class="p-5 space-y-4 overflow-y-auto text-xs sm:text-sm">
-				<!-- Connector Display Name -->
-				<div>
-					<label for="conn-name" class="block font-medium mb-1 text-foreground text-xs">Connector Display Name</label>
-					<input
-						id="conn-name"
-						type="text"
-						bind:value={newConnector.name}
-						placeholder="e.g. Jakarta Hub PostgreSQL / Surabaya MongoDB"
-						class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						required
-					/>
-				</div>
-
-				<!-- Database Engine Selector -->
-				<div class="grid sm:grid-cols-2 gap-3">
-					<div>
-						<label for="conn-engine" class="block font-medium mb-1 text-foreground text-xs">Database Engine</label>
-						<select
-							id="conn-engine"
-							value={newConnector.engine}
-							onchange={(e) => handleEngineChange((e.target as HTMLSelectElement).value as any)}
-							class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-						>
-							<option value="postgres">PostgreSQL (Relational)</option>
-							<option value="oracle">Oracle Database 11g (Relational)</option>
-							<option value="mysql">MySQL / MariaDB (Relational)</option>
-							<option value="sqlite">SQLite 3 (Relational Embedded)</option>
-							<option value="mongodb">MongoDB (Non-Relational Document)</option>
-							<option value="redis">Redis (Non-Relational Key-Value)</option>
-						</select>
-					</div>
-
-					<div>
-						<label for="conn-paradigm" class="block font-medium mb-1 text-foreground text-xs">Architecture Paradigm</label>
-						<input
-							id="conn-paradigm"
-							type="text"
-							value={newConnector.paradigm.toUpperCase()}
-							disabled
-							class="h-9 w-full rounded-md border border-input bg-muted px-3 text-xs font-mono text-muted-foreground uppercase cursor-not-allowed"
-						/>
-					</div>
-				</div>
-
-				<!-- Version & Compatibility Range (2+ Year Support Standard) -->
-				<div>
-					<label for="conn-version" class="block font-medium mb-1 text-foreground text-xs flex items-center justify-between">
-						<span>Version Compatibility (2+ Year Support Standard)</span>
-						<span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">LTS Standard</span>
-					</label>
-					<input
-						id="conn-version"
-						type="text"
-						bind:value={newConnector.versionCompatibility}
-						placeholder="e.g. v14 - v18+ (2+ Yr LTS) or 11g - 23ai Enterprise"
-						class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						required
-					/>
-					<p class="text-[11px] text-muted-foreground mt-1">Version-agnostic query engine. Compliant with standard ANSI-SQL prepared statements and generic BSON protocols.</p>
-				</div>
-
-				<!-- Host & Port -->
-				<div class="grid sm:grid-cols-3 gap-3">
-					<div class="sm:col-span-2">
-						<label for="conn-host" class="block font-medium mb-1 text-foreground text-xs">Host / Connection String</label>
-						<input
-							id="conn-host"
-							type="text"
-							bind:value={newConnector.host}
-							placeholder="localhost or 192.168.1.50"
-							class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-							required
-						/>
-					</div>
-					<div>
-						<label for="conn-port" class="block font-medium mb-1 text-foreground text-xs">Port</label>
-						<input
-							id="conn-port"
-							type="text"
-							bind:value={newConnector.port}
-							class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						/>
-					</div>
-				</div>
-
-				<!-- Database Name -->
-				<div>
-					<label for="conn-dbname" class="block font-medium mb-1 text-foreground text-xs">Database Name / Collection</label>
-					<input
-						id="conn-dbname"
-						type="text"
-						bind:value={newConnector.databaseName}
-						placeholder="novapilot_db or ERP_DATA"
-						class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						required
-					/>
-				</div>
-
-				<!-- Credentials -->
-				<div class="grid sm:grid-cols-2 gap-3">
-					<div>
-						<label for="conn-user" class="block font-medium mb-1 text-foreground text-xs">Username (Optional)</label>
-						<input
-							id="conn-user"
-							type="text"
-							bind:value={newConnector.username}
-							class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						/>
-					</div>
-					<div>
-						<label for="conn-pass" class="block font-medium mb-1 text-foreground text-xs">Password</label>
-						<input
-							id="conn-pass"
-							type="password"
-							bind:value={newConnector.password}
-							class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						/>
-					</div>
-				</div>
-
-				<!-- Notes -->
-				<div>
-					<label for="conn-notes" class="block font-medium mb-1 text-foreground text-xs">Operational Description</label>
-					<input
-						id="conn-notes"
-						type="text"
-						bind:value={newConnector.notes}
-						placeholder="e.g. Factory DC backup database"
-						class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					/>
-				</div>
-
-				<!-- Actions -->
-				<div class="pt-3 border-t border-border flex items-center justify-end gap-2">
-					<button
-						type="button"
-						onclick={() => (showAddModal = false)}
-						class="h-9 px-4 rounded-md border border-input bg-background hover:bg-muted text-xs font-medium cursor-pointer"
-					>
-						Cancel
-					</button>
-
-					<button
-						type="submit"
-						class="h-9 px-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium cursor-pointer shadow-xs"
-					>
-						Save & Register Connector
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}

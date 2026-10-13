@@ -17,7 +17,10 @@
 		PaperClip, 
 		ArrowTopRightOnSquare,
 		Clock,
-		ShieldCheck
+		ShieldCheck,
+		CommandLine,
+		Play,
+		Trash
 	} from "svelte-heros-v2";
 	import { cockpit, type InboundMessage, type Ticket } from "$lib/cockpit.svelte";
 	import { timeAgo } from "$lib/utils";
@@ -51,6 +54,24 @@
 
 	let showPatternsDrawer = $state(false);
 	let imagePreviewUrl = $state<string | null>(null);
+
+	// Real-Time Exec Terminal State for WhatsApp Gateway Daemon
+	let showTerminalModal = $state(false);
+	let terminalLogs = $state<Array<{ id: string; time: string; level: string; text: string }>>([]);
+	let terminalStatus = $state<{
+		service: string;
+		port: number;
+		status: string;
+		user: any;
+		uptime_seconds: number;
+		memory_rss_mb: string;
+	} | null>(null);
+	let terminalCommand = $state("");
+	let terminalIsExecuting = $state(false);
+	let terminalAutoScroll = $state(true);
+	let terminalLogsContainer: HTMLDivElement | null = $state(null);
+	let terminalPollTimer: any = null;
+	let terminalOutputs = $state<Array<{ time: string; cmd: string; out: string }>>([]);
 
 	// Invoices list for quick dropdown in modal
 	let openInvoices = $state<Array<{ invoice_no: string; customer_name: string; amount: number }>>([
@@ -177,6 +198,93 @@
 		}
 	}
 
+	async function fetchTerminalData() {
+		try {
+			// Query via Vite proxy or direct fallback to port 3002
+			let statusRes = await fetch("/api/wa-gateway/status").catch(() => null);
+			if (!statusRes || !statusRes.ok) {
+				statusRes = await fetch("http://localhost:3002/api/status").catch(() => null);
+			}
+			if (statusRes && statusRes.ok) {
+				terminalStatus = await statusRes.json();
+			}
+
+			let logsRes = await fetch("/api/wa-gateway/logs").catch(() => null);
+			if (!logsRes || !logsRes.ok) {
+				logsRes = await fetch("http://localhost:3002/api/logs").catch(() => null);
+			}
+			if (logsRes && logsRes.ok) {
+				const logsData = await logsRes.json();
+				terminalLogs = logsData.logs || [];
+				if (terminalAutoScroll && terminalLogsContainer) {
+					setTimeout(() => {
+						if (terminalLogsContainer) {
+							terminalLogsContainer.scrollTop = terminalLogsContainer.scrollHeight;
+						}
+					}, 40);
+				}
+			}
+		} catch (err) {
+			console.error("[TERMINAL FETCH ERROR]", err);
+		}
+	}
+
+	function openTerminalModal() {
+		showTerminalModal = true;
+		fetchTerminalData();
+		if (terminalPollTimer) clearInterval(terminalPollTimer);
+		terminalPollTimer = setInterval(fetchTerminalData, 1500);
+	}
+
+	function closeTerminalModal() {
+		showTerminalModal = false;
+		if (terminalPollTimer) {
+			clearInterval(terminalPollTimer);
+			terminalPollTimer = null;
+		}
+	}
+
+	async function execTerminalCommand(cmdString?: string) {
+		const targetCmd = (cmdString || terminalCommand).trim();
+		if (!targetCmd) return;
+		terminalIsExecuting = true;
+		try {
+			let res = await fetch("/api/wa-gateway/exec", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ command: targetCmd })
+			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				res = await fetch("http://localhost:3002/api/exec", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ command: targetCmd })
+				}).catch(() => null);
+			}
+
+			if (res && res.ok) {
+				const resData = await res.json();
+				terminalOutputs.unshift({
+					time: new Date().toLocaleTimeString("id-ID", { hour12: false }),
+					cmd: resData.command,
+					out: resData.output
+				});
+				if (targetCmd === "clear") {
+					terminalLogs = [];
+					terminalOutputs = [];
+				} else {
+					await fetchTerminalData();
+				}
+			}
+		} catch (e: any) {
+			console.error("[EXEC ERROR]", e);
+		} finally {
+			terminalIsExecuting = false;
+			terminalCommand = "";
+		}
+	}
+
 	let autoPollTimer: any = null;
 
 	onMount(async () => {
@@ -201,6 +309,9 @@
 	onDestroy(() => {
 		if (autoPollTimer) {
 			clearInterval(autoPollTimer);
+		}
+		if (terminalPollTimer) {
+			clearInterval(terminalPollTimer);
 		}
 	});
 </script>
@@ -235,6 +346,18 @@
 		</div>
 
 		<div class="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+			<!-- WhatsApp Gateway Daemon Exec Terminal Button -->
+			<button
+				type="button"
+				onclick={openTerminalModal}
+				class="h-9 px-3.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+				title="Open Real-time Terminal for WhatsApp Gateway Daemon (:3002)"
+			>
+				<CommandLine class="h-4 w-4" />
+				<span>Exec Terminal WA Gateway</span>
+				<span class="h-2 w-2 rounded-full {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+			</button>
+
 			<button
 				type="button"
 				onclick={() => showPatternsDrawer = true}
@@ -1199,6 +1322,193 @@
 					class="h-8 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-medium cursor-pointer"
 				>
 					Tutup
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- ========================================================================= -->
+<!-- 6. LIVE EXEC TERMINAL POPUP (WhatsApp Gateway Daemon :3002)                -->
+<!-- ========================================================================= -->
+{#if showTerminalModal}
+	<div 
+		class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div class="w-full max-w-5xl h-[90vh] flex flex-col rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl text-zinc-200 overflow-hidden font-mono">
+			<!-- Terminal Window Titlebar -->
+			<div class="h-11 px-4 bg-zinc-900/90 border-b border-zinc-800/80 flex items-center justify-between shrink-0 select-none">
+				<div class="flex items-center gap-3">
+					<!-- Terminal Dots -->
+					<div class="flex items-center gap-1.5">
+						<button 
+							type="button" 
+							onclick={closeTerminalModal}
+							class="h-3 w-3 rounded-full bg-red-500/80 hover:bg-red-500 cursor-pointer transition-colors"
+							title="Close Terminal"
+						></button>
+						<span class="h-3 w-3 rounded-full bg-yellow-500/80"></span>
+						<span class="h-3 w-3 rounded-full bg-green-500/80"></span>
+					</div>
+					<div class="flex items-center gap-2 pl-2 text-xs">
+						<CommandLine class="h-4 w-4 text-emerald-400" />
+						<span class="font-bold text-zinc-100">wa-gateway daemon terminal</span>
+						<span class="text-[10px] text-zinc-500 hidden sm:inline">(Bun • Port 3002)</span>
+					</div>
+				</div>
+
+				<div class="flex items-center gap-2.5">
+					<!-- Live Status Indicator -->
+					<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}">
+						<span class="h-1.5 w-1.5 rounded-full {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}"></span>
+						<span>{terminalStatus?.status === 'CONNECTED' ? 'CONNECTED' : 'AWAITING HOOK'}</span>
+						{#if terminalStatus?.user?.name}
+							<span class="text-zinc-400 hidden md:inline">({terminalStatus.user.name})</span>
+						{/if}
+					</div>
+
+					<!-- Daemon Stats -->
+					{#if terminalStatus}
+						<span class="text-[10px] text-zinc-500 hidden lg:inline">
+							RAM: {terminalStatus.memory_rss_mb}MB • Up: {terminalStatus.uptime_seconds}s
+						</span>
+					{/if}
+
+					<!-- Auto-Scroll Toggle -->
+					<button
+						type="button"
+						onclick={() => terminalAutoScroll = !terminalAutoScroll}
+						class="px-2 py-0.5 rounded text-[10px] border border-zinc-700 hover:bg-zinc-800 transition-colors cursor-pointer {terminalAutoScroll ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : 'text-zinc-400'}"
+						title="Toggle auto-scroll to bottom"
+					>
+						Auto-Scroll: {terminalAutoScroll ? 'ON' : 'OFF'}
+					</button>
+
+					<!-- Close Button -->
+					<button
+						type="button"
+						onclick={closeTerminalModal}
+						class="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+					>
+						<XMark class="h-4 w-4" />
+					</button>
+				</div>
+			</div>
+
+			<!-- Terminal Quick Action Chips -->
+			<div class="px-4 py-2 bg-zinc-900/40 border-b border-zinc-800/60 flex items-center gap-2 overflow-x-auto text-xs shrink-0">
+				<span class="text-[10px] uppercase font-bold text-zinc-500 shrink-0">Quick Exec:</span>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand('ping')}
+					class="px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700/80 text-emerald-400 text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+				>
+					<span>⚡ Ping</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand('status')}
+					class="px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700/80 text-cyan-400 text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+				>
+					<span>🔍 Status</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand('test_log')}
+					class="px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700/80 text-purple-400 text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+				>
+					<span>🧪 Trigger Test Log</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand('qr_status')}
+					class="px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700/80 text-amber-400 text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+				>
+					<span>📱 QR Status</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand('clear')}
+					class="px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700/80 text-rose-400 text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1 transition-colors cursor-pointer shrink-0 ml-auto"
+				>
+					<Trash class="h-3 w-3" />
+					<span>Clear Buffer</span>
+				</button>
+			</div>
+
+			<!-- Terminal Body / Log Stream Canvas -->
+			<div 
+				bind:this={terminalLogsContainer}
+				class="flex-1 overflow-y-auto p-4 space-y-1.5 text-[11px] font-mono bg-black/80 select-text"
+			>
+				<!-- Terminal ASCII Welcome -->
+				<div class="text-zinc-500 pb-2 border-b border-zinc-800/60 mb-2 leading-relaxed">
+					<div class="text-emerald-400 font-bold">NovaPilot AI • WhatsApp ChatOps Gateway Daemon v1.0</div>
+					<div>Socket Engine: Baileys Multi-Device (WebSocket SSL) • Extractor: Regex + Tesseract.js OCR</div>
+					<div>Streaming stdout buffer from port 3002 via active poller.</div>
+				</div>
+
+				<!-- Command Execution Responses -->
+				{#if terminalOutputs.length > 0}
+					<div class="space-y-1 pb-2 border-b border-zinc-800/60 mb-2">
+						{#each terminalOutputs.slice(0, 3) as item}
+							<div class="p-2 rounded bg-zinc-900/80 border border-zinc-800 text-[11px]">
+								<div class="flex items-center gap-2 text-zinc-400">
+									<span class="text-emerald-400 font-bold">&gt; {item.cmd}</span>
+									<span class="text-[9px] text-zinc-600">[{item.time}]</span>
+								</div>
+								<div class="text-zinc-200 mt-0.5 whitespace-pre-wrap">{item.out}</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<!-- Real-Time Log Entries -->
+				{#if terminalLogs.length === 0}
+					<div class="p-6 text-center text-zinc-600">
+						Menunggu event atau pesan masuk dari daemon WhatsApp...
+					</div>
+				{:else}
+					{#each terminalLogs as log (log.id)}
+						<div class="flex items-start gap-2 hover:bg-zinc-900/40 px-1 py-0.5 rounded transition-colors leading-relaxed font-mono">
+							<span class="text-[10px] text-zinc-600 shrink-0 select-none">[{log.time}]</span>
+							<span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase shrink-0 {log.level === 'ERROR' ? 'bg-rose-500/20 text-rose-400' : log.level === 'WARN' ? 'bg-amber-500/20 text-amber-400' : log.level === 'EXEC' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-cyan-500/20 text-cyan-400'}">
+								{log.level}
+							</span>
+							<span class="break-all whitespace-pre-wrap {log.level === 'ERROR' ? 'text-rose-300' : log.level === 'WARN' ? 'text-amber-300' : log.level === 'EXEC' ? 'text-emerald-300 font-bold' : 'text-zinc-300'}">
+								{log.text}
+							</span>
+						</div>
+					{/each}
+				{/if}
+			</div>
+
+			<!-- Terminal Interactive Exec Command Input Bar -->
+			<div class="p-3 bg-zinc-900/90 border-t border-zinc-800 flex items-center gap-3 shrink-0">
+				<span class="text-emerald-400 font-bold text-xs select-none flex items-center gap-1 shrink-0">
+					<span>novapilot@wa-gateway:~$</span>
+				</span>
+				<input
+					type="text"
+					bind:value={terminalCommand}
+					onkeydown={(e) => {
+						if (e.key === "Enter" && !terminalIsExecuting) {
+							execTerminalCommand();
+						}
+					}}
+					placeholder="Ketik perintah exec (misal: ping, status, test_log, qr_status, clear, help)..."
+					class="flex-1 bg-transparent border-none text-xs text-emerald-300 placeholder-zinc-600 focus:outline-none font-mono"
+				/>
+				<button
+					type="button"
+					onclick={() => execTerminalCommand()}
+					disabled={terminalIsExecuting || !terminalCommand.trim()}
+					class="h-8 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-black text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+				>
+					<Play class="h-3.5 w-3.5" />
+					<span>{terminalIsExecuting ? 'Running...' : 'Run Exec'}</span>
 				</button>
 			</div>
 		</div>
