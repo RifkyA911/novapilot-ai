@@ -30,7 +30,7 @@
 	import DataTable from "$lib/components/DataTable.svelte";
 	import type { ColumnDef } from "$lib/types/table";
 
-	export interface GroupMember {
+	interface GroupMember {
 		id: string;
 		name: string;
 		phone: string;
