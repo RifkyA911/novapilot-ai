@@ -72,3 +72,37 @@ code, kbd, samp, pre {
 	background-color: rgba(47, 180, 121, 0.25);
 	color: #ffffff;
 }
+
+/* Custom Sleek Scrollbar (1/2 Lebih Kecil / Ultra-Thin Modern Scrollbar) */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(148, 163, 184, 0.25);
+	border-radius: 9999px;
+	transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(148, 163, 184, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background: rgba(100, 116, 139, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: rgba(148, 163, 184, 0.6);
+}
+
+/* Firefox Standard */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
