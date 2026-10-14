@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"novapilot-ai/backend/internal/domain"
+	"novapilot-ai/backend/internal/llm"
 	"novapilot-ai/backend/internal/service"
 	"os"
 	"path/filepath"
@@ -30,11 +31,16 @@ type APIHandler struct {
 	uploadDir     string
 	db            *sql.DB
 	mcpRefDB      *sql.DB
+	hermesAdapter *llm.HermesAdapter
 	startTime     time.Time
 }
 
 func (h *APIHandler) SetMCPRefDB(db *sql.DB) {
 	h.mcpRefDB = db
+}
+
+func (h *APIHandler) SetHermesAdapter(adapter *llm.HermesAdapter) {
+	h.hermesAdapter = adapter
 }
 
 func NewAPIHandler(
@@ -941,6 +947,32 @@ func (h *APIHandler) ExecuteMCPToolTest(c *gin.Context) {
 			"mcp_server_stamp":   fmt.Sprintf("novapilot-mcp-agent-%d", time.Now().Unix()),
 		},
 	})
+}
+
+type LLMProcessInput struct {
+	Message       string `json:"message" binding:"required"`
+	BranchContext string `json:"branch_context"`
+}
+
+func (h *APIHandler) ProcessLLMMessage(c *gin.Context) {
+	var input LLMProcessInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	adapter := h.hermesAdapter
+	if adapter == nil {
+		adapter = llm.NewHermesAdapter(llm.DefaultConfig())
+	}
+
+	res, err := adapter.ProcessMessage(c.Request.Context(), input.Message, input.BranchContext)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 

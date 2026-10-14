@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"novapilot-ai/backend/internal/handler"
+	"novapilot-ai/backend/internal/llm"
 	"novapilot-ai/backend/internal/repository/postgres"
 	"novapilot-ai/backend/internal/service"
 	"os"
@@ -72,6 +73,8 @@ func main() {
 		uploadDir = "uploads"
 	}
 	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, repo, repo, sseHub, uploadDir, db)
+	hermesAdapter := llm.NewHermesAdapter(llm.DefaultConfig())
+	apiHandler.SetHermesAdapter(hermesAdapter)
 
 	// 4. Setup Gin HTTP Engine
 	router := gin.Default()
@@ -131,6 +134,9 @@ func main() {
 		api.GET("/mcp/tools", apiHandler.ListMCPTools)
 		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
 		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
+
+		// Hermes 3 Agentic LLM Engine
+		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
 	}
 
 	// Optional: Connect MCP Reference Database if distinct configuration provided
