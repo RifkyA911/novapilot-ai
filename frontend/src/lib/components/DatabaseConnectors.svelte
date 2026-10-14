@@ -734,77 +734,124 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	<!-- REDESIGNED ANIMATED SVG DUAL-DB ARCHITECTURE (PAN, ZOOM, & 3 VISUAL STATES)-->
 	<!-- ========================================================================= -->
 	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 overflow-hidden relative">
-		<!-- Header Toolbar -->
-		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border/60">
-			<div class="flex items-center gap-2.5">
-				<div class="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-					<CircleStack class="h-4 w-4" />
+		<!-- Header Toolbar: Clean Tiered Architecture (Anti-Collision Layout) -->
+		<div class="space-y-3 pb-3 border-b border-border/60">
+			<!-- Tier 1: Title, Badges, & Architecture Purpose -->
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+				<div class="flex items-center gap-2.5">
+					<div class="h-8.5 w-8.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+						<CircleStack class="h-4.5 w-4.5" />
+					</div>
+					<div>
+						<div class="flex items-center gap-2 flex-wrap">
+							<h3 class="text-sm font-bold text-foreground tracking-tight">
+								Diagram Aliran Konektor Dual-DB
+							</h3>
+							<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+								LIVE ARCHITECTURE
+							</span>
+							<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-secondary text-muted-foreground border border-border">
+								PAN &amp; ZOOMABLE
+							</span>
+						</div>
+						<p class="text-xs text-muted-foreground mt-0.5">
+							Visualisasi aliran data real-time, throughput socket, dan proteksi mutasi enterprise.
+						</p>
+					</div>
 				</div>
-				<div>
-					<h3 class="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
-						Diagram Aliran Konektor Dual-DB (Live Architecture)
-						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-							PAN &amp; ZOOMABLE CANVAS
-						</span>
-					</h3>
-					<p class="text-xs text-muted-foreground">Animasi dinamis membedakan mode Connected, Processing, dan Disconnected dengan tata letak lega.</p>
+
+				<!-- Visual Canvas Hints -->
+				<div class="hidden md:flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-lg border border-border/50 shrink-0">
+					<span>🖐️ Drag geser</span>
+					<span class="text-border">•</span>
+					<span>Scroll zoom ({Math.round(zoom * 100)}%)</span>
 				</div>
 			</div>
 
-			<!-- Interactive Simulation Buttons -->
-			<div class="flex items-center gap-2 font-mono text-xs flex-wrap">
-				<button
-					type="button"
-					onclick={triggerDb1Burst}
-					disabled={isSimulatingDb1}
-					class="h-8 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-					title="Memicu efek transmisi PROCESSING pada DB 1"
-				>
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 {isSimulatingDb1 ? 'animate-ping' : ''}"></span>
-					<span>Simulasi DB 1 ({db1VisualState})</span>
-				</button>
+			<!-- Tier 2: Dedicated Control & Simulation Toolbar Strip -->
+			<div class="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-xl bg-secondary/35 dark:bg-muted/20 border border-border/70">
+				<!-- Simulation Action Buttons -->
+				<div class="flex items-center gap-2 flex-wrap text-xs font-mono">
+					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
+						Simulasi I/O:
+					</span>
 
-				<button
-					type="button"
-					onclick={triggerDb2Burst}
-					disabled={isSimulatingDb2}
-					class="h-8 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-					title="Memicu efek transmisi PROCESSING pada DB 2"
-				>
-					<span class="h-1.5 w-1.5 rounded-full bg-cyan-500 {isSimulatingDb2 ? 'animate-ping' : ''}"></span>
-					<span>Simulasi DB 2 ({db2VisualState})</span>
-				</button>
+					<!-- DB 1 Button -->
+					<button
+						type="button"
+						onclick={triggerDb1Burst}
+						disabled={isSimulatingDb1}
+						class="h-7.5 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						title="Memicu efek transmisi PROCESSING pada DB 1 (PostgreSQL Core)"
+					>
+						<span class="h-2 w-2 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
+						<span>DB 1: Core</span>
+						<span class="text-[10px] px-1 py-0.2 rounded font-bold {db1VisualState === 'CONNECTED' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : db1VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
+							{db1VisualState}
+						</span>
+					</button>
 
-				<button
-					type="button"
-					onclick={toggleMockStatusDb2}
-					class="h-8 px-2.5 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-					title="Uji langsung status Connected vs Disconnected pada DB 2"
-				>
-					<span>Toggle Status DB 2: {mcpStatus === 'CONNECTED' ? '🟢 Putus' : '🔴 Hubung'}</span>
-				</button>
+					<!-- DB 2 Button -->
+					<button
+						type="button"
+						onclick={triggerDb2Burst}
+						disabled={isSimulatingDb2}
+						class="h-7.5 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						title="Memicu efek transmisi PROCESSING pada DB 2 (MCP Reference Store)"
+					>
+						<span class="h-2 w-2 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
+						<span>DB 2: MCP Ref</span>
+						<span class="text-[10px] px-1 py-0.2 rounded font-bold {db2VisualState === 'CONNECTED' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300' : db2VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
+							{db2VisualState}
+						</span>
+					</button>
+
+					<!-- Toggle DB 2 Link State Button -->
+					<button
+						type="button"
+						onclick={toggleMockStatusDb2}
+						class="h-7.5 px-2.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+						title="Uji langsung switch status Link Online vs Offline pada DB 2"
+					>
+						{#if mcpStatus === 'CONNECTED'}
+							<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+							<span>Putus Link DB 2</span>
+						{:else}
+							<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+							<span>Hubung Link DB 2</span>
+						{/if}
+					</button>
+				</div>
+
+				<!-- Quick Reset Pan & Zoom -->
+				<div class="flex items-center gap-1.5 text-xs font-mono ml-auto">
+					<button
+						type="button"
+						onclick={resetPanZoom}
+						class="h-7.5 px-2.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] font-medium transition-colors cursor-pointer"
+						title="Reset kanvas ke ukuran normal (100%)"
+					>
+						Reset View ({Math.round(zoom * 100)}%)
+					</button>
+				</div>
 			</div>
 		</div>
 
-		<!-- Status Legend Pill -->
-		<div class="flex items-center justify-between text-xs px-2 text-muted-foreground flex-wrap gap-2">
-			<div class="flex items-center gap-4 text-[11px] font-mono flex-wrap">
+		<!-- Status Legend Bar -->
+		<div class="flex items-center justify-between text-xs px-1 text-muted-foreground flex-wrap gap-2 pt-0.5">
+			<div class="flex items-center gap-3 text-[11px] font-mono flex-wrap">
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-					<strong class="text-foreground">Connected:</strong> Aliran paket aktif &amp; platter beroperasi
+					<span class="text-foreground font-medium">Connected:</span> Aliran data aktif &amp; platter beroperasi
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-					<strong class="text-foreground">Processing:</strong> Strobo transmisi tinggi &amp; laser scan cepat
+					<span class="text-foreground font-medium">Processing:</span> Strobo I/O &amp; laser scan cepat
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-rose-500"></span>
-					<strong class="text-foreground">Disconnected:</strong> Pipa terputus (zero packet, platter unlit)
+					<span class="text-foreground font-medium">Disconnected:</span> Pipa putus (zero packet, platter unlit)
 				</span>
-			</div>
-
-			<div class="text-[11px] text-muted-foreground font-sans">
-				🖐️ Drag kanvas untuk geser • Scroll mouse untuk zoom ({Math.round(zoom * 100)}%)
 			</div>
 		</div>
 

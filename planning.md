@@ -142,6 +142,13 @@ Di lingkungan laptop kantor, aktivitas dibatasi secara ketat pada ranah visual d
 3. **Kerapian Kode & Verifikasi Lokal**:
    - Menjaga hasil build frontend selalu bersih (`bun run build` tanpa error).
    - Menjalankan unit tests frontend (`bun test`) dan backend (`go test`).
+4. **Standar Desain Anti-Collision Toolbar (Pencegahan Nabrak 1-Row di Layar Laptop)**:
+   - **Problem Root-Cause**: Memaksa judul panjang, subtitle, dan tombol aksi simulasi berada di 1 baris (`lg:flex-row justify-between`) menyebabkan elemen saling bertabrakan dan wrap berantakan pada layar laptop kantor (lebar viewport 900–1100px).
+   - **Solusi Arsitektur UI Multi-Tier**:
+     - **Tier 1 (Header Info)**: Khusus judul arsitektur, badge status live (`LIVE ARCHITECTURE`, `PAN & ZOOMABLE`), dan hint gestur kanvas di sisi kanan.
+     - **Tier 2 (Dedicated Action Strip)**: Baris terpisah berlatar `bg-secondary/35 border` khusus menampung tombol-tombol simulasi I/O (`DB 1: Core`, `DB 2: MCP Ref`, `Toggle Link`) dan tombol *Reset View*.
+     - **Tier 3 (Status Legend Bar)**: Legenda warna status (*Connected*, *Processing*, *Disconnected*) diletakkan di bawah bar aksi tanpa berebut ruang dengan tombol.
+   - **Pencegahan Layout Shift**: Label tombol distandarkan agar tidak memanjang/memendek secara drastis saat status berganti sehingga layout tetap stabil dan kokoh.
 
 ---
 
