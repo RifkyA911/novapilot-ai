@@ -102,12 +102,80 @@
 
 	function triggerDb1Burst() {
 		isSimulatingDb1 = true;
-		setTimeout(() => { isSimulatingDb1 = false; }, 1400);
+		setTimeout(() => { isSimulatingDb1 = false; }, 1800);
 	}
 
 	function triggerDb2Burst() {
 		isSimulatingDb2 = true;
-		setTimeout(() => { isSimulatingDb2 = false; }, 1400);
+		setTimeout(() => { isSimulatingDb2 = false; }, 1800);
+	}
+
+	// =========================================================================
+	// INTERACTIVE PAN & ZOOM CONTROLS FOR SVG
+	// =========================================================================
+	let zoom = $state(1);
+	let panX = $state(0);
+	let panY = $state(0);
+	let isDragging = $state(false);
+	let dragStartX = $state(0);
+	let dragStartY = $state(0);
+
+	function handleMouseDown(e: MouseEvent) {
+		if (e.button !== 0) return;
+		const target = e.target as HTMLElement | SVGElement;
+		if (target.closest("button") || target.closest("a") || target.closest(".no-pan")) return;
+		isDragging = true;
+		dragStartX = e.clientX - panX;
+		dragStartY = e.clientY - panY;
+	}
+
+	function handleMouseMove(e: MouseEvent) {
+		if (!isDragging) return;
+		panX = e.clientX - dragStartX;
+		panY = e.clientY - dragStartY;
+	}
+
+	function handleMouseUp() {
+		isDragging = false;
+	}
+
+	function handleWheel(e: WheelEvent) {
+		e.preventDefault();
+		const zoomDelta = e.deltaY < 0 ? 0.12 : -0.12;
+		const nextZoom = Math.min(Math.max(zoom + zoomDelta, 0.5), 2.5);
+		zoom = Number(nextZoom.toFixed(2));
+	}
+
+	function zoomIn() {
+		zoom = Math.min(Number((zoom + 0.15).toFixed(2)), 2.5);
+	}
+
+	function zoomOut() {
+		zoom = Math.max(Number((zoom - 0.15).toFixed(2)), 0.5);
+	}
+
+	function resetPanZoom() {
+		zoom = 1;
+		panX = 0;
+		panY = 0;
+	}
+
+	// Visual State Derivations for DB 1 and DB 2
+	const db1VisualState = $derived<"PROCESSING" | "CONNECTED" | "DISCONNECTED">(
+		isTestingSys || isSimulatingDb1 ? "PROCESSING" : (sysStatus === "CONNECTED" ? "CONNECTED" : "DISCONNECTED")
+	);
+
+	const db2VisualState = $derived<"PROCESSING" | "CONNECTED" | "DISCONNECTED">(
+		isTestingMcp || isSimulatingDb2 ? "PROCESSING" : (mcpStatus === "CONNECTED" ? "CONNECTED" : "DISCONNECTED")
+	);
+
+	// Quick toggle helpers for testing animation states
+	function toggleMockStatusDb1() {
+		sysStatus = sysStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
+	}
+
+	function toggleMockStatusDb2() {
+		mcpStatus = mcpStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
 	}
 
 	// Dynamic port switching based on database platform
@@ -340,7 +408,6 @@
 		activeToolForTest = tool;
 		toolTestExecutionResult = null;
 		
-		// Build sample parameters based on schema
 		const initialParams: Record<string, any> = {};
 		if (tool.inputSchema?.properties) {
 			for (const [propKey, propVal] of Object.entries(tool.inputSchema.properties)) {
@@ -452,7 +519,6 @@
 					mcpConfig.user = cfg.mcp_ref_db.user || "erp_agent";
 					mcpConfig.dbname = cfg.mcp_ref_db.dbname || "ERP_PROD_PDB";
 					mcpConfig.sslmode = cfg.mcp_ref_db.sslmode || "disable";
-					// Use exact verified status from backend (default DISCONNECTED if not verified)
 					mcpStatus = cfg.mcp_ref_db.status || "DISCONNECTED";
 				}
 			}
@@ -665,59 +731,135 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	</div>
 
 	<!-- ========================================================================= -->
-	<!-- ANIMATED SVG DUAL-DB CONNECTORS ARCHITECTURE (ENLARGED TEXT & HIGH-RES)  -->
+	<!-- REDESIGNED ANIMATED SVG DUAL-DB ARCHITECTURE (PAN, ZOOM, & 3 VISUAL STATES)-->
 	<!-- ========================================================================= -->
 	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 overflow-hidden relative">
-		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+		<!-- Header Toolbar -->
+		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border/60">
 			<div class="flex items-center gap-2.5">
 				<div class="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
 					<CircleStack class="h-4 w-4" />
 				</div>
 				<div>
-					<h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+					<h3 class="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
 						Diagram Aliran Konektor Dual-DB (Live Architecture)
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-							REALTIME ANIMATED
+							PAN &amp; ZOOMABLE CANVAS
 						</span>
 					</h3>
-					<p class="text-xs text-muted-foreground">Pipa transmisi terpisah: DB 1 (PostgreSQL internal ACID) vs DB 2 (ERP isolasi protokol MCP multi-platform).</p>
+					<p class="text-xs text-muted-foreground">Animasi dinamis membedakan mode Connected, Processing, dan Disconnected dengan tata letak lega.</p>
 				</div>
 			</div>
 
-			<!-- Trigger Buttons -->
-			<div class="flex items-center gap-2 font-mono text-xs">
+			<!-- Interactive Simulation Buttons -->
+			<div class="flex items-center gap-2 font-mono text-xs flex-wrap">
 				<button
 					type="button"
 					onclick={triggerDb1Burst}
 					disabled={isSimulatingDb1}
-					class="h-8 px-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+					class="h-8 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+					title="Memicu efek transmisi PROCESSING pada DB 1"
 				>
 					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 {isSimulatingDb1 ? 'animate-ping' : ''}"></span>
-					<span>Simulasi Kueri DB 1</span>
+					<span>Simulasi DB 1 ({db1VisualState})</span>
 				</button>
 
 				<button
 					type="button"
 					onclick={triggerDb2Burst}
 					disabled={isSimulatingDb2}
-					class="h-8 px-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+					class="h-8 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+					title="Memicu efek transmisi PROCESSING pada DB 2"
 				>
 					<span class="h-1.5 w-1.5 rounded-full bg-cyan-500 {isSimulatingDb2 ? 'animate-ping' : ''}"></span>
-					<span>Simulasi Mutasi MCP DB 2</span>
+					<span>Simulasi DB 2 ({db2VisualState})</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={toggleMockStatusDb2}
+					class="h-8 px-2.5 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+					title="Uji langsung status Connected vs Disconnected pada DB 2"
+				>
+					<span>Toggle Status DB 2: {mcpStatus === 'CONNECTED' ? '🟢 Putus' : '🔴 Hubung'}</span>
 				</button>
 			</div>
 		</div>
 
-		<!-- SVG Canvas with Clean Enlarged Fonts -->
-		<div class="w-full overflow-x-auto py-2">
+		<!-- Status Legend Pill -->
+		<div class="flex items-center justify-between text-xs px-2 text-muted-foreground flex-wrap gap-2">
+			<div class="flex items-center gap-4 text-[11px] font-mono flex-wrap">
+				<span class="flex items-center gap-1.5">
+					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+					<strong class="text-foreground">Connected:</strong> Aliran paket aktif &amp; platter beroperasi
+				</span>
+				<span class="flex items-center gap-1.5">
+					<span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+					<strong class="text-foreground">Processing:</strong> Strobo transmisi tinggi &amp; laser scan cepat
+				</span>
+				<span class="flex items-center gap-1.5">
+					<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+					<strong class="text-foreground">Disconnected:</strong> Pipa terputus (zero packet, platter unlit)
+				</span>
+			</div>
+
+			<div class="text-[11px] text-muted-foreground font-sans">
+				🖐️ Drag kanvas untuk geser • Scroll mouse untuk zoom ({Math.round(zoom * 100)}%)
+			</div>
+		</div>
+
+		<!-- Interactive Pan & Zoom Canvas Viewport -->
+		<div 
+			role="region"
+			aria-label="Interactive Dual-DB Connector Architecture Visualizer"
+			class="relative w-full rounded-xl bg-secondary/25 dark:bg-black/70 border border-border/80 overflow-hidden select-none transition-colors {isDragging ? 'cursor-grabbing' : 'cursor-grab'} h-[390px]"
+			onmousedown={handleMouseDown}
+			onmousemove={handleMouseMove}
+			onmouseup={handleMouseUp}
+			onmouseleave={handleMouseUp}
+			onwheel={handleWheel}
+		>
+			<!-- Floating Pan & Zoom Controls Toolbar -->
+			<div class="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 rounded-xl bg-card/90 backdrop-blur-md border border-border shadow-md text-xs font-mono">
+				<button 
+					type="button"
+					onclick={zoomIn} 
+					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
+					title="Perbesar (Zoom In)"
+				>
+					+
+				</button>
+				<button 
+					type="button"
+					onclick={zoomOut} 
+					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
+					title="Perkecil (Zoom Out)"
+				>
+					-
+				</button>
+				<button 
+					type="button"
+					onclick={resetPanZoom} 
+					class="h-7 px-2 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-semibold text-[11px] cursor-pointer transition-colors" 
+					title="Reset Zoom &amp; Posisi (100%)"
+				>
+					{Math.round(zoom * 100)}%
+				</button>
+			</div>
+
+			<!-- Spacious Scaled Vector Canvas -->
 			<svg
-				viewBox="0 0 980 240"
-				class="w-full min-w-[800px] h-[225px] select-none"
+				viewBox="0 0 1260 380"
+				class="w-full h-full"
 				xmlns="http://www.w3.org/2000/svg"
 			>
 				<defs>
 					<style>
 						@keyframes wireDashFlow {
+							from { stroke-dashoffset: 0; }
+							to { stroke-dashoffset: -24; }
+						}
+						@keyframes wireDashFlowFast {
 							from { stroke-dashoffset: 0; }
 							to { stroke-dashoffset: -24; }
 						}
@@ -733,18 +875,35 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							0%, 100% { opacity: 0.35; }
 							50% { opacity: 1; }
 						}
-						@keyframes diskBeam {
+						@keyframes diskLedStrobe {
+							0%, 100% { opacity: 0.15; }
+							50% { opacity: 1; }
+						}
+						@keyframes diskBeamActive {
 							0% { transform: translateY(0px); opacity: 0.3; }
-							50% { transform: translateY(24px); opacity: 0.95; }
+							50% { transform: translateY(28px); opacity: 0.95; }
 							100% { transform: translateY(0px); opacity: 0.3; }
+						}
+						@keyframes diskBeamFast {
+							0% { transform: translateY(0px); opacity: 0.4; }
+							50% { transform: translateY(28px); opacity: 1; }
+							100% { transform: translateY(0px); opacity: 0.4; }
 						}
 						@keyframes socketPingRipple {
 							0% { r: 4px; opacity: 1; stroke-width: 2px; }
-							100% { r: 14px; opacity: 0; stroke-width: 0.5px; }
+							100% { r: 16px; opacity: 0; stroke-width: 0.5px; }
+						}
+						@keyframes socketPingFast {
+							0% { r: 4px; opacity: 1; stroke-width: 2.5px; }
+							100% { r: 20px; opacity: 0; stroke-width: 0.5px; }
 						}
 						.wire-flow-forward {
 							stroke-dasharray: 6 4;
-							animation: wireDashFlow 0.85s linear infinite;
+							animation: wireDashFlow 0.9s linear infinite;
+						}
+						.wire-flow-fast {
+							stroke-dasharray: 6 4;
+							animation: wireDashFlowFast 0.35s linear infinite;
 						}
 						.wire-flow-backward {
 							stroke-dasharray: 6 4;
@@ -756,11 +915,26 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						.conn-led-slow {
 							animation: diskLedSlow 1.3s infinite;
 						}
+						.conn-led-strobe {
+							animation: diskLedStrobe 0.18s infinite;
+						}
 						.conn-socket-pulse {
 							animation: socketPingRipple 1.6s ease-out infinite;
 						}
+						.conn-socket-pulse-fast {
+							animation: socketPingFast 0.6s ease-out infinite;
+						}
 						.conn-beam {
-							animation: diskBeam 1.8s ease-in-out infinite;
+							animation: diskBeamActive 1.8s ease-in-out infinite;
+						}
+						.conn-beam-fast {
+							animation: diskBeamFast 0.65s ease-in-out infinite;
+						}
+						.active-box-glow {
+							filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
+						}
+						.active-box-glow-cyan {
+							filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.6));
 						}
 					</style>
 
@@ -786,187 +960,433 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</linearGradient>
 				</defs>
 
-				<!-- ========================================================= -->
-				<!-- LEFT BOX: NOVAPILOT CORE ENGINE (:8088 GO)                -->
-				<!-- ========================================================= -->
-				<g transform="translate(15, 18)">
-					<rect
-						x="0" y="0" width="190" height="204" rx="16"
-						fill="currentColor"
-						class="text-card stroke-emerald-500/80 stroke-[2px]"
-					/>
-					<rect x="0" y="0" width="190" height="36" rx="16" fill="#10b981" fill-opacity="0.16" />
-					<text x="12" y="24" font-family="system-ui" font-size="13.5" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
-					<text x="136" y="24" font-family="monospace" font-size="11" fill="#10b981" font-weight="bold">:8088 Go</text>
+				<!-- Outer Transformed Group for Pan & Zoom -->
+				<g transform="translate({panX}, {panY}) scale({zoom})">
 
-					<g transform="translate(10, 46)">
-						<rect x="0" y="0" width="170" height="46" rx="8" fill="currentColor" class="text-secondary/60" />
-						<text x="10" y="18" font-family="monospace" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">Connection Pooler</text>
-						<text x="10" y="34" font-family="monospace" font-size="10.5" fill="#10b981" font-weight="bold">Pool: {telemetry?.database?.open_connections || 0} / 25 Conns</text>
+					<!-- ========================================================= -->
+					<!-- 1. LEFT BOX: NOVAPILOT CORE ENGINE (:8088 GO)             -->
+					<!-- ========================================================= -->
+					<g transform="translate(30, 35)">
+						<rect
+							x="0" y="0" width="250" height="310" rx="18"
+							fill="currentColor"
+							class="text-card stroke-emerald-500/80 stroke-[2px]"
+						/>
+						<rect x="0" y="0" width="250" height="42" rx="18" fill="#10b981" fill-opacity="0.16" />
+						<text x="14" y="27" font-family="system-ui" font-size="14" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
+						<text x="180" y="27" font-family="monospace" font-size="11.5" fill="#10b981" font-weight="bold">:8088 Go</text>
+
+						<!-- Module A: Connection Pooler -->
+						<g transform="translate(10, 52)">
+							<rect x="0" y="0" width="230" height="56" rx="10" fill="currentColor" class="text-secondary/60" />
+							<text x="12" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Connection Pooler</text>
+							<text x="12" y="34" font-family="monospace" font-size="11" fill="#10b981" font-weight="bold">Pool: {telemetry?.database?.open_connections || 0} / 25 Conns</text>
+							<text x="12" y="48" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">Max Idle: 10 • Wait: {telemetry?.database?.wait_count || 0}</text>
+						</g>
+
+						<!-- Module B: Dual-Engine Router -->
+						<g transform="translate(10, 118)">
+							<rect x="0" y="0" width="230" height="56" rx="10" fill="currentColor" class="text-secondary/60" />
+							<text x="12" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Dual-Engine Router</text>
+							<text x="12" y="34" font-family="monospace" font-size="10.5" fill="currentColor" class="text-foreground">Direct Internal vs MCP Isolation</text>
+							<text x="12" y="48" font-family="monospace" font-size="10" fill="#06b6d4" font-weight="bold">Zero Raw SQL Policy Enforced</text>
+						</g>
+
+						<!-- Module C: Runtime Telemetry -->
+						<g transform="translate(10, 184)">
+							<rect x="0" y="0" width="230" height="56" rx="10" fill="currentColor" class="text-secondary/60" />
+							<text x="12" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Runtime Telemetry</text>
+							<text x="12" y="34" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">Goroutines: {telemetry?.goroutines || 14} • Mem: {telemetry?.memory_alloc_mb || '18.2'} MB</text>
+							<text x="12" y="48" font-family="monospace" font-size="10" fill="#10b981">SSE Stream: /api/events</text>
+						</g>
+
+						<!-- Module D: Uptime Banner -->
+						<g transform="translate(10, 250)">
+							<rect x="0" y="0" width="230" height="48" rx="10" fill="#10b981" fill-opacity="0.08" stroke="#10b981" stroke-opacity="0.3" stroke-width="1" />
+							<circle cx="16" cy="24" r="3.5" fill="#10b981" class="conn-led-fast" />
+							<text x="28" y="24" font-family="monospace" font-size="11" font-weight="bold" fill="#10b981">Uptime: {Math.floor((telemetry?.uptime_seconds || 0) / 60)} min</text>
+							<text x="28" y="39" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">Status: Core Engine Healthy</text>
+						</g>
 					</g>
 
-					<g transform="translate(10, 100)">
-						<rect x="0" y="0" width="170" height="44" rx="8" fill="currentColor" class="text-secondary/60" />
-						<text x="10" y="18" font-family="monospace" font-size="11" font-weight="bold" fill="currentColor" class="text-foreground">Dual-Engine Router</text>
-						<text x="10" y="33" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">Internal vs ERP Isolation</text>
-					</g>
-
-					<g transform="translate(10, 152)">
-						<rect x="0" y="0" width="170" height="40" rx="8" fill="#10b981" fill-opacity="0.08" stroke="#10b981" stroke-opacity="0.25" stroke-width="1" />
-						<circle cx="12" cy="20" r="3.5" fill="#10b981" class="conn-led-fast" />
-						<text x="22" y="24" font-family="monospace" font-size="10.5" font-weight="bold" fill="#10b981">Uptime: {Math.floor((telemetry?.uptime_seconds || 0) / 60)} min</text>
-					</g>
-				</g>
-
-				<!-- ========================================================= -->
-				<!-- UPPER PIPE: CORE -> DB 1 SYSTEM STORE                     -->
-				<!-- ========================================================= -->
-				<path
-					d="M 205 66 L 430 66"
-					fill="none"
-					stroke="url(#connGradCoreToDB1)"
-					stroke-width="2.5"
-					class="wire-flow-forward"
-				/>
-
-				<!-- Socket Port 1 (DB 1) -->
-				<circle cx="430" cy="66" r="4.5" fill="#10b981" />
-				<circle cx="430" cy="66" r="5" fill="none" stroke="#10b981" class="conn-socket-pulse" />
-
-				<!-- Continuous Live Packets: Core <-> DB 1 -->
-				<circle r="4" fill="#10b981" filter="url(#dbConnGlow)">
-					<animateMotion dur="1.3s" repeatCount="indefinite" path="M 205 66 L 430 66" />
-				</circle>
-				<circle r="3" fill="#34d399" filter="url(#dbConnGlow)">
-					<animateMotion dur="1.8s" begin="0.5s" repeatCount="indefinite" path="M 430 66 L 205 66" />
-				</circle>
-
-				{#if isSimulatingDb1}
-					<circle r="8" fill="#10b981" filter="url(#dbConnGlow)">
-						<animateMotion dur="0.45s" repeatCount="1" path="M 205 66 L 430 66" />
-					</circle>
-				{/if}
-
-				<!-- ========================================================= -->
-				<!-- UPPER RIGHT: DB 1 (POSTGRESQL SYSTEM STORE - LOCKED)      -->
-				<!-- ========================================================= -->
-				<g transform="translate(430, 18)">
-					<rect
-						x="0" y="0" width="535" height="96" rx="14"
-						fill="currentColor"
-						class="text-card stroke-emerald-600/90 {isSimulatingDb1 ? 'active-box-glow' : 'stroke-[1.5px]'}"
-					/>
-					<rect x="0" y="0" width="535" height="32" rx="14" fill="#10b981" fill-opacity="0.16" />
-					<text x="14" y="22" font-family="system-ui" font-size="13.5" font-weight="bold" fill="#059669">🗄️ Database Internal Sistem (PostgreSQL Locked)</text>
-					<text x="435" y="22" font-family="monospace" font-size="11.5" font-weight="bold" fill={sysStatus === 'CONNECTED' ? '#10b981' : '#ef4444'}>● {sysStatus}</text>
-
-					<!-- Table Badges & Descriptions -->
-					<g transform="translate(14, 40)">
-						<text x="4" y="17" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Host: {sysConfig.host}:{sysConfig.port}/{sysConfig.dbname} (Core Engine)</text>
-						<text x="4" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• tickets, audit_logs (HMAC Signed), inbound_messages, learned_patterns</text>
-						<text x="4" y="48" font-family="monospace" font-size="10.5" fill="#10b981" font-weight="bold">✓ Transactional ACID Staging Store • Auto-Rollback Guard</text>
-					</g>
-
-					<!-- 3D Database Disk Platters (DB 1) -->
-					<g transform="translate(480, 36)">
-						<line x1="-10" y1="0" x2="34" y2="0" stroke="#10b981" stroke-width="1.5" class="conn-beam" filter="url(#dbConnGlow)" />
-						<path d="M 0 8 v 7 a 15 5 0 0 0 30 0 v -7" fill="#059669" fill-opacity="0.45" stroke="#10b981" stroke-width="1" />
-						<ellipse cx="15" cy="8" rx="15" ry="5" fill="#10b981" fill-opacity="0.65" stroke="#10b981" stroke-width="1.2" />
-						<path d="M 0 19 v 7 a 15 5 0 0 0 30 0 v -7" fill="#047857" fill-opacity="0.55" stroke="#10b981" stroke-width="1" />
-						<ellipse cx="15" cy="19" rx="15" ry="5" fill="#059669" fill-opacity="0.75" stroke="#10b981" stroke-width="1.2" />
-						<circle cx="3" cy="38" r="2.5" fill="#10b981" class="conn-led-fast" />
-						<text x="8" y="40" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">RD</text>
-						<circle cx="18" cy="38" r="2.5" fill="#f59e0b" class="conn-led-slow" />
-						<text x="23" y="40" font-family="monospace" font-size="8.5" fill="#f59e0b" font-weight="bold">WR</text>
-					</g>
-				</g>
-
-				<!-- ========================================================= -->
-				<!-- LOWER PIPE: CORE -> MCP GATEWAY -> DB 2                   -->
-				<!-- ========================================================= -->
-				<path
-					d="M 205 168 L 290 168"
-					fill="none"
-					stroke="url(#connGradCoreToMCP)"
-					stroke-width="2.5"
-					class="wire-flow-forward"
-				/>
-
-				<!-- MCP Gateway Isolator Node -->
-				<g transform="translate(290, 142)">
-					<rect x="0" y="0" width="94" height="52" rx="10" fill="currentColor" class="text-card stroke-cyan-500/80 stroke-[1.5px]" />
-					<rect x="0" y="0" width="94" height="20" rx="10" fill="#06b6d4" fill-opacity="0.18" />
-					<text x="8" y="15" font-family="system-ui" font-size="11.5" font-weight="bold" fill="#06b6d4">🔌 MCP Tool</text>
-					<text x="6" y="32" font-family="monospace" font-size="9.5" fill="currentColor" class="text-foreground">mutate_invoice()</text>
-					<text x="6" y="45" font-family="monospace" font-size="9" fill="#06b6d4" font-weight="bold">Zero Raw SQL</text>
-				</g>
-
-				<path
-					d="M 384 168 L 430 168"
-					fill="none"
-					stroke="url(#connGradMCPToDB2)"
-					stroke-width="2.5"
-					class="wire-flow-forward"
-				/>
-
-				<!-- Socket Port 2 (DB 2) -->
-				<circle cx="430" cy="168" r="4.5" fill="#06b6d4" />
-				<circle cx="430" cy="168" r="5" fill="none" stroke="#06b6d4" class="conn-socket-pulse" />
-
-				<!-- Continuous Live Packets: MCP <-> DB 2 -->
-				<circle r="4" fill="#06b6d4" filter="url(#dbConnGlow)">
-					<animateMotion dur="1.4s" repeatCount="indefinite" path="M 205 168 L 290 168" />
-				</circle>
-				<circle r="4" fill="#06b6d4" filter="url(#dbConnGlow)">
-					<animateMotion dur="0.9s" begin="0.3s" repeatCount="indefinite" path="M 384 168 L 430 168" />
-				</circle>
-				<circle r="3" fill="#38bdf8" filter="url(#dbConnGlow)">
-					<animateMotion dur="1.7s" begin="0.6s" repeatCount="indefinite" path="M 430 168 L 384 168" />
-				</circle>
-
-				{#if isSimulatingDb2}
-					<circle r="8" fill="#06b6d4" filter="url(#dbConnGlow)">
-						<animateMotion dur="0.45s" repeatCount="1" path="M 384 168 L 430 168" />
-					</circle>
-				{/if}
-
-				<!-- ========================================================= -->
-				<!-- LOWER RIGHT: DB 2 (ENTERPRISE ERP STORE VIA MCP)          -->
-				<!-- ========================================================= -->
-				<g transform="translate(430, 126)">
-					<rect
-						x="0" y="0" width="535" height="96" rx="14"
-						fill="currentColor"
-						class="text-card stroke-blue-600/90 {isSimulatingDb2 ? 'active-box-glow' : 'stroke-[1.5px]'}"
-					/>
-					<rect x="0" y="0" width="535" height="32" rx="14" fill="#2563eb" fill-opacity="0.16" />
-					<text x="14" y="22" font-family="system-ui" font-size="13.5" font-weight="bold" fill="#2563eb">🏢 DB Referensi MCP &amp; ERP ({mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : 'Enterprise DB'})</text>
-					
-					{#if mcpStatus === 'CONNECTED'}
-						<text x="435" y="22" font-family="monospace" font-size="11.5" font-weight="bold" fill="#06b6d4">● CONNECTED</text>
+					<!-- ========================================================= -->
+					<!-- 2. UPPER PIPE: CORE -> DB 1 SYSTEM STORE                  -->
+					<!-- ========================================================= -->
+					{#if db1VisualState === "DISCONNECTED"}
+						<!-- Disconnected Static Severed Pipe -->
+						<path
+							d="M 280 105 L 580 105"
+							fill="none"
+							stroke="#64748b"
+							stroke-width="2"
+							stroke-dasharray="6 6"
+							stroke-opacity="0.45"
+						/>
+						<!-- Severed Indicator Badge -->
+						<g transform="translate(430, 105)">
+							<rect x="-65" y="-13" width="130" height="26" rx="6" fill="#0f172a" stroke="#ef4444" stroke-width="1.2" stroke-opacity="0.6" />
+							<text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ef4444">✕ LINK SEVERED</text>
+						</g>
+						<!-- Static Inactive Socket -->
+						<circle cx="580" cy="105" r="4.5" fill="#ef4444" />
+					{:else if db1VisualState === "PROCESSING"}
+						<!-- Processing Burst Pipe -->
+						<path
+							d="M 280 105 L 580 105"
+							fill="none"
+							stroke="#10b981"
+							stroke-width="3.5"
+							class="wire-flow-fast"
+						/>
+						<!-- Processing Badge on Wire -->
+						<g transform="translate(430, 105)">
+							<rect x="-70" y="-13" width="140" height="26" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+							<text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#10b981">⚡ EXECUTING QUERY</text>
+						</g>
+						<!-- Fast Burst Packets -->
+						<circle r="8" fill="#10b981" filter="url(#dbConnGlow)">
+							<animateMotion dur="0.45s" repeatCount="indefinite" path="M 280 105 L 580 105" />
+						</circle>
+						<circle r="6" fill="#34d399" filter="url(#dbConnGlow)">
+							<animateMotion dur="0.45s" begin="0.22s" repeatCount="indefinite" path="M 280 105 L 580 105" />
+						</circle>
+						<!-- Socket with Fast Pulse Ripple -->
+						<circle cx="580" cy="105" r="5" fill="#10b981" />
+						<circle cx="580" cy="105" r="6" fill="none" stroke="#10b981" class="conn-socket-pulse-fast" />
 					{:else}
-						<text x="420" y="22" font-family="monospace" font-size="11.5" font-weight="bold" fill="#ef4444">● DISCONNECTED</text>
+						<!-- Connected Active Pipe -->
+						<path
+							d="M 280 105 L 580 105"
+							fill="none"
+							stroke="url(#connGradCoreToDB1)"
+							stroke-width="2.5"
+							class="wire-flow-forward"
+						/>
+						<!-- Active Data Packets (Bidirectional) -->
+						<circle r="4.5" fill="#10b981" filter="url(#dbConnGlow)">
+							<animateMotion dur="1.6s" repeatCount="indefinite" path="M 280 105 L 580 105" />
+						</circle>
+						<circle r="3.5" fill="#34d399" filter="url(#dbConnGlow)">
+							<animateMotion dur="2.2s" begin="0.8s" repeatCount="indefinite" path="M 580 105 L 280 105" />
+						</circle>
+						<!-- Socket with Normal Ripple -->
+						<circle cx="580" cy="105" r="5" fill="#10b981" />
+						<circle cx="580" cy="105" r="6" fill="none" stroke="#10b981" class="conn-socket-pulse" />
 					{/if}
 
-					<!-- Table Badges & Descriptions -->
-					<g transform="translate(14, 40)">
-						<text x="4" y="17" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel' : mcpMode === 'ssl' ? 'SSL/TLS' : 'Local Direct'}</text>
-						<text x="4" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• invoices (Buku Besar Transaksi), customer_master (Entitas Resmi)</text>
-						<text x="4" y="48" font-family="monospace" font-size="10.5" fill="#2563eb" font-weight="bold">🔒 Terisolasi Total di Balik Protokol MCP • Parameterized Prepared Statements Saja</text>
+					<!-- ========================================================= -->
+					<!-- 3. UPPER RIGHT: DB 1 (POSTGRESQL SYSTEM STORE - LOCKED)   -->
+					<!-- ========================================================= -->
+					<g transform="translate(580, 35)">
+						<rect
+							x="0" y="0" width="650" height="145" rx="18"
+							fill="currentColor"
+							class="text-card {db1VisualState === 'PROCESSING' ? 'stroke-emerald-400 stroke-[2.5px] active-box-glow' : db1VisualState === 'CONNECTED' ? 'stroke-emerald-600/90 stroke-[2px]' : 'stroke-rose-500/40 stroke-[1.5px]'}"
+						/>
+						<!-- Title Banner -->
+						<rect 
+							x="0" y="0" width="650" height="38" rx="18" 
+							fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : '#10b981'} 
+							fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.08' : db1VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
+						/>
+						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : '#059669'}>
+							🗄️ Database Internal Sistem (PostgreSQL 14–18 Core - Locked)
+						</text>
+						
+						<!-- Status Indicator Badge -->
+						{#if db1VisualState === 'PROCESSING'}
+							<circle cx="530" cy="24" r="3.5" fill="#10b981" class="conn-led-strobe" />
+							<text x="540" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#10b981">⚡ PROCESSING...</text>
+						{:else if db1VisualState === 'CONNECTED'}
+							<circle cx="530" cy="24" r="3.5" fill="#10b981" class="conn-led-fast" />
+							<text x="540" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#10b981">● CONNECTED (LIVE)</text>
+						{:else}
+							<circle cx="510" cy="24" r="3.5" fill="#ef4444" />
+							<text x="520" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#ef4444">● DISCONNECTED (OFFLINE)</text>
+						{/if}
+
+						<!-- Left Text Details Column -->
+						<g transform="translate(18, 48)">
+							<text x="0" y="16" font-family="monospace" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">
+								Host: {sysConfig.host}:{sysConfig.port}/{sysConfig.dbname} (PostgreSQL Core Locked)
+							</text>
+							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
+								• Tabel: tickets, audit_logs (HMAC Signed), inbound_messages, learned_patterns
+							</text>
+							<text x="0" y="50" font-family="monospace" font-size="10.5" fill="#10b981" font-weight="bold">
+								✓ Transactional ACID Staging Store • Atomic Rollback Guard
+							</text>
+							<!-- Realtime Health Notice -->
+							<text x="0" y="66" font-family="monospace" font-size="10" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db1VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
+								{#if db1VisualState === 'CONNECTED'}
+									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Latensi Socket ~1.2ms
+								{:else if db1VisualState === 'PROCESSING'}
+									⚡ Sedang Memproses Kueri Staging Tiket &amp; Penandatanganan Log Audit...
+								{:else}
+									✕ Server Database Belum Terhubung • Pastikan PostgreSQL aktif pada port 5432
+								{/if}
+							</text>
+						</g>
+
+						<!-- Right Platter Disc Rack (DB 1) -->
+						<g transform="translate(555, 46)">
+							<!-- Scanner Laser Beam (Only active if not disconnected) -->
+							{#if db1VisualState !== 'DISCONNECTED'}
+								<line 
+									x1="-10" y1="0" x2="38" y2="0" 
+									stroke="#10b981" stroke-width="1.8" 
+									class={db1VisualState === 'PROCESSING' ? 'conn-beam-fast' : 'conn-beam'} 
+									filter="url(#dbConnGlow)" 
+								/>
+							{/if}
+							
+							<!-- Disk 1 (Top) -->
+							<path 
+								d="M 0 10 v 10 a 18 6.5 0 0 0 36 0 v -10" 
+								fill={db1VisualState === 'DISCONNECTED' ? '#334155' : '#059669'} 
+								fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.4' : '0.55'} 
+								stroke={db1VisualState === 'DISCONNECTED' ? '#475569' : '#10b981'} 
+								stroke-width="1" 
+							/>
+							<ellipse 
+								cx="18" cy="10" rx="18" ry="6.5" 
+								fill={db1VisualState === 'DISCONNECTED' ? '#475569' : '#10b981'} 
+								fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.5' : '0.75'} 
+								stroke={db1VisualState === 'DISCONNECTED' ? '#475569' : '#10b981'} 
+								stroke-width="1.2" 
+							/>
+							
+							<!-- Disk 2 (Middle) -->
+							<path 
+								d="M 0 24 v 10 a 18 6.5 0 0 0 36 0 v -10" 
+								fill={db1VisualState === 'DISCONNECTED' ? '#1e293b' : '#047857'} 
+								fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.4' : '0.65'} 
+								stroke={db1VisualState === 'DISCONNECTED' ? '#475569' : '#10b981'} 
+								stroke-width="1" 
+							/>
+							<ellipse 
+								cx="18" cy="24" rx="18" ry="6.5" 
+								fill={db1VisualState === 'DISCONNECTED' ? '#334155' : '#059669'} 
+								fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.5' : '0.85'} 
+								stroke={db1VisualState === 'DISCONNECTED' ? '#475569' : '#10b981'} 
+								stroke-width="1.2" 
+							/>
+
+							<!-- LEDs Activity -->
+							<circle cx="4" cy="46" r="3" fill={db1VisualState === 'DISCONNECTED' ? '#334155' : '#10b981'} class={db1VisualState === 'PROCESSING' ? 'conn-led-strobe' : db1VisualState === 'CONNECTED' ? 'conn-led-fast' : ''} />
+							<text x="11" y="49" font-family="monospace" font-size="8.5" fill={db1VisualState === 'DISCONNECTED' ? '#64748b' : '#10b981'} font-weight="bold">RD</text>
+
+							<circle cx="23" cy="46" r="3" fill={db1VisualState === 'DISCONNECTED' ? '#334155' : '#f59e0b'} class={db1VisualState === 'PROCESSING' ? 'conn-led-strobe' : db1VisualState === 'CONNECTED' ? 'conn-led-slow' : ''} />
+							<text x="30" y="49" font-family="monospace" font-size="8.5" fill={db1VisualState === 'DISCONNECTED' ? '#64748b' : '#f59e0b'} font-weight="bold">WR</text>
+						</g>
 					</g>
 
-					<!-- 3D Database Disk Platters (DB 2) -->
-					<g transform="translate(480, 36)">
-						<line x1="-10" y1="0" x2="34" y2="0" stroke="#06b6d4" stroke-width="1.5" class="conn-beam" filter="url(#dbConnGlow)" />
-						<path d="M 0 8 v 7 a 15 5 0 0 0 30 0 v -7" fill="#0284c7" fill-opacity="0.45" stroke="#06b6d4" stroke-width="1" />
-						<ellipse cx="15" cy="8" rx="15" ry="5" fill="#06b6d4" fill-opacity="0.65" stroke="#06b6d4" stroke-width="1.2" />
-						<path d="M 0 19 v 7 a 15 5 0 0 0 30 0 v -7" fill="#0369a1" fill-opacity="0.55" stroke="#06b6d4" stroke-width="1" />
-						<ellipse cx="15" cy="19" rx="15" ry="5" fill="#0284c7" fill-opacity="0.75" stroke="#06b6d4" stroke-width="1.2" />
-						<circle cx="3" cy="38" r="2.5" fill="#06b6d4" class="conn-led-fast" />
-						<text x="8" y="40" font-family="monospace" font-size="8.5" fill="#06b6d4" font-weight="bold">TX</text>
-						<circle cx="18" cy="38" r="2.5" fill="#3b82f6" class="conn-led-slow" />
-						<text x="23" y="40" font-family="monospace" font-size="8.5" fill="#3b82f6" font-weight="bold">OK</text>
+					<!-- ========================================================= -->
+					<!-- 4. LOWER PIPE: CORE -> MCP GATEWAY -> DB 2                -->
+					<!-- ========================================================= -->
+					{#if db2VisualState === "DISCONNECTED"}
+						<!-- Disconnected Static Pipe to MCP -->
+						<path
+							d="M 280 265 L 375 265"
+							fill="none"
+							stroke="#64748b"
+							stroke-width="2"
+							stroke-dasharray="6 6"
+							stroke-opacity="0.45"
+						/>
+						<g transform="translate(325, 265)">
+							<rect x="-40" y="-12" width="80" height="24" rx="5" fill="#0f172a" stroke="#ef4444" stroke-width="1.2" stroke-opacity="0.6" />
+							<text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="9" font-weight="bold" fill="#ef4444">✕ OFFLINE</text>
+						</g>
+						<path
+							d="M 525 265 L 580 265"
+							fill="none"
+							stroke="#64748b"
+							stroke-width="2"
+							stroke-dasharray="6 6"
+							stroke-opacity="0.45"
+						/>
+						<circle cx="580" cy="265" r="4.5" fill="#ef4444" />
+					{:else if db2VisualState === "PROCESSING"}
+						<!-- Processing Burst Pipe -->
+						<path
+							d="M 280 265 L 375 265"
+							fill="none"
+							stroke="#06b6d4"
+							stroke-width="3.5"
+							class="wire-flow-fast"
+						/>
+						<path
+							d="M 525 265 L 580 265"
+							fill="none"
+							stroke="#06b6d4"
+							stroke-width="3.5"
+							class="wire-flow-fast"
+						/>
+						<circle r="7.5" fill="#06b6d4" filter="url(#dbConnGlow)">
+							<animateMotion dur="0.4s" repeatCount="indefinite" path="M 280 265 L 375 265" />
+						</circle>
+						<circle r="7.5" fill="#06b6d4" filter="url(#dbConnGlow)">
+							<animateMotion dur="0.3s" repeatCount="indefinite" path="M 525 265 L 580 265" />
+						</circle>
+						<circle cx="580" cy="265" r="5" fill="#06b6d4" />
+						<circle cx="580" cy="265" r="6" fill="none" stroke="#06b6d4" class="conn-socket-pulse-fast" />
+					{:else}
+						<!-- Connected Active Pipe -->
+						<path
+							d="M 280 265 L 375 265"
+							fill="none"
+							stroke="url(#connGradCoreToMCP)"
+							stroke-width="2.5"
+							class="wire-flow-forward"
+						/>
+						<path
+							d="M 525 265 L 580 265"
+							fill="none"
+							stroke="url(#connGradMCPToDB2)"
+							stroke-width="2.5"
+							class="wire-flow-forward"
+						/>
+						<circle r="4.5" fill="#06b6d4" filter="url(#dbConnGlow)">
+							<animateMotion dur="1.4s" repeatCount="indefinite" path="M 280 265 L 375 265" />
+						</circle>
+						<circle r="4" fill="#38bdf8" filter="url(#dbConnGlow)">
+							<animateMotion dur="0.9s" begin="0.3s" repeatCount="indefinite" path="M 525 265 L 580 265" />
+						</circle>
+						<circle r="3.5" fill="#38bdf8" filter="url(#dbConnGlow)">
+							<animateMotion dur="1.7s" begin="0.6s" repeatCount="indefinite" path="M 580 265 L 525 265" />
+						</circle>
+						<circle cx="580" cy="265" r="5" fill="#06b6d4" />
+						<circle cx="580" cy="265" r="6" fill="none" stroke="#06b6d4" class="conn-socket-pulse" />
+					{/if}
+
+					<!-- MCP Protocol Gateway Node (Middle) -->
+					<g transform="translate(375, 215)">
+						<rect 
+							x="0" y="0" width="150" height="100" rx="14" 
+							fill="currentColor" 
+							class="text-card stroke-cyan-500/80 stroke-[1.8px] shadow-sm" 
+						/>
+						<rect x="0" y="0" width="150" height="28" rx="14" fill="#06b6d4" fill-opacity="0.18" />
+						<text x="12" y="19" font-family="system-ui" font-size="11.5" font-weight="bold" fill="#06b6d4">🔌 MCP Protocol Tool</text>
+						
+						<g transform="translate(10, 36)">
+							<text x="0" y="14" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">mutate_invoice()</text>
+							<text x="0" y="28" font-family="monospace" font-size="9.5" fill="#06b6d4" font-weight="bold">Zero Raw SQL Guard</text>
+							<text x="0" y="42" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">JSON-RPC 2.0 / stdio</text>
+							<text x="0" y="55" font-family="monospace" font-size="9" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#10b981'}>
+								{db2VisualState === 'PROCESSING' ? '⚡ EXECUTING RPC' : db2VisualState === 'CONNECTED' ? '● ACTIVE / READY' : '○ STANDBY PROXY'}
+							</text>
+						</g>
 					</g>
+
+					<!-- ========================================================= -->
+					<!-- 5. LOWER RIGHT: DB 2 (ENTERPRISE ERP STORE VIA MCP)       -->
+					<!-- ========================================================= -->
+					<g transform="translate(580, 200)">
+						<rect
+							x="0" y="0" width="650" height="145" rx="18"
+							fill="currentColor"
+							class="text-card {db2VisualState === 'PROCESSING' ? 'stroke-cyan-400 stroke-[2.5px] active-box-glow-cyan' : db2VisualState === 'CONNECTED' ? 'stroke-blue-600/90 stroke-[2px]' : 'stroke-rose-500/40 stroke-[1.5px]'}"
+						/>
+						<!-- Title Banner -->
+						<rect 
+							x="0" y="0" width="650" height="38" rx="18" 
+							fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'} 
+							fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.08' : db2VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
+						/>
+						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'}>
+							🏢 Database Referensi MCP &amp; ERP ({mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : 'Enterprise DB'})
+						</text>
+						
+						<!-- Status Indicator Badge -->
+						{#if db2VisualState === 'PROCESSING'}
+							<circle cx="530" cy="24" r="3.5" fill="#06b6d4" class="conn-led-strobe" />
+							<text x="540" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#06b6d4">⚡ MUTATING...</text>
+						{:else if db2VisualState === 'CONNECTED'}
+							<circle cx="530" cy="24" r="3.5" fill="#06b6d4" class="conn-led-fast" />
+							<text x="540" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#06b6d4">● CONNECTED (LIVE)</text>
+						{:else}
+							<circle cx="510" cy="24" r="3.5" fill="#ef4444" />
+							<text x="520" y="28" font-family="monospace" font-size="11.5" font-weight="bold" fill="#ef4444">● DISCONNECTED (OFFLINE)</text>
+						{/if}
+
+						<!-- Left Text Details Column -->
+						<g transform="translate(18, 48)">
+							<text x="0" y="16" font-family="monospace" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">
+								Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel (Bastion 22)' : mcpMode === 'ssl' ? 'SSL/TLS Encrypted' : 'Local Direct'}
+							</text>
+							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
+								• Tabel Referensi: invoices (Buku Besar Transaksi), customer_master (Entitas Resmi), branches
+							</text>
+							<text x="0" y="50" font-family="monospace" font-size="10.5" fill="#2563eb" font-weight="bold">
+								🔒 Terisolasi Total di Balik Protokol MCP • Parameterized Prepared Statements Saja
+							</text>
+							<!-- Realtime Health Notice -->
+							<text x="0" y="66" font-family="monospace" font-size="10" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db2VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
+								{#if db2VisualState === 'CONNECTED'}
+									✓ Sumber Data Bisnis Terverifikasi • Akses Read/Write Terisolasi Aman
+								{:else if db2VisualState === 'PROCESSING'}
+									⚡ Mengeksekusi Mutasi Terverifikasi melalui MCP Protocol RPC...
+								{:else}
+									✕ Belum Terhubung • Konfigurasikan Platform &amp; Uji Koneksi di Tab 2
+								{/if}
+							</text>
+						</g>
+
+						<!-- Right Platter Disc Rack (DB 2) -->
+						<g transform="translate(555, 46)">
+							<!-- Scanner Laser Beam (Only active if not disconnected) -->
+							{#if db2VisualState !== 'DISCONNECTED'}
+								<line 
+									x1="-10" y1="0" x2="38" y2="0" 
+									stroke="#06b6d4" stroke-width="1.8" 
+									class={db2VisualState === 'PROCESSING' ? 'conn-beam-fast' : 'conn-beam'} 
+									filter="url(#dbConnGlow)" 
+								/>
+							{/if}
+							
+							<!-- Disk 1 (Top) -->
+							<path 
+								d="M 0 10 v 10 a 18 6.5 0 0 0 36 0 v -10" 
+								fill={db2VisualState === 'DISCONNECTED' ? '#334155' : '#0284c7'} 
+								fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.4' : '0.55'} 
+								stroke={db2VisualState === 'DISCONNECTED' ? '#475569' : '#06b6d4'} 
+								stroke-width="1" 
+							/>
+							<ellipse 
+								cx="18" cy="10" rx="18" ry="6.5" 
+								fill={db2VisualState === 'DISCONNECTED' ? '#475569' : '#06b6d4'} 
+								fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.5' : '0.75'} 
+								stroke={db2VisualState === 'DISCONNECTED' ? '#475569' : '#06b6d4'} 
+								stroke-width="1.2" 
+							/>
+							
+							<!-- Disk 2 (Middle) -->
+							<path 
+								d="M 0 24 v 10 a 18 6.5 0 0 0 36 0 v -10" 
+								fill={db2VisualState === 'DISCONNECTED' ? '#1e293b' : '#0369a1'} 
+								fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.4' : '0.65'} 
+								stroke={db2VisualState === 'DISCONNECTED' ? '#475569' : '#06b6d4'} 
+								stroke-width="1" 
+							/>
+							<ellipse 
+								cx="18" cy="24" rx="18" ry="6.5" 
+								fill={db2VisualState === 'DISCONNECTED' ? '#334155' : '#0284c7'} 
+								fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.5' : '0.85'} 
+								stroke={db2VisualState === 'DISCONNECTED' ? '#475569' : '#06b6d4'} 
+								stroke-width="1.2" 
+							/>
+
+							<!-- LEDs Activity -->
+							<circle cx="4" cy="46" r="3" fill={db2VisualState === 'DISCONNECTED' ? '#334155' : '#06b6d4'} class={db2VisualState === 'PROCESSING' ? 'conn-led-strobe' : db2VisualState === 'CONNECTED' ? 'conn-led-fast' : ''} />
+							<text x="11" y="49" font-family="monospace" font-size="8.5" fill={db2VisualState === 'DISCONNECTED' ? '#64748b' : '#06b6d4'} font-weight="bold">TX</text>
+
+							<circle cx="23" cy="46" r="3" fill={db2VisualState === 'DISCONNECTED' ? '#334155' : '#3b82f6'} class={db2VisualState === 'PROCESSING' ? 'conn-led-strobe' : db2VisualState === 'CONNECTED' ? 'conn-led-slow' : ''} />
+							<text x="30" y="49" font-family="monospace" font-size="8.5" fill={db2VisualState === 'DISCONNECTED' ? '#64748b' : '#3b82f6'} font-weight="bold">OK</text>
+						</g>
+					</g>
+
 				</g>
 			</svg>
 		</div>
