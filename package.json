@@ -13,7 +13,7 @@
     "test:backend": "cd backend && go test -v -cover ./...",
     "test:unit:backend": "cd backend && go test -v ./internal/...",
     "test:unit:gateway": "cd whatsapp-gateway && bun test test/extractor.test.ts",
-    "test:unit:frontend": "cd frontend && bun test src/lib/utils.test.ts",
+    "test:unit:frontend": "cd frontend && bun test test/utils.test.ts",
     "test:unit": "bun run test:unit:backend && bun run test:unit:gateway && bun run test:unit:frontend",
     "test:integration:backend": "cd backend && go test -v ./tests/integration/...",
     "test:integration:gateway": "cd whatsapp-gateway && bun test test/gateway_integration.test.ts",

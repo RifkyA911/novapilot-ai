@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { cn, formatCurrency, timeAgo } from "./utils";
+import { cn, formatCurrency, timeAgo } from "../src/lib/utils";
 
 describe("Frontend Utilities Unit Tests", () => {
     describe("cn (Tailwind class merger)", () => {

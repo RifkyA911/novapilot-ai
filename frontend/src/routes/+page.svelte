@@ -21,6 +21,7 @@
 		ExclamationTriangle
 	} from "svelte-heros-v2";
 	import DottedSurface from "$lib/components/DottedSurface.svelte";
+	import PulsarGridBackground from "$lib/components/PulsarGridBackground.svelte";
 
 	// Interactive Simulation State
 	let isSimulating = $state(false);
@@ -131,6 +132,8 @@
 
 	<!-- HERO SECTION -->
 	<section class="relative pt-12 pb-16 md:pt-20 md:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden">
+		<!-- Interactive Pulsar Grid Background (21st.dev @dhileepkumargm reference) -->
+		<PulsarGridBackground />
 		<!-- 3D Three.js Animated Dotted Surface Wave Background (21st.dev @efferd reference) -->
 		<DottedSurface />
 

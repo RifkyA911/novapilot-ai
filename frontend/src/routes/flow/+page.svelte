@@ -2,7 +2,7 @@
 	import { 
 		ShieldCheck, CheckCircle, ArrowRight, ServerStack, CpuChip, Radio, LockClosed, Bolt, 
 		DocumentText, Sparkles, CommandLine, Square3Stack3d, ArrowPath, ExclamationTriangle, 
-		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight
+		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight, Key, ArrowTopRightOnSquare
 	} from "svelte-heros-v2";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
@@ -47,7 +47,10 @@ await fetch("http://localhost:8088/api/tickets", {
 				"The agent learns branch-specific dialect patterns organically over time without requiring manual codebase changes."
 			],
 			circuitDesc: "WhatsApp Socket & Hook → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
-			node1Label: "WhatsApp"
+			node1Label: "WhatsApp",
+			apiKeyLabel: "Meta WhatsApp Cloud API & Apps",
+			apiKeyUrl: "https://developers.facebook.com/apps/",
+			portalName: "Meta Developer Console"
 		},
 		telegram: {
 			name: "Telegram Bot",
@@ -80,7 +83,10 @@ if err != nil {
 				"Ensures prompt consistency across branch plant teams."
 			],
 			circuitDesc: "Telegram Bot API → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
-			node1Label: "Telegram"
+			node1Label: "Telegram",
+			apiKeyLabel: "Get Bot Token via @BotFather",
+			apiKeyUrl: "https://t.me/BotFather",
+			portalName: "Telegram @BotFather"
 		},
 		discord: {
 			name: "Discord Webhook",
@@ -109,7 +115,10 @@ forwardToNovaPilot("http://localhost:8088/api/tickets", interaction.Data)`,
 				"Continuous improvement of entity extraction accuracy."
 			],
 			circuitDesc: "Discord Gateway & Embeds → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
-			node1Label: "Discord"
+			node1Label: "Discord",
+			apiKeyLabel: "Get Discord Bot Token & Applications",
+			apiKeyUrl: "https://discord.com/developers/applications",
+			portalName: "Discord Developer Portal"
 		},
 		slack: {
 			name: "Slack Enterprise",
@@ -139,7 +148,10 @@ forwardTicketToCore("http://localhost:8088/api/tickets", slackEvent)`,
 				"Eliminates repetitive ticket correction overhead."
 			],
 			circuitDesc: "Slack Events API & Bolt → LLM Guardrail → Pre-Check → Human Sign-off → DB Commit",
-			node1Label: "Slack"
+			node1Label: "Slack",
+			apiKeyLabel: "Create Slack App & Signing Secret",
+			apiKeyUrl: "https://api.slack.com/apps",
+			portalName: "Slack API Dashboard"
 		}
 	});
 
@@ -339,8 +351,8 @@ if humanCorrectedValue != aiExtractedValue {
 			{/each}
 		</div>
 
-		<!-- Simulation Trigger Button -->
-		<div class="pt-2 flex justify-center">
+		<!-- Simulation Trigger Button & Direct Platform API Key Portal Link -->
+		<div class="pt-2 flex flex-wrap items-center justify-center gap-2.5">
 			<button
 				type="button"
 				onclick={runSimulation}
@@ -350,6 +362,27 @@ if humanCorrectedValue != aiExtractedValue {
 				<ArrowPath class="h-3.5 w-3.5 {isSimulating ? 'animate-spin' : ''}" />
 				<span>{isSimulating ? `Traversing Stage 0${activeStage}/06...` : `Simulate Live ${platformMeta[cockpit.chatPlatform].name} Ingestion`}</span>
 			</button>
+
+			<a
+				href={platformMeta[cockpit.chatPlatform].apiKeyUrl}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-xs group"
+				title="Buka portal developer resmi untuk mendapatkan API key/bot token {platformMeta[cockpit.chatPlatform].name}"
+			>
+				<Key class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+				<span>Get {platformMeta[cockpit.chatPlatform].name} API Key</span>
+				<span class="text-[10px] font-mono opacity-60">({platformMeta[cockpit.chatPlatform].portalName})</span>
+				<ArrowTopRightOnSquare class="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+			</a>
+
+			<a
+				href="/dashboard/platforms"
+				class="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium border border-border transition-all"
+			>
+				<span>Set Token di Dashboard</span>
+				<ChevronRight class="h-3 w-3" />
+			</a>
 		</div>
 	</div>
 
