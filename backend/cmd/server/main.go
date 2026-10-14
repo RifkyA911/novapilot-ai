@@ -17,6 +17,7 @@ import (
 func main() {
 	// 1. Load Environment Configuration
 	_ = godotenv.Load("../../.env")
+	_ = godotenv.Load("../.env")
 	_ = godotenv.Load(".env")
 
 	port := os.Getenv("SERVER_PORT")
@@ -24,32 +25,50 @@ func main() {
 		port = "8088"
 	}
 
-	pgHost := os.Getenv("POSTGRES_HOST")
+	pgHost := os.Getenv("SYSTEM_DB_HOST")
+	if pgHost == "" {
+		pgHost = os.Getenv("POSTGRES_HOST")
+	}
 	if pgHost == "" {
 		pgHost = "localhost"
 	}
-	pgPort := os.Getenv("POSTGRES_PORT")
+	pgPort := os.Getenv("SYSTEM_DB_PORT")
+	if pgPort == "" {
+		pgPort = os.Getenv("POSTGRES_PORT")
+	}
 	if pgPort == "" {
 		pgPort = "5432"
 	}
-	pgUser := os.Getenv("POSTGRES_USER")
+	pgUser := os.Getenv("SYSTEM_DB_USER")
+	if pgUser == "" {
+		pgUser = os.Getenv("POSTGRES_USER")
+	}
 	if pgUser == "" {
 		pgUser = "postgres"
 	}
-	pgPass := os.Getenv("POSTGRES_PASSWORD")
+	pgPass := os.Getenv("SYSTEM_DB_PASSWORD")
+	if pgPass == "" {
+		pgPass = os.Getenv("POSTGRES_PASSWORD")
+	}
 	if pgPass == "" {
 		pgPass = "postgres"
 	}
-	pgDB := os.Getenv("POSTGRES_DB")
+	pgDB := os.Getenv("SYSTEM_DB_NAME")
 	if pgDB == "" {
-		pgDB = "postgres"
+		pgDB = os.Getenv("POSTGRES_DB")
 	}
-	sslMode := os.Getenv("POSTGRES_SSLMODE")
+	if pgDB == "" {
+		pgDB = "novapilot_db"
+	}
+	sslMode := os.Getenv("SYSTEM_DB_SSLMODE")
+	if sslMode == "" {
+		sslMode = os.Getenv("POSTGRES_SSLMODE")
+	}
 	if sslMode == "" {
 		sslMode = "disable"
 	}
 
-	// 2. Initialize Database Connection
+	// 2. Initialize Database Connection (System Database 1)
 	db, err := postgres.NewConnection(postgres.Config{
 		Host:     pgHost,
 		Port:     pgPort,
@@ -139,12 +158,27 @@ func main() {
 		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
 	}
 
-	// Optional: Connect MCP Reference Database if distinct configuration provided
+	// 5. Connect MCP Reference Database (Database 2 - Enterprise ERP Source)
 	mcpHost := os.Getenv("MCP_REF_DB_HOST")
+	if mcpHost == "" {
+		mcpHost = "localhost"
+	}
 	mcpPort := os.Getenv("MCP_REF_DB_PORT")
+	if mcpPort == "" {
+		mcpPort = "5432"
+	}
 	mcpUser := os.Getenv("MCP_REF_DB_USER")
+	if mcpUser == "" {
+		mcpUser = "postgres"
+	}
 	mcpPass := os.Getenv("MCP_REF_DB_PASSWORD")
+	if mcpPass == "" {
+		mcpPass = "postgres"
+	}
 	mcpDBName := os.Getenv("MCP_REF_DB_NAME")
+	if mcpDBName == "" {
+		mcpDBName = "novapilot_mcp_ref"
+	}
 	mcpSSL := os.Getenv("MCP_REF_DB_SSLMODE")
 	if mcpSSL == "" {
 		mcpSSL = "disable"
