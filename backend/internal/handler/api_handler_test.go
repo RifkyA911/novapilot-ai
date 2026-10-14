@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,10 @@ func setupTestServer() (*gin.Engine, *postgres.Repository) {
 		api.POST("/inbound-messages", apiHandler.CreateInboundMessage)
 		api.POST("/inbound-messages/:id/stage-ticket", apiHandler.StageTicketFromMessage)
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)
+		api.POST("/database/test", apiHandler.TestDatabaseConnection)
+		api.GET("/mcp/tools", apiHandler.ListMCPTools)
+		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
+		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 	}
 
 	return r, repo
@@ -215,5 +220,52 @@ func TestGetDatabaseConfig(t *testing.T) {
 	}
 	if cfg["mcp_ref_db"] == nil {
 		t.Errorf("expected mcp_ref_db in config response")
+	}
+}
+
+func TestMCPToolsAndUpload(t *testing.T) {
+	router, _ := setupTestServer()
+
+	// 1. List tools
+	req, _ := http.NewRequest(http.MethodGet, "/api/mcp/tools", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.Code)
+	}
+
+	var listData struct {
+		Tools []map[string]interface{} `json:"tools"`
+		Count int                      `json:"count"`
+	}
+	if err := json.Unmarshal(resp.Body.Bytes(), &listData); err != nil {
+		t.Fatalf("failed to parse JSON: %v", err)
+	}
+
+	if listData.Count < 3 {
+		t.Errorf("expected at least 3 default MCP tools, got %d", listData.Count)
+	}
+
+	// 2. Upload custom tool
+	uploadBody := `{"name":"sync_sap_inventory","description":"Sync sap stock","version":"1.0.0"}`
+	reqUp, _ := http.NewRequest(http.MethodPost, "/api/mcp/tools", strings.NewReader(uploadBody))
+	reqUp.Header.Set("Content-Type", "application/json")
+	respUp := httptest.NewRecorder()
+	router.ServeHTTP(respUp, reqUp)
+
+	if respUp.Code != http.StatusOK {
+		t.Fatalf("expected upload status 200, got %d", respUp.Code)
+	}
+
+	// 3. Test execute tool
+	execBody := `{"tool_name":"sync_sap_inventory","parameters":{"warehouse_id":"JKT-01"}}`
+	reqExec, _ := http.NewRequest(http.MethodPost, "/api/mcp/test", strings.NewReader(execBody))
+	reqExec.Header.Set("Content-Type", "application/json")
+	respExec := httptest.NewRecorder()
+	router.ServeHTTP(respExec, reqExec)
+
+	if respExec.Code != http.StatusOK {
+		t.Fatalf("expected exec status 200, got %d", respExec.Code)
 	}
 }

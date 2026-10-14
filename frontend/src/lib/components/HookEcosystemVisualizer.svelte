@@ -1011,7 +1011,7 @@
 					/>
 					<!-- Title Banner -->
 					<rect x="0" y="0" width="245" height="34" rx="16" fill="#10b981" fill-opacity="0.18" />
-					<text x="14" y="23" font-family="system-ui" font-size="12.5" font-weight="bold" fill="#059669">🗄️ DB 1: System Store (PostgreSQL 18)</text>
+					<text x="14" y="23" font-family="system-ui" font-size="13.5" font-weight="bold" fill="#059669">🗄️ DB 1: System Store (PostgreSQL 18)</text>
 
 					<!-- Animated 3D Disk Platter Cylinder Stack on Right -->
 					<g transform="translate(192, 44)">
@@ -1032,19 +1032,19 @@
 
 						<!-- Blinking IO Activity LEDs -->
 						<circle cx="4" cy="54" r="2.5" fill="#10b981" class="db-led-fast" />
-						<text x="10" y="57" font-family="monospace" font-size="7.5" fill="#10b981" font-weight="bold">RD</text>
+						<text x="10" y="57" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">RD</text>
 
 						<circle cx="21" cy="54" r="2.5" fill="#f59e0b" class="db-led-slow" />
-						<text x="27" y="57" font-family="monospace" font-size="7.5" fill="#f59e0b" font-weight="bold">WR</text>
+						<text x="27" y="57" font-family="monospace" font-size="8.5" fill="#f59e0b" font-weight="bold">WR</text>
 					</g>
 
 					<!-- Tables List -->
 					<g transform="translate(12, 42)">
-						<text x="6" y="15" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Tabel Operasional (:5432 novapilot_db):</text>
-						<text x="6" y="31" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• inbound_messages (Staging Feed)</text>
-						<text x="6" y="46" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• tickets (Pending Approval Queue)</text>
-						<text x="6" y="61" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• audit_logs (Immutable Historical Trail)</text>
-						<text x="6" y="74" font-family="monospace" font-size="10" fill="#10b981" font-weight="bold">• learned_patterns (AI Feedback Weights)</text>
+						<text x="6" y="15" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Tabel Operasional (:5432 novapilot_db):</text>
+						<text x="6" y="31" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• inbound_messages (Staging Feed)</text>
+						<text x="6" y="46" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• tickets (Pending Approval Queue)</text>
+						<text x="6" y="61" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• audit_logs (Immutable Historical Trail)</text>
+						<text x="6" y="74" font-family="monospace" font-size="11" fill="#10b981" font-weight="bold">• learned_patterns (AI Feedback Weights)</text>
 					</g>
 				</g>
 
@@ -1130,26 +1130,26 @@
 						class="text-card stroke-cyan-500/90 {simulationStep === 5 ? 'active-box-glow' : 'stroke-[2px]'}"
 					/>
 					<rect x="0" y="0" width="220" height="38" rx="18" fill="#06b6d4" fill-opacity="0.16" />
-					<text x="14" y="25" font-family="system-ui" font-size="13" font-weight="bold" fill="#06b6d4">🔌 Enterprise MCP Connector</text>
+					<text x="14" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill="#06b6d4">🔌 Enterprise MCP Connector</text>
 					
 					<!-- Live Status Indicator -->
 					<circle cx="204" cy="18" r="3" fill="#06b6d4" class="db-led-fast" />
-					<text x="162" y="21" font-family="monospace" font-size="8.5" font-weight="bold" fill="#06b6d4">RPC: LIVE</text>
+					<text x="156" y="21" font-family="monospace" font-size="9.5" font-weight="bold" fill="#06b6d4">RPC: LIVE</text>
 
 					<!-- MCP Features -->
 					<g transform="translate(10, 48)">
 						<rect x="0" y="0" width="200" height="58" rx="10" fill="currentColor" class="text-secondary/60" />
 						<line x1="8" y1="48" x2="192" y2="48" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="6 4" class="flowing-path-connected" />
-						<text x="8" y="18" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Model Context Protocol</text>
-						<text x="8" y="33" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">Tool: mutate_invoice_record()</text>
-						<text x="8" y="45" font-family="monospace" font-size="9" fill="#06b6d4">Standard Multiplatform Schema</text>
+						<text x="8" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Model Context Protocol</text>
+						<text x="8" y="33" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">Tool: mutate_invoice_record()</text>
+						<text x="8" y="45" font-family="monospace" font-size="10" fill="#06b6d4">Standard Multiplatform Schema</text>
 					</g>
 
 					<g transform="translate(10, 112)">
 						<rect x="0" y="0" width="200" height="48" rx="10" fill="#06b6d4" fill-opacity="0.08" stroke="#06b6d4" stroke-opacity="0.25" stroke-width="1" />
-						<text x="8" y="18" font-family="monospace" font-size="10.5" font-weight="bold" fill="#06b6d4">✓ Zero Raw SQL Execution</text>
-						<text x="8" y="33" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">Hanya parameterized mutations</text>
-						<text x="8" y="44" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">diteruskan ke target ERP/DB</text>
+						<text x="8" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="#06b6d4">✓ Zero Raw SQL Execution</text>
+						<text x="8" y="33" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">Hanya parameterized mutations</text>
+						<text x="8" y="44" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">diteruskan ke target ERP/DB</text>
 					</g>
 				</g>
 
@@ -1189,7 +1189,7 @@
 						class="text-card stroke-blue-600/90 {simulationStep === 5 ? 'active-box-glow' : 'stroke-[2px]'}"
 					/>
 					<rect x="0" y="0" width="220" height="34" rx="16" fill="#2563eb" fill-opacity="0.18" />
-					<text x="12" y="23" font-family="system-ui" font-size="12" font-weight="bold" fill="#2563eb">🏢 DB 2: Enterprise Data (ERP)</text>
+					<text x="12" y="23" font-family="system-ui" font-size="13.5" font-weight="bold" fill="#2563eb">🏢 DB 2: Enterprise Data (ERP)</text>
 
 					<!-- Animated 3D Disk Platter Cylinder Stack on Right -->
 					<g transform="translate(170, 44)">
@@ -1210,18 +1210,18 @@
 
 						<!-- Blinking IO Activity LEDs -->
 						<circle cx="4" cy="54" r="2.5" fill="#06b6d4" class="db-led-fast" />
-						<text x="10" y="57" font-family="monospace" font-size="7.5" fill="#06b6d4" font-weight="bold">TX</text>
+						<text x="10" y="57" font-family="monospace" font-size="8.5" fill="#06b6d4" font-weight="bold">TX</text>
 
 						<circle cx="20" cy="54" r="2.5" fill="#3b82f6" class="db-led-slow" />
-						<text x="26" y="57" font-family="monospace" font-size="7.5" fill="#3b82f6" font-weight="bold">OK</text>
+						<text x="26" y="57" font-family="monospace" font-size="8.5" fill="#3b82f6" font-weight="bold">OK</text>
 					</g>
 
 					<g transform="translate(10, 42)">
-						<text x="6" y="15" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Oracle 19c / SAP / ERP Prod:</text>
-						<text x="6" y="31" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• invoices (Buku Besar Faktur)</text>
-						<text x="6" y="46" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• customer_master (Pelanggan)</text>
-						<text x="6" y="61" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">• ledger_balance (Akuntansi)</text>
-						<text x="6" y="74" font-family="monospace" font-size="10" fill="#2563eb" font-weight="bold">🔒 Terisolasi di balik MCP Server</text>
+						<text x="6" y="15" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Oracle 19c / SAP / ERP Prod:</text>
+						<text x="6" y="31" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• invoices (Buku Besar Faktur)</text>
+						<text x="6" y="46" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• customer_master (Pelanggan)</text>
+						<text x="6" y="61" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• ledger_balance (Akuntansi)</text>
+						<text x="6" y="74" font-family="monospace" font-size="11" fill="#2563eb" font-weight="bold">🔒 Terisolasi di balik MCP Server</text>
 					</g>
 				</g>
 

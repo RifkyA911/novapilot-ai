@@ -126,6 +126,11 @@ func main() {
 		// Database Configuration & Connectivity
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)
 		api.POST("/database/test", apiHandler.TestDatabaseConnection)
+
+		// MCP Tool Catalog & Manifest Upload
+		api.GET("/mcp/tools", apiHandler.ListMCPTools)
+		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
+		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 	}
 
 	// Optional: Connect MCP Reference Database if distinct configuration provided
