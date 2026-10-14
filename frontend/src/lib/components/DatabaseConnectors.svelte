@@ -31,16 +31,16 @@
 
 	let mcpConfig = $state({
 		host: "localhost",
-		port: "1521",
-		user: "erp_agent",
+		port: "5432",
+		user: "postgres",
 		password: "",
-		dbname: "ERP_PROD_PDB",
-		sslmode: "require"
+		dbname: "novapilot_mcp_ref",
+		sslmode: "disable"
 	});
 
 	// Platform & Connection Mode for MCP Reference DB
-	let mcpPlatform = $state<"oracle" | "sap" | "postgres" | "mysql" | "mssql" | "custom_rest">("oracle");
-	let mcpMode = $state<"local" | "ssl" | "ssh">("ssl");
+	let mcpPlatform = $state<"oracle" | "sap" | "postgres" | "mysql" | "mssql" | "custom_rest">("postgres");
+	let mcpMode = $state<"local" | "ssl" | "ssh">("local");
 
 	// SSH Bastion Tunnel Configuration for MCP
 	let mcpSshConfig = $state({
@@ -182,7 +182,11 @@
 	function handlePlatformChange(e: Event) {
 		const val = (e.target as HTMLSelectElement).value as typeof mcpPlatform;
 		mcpPlatform = val;
-		if (val === "oracle") {
+		if (val === "postgres") {
+			mcpConfig.port = "5432";
+			mcpConfig.dbname = "novapilot_mcp_ref";
+			mcpConfig.user = "postgres";
+		} else if (val === "oracle") {
 			mcpConfig.port = "1521";
 			mcpConfig.dbname = "ERP_PROD_PDB";
 			mcpConfig.user = "erp_agent";
@@ -198,10 +202,6 @@
 			mcpConfig.port = "1433";
 			mcpConfig.dbname = "MasterInvoiceStore";
 			mcpConfig.user = "sa_novapilot";
-		} else if (val === "postgres") {
-			mcpConfig.port = "5432";
-			mcpConfig.dbname = "enterprise_dw";
-			mcpConfig.user = "postgres";
 		} else if (val === "custom_rest") {
 			mcpConfig.port = "8000";
 			mcpConfig.dbname = "mcp_gateway";
@@ -251,6 +251,38 @@
 
 	// Default Presets for Easy Manifest Upload
 	const presets = {
+		postgres_invoicing: {
+			name: "mutate_invoice_record",
+			version: "1.4.0",
+			category: "ERP_MUTATION",
+			description: "Memperbarui nama pelanggan dan status faktur pada PostgreSQL (novapilot_mcp_ref) via parameterized query tanpa raw SQL.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					invoice_no: { type: "string", description: "Nomor faktur/nota resmi misal INV/2026/001" },
+					target_client: { type: "string", description: "Nama badan usaha pelanggan resmi baru" },
+					revised_amount: { type: "number", description: "Nominal revisi jika terdapat penyesuaian pajak" },
+					operator_note: { type: "string", description: "Catatan pengesahan dari petugas on-call" }
+				},
+				required: ["invoice_no", "target_client"]
+			}
+		},
+		customer_master_query: {
+			name: "query_customer_master",
+			version: "1.2.0",
+			category: "READ_ONLY_REFERENCE",
+			description: "Kueri read-only data master nama legal PT/CV dan nomor registrasi pajak dari database referensi enterprise novapilot_mcp_ref.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					query: { type: "string", description: "Nama parsial atau NPWP pelanggan misal Makmur atau 01.234" },
+					limit: { type: "integer", description: "Maksimal baris referensi (default 10)" }
+				},
+				required: ["query"]
+			}
+		},
 		oracle_invoicing: {
 			name: "mutate_invoice_record",
 			version: "1.4.0",
@@ -489,11 +521,12 @@
 		{ name: "documents", count: "~18 baris", desc: "Metadata file lampiran foto bukti nota, invoice PDF, dan ringkasan OCR" }
 	];
 
-	const mcpReferenceTables = [
-		{ name: "invoices", desc: "Faktur operasional, nomor nota, nama pelanggan, nominal, status OPEN/CLOSED" },
-		{ name: "customer_master", desc: "Master nama PT/CV/Toko pelanggan resmi terdaftar dalam enterprise" },
-		{ name: "branches", desc: "Daftar cabang resmi pabrik/gudang dan nomor kontak whitelist" }
-	];
+	let mcpReferenceTables = $state([
+		{ name: "customer_master", desc: "Master nama PT/CV/Toko pelanggan, NPWP resmi, status enterprise" },
+		{ name: "erp_invoices", desc: "Faktur operasional, nomor nota, nama penerima, nominal, status OPEN/PAID" },
+		{ name: "tax_validations", desc: "Database validasi perpajakan, status PKP, status faktur pajak aktif" },
+		{ name: "item_inventory", desc: "Katalog SKU suku cadang, deskripsi barang, stok cabang, harga referensi" }
+	]);
 
 	async function fetchConfigAndTelemetry() {
 		isLoadingConfig = true;
@@ -515,11 +548,42 @@
 				}
 				if (cfg.mcp_ref_db) {
 					mcpConfig.host = cfg.mcp_ref_db.host || "localhost";
-					mcpConfig.port = cfg.mcp_ref_db.port || "1521";
-					mcpConfig.user = cfg.mcp_ref_db.user || "erp_agent";
-					mcpConfig.dbname = cfg.mcp_ref_db.dbname || "ERP_PROD_PDB";
+					mcpConfig.port = cfg.mcp_ref_db.port || "5432";
+					mcpConfig.user = cfg.mcp_ref_db.user || "postgres";
+					mcpConfig.dbname = cfg.mcp_ref_db.dbname || "novapilot_mcp_ref";
 					mcpConfig.sslmode = cfg.mcp_ref_db.sslmode || "disable";
 					mcpStatus = cfg.mcp_ref_db.status || "DISCONNECTED";
+
+					// Dynamic detection of platform from backend response or port
+					if (cfg.mcp_ref_db.platform) {
+						mcpPlatform = cfg.mcp_ref_db.platform;
+					} else if (mcpConfig.port === "5432") {
+						mcpPlatform = "postgres";
+					} else if (mcpConfig.port === "1521") {
+						mcpPlatform = "oracle";
+					} else if (mcpConfig.port === "3300") {
+						mcpPlatform = "sap";
+					} else if (mcpConfig.port === "3306") {
+						mcpPlatform = "mysql";
+					} else if (mcpConfig.port === "1433") {
+						mcpPlatform = "mssql";
+					}
+
+					// Dynamic detection of tables from backend
+					if (Array.isArray(cfg.mcp_ref_db.tables) && cfg.mcp_ref_db.tables.length > 0) {
+						const tableDescMap: Record<string, string> = {
+							customer_master: "Master nama PT/CV/Toko pelanggan, NPWP resmi, status enterprise",
+							erp_invoices: "Faktur operasional, nomor nota, nama penerima, nominal, status OPEN/PAID",
+							tax_validations: "Database validasi perpajakan, status PKP, status faktur pajak aktif",
+							item_inventory: "Katalog SKU suku cadang, deskripsi barang, stok cabang, harga referensi",
+							invoices: "Faktur operasional, nomor nota, nama pelanggan, nominal, status OPEN/CLOSED",
+							branches: "Daftar cabang resmi pabrik/gudang dan nomor kontak whitelist"
+						};
+						mcpReferenceTables = cfg.mcp_ref_db.tables.map((tblName: string) => ({
+							name: tblName,
+							desc: tableDescMap[tblName] || "Tabel referensi data bisnis enterprise MCP"
+						}));
+					}
 				}
 			}
 
@@ -769,10 +833,10 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			</div>
 
 			<!-- Tier 2: Dedicated Control & Simulation Toolbar Strip -->
-			<div class="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-xl bg-secondary/35 dark:bg-muted/20 border border-border/70">
+			<div class="flex flex-wrap items-center justify-between gap-3 py-3.5 px-4 rounded-xl bg-secondary/40 dark:bg-muted/25 border border-border/70 shadow-2xs">
 				<!-- Simulation Action Buttons -->
-				<div class="flex items-center gap-2 flex-wrap text-xs font-mono">
-					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
+				<div class="flex items-center gap-2.5 flex-wrap text-xs font-mono">
+					<span class="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
 						Simulasi I/O:
 					</span>
 
@@ -781,12 +845,12 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={triggerDb1Burst}
 						disabled={isSimulatingDb1}
-						class="h-7.5 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
 						title="Memicu efek transmisi PROCESSING pada DB 1 (PostgreSQL Core)"
 					>
-						<span class="h-2 w-2 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
+						<span class="h-2.5 w-2.5 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 1: Core</span>
-						<span class="text-[10px] px-1 py-0.2 rounded font-bold {db1VisualState === 'CONNECTED' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : db1VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
+						<span class="text-[10px] px-1.5 py-0.5 rounded font-bold {db1VisualState === 'CONNECTED' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : db1VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
 							{db1VisualState}
 						</span>
 					</button>
@@ -796,12 +860,12 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={triggerDb2Burst}
 						disabled={isSimulatingDb2}
-						class="h-7.5 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
 						title="Memicu efek transmisi PROCESSING pada DB 2 (MCP Reference Store)"
 					>
-						<span class="h-2 w-2 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
+						<span class="h-2.5 w-2.5 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 2: MCP Ref</span>
-						<span class="text-[10px] px-1 py-0.2 rounded font-bold {db2VisualState === 'CONNECTED' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300' : db2VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
+						<span class="text-[10px] px-1.5 py-0.5 rounded font-bold {db2VisualState === 'CONNECTED' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300' : db2VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
 							{db2VisualState}
 						</span>
 					</button>
@@ -810,25 +874,25 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<button
 						type="button"
 						onclick={toggleMockStatusDb2}
-						class="h-7.5 px-2.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
 						title="Uji langsung switch status Link Online vs Offline pada DB 2"
 					>
 						{#if mcpStatus === 'CONNECTED'}
-							<span class="h-2 w-2 rounded-full bg-rose-500"></span>
+							<span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
 							<span>Putus Link DB 2</span>
 						{:else}
-							<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+							<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
 							<span>Hubung Link DB 2</span>
 						{/if}
 					</button>
 				</div>
 
 				<!-- Quick Reset Pan & Zoom -->
-				<div class="flex items-center gap-1.5 text-xs font-mono ml-auto">
+				<div class="flex items-center gap-2 text-xs font-mono ml-auto">
 					<button
 						type="button"
 						onclick={resetPanZoom}
-						class="h-7.5 px-2.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] font-medium transition-colors cursor-pointer"
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer shadow-2xs"
 						title="Reset kanvas ke ukuran normal (100%)"
 					>
 						Reset View ({Math.round(zoom * 100)}%)
@@ -1343,7 +1407,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.08' : db2VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
 						/>
 						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'}>
-							🏢 Database Referensi MCP &amp; ERP ({mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : 'Enterprise DB'})
+							🏢 Database Referensi MCP &amp; ERP ({mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname})
 						</text>
 						
 						<!-- Status Indicator Badge -->
@@ -1364,7 +1428,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel (Bastion 22)' : mcpMode === 'ssl' ? 'SSL/TLS Encrypted' : 'Local Direct'}
 							</text>
 							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
-								• Tabel Referensi: invoices (Buku Besar Transaksi), customer_master (Entitas Resmi), branches
+								• Tabel Referensi: {mcpReferenceTables.map(t => t.name).join(', ')}
 							</text>
 							<text x="0" y="50" font-family="monospace" font-size="10.5" fill="#2563eb" font-weight="bold">
 								🔒 Terisolasi Total di Balik Protokol MCP • Parameterized Prepared Statements Saja
@@ -1848,9 +1912,9 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							onchange={handlePlatformChange}
 							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-cyan-500/20 focus:outline-none"
 						>
+							<option value="postgres">PostgreSQL 16/18 (novapilot_mcp_ref / Enterprise MCP)</option>
 							<option value="oracle">Oracle 19c / 21c Enterprise (ERP Prod / Financials)</option>
 							<option value="sap">SAP S/4HANA (BAPI / RFC Data Source)</option>
-							<option value="postgres">PostgreSQL (External Data Warehouse / Secondary DB)</option>
 							<option value="mysql">MySQL / MariaDB Enterprise Cluster</option>
 							<option value="mssql">Microsoft SQL Server (MSSQL Enterprise)</option>
 							<option value="custom_rest">Custom MCP REST / GraphQL Adapter</option>
@@ -2123,6 +2187,20 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
 						<span class="font-bold text-foreground">Muat Template Preset Cepat:</span>
 						<div class="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("postgres_invoicing")}
+								class="px-2.5 py-1 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 text-[11px] font-mono cursor-pointer transition-colors font-semibold"
+							>
+								PostgreSQL Invoice Mutation
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("customer_master_query")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								Customer Master Query
+							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("oracle_invoicing")}

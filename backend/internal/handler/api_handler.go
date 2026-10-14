@@ -658,33 +658,38 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 	mcpUser := os.Getenv("MCP_REF_DB_USER")
 	if mcpUser == "" { mcpUser = "postgres" }
 
+	mcpPlatform := os.Getenv("MCP_REF_DB_PLATFORM")
+	if mcpPlatform == "" { mcpPlatform = "postgres" }
+
 	mcpDB := os.Getenv("MCP_REF_DB_NAME")
-	if mcpDB == "" { mcpDB = "novapilot_db" }
+	if mcpDB == "" { mcpDB = "novapilot_mcp_ref" }
 
 	c.JSON(http.StatusOK, gin.H{
 		"system_db": gin.H{
-			"name":    "Database Internal Sistem",
-			"driver":  "PostgreSQL 18 / lib/pq (Core Engine Requirement - Locked)",
-			"host":    sysHost,
-			"port":    sysPort,
-			"user":    sysUser,
-			"dbname":  sysDB,
-			"sslmode": "disable",
-			"status":  sysStatus,
-			"purpose": "Antrean Tiket, Audit Trail, Sesi, Inbound Messages, Learned Patterns",
-			"tables":  []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"},
+			"name":     "Database Internal Sistem",
+			"platform": "postgres",
+			"driver":   "PostgreSQL 18 / lib/pq (Core Engine Requirement - Locked)",
+			"host":     sysHost,
+			"port":     sysPort,
+			"user":     sysUser,
+			"dbname":   sysDB,
+			"sslmode":  "disable",
+			"status":   sysStatus,
+			"purpose":  "Antrean Tiket, Audit Trail, Sesi, Inbound Messages, Learned Patterns",
+			"tables":   []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"},
 		},
 		"mcp_ref_db": gin.H{
-			"name":    "Database Referensi MCP",
-			"driver":  "Enterprise Data Source (PostgreSQL / ERP)",
-			"host":    mcpHost,
-			"port":    mcpPort,
-			"user":    mcpUser,
-			"dbname":  mcpDB,
-			"sslmode": "disable",
-			"status":  mcpStatus,
-			"purpose": "Sumber Data Referensi Faktur & Pelanggan yang diakses oleh Tool MCP",
-			"tables":  []string{"invoices", "customer_master", "branches"},
+			"name":     "Database Referensi MCP",
+			"platform": mcpPlatform,
+			"driver":   "PostgreSQL 16/18 (Enterprise MCP)",
+			"host":     mcpHost,
+			"port":     mcpPort,
+			"user":     mcpUser,
+			"dbname":   mcpDB,
+			"sslmode":  "disable",
+			"status":   mcpStatus,
+			"purpose":  "Sumber Data Referensi Faktur, NPWP, & Pelanggan yang diakses oleh Tool MCP",
+			"tables":   []string{"customer_master", "erp_invoices", "tax_validations", "item_inventory"},
 		},
 	})
 }
