@@ -195,14 +195,14 @@ func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, b
 
 	// Mode 3: "auto" - Try HTTP first, then CLI, then Heuristic Fallback
 	res, err := h.ProcessViaHTTP(ctx, rawMessage, branchContext)
-	if err == nil && !res.IsFallback {
+	if err == nil && !res.IsFallback && res.ToolCall != nil {
 		return res, nil
 	}
 
 	// If HTTP was fallback or failed, try CLI if binary is available
 	if h.hasCLI() {
 		cliRes, cliErr := h.ProcessViaCLI(ctx, rawMessage, branchContext)
-		if cliErr == nil && !cliRes.IsFallback {
+		if cliErr == nil && !cliRes.IsFallback && cliRes.ToolCall != nil {
 			return cliRes, nil
 		}
 	}
@@ -313,7 +313,14 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 		"-z", userPrompt,
 	}
 
-	cmd := exec.CommandContext(ctx, h.cfg.CLIPath, cmdArgs...)
+	cliTimeout := 8 * time.Second
+	if h.cfg.Timeout > 0 && h.cfg.Timeout < cliTimeout {
+		cliTimeout = h.cfg.Timeout
+	}
+	cliCtx, cancel := context.WithTimeout(ctx, cliTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(cliCtx, h.cfg.CLIPath, cmdArgs...)
 	outBytes, err := cmd.Output()
 	if err != nil {
 		res := h.FallbackHeuristic(rawMessage)
@@ -323,6 +330,15 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 
 	content := string(outBytes)
 	thought, toolCall := ParseHermesOutput(content)
+	if toolCall == nil {
+		res := h.FallbackHeuristic(rawMessage)
+		if thought != "" {
+			res.Thought = thought
+		}
+		res.RawContent = content
+		res.LatencyMs = time.Since(start).Milliseconds()
+		return res, nil
+	}
 
 	latency := time.Since(start).Milliseconds()
 

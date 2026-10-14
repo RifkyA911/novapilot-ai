@@ -36,6 +36,23 @@ describe("NovaPilot AI — Full Omnichannel E2E System Test", () => {
             expect(data.lan_ip).toBeDefined();
             expect(data.database).toBeDefined();
         });
+
+        it("Hermes LLM Extraction Engine should process unstructured natural language chat", async () => {
+            const res = await fetch(`${BACKEND_URL}/api/llm/process`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: "Halo tim IT on-call, tolong ubah customer nota INV/2026/001 jadi PT Sumber Makmur Abadi ya.",
+                    branch_context: "Surabaya Regional Hub"
+                })
+            });
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.tool_call).toBeDefined();
+            expect(data.tool_call.name).toBe("stage_invoice_update");
+            expect(data.tool_call.arguments.document_no).toBe("INV/2026/001");
+            expect(data.thought).toBeDefined();
+        }, 15000);
     });
 
     describe("End-to-End ChatOps Approval & Mutation Workflow", () => {

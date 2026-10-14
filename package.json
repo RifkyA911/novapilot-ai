@@ -19,6 +19,7 @@
     "test:integration:gateway": "cd whatsapp-gateway && bun test test/gateway_integration.test.ts",
     "test:integration": "bun run test:integration:backend && bun run test:integration:gateway",
     "test:e2e": "bun test tests/e2e/e2e_flow.test.ts",
-    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e"
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
+    "simulate": "bun run scripts/simulate_pipeline.ts"
   }
 }
