@@ -20,11 +20,22 @@
 		UserPlus,
 		Trash,
 		XMark,
-		Plus
+		Plus,
+		Phone,
+		MagnifyingGlass
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import DataTable from "$lib/components/DataTable.svelte";
 	import type { ColumnDef } from "$lib/types/table";
+
+	export interface GroupMember {
+		id: string;
+		name: string;
+		phone: string;
+		role: "SUPERADMIN" | "ADMIN" | "MEMBER" | "ON_CALL";
+		isWhitelisted: boolean;
+		lastActive: string;
+	}
 
 	interface ContactChannel {
 		id: string;
@@ -41,6 +52,7 @@
 		actionableTickets: number;
 		latencyMs: number;
 		lastActivity: string;
+		members?: GroupMember[];
 	}
 
 	let testPingId = $state<string | null>(null);
@@ -62,7 +74,15 @@
 			totalMessages: 284,
 			actionableTickets: 32,
 			latencyMs: 78,
-			lastActivity: "4 menit yang lalu"
+			lastActivity: "4 menit yang lalu",
+			members: [
+				{ id: "mem_sby_1", name: "Bambang Santoso", phone: "+62 812-3456-7890", role: "ADMIN", isWhitelisted: true, lastActive: "4 mnt yang lalu" },
+				{ id: "mem_sby_2", name: "Rifky Firdaus (Regional Tech Lead)", phone: "+62 812-9876-1122", role: "ON_CALL", isWhitelisted: true, lastActive: "12 mnt yang lalu" },
+				{ id: "mem_sby_3", name: "Siti Aminah (Logistik Hub)", phone: "+62 813-9876-5432", role: "MEMBER", isWhitelisted: true, lastActive: "35 mnt yang lalu" },
+				{ id: "mem_sby_4", name: "Dedi Kurniawan (Admin Gudang)", phone: "+62 856-4321-8765", role: "MEMBER", isWhitelisted: true, lastActive: "2 jam yang lalu" },
+				{ id: "mem_sby_5", name: "Eko Prasetyo (Driver Armada)", phone: "+62 878-1122-3344", role: "MEMBER", isWhitelisted: false, lastActive: "1 hari yang lalu" },
+				{ id: "mem_sby_6", name: "Maya Indah (Staff Timbangan)", phone: "+62 821-5566-7788", role: "MEMBER", isWhitelisted: true, lastActive: "5 jam yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_ind_1",
@@ -94,7 +114,13 @@
 			totalMessages: 198,
 			actionableTickets: 24,
 			latencyMs: 112,
-			lastActivity: "25 menit yang lalu"
+			lastActivity: "25 menit yang lalu",
+			members: [
+				{ id: "mem_mdn_1", name: "Hendra Wijaya", phone: "+62 813-8821-4910", role: "ADMIN", isWhitelisted: true, lastActive: "25 mnt yang lalu" },
+				{ id: "mem_mdn_2", name: "Surya Dharma (Dispatch On-Call)", phone: "+62 812-7766-5544", role: "ON_CALL", isWhitelisted: true, lastActive: "1 jam yang lalu" },
+				{ id: "mem_mdn_3", name: "Rudi Tabuti (Checker Belawan)", phone: "+62 852-3344-5566", role: "MEMBER", isWhitelisted: true, lastActive: "4 jam yang lalu" },
+				{ id: "mem_mdn_4", name: "Linda Siregar (Admin Surat Jalan)", phone: "+62 821-9988-7711", role: "MEMBER", isWhitelisted: false, lastActive: "1 hari yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_ind_2",
@@ -126,7 +152,14 @@
 			totalMessages: 540,
 			actionableTickets: 72,
 			latencyMs: 82,
-			lastActivity: "8 menit yang lalu"
+			lastActivity: "8 menit yang lalu",
+			members: [
+				{ id: "mem_jkt_1", name: "Siti Rahmawati", phone: "+62 812-9900-1122", role: "SUPERADMIN", isWhitelisted: true, lastActive: "8 mnt yang lalu" },
+				{ id: "mem_jkt_2", name: "Dewi Lestari (AR/AP Lead)", phone: "+62 811-9283-7411", role: "ON_CALL", isWhitelisted: true, lastActive: "2 mnt yang lalu" },
+				{ id: "mem_jkt_3", name: "Kevin Gunawan (Tax Compliance)", phone: "+62 812-4433-2211", role: "ADMIN", isWhitelisted: true, lastActive: "15 mnt yang lalu" },
+				{ id: "mem_jkt_4", name: "Anisa Tri (Kasir Utama)", phone: "+62 813-7766-1122", role: "MEMBER", isWhitelisted: true, lastActive: "1 jam yang lalu" },
+				{ id: "mem_jkt_5", name: "Farhan Malik (Auditor Internal)", phone: "+62 857-8899-0011", role: "MEMBER", isWhitelisted: true, lastActive: "3 jam yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_grp_4",
@@ -142,7 +175,13 @@
 			totalMessages: 96,
 			actionableTickets: 11,
 			latencyMs: 95,
-			lastActivity: "1 jam yang lalu"
+			lastActivity: "1 jam yang lalu",
+			members: [
+				{ id: "mem_ckr_1", name: "Agus Pratama", phone: "+62 821-7788-9900", role: "ADMIN", isWhitelisted: true, lastActive: "1 jam yang lalu" },
+				{ id: "mem_ckr_2", name: "Wahyu Hidayat (Maintenance On-Call)", phone: "+62 812-3344-9988", role: "ON_CALL", isWhitelisted: true, lastActive: "2 jam yang lalu" },
+				{ id: "mem_ckr_3", name: "Dani Ramadhan (QC Line 1)", phone: "+62 856-1122-3344", role: "MEMBER", isWhitelisted: true, lastActive: "5 jam yang lalu" },
+				{ id: "mem_ckr_4", name: "Slamet Riyadi (Shift Supervisor)", phone: "+62 878-9900-1122", role: "MEMBER", isWhitelisted: false, lastActive: "2 hari yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_ind_3",
@@ -174,7 +213,12 @@
 			totalMessages: 165,
 			actionableTickets: 21,
 			latencyMs: 145,
-			lastActivity: "18 menit yang lalu"
+			lastActivity: "18 menit yang lalu",
+			members: [
+				{ id: "mem_tg_1", name: "Rudi Hartono (SRE Lead)", phone: "@rudi_oncall", role: "ADMIN", isWhitelisted: true, lastActive: "18 mnt yang lalu" },
+				{ id: "mem_tg_2", name: "NovaBot Incident Forwarder", phone: "@novapilot_bot", role: "ON_CALL", isWhitelisted: true, lastActive: "Aktif terus" },
+				{ id: "mem_tg_3", name: "Ari Wibowo (DevOps)", phone: "@ari_wibowo", role: "MEMBER", isWhitelisted: true, lastActive: "4 jam yang lalu" }
+			]
 		},
 		{
 			id: "ch_dc_grp_1",
@@ -190,7 +234,12 @@
 			totalMessages: 130,
 			actionableTickets: 14,
 			latencyMs: 120,
-			lastActivity: "40 menit yang lalu"
+			lastActivity: "40 menit yang lalu",
+			members: [
+				{ id: "mem_dc_1", name: "DevOps Ops Bot", phone: "ops-bot#1049", role: "ADMIN", isWhitelisted: true, lastActive: "40 mnt yang lalu" },
+				{ id: "mem_dc_2", name: "Rifky Firdaus (Lead)", phone: "rifky#0001", role: "ON_CALL", isWhitelisted: true, lastActive: "12 mnt yang lalu" },
+				{ id: "mem_dc_3", name: "Warehouse Webhook Pipe", phone: "pipe-bot#9999", role: "MEMBER", isWhitelisted: true, lastActive: "1 jam yang lalu" }
+			]
 		},
 		{
 			id: "ch_sl_grp_1",
@@ -206,7 +255,12 @@
 			totalMessages: 220,
 			actionableTickets: 29,
 			latencyMs: 110,
-			lastActivity: "15 menit yang lalu"
+			lastActivity: "15 menit yang lalu",
+			members: [
+				{ id: "mem_sl_1", name: "IT Support Escalation Bot", phone: "U06ABC1234", role: "ADMIN", isWhitelisted: true, lastActive: "15 mnt yang lalu" },
+				{ id: "mem_sl_2", name: "Dewi Lestari (Finance)", phone: "U07XYZ5678", role: "ON_CALL", isWhitelisted: true, lastActive: "2 mnt yang lalu" },
+				{ id: "mem_sl_3", name: "Budi Santoso (Helpdesk)", phone: "U08QWE9012", role: "MEMBER", isWhitelisted: true, lastActive: "3 jam yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_grp_5",
@@ -222,7 +276,12 @@
 			totalMessages: 45,
 			actionableTickets: 2,
 			latencyMs: 230,
-			lastActivity: "4 jam yang lalu"
+			lastActivity: "4 jam yang lalu",
+			members: [
+				{ id: "mem_mks_1", name: "Andi Mallarangeng", phone: "+62 813-4455-6677", role: "ADMIN", isWhitelisted: false, lastActive: "4 jam yang lalu" },
+				{ id: "mem_mks_2", name: "Daeng Rusli (Gudang Pelabuhan)", phone: "+62 812-9988-1122", role: "MEMBER", isWhitelisted: false, lastActive: "1 hari yang lalu" },
+				{ id: "mem_mks_3", name: "Nur Hasanah (Admin Manifest)", phone: "+62 852-7788-9900", role: "MEMBER", isWhitelisted: false, lastActive: "3 hari yang lalu" }
+			]
 		},
 		{
 			id: "ch_wa_ind_4",
@@ -241,6 +300,47 @@
 			lastActivity: "2 hari yang lalu"
 		}
 	]);
+
+	// Group Members Modal State
+	let selectedGroupForMembers = $state<ContactChannel | null>(null);
+	let memberSearchQuery = $state("");
+	let copiedMemberPhone = $state<string | null>(null);
+
+	function openGroupMembers(channel: ContactChannel) {
+		selectedGroupForMembers = channel;
+		memberSearchQuery = "";
+	}
+
+	function closeGroupMembers() {
+		selectedGroupForMembers = null;
+		memberSearchQuery = "";
+	}
+
+	function copyMemberPhone(phone: string) {
+		navigator.clipboard.writeText(phone);
+		copiedMemberPhone = phone;
+		setTimeout(() => { copiedMemberPhone = null; }, 1800);
+	}
+
+	function toggleMemberWhitelist(memberId: string) {
+		if (!selectedGroupForMembers || !selectedGroupForMembers.members) return;
+		const member = selectedGroupForMembers.members.find(m => m.id === memberId);
+		if (member) {
+			member.isWhitelisted = !member.isWhitelisted;
+		}
+	}
+
+	const filteredMembers = $derived(
+		!selectedGroupForMembers || !selectedGroupForMembers.members 
+			? [] 
+			: selectedGroupForMembers.members.filter(m => {
+				const q = memberSearchQuery.trim().toLowerCase();
+				if (!q) return true;
+				return m.name.toLowerCase().includes(q) ||
+					m.phone.toLowerCase().includes(q) ||
+					m.role.toLowerCase().includes(q);
+			})
+	);
 
 	// Interactive whitelist toggle
 	function toggleWhitelist(channelId: string) {
@@ -369,7 +469,17 @@
 			totalMessages: 0,
 			actionableTickets: 0,
 			latencyMs: Math.floor(Math.random() * 40) + 60,
-			lastActivity: "Baru saja"
+			lastActivity: "Baru saja",
+			members: newContact.type === "GROUP" ? [
+				{
+					id: `mem_${Date.now()}_1`,
+					name: newContact.contactPerson.trim() || `${newContact.name.trim()} (Admin)`,
+					phone: newContact.contactPhone.trim() || "+62 812-0000-0000",
+					role: "ADMIN",
+					isWhitelisted: newContact.isWhitelisted,
+					lastActive: "Baru saja"
+				}
+			] : undefined
 		};
 
 		channels = [createdChannel, ...channels];
@@ -801,26 +911,59 @@
 		<!-- Custom Cell Rendering -->
 		{#snippet rowCell({ row, column })}
 			{#if column.id === "name"}
-				<div class="flex items-center gap-3 min-w-[200px]">
-					<div class="h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border {row.type === 'GROUP' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'}">
-						{#if row.type === 'GROUP'}
+				<div class="flex items-center gap-3 min-w-[220px]">
+					{#if row.type === 'GROUP'}
+						<button
+							type="button"
+							onclick={() => openGroupMembers(row)}
+							class="h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border bg-primary/10 text-primary border-primary/25 hover:bg-primary/20 hover:scale-105 transition-all cursor-pointer shadow-2xs"
+							title="Klik untuk membuka roster {row.members?.length || 0} anggota grup"
+						>
 							<UserGroup class="h-4 w-4" />
-						{:else}
+						</button>
+					{:else}
+						<div class="h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20">
 							<User class="h-4 w-4" />
-						{/if}
-					</div>
-					<div class="min-w-0">
+						</div>
+					{/if}
+					<div class="min-w-0 flex-1">
 						<div class="font-bold text-foreground text-xs truncate flex items-center gap-1.5">
-							<span>{row.name}</span>
-							<span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold {row.type === 'GROUP' ? 'bg-secondary text-foreground border border-border' : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'}">
+							{#if row.type === 'GROUP'}
+								<button
+									type="button"
+									onclick={() => openGroupMembers(row)}
+									class="hover:text-primary hover:underline text-left truncate cursor-pointer font-bold transition-colors"
+									title="Buka daftar anggota {row.name}"
+								>
+									{row.name}
+								</button>
+							{:else}
+								<span class="truncate">{row.name}</span>
+							{/if}
+							<span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold shrink-0 {row.type === 'GROUP' ? 'bg-secondary text-foreground border border-border' : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'}">
 								{row.type}
 							</span>
 						</div>
-						<div class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-							<BuildingOffice2 class="h-3 w-3" />
-							<span>{row.branch}</span>
+						<div class="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5 flex-wrap">
+							<span class="inline-flex items-center gap-0.5">
+								<BuildingOffice2 class="h-3 w-3 shrink-0" />
+								<span>{row.branch}</span>
+							</span>
 							<span class="text-border">·</span>
-							<span>{row.contactPerson}</span>
+							<span class="truncate max-w-[120px]">{row.contactPerson}</span>
+							{#if row.type === 'GROUP' && row.members}
+								<span class="text-border">·</span>
+								<button
+									type="button"
+									onclick={(e) => { e.stopPropagation(); openGroupMembers(row); }}
+									class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 transition-all text-[10px] font-semibold cursor-pointer shadow-2xs group"
+									title="Klik untuk melihat {row.members.length} anggota grup"
+								>
+									<UserGroup class="h-2.5 w-2.5" />
+									<span>{row.members.length} Anggota</span>
+									<span class="text-[9px] opacity-70 group-hover:translate-x-0.5 transition-transform">→</span>
+								</button>
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -1158,6 +1301,184 @@
 					>
 						<Trash class="h-3.5 w-3.5" />
 						<span>Ya, Hapus Saluran</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- ========================================================================= -->
+	<!-- MODAL: DAFTAR ANGGOTA GRUP (GROUP MEMBERS & PARTICIPANTS ROSTER)           -->
+	<!-- ========================================================================= -->
+	{#if selectedGroupForMembers}
+		<div 
+			class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+			role="dialog"
+			aria-modal="true"
+		>
+			<div 
+				class="w-full max-w-2xl rounded-2xl bg-card border border-border text-card-foreground shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
+			>
+				<!-- Modal Header -->
+				<div class="flex items-start justify-between pb-3 border-b border-border/60 shrink-0">
+					<div class="flex items-start gap-3">
+						<div class="h-10 w-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold shrink-0 mt-0.5">
+							<UserGroup class="h-5 w-5" />
+						</div>
+						<div>
+							<div class="flex items-center gap-2 flex-wrap">
+								<h3 class="text-sm font-bold text-foreground">{selectedGroupForMembers.name}</h3>
+								<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+									ROSTER ANGGOTA
+								</span>
+								<span class="text-[10px] px-2 py-0.5 rounded-full font-mono uppercase bg-secondary text-muted-foreground border border-border">
+									{selectedGroupForMembers.platform}
+								</span>
+							</div>
+							<p class="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+								<BuildingOffice2 class="h-3 w-3 shrink-0" />
+								<span>{selectedGroupForMembers.branch}</span>
+								<span class="text-border">·</span>
+								<span class="font-mono text-[11px] text-foreground">{selectedGroupForMembers.jidOrChatId}</span>
+							</p>
+						</div>
+					</div>
+					<button 
+						type="button"
+						onclick={closeGroupMembers}
+						class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+						title="Tutup dialog"
+					>
+						<XMark class="h-5 w-5" />
+					</button>
+				</div>
+
+				<!-- Multi-Device Compatibility & Whitelist Notice -->
+				<div class="p-3 rounded-xl bg-secondary/35 border border-border/80 text-[11px] leading-relaxed space-y-1 shrink-0">
+					<div class="flex items-center justify-between font-semibold text-foreground">
+						<span class="flex items-center gap-1.5 text-primary">
+							<ShieldCheck class="h-3.5 w-3.5" />
+							<span>Resolusi Pengirim Multi-Device (`msg.key.participant`)</span>
+						</span>
+						<span class="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+							BAILEYS &amp; FERDIUM READY
+						</span>
+					</div>
+					<p class="text-muted-foreground">
+						Ketika pesan masuk ke grup WhatsApp ini, gateway secara granular membaca nomor HP pengirim individual. Anggota bertanda <strong class="text-emerald-600 dark:text-emerald-400">Whitelisted</strong> dapat langsung memicu staging tiket AI tanpa disaring keluar.
+					</p>
+				</div>
+
+				<!-- Search Filter & Quick Metric Badges -->
+				<div class="space-y-2 shrink-0">
+					<div class="relative">
+						<MagnifyingGlass class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+						<input
+							type="text"
+							bind:value={memberSearchQuery}
+							placeholder="Cari nama anggota, nomor telepon/JID, atau role..."
+							class="w-full h-9 pl-9 pr-3 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground shadow-2xs focus:ring-1 focus:ring-ring"
+						/>
+					</div>
+
+					<div class="flex items-center justify-between text-[11px] px-1 text-muted-foreground flex-wrap gap-2">
+						<div class="flex items-center gap-2">
+							<span class="font-semibold text-foreground">Total: {selectedGroupForMembers.members?.length || 0} Anggota</span>
+							<span class="text-border">·</span>
+							<span class="text-blue-600 dark:text-blue-400 font-medium">
+								{selectedGroupForMembers.members?.filter(m => m.role === 'ADMIN' || m.role === 'SUPERADMIN').length || 0} Admin
+							</span>
+							<span class="text-border">·</span>
+							<span class="text-emerald-600 dark:text-emerald-400 font-medium">
+								{selectedGroupForMembers.members?.filter(m => m.role === 'ON_CALL').length || 0} On-Call PIC
+							</span>
+						</div>
+						<div class="font-mono text-[10px]">
+							{selectedGroupForMembers.members?.filter(m => m.isWhitelisted).length || 0} Whitelisted
+						</div>
+					</div>
+				</div>
+
+				<!-- Scrollable Members Roster List -->
+				<div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px] max-h-[360px]">
+					{#if filteredMembers.length === 0}
+						<div class="p-8 text-center rounded-xl border border-dashed border-border text-muted-foreground space-y-1">
+							<p class="text-xs font-semibold text-foreground">Tidak ditemukan anggota</p>
+							<p class="text-[11px]">Tidak ada peserta yang cocok dengan kata kunci "{memberSearchQuery}".</p>
+						</div>
+					{:else}
+						{#each filteredMembers as member (member.id)}
+							<div class="p-2.5 rounded-xl border border-border/80 bg-background hover:bg-muted/30 transition-all flex items-center justify-between gap-3 shadow-2xs">
+								<!-- Left: Avatar & Info -->
+								<div class="flex items-center gap-2.5 min-w-0">
+									<div class="h-8.5 w-8.5 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border {member.role === 'SUPERADMIN' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' : member.role === 'ADMIN' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' : member.role === 'ON_CALL' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-secondary text-muted-foreground border-border'}">
+										{member.name.substring(0, 2).toUpperCase()}
+									</div>
+									<div class="min-w-0">
+										<div class="flex items-center gap-1.5 flex-wrap">
+											<span class="text-xs font-bold text-foreground truncate">{member.name}</span>
+											<span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold uppercase border {member.role === 'SUPERADMIN' ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30' : member.role === 'ADMIN' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30' : member.role === 'ON_CALL' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' : 'bg-secondary text-muted-foreground border-border'}">
+												{member.role}
+											</span>
+										</div>
+										<div class="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+											<span class="font-mono flex items-center gap-1">
+												<Phone class="h-2.5 w-2.5" />
+												<span>{member.phone}</span>
+											</span>
+											<button
+												type="button"
+												onclick={() => copyMemberPhone(member.phone)}
+												class="hover:text-foreground transition-colors p-0.5 rounded cursor-pointer"
+												title="Salin nomor / handle"
+											>
+												{#if copiedMemberPhone === member.phone}
+													<Check class="h-3 w-3 text-emerald-500" />
+												{:else}
+													<ClipboardDocument class="h-3 w-3" />
+												{/if}
+											</button>
+											<span class="text-border">·</span>
+											<span>Aktif {member.lastActive}</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Right: Whitelist Toggle Switch -->
+								<div class="flex items-center gap-2 shrink-0">
+									<div class="text-right hidden sm:block">
+										<span class="text-[10px] font-mono font-semibold {member.isWhitelisted ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}">
+											{member.isWhitelisted ? "Whitelisted" : "Muted"}
+										</span>
+									</div>
+									<button
+										type="button"
+										onclick={() => toggleMemberWhitelist(member.id)}
+										class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {member.isWhitelisted ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}"
+										title={member.isWhitelisted ? "Pesan dari anggota ini diproses otomatis" : "Pesan dari anggota ini diabaikan"}
+									>
+										<span
+											class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out {member.isWhitelisted ? 'translate-x-4' : 'translate-x-0'}"
+										></span>
+									</button>
+								</div>
+							</div>
+						{/each}
+					{/if}
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="flex items-center justify-between pt-3 border-t border-border/60 shrink-0 text-xs">
+					<div class="flex items-center gap-2 text-muted-foreground text-[11px]">
+						<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+						<span>Kompatibel WhatsApp Web / Ferdium / Rambox via Baileys</span>
+					</div>
+					<button
+						type="button"
+						onclick={closeGroupMembers}
+						class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs transition-colors cursor-pointer"
+					>
+						Selesai &amp; Tutup
 					</button>
 				</div>
 			</div>

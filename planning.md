@@ -158,7 +158,77 @@ Di lingkungan laptop kantor, aktivitas dibatasi secara ketat pada ranah visual d
 
 ---
 
-## 5. Strategi Sinkronisasi Kerja: Kantor vs. Rumah
+## 5. Arsitektur WhatsApp Multi-Device & Kompatibilitas Multi-Client (Baileys vs Ferdium vs Rambox vs WhatsApp Web)
+
+### 5.1 Bagaimana Baileys Bekerja Bersama Ferdium / Rambox / WhatsApp Web?
+Banyak operator bertanya apakah menjalankan **WhatsApp Gateway (Baileys)** di NovaPilot akan membuat WhatsApp Web, Ferdium, atau Rambox di laptop mereka ter-kick / log out. **Jawabannya: 100% Kompatibel dan Aman.**
+
+Di bawah protokol **WhatsApp Multi-Device (MD)** yang dirilis Meta:
+- **1 Akun WhatsApp Utama (Ponsel)** dapat menghubungkan hingga **4 Perangkat Pendamping (Companion Devices)** secara bersamaan secara independen tanpa perlu ponsel selalu online.
+- **Ferdium / Rambox / Browser (Chrome/Brave)**: Berfungsi sebagai *Companion Device #1* (menjalankan instance webview `web.whatsapp.com`).
+- **NovaPilot WhatsApp Gateway (Baileys)**: Berfungsi sebagai *Companion Device #2* (menjalankan socket WebSocket native berprotokol Noise & Signal Protocol terenkripsi).
+
+```mermaid
+flowchart TD
+    Phone["📱 Ponsel WhatsApp Utama (PIC / CS Kantor)"]
+    Meta["☁️ Meta WhatsApp Multi-Device Server"]
+    Phone <-->|Registrasi Multi-Device| Meta
+
+    subgraph DesktopOperator["Desktop Operator Kantor"]
+        Ferdium["💻 Ferdium / Rambox / WhatsApp Web (Companion #1)"]
+    end
+
+    subgraph NovaPilotStack["NovaPilot Server Stack"]
+        Baileys["🤖 Baileys Gateway Socket :3002 (Companion #2)"]
+        Guardrail["🛡️ Whitelist Gatekeeper & AI OCR"]
+        Backend["⚡ Go Core Backend :8088"]
+        Cockpit["🖥️ SvelteKit Cockpit :3000"]
+    end
+
+    Meta <-->|Sync Pesan Masuk & Keluar| Ferdium
+    Meta <-->|Sync Pesan Masuk & Keluar| Baileys
+    Baileys --> Guardrail
+    Guardrail --> Backend
+    Backend <--> Cockpit
+```
+
+### 5.2 Alur Kompatibilitas Logika (Zero-Conflict Flow)
+1. **Pencegahan Infinite Loop / Echo Bot (`fromMe === true`)**:
+   - Ketika operator mengetik pesan secara manual di Ferdium, Rambox, atau WhatsApp Web, Meta otomatis membroadcast pesan tersebut ke seluruh companion device.
+   - Baileys menerima pesan tersebut dengan tanda:
+     ```ts
+     if (!msg.message || msg.key.fromMe) continue;
+     ```
+   - Baileys langsung mengabaikan pesan yang dikirim oleh operator sendiri (`fromMe === true`), sehingga bot **tidak akan pernah looping** merespons chat dirinya sendiri atau operator kantor.
+
+2. **Resolusi Anggota Grup Granular (`msg.key.participant`)**:
+   - Di dalam grup WhatsApp (`@g.us`), `remoteJid` bernilai ID grup (misal `120363xxx@g.us`).
+   - Baileys membaca `msg.key.participant` untuk mengetahui secara spesifik **siapa orang (nomor HP)** di dalam grup yang mengirim chat.
+   - Di NovaPilot Contacts, admin dapat melihat roster anggota dan mengatur toggle **Whitelist** per anggota. Jika nomor HP pengirim tidak di-whitelist, chat santai anggota grup tidak akan mengotori pipeline staging tiket.
+
+3. **Sinkronisasi Notifikasi Outbound Real-Time**:
+   - Ketika reviewer di Cockpit SvelteKit menyetujui mutasi data, Go Backend memicu SSE ke Baileys untuk mengirim pesan balasan (`sock.sendMessage`).
+   - Begitu Baileys mengirim pesan, pesan konfirmasi tersebut **langsung seketika muncul di jendela chat Ferdium / Rambox / WhatsApp Web** milik operator kantor, sehingga operator selalu memiliki visibilitas percakapan 100% konsisten.
+
+---
+
+## 6. Penjelasan Mekanisme "Monitoring Probe" & Health Telemetry
+
+Di menu `/dashboard/contacts`, kolom **Monitoring Probe** menunjukkan kondisi live soket dan latensi jaringan komunikasi antara NovaPilot dengan kanal target:
+
+| Status Probe | Arti Teknis | Respon Sistem NovaPilot |
+| :--- | :--- | :--- |
+| `ACTIVE` (Hijau Berkedip) | Soket terhubung, event listener aktif, dan koneksi ke grup/hotline responsif. | Pesan masuk dan media gambar langsung diproses oleh AI pipeline. |
+| `STANDBY` (Kuning) | Kanal terdaftar namun tidak ada traffic pesan baru dalam periode waktu tertentu, soket dalam mode hemat daya / idle keep-alive. | Siap menerima pesan kapan pun tanpa delay inisialisasi. |
+| `MUTED` (Abu-Abu) | Kanal sengaja diabaikan atau toggle *Whitelist Intake* dimatikan oleh admin. | Pesan yang masuk langsung di-drop di layer gatekeeper (hemat token AI & nol noise). |
+| `Latency (ms)` | Mengukur Round-Trip Time (RTT) probe socket dari Baileys gateway menuju server perantara / webhook internal. | Nilai normal berkisar antara 60ms – 160ms. |
+
+### Tombol "Simulasi"
+Tombol **Simulasi** pada setiap baris kontak berfungsi untuk mengirim paket probe sintetis ke endpoint `/api/inbound-messages`. Fitur ini digunakan operator kantor untuk memverifikasi secara instan apakah pipeline ingest webhook, filter regex, dan penghubung database berjalan normal tanpa harus menunggu chat riil dari lapangan.
+
+---
+
+## 7. Strategi Sinkronisasi Kerja: Kantor vs. Rumah
 
 ### Solusi Standar: Git Remote / Git Bundle
 1. **Opsi Rekomendasi (GitHub Private Repo)**:
@@ -185,7 +255,7 @@ Di lingkungan laptop kantor, aktivitas dibatasi secara ketat pada ranah visual d
 
 ---
 
-## 6. Status Pengujian & Quality Assurance
+## 8. Status Pengujian & Quality Assurance
 
 Sistem pengujian saat ini telah terstruktur rapi:
 
