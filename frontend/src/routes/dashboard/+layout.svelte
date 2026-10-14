@@ -60,7 +60,159 @@
 			e.preventDefault();
 			commandOpen = !commandOpen;
 		}
+		if (e.key === "Escape" && mobileMenuOpen) {
+			mobileMenuOpen = false;
+		}
 	}
+
+	// Unified Navigation Items Structure (Shared between Desktop & Mobile)
+	const navGroups = $derived([
+		{
+			title: "Operations",
+			items: [
+				{
+					href: "/dashboard",
+					label: "Dashboard",
+					icon: CommandLine,
+					iconColor: "text-primary",
+					title: "Operations Dashboard Overview"
+				},
+				{
+					href: "/dashboard/cockpit",
+					label: "Cockpit Overview",
+					icon: Sparkles,
+					iconColor: "text-purple-500",
+					title: "Cockpit Overview & AI Analytics",
+					badge: "DUMMY",
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+				},
+				{
+					href: "/dashboard/queue",
+					label: "Approval Queue",
+					icon: Clock,
+					iconColor: "text-amber-500",
+					title: "Approval Queue",
+					count: cockpit.pendingCount
+				},
+				{
+					href: "/dashboard/history",
+					label: "Execution History",
+					icon: ChartBarSquare,
+					iconColor: "text-foreground",
+					title: "Execution History & Audit Log"
+				}
+			]
+		},
+		{
+			title: "Databases & Telemetry",
+			items: [
+				{
+					href: "/dashboard/connectors",
+					label: "DB Connectors",
+					icon: CircleStack,
+					iconColor: "text-amber-500",
+					title: "Database Configuration & Setup",
+					badge: "SETUP",
+					badgeColor: "bg-secondary text-muted-foreground border border-border"
+				},
+				{
+					href: "/dashboard/mcp",
+					label: "MCP Knowledge",
+					icon: Cube,
+					iconColor: "text-cyan-500",
+					title: "Model Context Protocol (MCP) Knowledge Base & Tools",
+					badge: "SPEC",
+					badgeColor: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30"
+				},
+				{
+					href: "/dashboard/connectivity",
+					label: "System Telemetry",
+					icon: CpuChip,
+					iconColor: "text-blue-500",
+					title: "System Telemetry & Platform Probes"
+				},
+				{
+					href: "/dashboard/logs",
+					label: "System Logs",
+					icon: DocumentText,
+					iconColor: "text-cyan-500",
+					title: "Enterprise System Logs & Daemon Telemetry",
+					badge: "STREAM",
+					badgeColor: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30"
+				}
+			]
+		},
+		{
+			title: "ChatOps Gateways",
+			items: [
+				{
+					href: "/dashboard/messages",
+					label: "Inbound Messages",
+					icon: ChatBubbleLeftRight,
+					iconColor: "text-emerald-500",
+					title: "Omnichannel Inbound Messages Feed",
+					count: cockpit.needsReviewCount
+				},
+				{
+					href: "/dashboard/hooks",
+					label: "Client Hook Flows",
+					icon: CodeBracket,
+					iconColor: "text-purple-500",
+					title: "Client Hook Flows",
+					badge: cockpit.chatPlatform,
+					badgeColor: "bg-primary/10 text-primary border border-primary/20"
+				},
+				{
+					href: "/dashboard/contacts",
+					label: "Group Contacts",
+					icon: UserGroup,
+					iconColor: "text-teal-500",
+					title: "Omnichannel Group Contacts & Directory",
+					badge: "DUMMY",
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+				},
+				{
+					href: "/dashboard/simulator",
+					label: "Simulator",
+					icon: PaperAirplane,
+					iconColor: "text-foreground",
+					title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
+					badge: "EXP",
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+				},
+				{
+					href: "/dashboard/platforms",
+					label: "Platform Flows",
+					icon: AdjustmentsHorizontal,
+					iconColor: "text-sky-500",
+					title: "ChatOps Platform Settings & Logic Flows",
+					badge: "Flows",
+					badgeColor: "bg-primary/10 text-primary border border-primary/20"
+				}
+			]
+		},
+		{
+			title: "System & Config",
+			items: [
+				{
+					href: "/dashboard/settings",
+					label: "Settings",
+					icon: Cog6Tooth,
+					iconColor: "text-zinc-400",
+					title: "System Settings & Gatekeeper Policies"
+				},
+				{
+					href: "/dashboard/about",
+					label: "About & Repo",
+					icon: InformationCircle,
+					iconColor: "text-purple-500",
+					title: "About NovaPilot AI & Creator",
+					badge: "v1.0",
+					badgeColor: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+				}
+			]
+		}
+	]);
 
 	onMount(() => {
 		cockpit.setupSSE();
@@ -148,308 +300,65 @@
 			</div>
 		{/if}
 
-		<!-- Navigation Menu Links -->
-		<div class="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-			<!-- Group 1: OPERATIONS -->
-			<div class="space-y-1">
-				{#if !sidebarCollapsed}
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						Operations
-					</div>
-				{/if}
-
-				<!-- Dashboard Overview -->
-				<a
-					href="/dashboard"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Operations Dashboard Overview"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<CommandLine class="h-4 w-4 shrink-0" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Dashboard</span>
+		<!-- Navigation Menu Links (Unified, Centered, & Protected) -->
+		<div class="flex-1 overflow-y-auto px-2 py-4 space-y-4">
+			{#each navGroups as group, gIdx}
+				<div class="space-y-1">
+					{#if sidebarCollapsed}
+						{#if gIdx > 0}
+							<div class="w-8 h-px bg-border/60 mx-auto my-2"></div>
 						{/if}
-					</div>
-				</a>
-
-				<!-- Cockpit Overview & AI Analytics -->
-				<a
-					href="/dashboard/cockpit"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/cockpit' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Cockpit Overview & AI Analytics"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<Sparkles class="h-4 w-4 shrink-0 {currentPath === '/dashboard/cockpit' ? '' : 'text-purple-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Cockpit Overview</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/cockpit' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
-							DUMMY
-						</span>
+					{:else}
+						<div class="px-2.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+							{group.title}
+						</div>
 					{/if}
-				</a>
 
-				<!-- Approval Queue -->
-				<a
-					href="/dashboard/queue"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/queue' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Approval Queue"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<Clock class="h-4 w-4 shrink-0" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Approval Queue</span>
+					{#each group.items as item}
+						{@const isActive = currentPath === item.href}
+						{#if sidebarCollapsed}
+							<!-- Collapsed Mode: Dead-Centered 36x36px Square Box on Exact Vertical Axis -->
+							<div class="flex justify-center py-0.5">
+								<a
+									href={item.href}
+									class="relative h-9 w-9 rounded-xl flex items-center justify-center transition-all {isActive ? 'bg-primary text-primary-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+									title="{item.title}{item.count && item.count > 0 ? ` (${item.count} items)` : item.badge ? ` [${item.badge}]` : ''}"
+								>
+									<item.icon class="h-4.5 w-4.5 shrink-0 {isActive ? '' : item.iconColor || ''}" />
+
+									<!-- Notification Badge on Top-Right Corner (Fixed Absolute, Never Displaces the Centerline) -->
+									{#if item.count && item.count > 0}
+										<span class="absolute -top-1 -right-1 min-w-[17px] h-4 px-1 rounded-full text-[9px] font-mono font-bold flex items-center justify-center bg-amber-500 text-white shadow-xs ring-2 ring-card animate-pulse leading-none">
+											{item.count > 99 ? '99+' : item.count}
+										</span>
+									{/if}
+								</a>
+							</div>
+						{:else}
+							<!-- Expanded Mode: Full Width Row with Label and Side Badge -->
+							<a
+								href={item.href}
+								class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all {isActive ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+								title={item.title}
+							>
+								<div class="flex items-center gap-2.5 min-w-0">
+									<item.icon class="h-4 w-4 shrink-0 {isActive ? '' : item.iconColor || ''}" />
+									<span class="truncate">{item.label}</span>
+								</div>
+								{#if item.count && item.count > 0}
+									<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 {isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
+										{item.count}
+									</span>
+								{:else if item.badge}
+									<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {isActive ? 'bg-primary-foreground/20 text-primary-foreground' : item.badgeColor || 'bg-secondary text-muted-foreground border border-border'}">
+										{item.badge}
+									</span>
+								{/if}
+							</a>
 						{/if}
-					</div>
-					{#if cockpit.pendingCount > 0}
-						<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 {currentPath === '/dashboard/queue' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
-							{cockpit.pendingCount}
-						</span>
-					{/if}
-				</a>
-
-				<!-- Execution History -->
-				<a
-					href="/dashboard/history"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/history' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Execution History & Audit Log"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<ChartBarSquare class="h-4 w-4 shrink-0" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Execution History</span>
-						{/if}
-					</div>
-				</a>
-			</div>
-
-			<!-- Group 2: DATABASES & TELEMETRY -->
-			<div class="space-y-1">
-				{#if !sidebarCollapsed}
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						Databases & Telemetry
-					</div>
-				{/if}
-
-				<!-- DB Connectors (Database Configuration & Setup) -->
-				<a
-					href="/dashboard/connectors"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/connectors' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Database Configuration & Setup"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<CircleStack class="h-4 w-4 shrink-0 {currentPath === '/dashboard/connectors' ? '' : 'text-amber-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">DB Connectors</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/connectors' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary text-muted-foreground border border-border'}">
-							SETUP
-						</span>
-					{/if}
-				</a>
-
-				<!-- MCP Knowledge Base & Tools -->
-				<a
-					href="/dashboard/mcp"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/mcp' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Model Context Protocol (MCP) Knowledge Base & Tools"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<Cube class="h-4 w-4 shrink-0 {currentPath === '/dashboard/mcp' ? '' : 'text-cyan-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">MCP Knowledge</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/mcp' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'}">
-							SPEC
-						</span>
-					{/if}
-				</a>
-
-				<!-- System Telemetry & Probes -->
-				<a
-					href="/dashboard/connectivity"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/connectivity' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="System Telemetry & Platform Probes"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<CpuChip class="h-4 w-4 shrink-0 {currentPath === '/dashboard/connectivity' ? '' : 'text-blue-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">System Telemetry</span>
-						{/if}
-					</div>
-				</a>
-
-				<!-- System Logs Viewer -->
-				<a
-					href="/dashboard/logs"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/logs' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Enterprise System Logs & Daemon Telemetry"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<DocumentText class="h-4 w-4 shrink-0 {currentPath === '/dashboard/logs' ? '' : 'text-cyan-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">System Logs</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/logs' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'}">
-							STREAM
-						</span>
-					{/if}
-				</a>
-			</div>
-
-			<!-- Group 3: CHATOPS GATEWAYS -->
-			<div class="space-y-1">
-				{#if !sidebarCollapsed}
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						ChatOps Gateways
-					</div>
-				{/if}
-
-				<!-- Inbound Messages Feed -->
-				<a
-					href="/dashboard/messages"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/messages' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Omnichannel Inbound Messages Feed"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<ChatBubbleLeftRight class="h-4 w-4 shrink-0 {currentPath === '/dashboard/messages' ? '' : 'text-emerald-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Inbound Messages</span>
-						{/if}
-					</div>
-					{#if cockpit.needsReviewCount > 0}
-						<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 {currentPath === '/dashboard/messages' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
-							{cockpit.needsReviewCount}
-						</span>
-					{/if}
-				</a>
-
-				<!-- Client Hook Flows -->
-				<a
-					href="/dashboard/hooks"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/hooks' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Client Hook Flows"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<CodeBracket class="h-4 w-4 shrink-0 {currentPath === '/dashboard/hooks' ? '' : 'text-purple-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Client Hook Flows</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-							{cockpit.chatPlatform}
-						</span>
-					{/if}
-				</a>
-
-				<!-- Group Contacts Directory -->
-				<a
-					href="/dashboard/contacts"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/contacts' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="Omnichannel Group Contacts & Directory"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<UserGroup class="h-4 w-4 shrink-0 {currentPath === '/dashboard/contacts' ? '' : 'text-teal-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Group Contacts</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/contacts' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
-							DUMMY
-						</span>
-					{/if}
-				</a>
-
-				<!-- ChatOps Simulator (Experimental) -->
-				<a
-					href="/dashboard/simulator"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/simulator' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="ChatOps Ingestion Simulator [EXPERIMENTAL]"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<PaperAirplane class="h-4 w-4 shrink-0" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Simulator</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold uppercase tracking-wider {currentPath === '/dashboard/simulator' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
-							EXP
-						</span>
-					{/if}
-				</a>
-
-				<!-- Platform Settings & Logic Flows -->
-				<a
-					href="/dashboard/platforms"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/platforms' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="ChatOps Platform Settings & Logic Flows"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<AdjustmentsHorizontal class="h-4 w-4 shrink-0 {currentPath === '/dashboard/platforms' ? '' : 'text-sky-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Platform Flows</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/platforms' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary border border-primary/20'}">
-							Flows
-						</span>
-					{/if}
-				</a>
-			</div>
-
-			<!-- Group 4: SYSTEM & PREFERENCES -->
-			<div class="space-y-1">
-				{#if !sidebarCollapsed}
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-						System &amp; Config
-					</div>
-				{/if}
-
-				<!-- System Settings -->
-				<a
-					href="/dashboard/settings"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/settings' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="System Settings & Gatekeeper Policies"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<Cog6Tooth class="h-4 w-4 shrink-0 {currentPath === '/dashboard/settings' ? '' : 'text-zinc-400'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">Settings</span>
-						{/if}
-					</div>
-				</a>
-
-				<!-- About & Repo -->
-				<a
-					href="/dashboard/about"
-					class="w-full flex items-center {sidebarCollapsed ? 'justify-center' : 'justify-between'} px-2.5 py-2 rounded-lg text-xs font-medium transition-all {currentPath === '/dashboard/about' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-					title="About NovaPilot AI & Creator"
-				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						<InformationCircle class="h-4 w-4 shrink-0 {currentPath === '/dashboard/about' ? '' : 'text-purple-500'}" />
-						{#if !sidebarCollapsed}
-							<span class="truncate">About &amp; Repo</span>
-						{/if}
-					</div>
-					{#if !sidebarCollapsed}
-						<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-wider {currentPath === '/dashboard/about' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'}">
-							v1.0
-						</span>
-					{/if}
-				</a>
-			</div>
+					{/each}
+				</div>
+			{/each}
 		</div>
 
 		<!-- Sidebar Bottom: Honest Platform Connection Status -->
@@ -544,229 +453,120 @@
 			</div>
 		</header>
 
-		<!-- Mobile Navigation Drawer -->
+		<!-- Mobile Navigation Slide-Over Drawer Sheet -->
 		{#if mobileMenuOpen}
-			<div class="lg:hidden border-b border-border/60 bg-card/95 backdrop-blur-xl px-4 py-4 space-y-4 animate-in slide-in-from-top-3 duration-200">
-				<!-- Mobile Platform Select -->
-				<div class="space-y-1">
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">ChatOps Platform</div>
-					<select
-						bind:value={cockpit.chatPlatform}
-						class="w-full h-9 rounded-lg border border-input bg-card dark:bg-zinc-900 px-3 text-xs font-semibold text-foreground shadow-xs focus:ring-1 focus:ring-ring"
+			<!-- Backdrop Overlay with Blur -->
+			<div 
+				class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-200"
+				onclick={closeMobileMenu}
+				role="button"
+				tabindex="0"
+				onkeydown={(e) => e.key === 'Escape' && closeMobileMenu()}
+				aria-label="Close mobile navigation"
+			></div>
+
+			<!-- Slide-Over Drawer Panel -->
+			<aside 
+				class="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-card border-r border-border z-50 flex flex-col shadow-2xl lg:hidden animate-in slide-in-from-left duration-200"
+				aria-label="Mobile Navigation"
+			>
+				<!-- Drawer Header -->
+				<div class="h-16 flex items-center justify-between px-4 border-b border-border/50 shrink-0">
+					<a href="/dashboard" onclick={closeMobileMenu} class="flex items-center gap-2.5">
+						<div class="h-8.5 w-8.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center font-bold shadow-md shadow-primary/25">
+							<ShieldCheck class="h-5 w-5" />
+						</div>
+						<div class="flex flex-col">
+							<div class="flex items-center gap-1.5 leading-none">
+								<span class="font-bold text-sm tracking-tight text-foreground">NovaPilot</span>
+								<span class="text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20 font-mono font-bold">AI</span>
+								<span class="text-[8px] px-1 py-0.2 rounded font-mono font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">BETA</span>
+							</div>
+							<span class="text-[9px] text-muted-foreground uppercase tracking-wider font-mono mt-0.5">ChatOps Gatekeeper</span>
+						</div>
+					</a>
+
+					<button
+						type="button"
+						onclick={closeMobileMenu}
+						class="h-8 w-8 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+						aria-label="Close menu"
 					>
-						<option class="bg-white dark:bg-zinc-900 text-foreground" value="whatsapp">WhatsApp (Live Hook)</option>
-						<option class="bg-white dark:bg-zinc-900 text-foreground" value="telegram">Telegram Bot</option>
-						<option class="bg-white dark:bg-zinc-900 text-foreground" value="discord">Discord Webhook</option>
-						<option class="bg-white dark:bg-zinc-900 text-foreground" value="slack">Slack Enterprise</option>
-					</select>
+						<XMark class="h-4.5 w-4.5" />
+					</button>
 				</div>
 
-				<!-- Mobile Navigation Links -->
-				<div class="space-y-1">
-					<div class="px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Operations</div>
-
-					<a
-						href="/dashboard"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
+				<!-- Drawer Scrollable Content -->
+				<div class="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+					<!-- Quick Search Palette Trigger in Drawer -->
+					<button
+						type="button"
+						onclick={() => { closeMobileMenu(); commandOpen = true; }}
+						class="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border/80 bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs transition-colors cursor-pointer"
 					>
 						<span class="flex items-center gap-2">
-							<CommandLine class="h-4 w-4 text-primary" />
-							<span>Dashboard</span>
+							<MagnifyingGlass class="h-4 w-4 text-muted-foreground" />
+							<span>Search commands...</span>
 						</span>
-						<span class="font-mono text-[10px]">/dashboard</span>
-					</a>
+						<kbd class="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[9px]">⌘K</kbd>
+					</button>
 
-					<a
-						href="/dashboard/cockpit"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/cockpit' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<Sparkles class="h-4 w-4 text-purple-500" />
-							<span>Cockpit Overview</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">DUMMY</span>
-					</a>
+					<!-- Navigation Groups (Cleanly Styled with Active Indicator & Number Badges) -->
+					{#each navGroups as group}
+						<div class="space-y-1">
+							<div class="px-2.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+								{group.title}
+							</div>
+							{#each group.items as item}
+								{@const isActive = currentPath === item.href}
+								<a
+									href={item.href}
+									onclick={closeMobileMenu}
+									class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all {isActive ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+								>
+									<div class="flex items-center gap-2.5 min-w-0">
+										<item.icon class="h-4 w-4 shrink-0 {isActive ? '' : item.iconColor || ''}" />
+										<span class="truncate">{item.label}</span>
+									</div>
+									{#if item.count && item.count > 0}
+										<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold {isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'}">
+											{item.count}
+										</span>
+									{:else if item.badge}
+										<span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase {isActive ? 'bg-primary-foreground/20 text-primary-foreground' : item.badgeColor || 'bg-secondary text-muted-foreground border border-border'}">
+											{item.badge}
+										</span>
+									{/if}
+								</a>
+							{/each}
+						</div>
+					{/each}
 
-					<a
-						href="/dashboard/queue"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/queue' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<Clock class="h-4 w-4 text-amber-500" />
-							<span>Approval Queue</span>
-						</span>
-						{#if cockpit.pendingCount > 0}
-							<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500">
-								{cockpit.pendingCount}
-							</span>
-						{/if}
-					</a>
-
-					<a
-						href="/dashboard/history"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/history' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<ChartBarSquare class="h-4 w-4" />
-							<span>Execution History</span>
-						</span>
-					</a>
-
-					<a
-						href="/dashboard/connectors"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/connectors' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<CircleStack class="h-4 w-4 text-amber-500" />
-							<span>DB Connectors (Dual-DB)</span>
-						</span>
-					</a>
-
-					<a
-						href="/dashboard/mcp"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/mcp' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<Cube class="h-4 w-4 text-cyan-500" />
-							<span>MCP Knowledge</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-500">SPEC</span>
-					</a>
-
-					<a
-						href="/dashboard/connectivity"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/connectivity' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<CpuChip class="h-4 w-4 text-blue-500" />
-							<span>System Telemetry</span>
-						</span>
-					</a>
-
-					<a
-						href="/dashboard/logs"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/logs' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<DocumentText class="h-4 w-4 text-cyan-500" />
-							<span>System Logs</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-500">STREAM</span>
-					</a>
-
-					<a
-						href="/dashboard/messages"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/messages' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<ChatBubbleLeftRight class="h-4 w-4 text-emerald-500" />
-							<span>Inbound Messages</span>
-						</span>
-						{#if cockpit.needsReviewCount > 0}
-							<span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500">
-								{cockpit.needsReviewCount}
-							</span>
-						{/if}
-					</a>
-
-					<a
-						href="/dashboard/hooks"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/hooks' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<CodeBracket class="h-4 w-4 text-purple-500" />
-							<span>Client Hook Flows</span>
-						</span>
-					</a>
-
-					<a
-						href="/dashboard/contacts"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/contacts' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<UserGroup class="h-4 w-4 text-teal-500" />
-							<span>Group Contacts</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500">DUMMY</span>
-					</a>
-
-					<a
-						href="/dashboard/simulator"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/simulator' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<PaperAirplane class="h-4 w-4" />
-							<span>ChatOps Simulator</span>
-						</span>
-						<span class="font-mono text-[8.5px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">EXPERIMENTAL</span>
-					</a>
-
-					<a
-						href="/dashboard/platforms"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/platforms' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<AdjustmentsHorizontal class="h-4 w-4 text-sky-500" />
-							<span>Platform Flows</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary">Flows</span>
-					</a>
-
-					<a
-						href="/dashboard/settings"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/settings' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<Cog6Tooth class="h-4 w-4 text-zinc-400" />
-							<span>Settings</span>
-						</span>
-					</a>
-
-					<a
-						href="/dashboard/about"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg {currentPath === '/dashboard/about' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
-					>
-						<span class="flex items-center gap-2">
-							<InformationCircle class="h-4 w-4 text-purple-500" />
-							<span>About &amp; Repo</span>
-						</span>
-						<span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400">v1.0</span>
-					</a>
-
-					<div class="pt-2 px-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Public Website</div>
-
-					<a
-						href="/"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg text-muted-foreground hover:bg-secondary"
-					>
-						<span>Public Home (/)</span>
-					</a>
-
-					<a
-						href="/flow"
-						onclick={closeMobileMenu}
-						class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg text-muted-foreground hover:bg-secondary"
-					>
-						<span>System Flow (/flow)</span>
-					</a>
+					<!-- Public Site Links -->
+					<div class="space-y-1 pt-2 border-t border-border/50">
+						<div class="px-2.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Public Website</div>
+						<a href="/" onclick={closeMobileMenu} class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary">
+							<span>Public Home (/)</span>
+						</a>
+						<a href="/flow" onclick={closeMobileMenu} class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary">
+							<span>System Flow (/flow)</span>
+						</a>
+					</div>
 				</div>
-			</div>
+
+				<!-- Drawer Footer -->
+				<div class="p-3 border-t border-border/50 shrink-0 bg-card/60">
+					<div class="flex items-center justify-between text-[11px] font-mono">
+						<span class="flex items-center gap-1.5 font-medium text-foreground">
+							<span class="h-2 w-2 rounded-full {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+							{cockpit.platformStatuses[cockpit.chatPlatform].name}
+						</span>
+						<span class="text-[9px] px-1.5 py-0.5 rounded font-bold {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">
+							{cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'LIVE' : 'STANDBY'}
+						</span>
+					</div>
+				</div>
+			</aside>
 		{/if}
 
 		<!-- Main Content Slot -->

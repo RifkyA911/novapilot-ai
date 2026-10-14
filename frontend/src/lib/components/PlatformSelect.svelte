@@ -88,7 +88,7 @@
 			class="h-4 w-4 object-contain shrink-0"
 		/>
 		
-		<span class="truncate font-medium">{activePlatform.name}</span>
+		<span class="truncate font-medium hidden sm:inline">{activePlatform.name}</span>
 
 		<ChevronDown class="h-3.5 w-3.5 text-muted-foreground shrink-0 opacity-70 ml-0.5 {isOpen ? 'rotate-180' : ''} transition-transform duration-150" />
 	</button>

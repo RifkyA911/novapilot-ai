@@ -149,6 +149,12 @@ Di lingkungan laptop kantor, aktivitas dibatasi secara ketat pada ranah visual d
      - **Tier 2 (Dedicated Action Strip)**: Baris terpisah berlatar `bg-secondary/35 border` khusus menampung tombol-tombol simulasi I/O (`DB 1: Core`, `DB 2: MCP Ref`, `Toggle Link`) dan tombol *Reset View*.
      - **Tier 3 (Status Legend Bar)**: Legenda warna status (*Connected*, *Processing*, *Disconnected*) diletakkan di bawah bar aksi tanpa berebut ruang dengan tombol.
    - **Pencegahan Layout Shift**: Label tombol distandarkan agar tidak memanjang/memendek secara drastis saat status berganti sehingga layout tetap stabil dan kokoh.
+5. **Standar Sidebar Collapsed (Ikon Lurus Middle & Floating Notification Indicator)**:
+   - **Presisi Sumbu Vertikal**: Saat sidebar di-collapse (`w-16`), setiap item menu dibungkus dalam kontainer bujur sangkar `h-9 w-9 mx-auto rounded-xl flex items-center justify-center`. Seluruh ikon berada tepat di sumbu tengah yang sama (lurus vertikal 100%).
+   - **Floating Notification Badge**: Indikator angka antrean (`cockpit.pendingCount`, `cockpit.needsReviewCount`) diposisikan sebagai floating badge di sudut kanan atas tombol (`absolute -top-1 -right-1 min-w-[17px] h-4`) sehingga tidak pernah menggeser atau mendistorsi bentuk ikon.
+6. **Arsitektur Navigasi Mobile-First (Slide-Over Sheet & Auto-Compact Navbar)**:
+   - **Off-Canvas Slide-Over Drawer**: Mengganti dropdown header dengan drawer samping kiri modern ber-backdrop blur (`bg-black/60 z-50`) yang dapat ditutup via klik di luar atau tombol `Escape`.
+   - **Ultra-Compact Header (<640px)**: Selector platform secara otomatis menyembunyikan label teks dan hanya menampilkan logo platform pada layar ponsel kecil (360px), menjaga ruang untuk tombol pencarian `⌘K` dan avatar user.
 
 ---
 
