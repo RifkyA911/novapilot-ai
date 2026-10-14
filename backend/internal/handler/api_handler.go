@@ -666,7 +666,7 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"system_db": gin.H{
-			"name":     "Database Internal Sistem",
+			"name":     "Internal System Database",
 			"platform": "postgres",
 			"driver":   "PostgreSQL 18 / lib/pq (Core Engine Requirement - Locked)",
 			"host":     sysHost,
@@ -675,11 +675,11 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 			"dbname":   sysDB,
 			"sslmode":  "disable",
 			"status":   sysStatus,
-			"purpose":  "Antrean Tiket, Audit Trail, Sesi, Inbound Messages, Learned Patterns",
+			"purpose":  "Ticket Staging Queue, Audit Trail, Sessions, Inbound Messages, Learned Patterns",
 			"tables":   []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"},
 		},
 		"mcp_ref_db": gin.H{
-			"name":     "Database Referensi MCP",
+			"name":     "MCP Reference Database",
 			"platform": mcpPlatform,
 			"driver":   "PostgreSQL 16/18 (Enterprise MCP)",
 			"host":     mcpHost,
@@ -688,7 +688,7 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 			"dbname":   mcpDB,
 			"sslmode":  "disable",
 			"status":   mcpStatus,
-			"purpose":  "Sumber Data Referensi Penjualan, Faktur, NPWP, & Pelanggan yang diakses oleh Tool MCP",
+			"purpose":  "Enterprise Reference Data Source for Sales Orders, Invoices, Tax IDs, and Customers",
 			"tables":   []string{"sales_orders", "customer_master", "erp_invoices", "tax_validations", "item_inventory"},
 		},
 	})
@@ -744,7 +744,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"ok":         true,
 			"latency_ms": latency,
-			"message":    fmt.Sprintf("SSH Tunnel Bastion terverifikasi! Bastion: %s:%s | Target ERP: %s:%s/%s | Roundtrip: %dms", req.SSHBastionHost, bastionPort, req.Host, req.Port, req.DBName, latency),
+			"message":    fmt.Sprintf("SSH Tunnel Bastion verified! Bastion: %s:%s | Target ERP: %s:%s/%s | Roundtrip: %dms", req.SSHBastionHost, bastionPort, req.Host, req.Port, req.DBName, latency),
 		})
 		return
 	}
@@ -755,7 +755,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"ok":    false,
-				"error": fmt.Sprintf("Gagal membuka socket TCP ke platform %s (%s:%s): %v", req.Platform, req.Host, req.Port, err),
+				"error": fmt.Sprintf("Failed to open TCP socket to platform %s (%s:%s): %v", req.Platform, req.Host, req.Port, err),
 			})
 			return
 		}
@@ -765,7 +765,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"ok":         true,
 			"latency_ms": latency,
-			"message":    fmt.Sprintf("Koneksi platform %s terverifikasi! Endpoint: %s:%s/%s | Roundtrip: %dms", req.Platform, req.Host, req.Port, req.DBName, latency),
+			"message":    fmt.Sprintf("%s platform connection verified! Endpoint: %s:%s/%s | Roundtrip: %dms", req.Platform, req.Host, req.Port, req.DBName, latency),
 		})
 		return
 	}
@@ -776,7 +776,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 
 	testDB, err := sql.Open("postgres", connStr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal membuka driver: %v", err)})
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Failed to open database driver: %v", err)})
 		return
 	}
 	defer testDB.Close()
@@ -784,7 +784,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 	if err := testDB.Ping(); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"ok":    false,
-			"error": fmt.Sprintf("Gagal ping database (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err),
+			"error": fmt.Sprintf("Failed to ping database (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err),
 		})
 		return
 	}
@@ -802,7 +802,7 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"ok":         true,
 		"latency_ms": latency,
-		"message":    fmt.Sprintf("Koneksi database PostgreSQL terverifikasi! Host: %s:%s | DB: %s | Roundtrip: %dms", req.Host, req.Port, req.DBName, latency),
+		"message":    fmt.Sprintf("PostgreSQL database connection verified! Host: %s:%s | DB: %s | Roundtrip: %dms", req.Host, req.Port, req.DBName, latency),
 	})
 }
 
@@ -838,12 +838,12 @@ func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
 				req.Host, req.Port, req.User, req.Password, req.DBName, req.SSLMode)
 			newDB, err := sql.Open("postgres", connStr)
 			if err != nil {
-				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal inisialisasi driver: %v", err)})
+				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Failed to initialize database driver: %v", err)})
 				return
 			}
 			if err := newDB.Ping(); err != nil {
 				newDB.Close()
-				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal ping database referensi (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err)})
+				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Failed to ping reference database (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err)})
 				return
 			}
 
@@ -872,7 +872,7 @@ func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"ok":         true,
 			"latency_ms": latency,
-			"message":    fmt.Sprintf("Konfigurasi Database Referensi MCP berhasil diterapkan dan aktif secara LIVE! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
+			"message":    fmt.Sprintf("MCP Reference Database configuration applied and active live! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
 			"config": gin.H{
 				"platform": req.Platform,
 				"host":     req.Host,
@@ -890,12 +890,12 @@ func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
 		req.Host, req.Port, req.User, req.Password, req.DBName, req.SSLMode)
 	testDB, err := sql.Open("postgres", connStr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal inisialisasi driver sistem: %v", err)})
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Failed to initialize system database driver: %v", err)})
 		return
 	}
 	defer testDB.Close()
 	if err := testDB.Ping(); err != nil {
-		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal ping database sistem: %v", err)})
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Failed to ping system database: %v", err)})
 		return
 	}
 
@@ -909,7 +909,7 @@ func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"ok":         true,
 		"latency_ms": latency,
-		"message":    fmt.Sprintf("Konfigurasi Database Internal Sistem berhasil diterapkan! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
+		"message":    fmt.Sprintf("System Internal Database configuration applied successfully! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
 	})
 }
 

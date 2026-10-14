@@ -440,9 +440,9 @@
 			badge: "MULTI-CLIENT INGRESS",
 			color: "text-purple-500",
 			bgColor: "bg-purple-500/10 border-purple-500/30",
-			description: "Pesan teks atau foto fisik nota dikirimkan dari aplikasi WhatsApp, Ferdium, Rambox, atau Browser. Client tidak pernah memiliki akses jaringan langsung ke database manapun.",
+			description: "Text messages or physical invoice photos sent from WhatsApp, Telegram, Ferdium, Rambox, or Web UI. Clients never hold direct network access to any database.",
 			dataFlow: "Chat Client / Mobile → Ingress Hook (HTTP / Socket)",
-			dbStatus: "Zero DB Exposure: Klien berjalan di sandbox terisolasi"
+			dbStatus: "Zero DB Exposure: Clients execute in isolated sandbox"
 		},
 		{
 			step: 2,
@@ -450,9 +450,9 @@
 			badge: "PARSING & OCR ENGINE",
 			color: "text-blue-500",
 			bgColor: "bg-blue-500/10 border-blue-500/30",
-			description: "Hook mengekstrak body pesan dan mengunduh buffer gambar ke storage. Engine OCR Tesseract.js membaca teks nota fisik (INV/2026/001), sementara NLP regex mencocokkan intent dan target nama baru.",
+			description: "Hook extracts message body and downloads image buffers to storage. Tesseract.js OCR engine parses physical invoice text (INV/2026/001), while NLP regex matches intent and target customer name.",
 			dataFlow: "Baileys Socket / DOM → Tesseract OCR Engine → Entity Mapping",
-			dbStatus: "Memeriksa memory DB 1 (tabel learned_patterns) untuk mencocokkan gaya chat kasual"
+			dbStatus: "Queries DB 1 memory (learned_patterns table) to match conversational phrasing"
 		},
 		{
 			step: 3,
@@ -460,9 +460,9 @@
 			badge: "DB 1: OPERATIONAL SYSTEM STORE",
 			color: "text-emerald-500",
 			bgColor: "bg-emerald-500/10 border-emerald-500/30",
-			description: "Backend Go Core (:8088) mementaskan pesan ke DB 1 (PostgreSQL local :5432). Tiket baru (status PENDING_APPROVAL) dan immutable audit log dibuat secara atomik dengan rollback guard.",
+			description: "Go Core Backend (:8088) stages the payload into DB 1 (PostgreSQL local :5432). A new ticket (PENDING_APPROVAL status) and immutable HMAC audit log are created atomically with rollback guard.",
 			dataFlow: "Go Core Engine (:8088) → PostgreSQL 18 Local (novapilot_db)",
-			dbStatus: "DB 1 AKTIF: Menyimpan tabel inbound_messages, tickets, audit_logs, learned_patterns"
+			dbStatus: "DB 1 ACTIVE: Persisting inbound_messages, tickets, audit_logs, learned_patterns tables"
 		},
 		{
 			step: 4,
@@ -470,9 +470,9 @@
 			badge: "ZERO-TRUST VERIFICATION",
 			color: "text-amber-500",
 			bgColor: "bg-amber-500/10 border-amber-500/30",
-			description: "Engineer on-call membuka dashboard (/dashboard/queue), memeriksa bukti foto nota asli, memvalidasi perbandingan nilai lama vs baru, lalu menekan tombol '1-Click Approve'.",
+			description: "On-call engineer inspects dashboard (/dashboard/queue), verifies original invoice image proof, compares old vs new values, then triggers '1-Click Approve'.",
 			dataFlow: "Web Dashboard (:3000) → POST /api/tickets/:id/approve",
-			dbStatus: "DB 1 DIPERBARUI: Status tiket diubah menjadi APPROVED; log pengesahan dicatat"
+			dbStatus: "DB 1 UPDATED: Ticket status updated to APPROVED; cryptographic approval signature logged"
 		},
 		{
 			step: 5,
@@ -480,9 +480,9 @@
 			badge: "DB 2: TARGET BUSINESS DATA SOURCE",
 			color: "text-cyan-500",
 			bgColor: "bg-cyan-500/10 border-cyan-500/30",
-			description: "Core memanggil Model Context Protocol (MCP) Tool Server untuk memutasi data bisnis pada DB 2 (Oracle 19c Enterprise / ERP / SAP). Hanya parameterized prepared statement yang dieksekusi (Zero Raw SQL).",
+			description: "Core invokes Model Context Protocol (MCP) Tool Server to mutate business data in DB 2 (Oracle 19c Enterprise / ERP / SAP). Only parameterized prepared statements are executed (Zero Raw SQL).",
 			dataFlow: "Core Engine → MCP Tool Server → DB 2 Enterprise Data Source (Oracle/ERP)",
-			dbStatus: "DB 2 DIMUTASI: Tabel faktur bisnis resmi (invoices) diperbarui secara transaksional"
+			dbStatus: "DB 2 MUTATED: Official enterprise invoice table updated transactionally"
 		},
 		{
 			step: 6,
@@ -490,9 +490,9 @@
 			badge: "REAL-TIME CONFIRMATION",
 			color: "text-rose-500",
 			bgColor: "bg-rose-500/10 border-rose-500/30",
-			description: "Event SSE ticket_updated disiarkan secara real-time ke WhatsApp Gateway. Bot otomatis mengirimkan bukti tanda terima resmi beserta nomor tiket kembali ke grup/chat pengirim asli.",
+			description: "SSE ticket_updated event broadcasts in real-time to WhatsApp Gateway. The bot automatically dispatches an official receipt with ticket number back to the originating chat group.",
 			dataFlow: "SSE Stream (:8088/api/events) → WhatsApp Socket → Chat Group",
-			dbStatus: "DB 1 LENGKAP: Waktu eksekusi, ID petugas, dan status akhir tersimpan permanen"
+			dbStatus: "DB 1 COMPLETE: Execution time, operator ID, and final state permanently archived"
 		}
 	];
 
@@ -580,7 +580,7 @@
 			</div>
 
 			<p class="text-xs text-muted-foreground leading-relaxed max-w-3xl">
-				Arsitektur isolasi 2 database: <strong>DB 1 (PostgreSQL)</strong> sebagai penampung operasional (tiket, log, dan memory AI), dan <strong>DB 2 (Oracle/ERP via MCP)</strong> sebagai sumber data bisnis eksternal yang dimutasi secara aman tanpa ekspos SQL mentah.
+				Dual-Database Isolation Architecture: <strong>DB 1 (PostgreSQL)</strong> serves as the operational staging store (tickets, logs, and AI memory), and <strong>DB 2 (Enterprise ERP via MCP)</strong> acts as the external business data source mutated safely without raw SQL exposure.
 			</p>
 		</div>
 
@@ -651,7 +651,7 @@
 					type="button"
 					onclick={() => toggleAdapterStatus(client.id)}
 					class="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider shrink-0 cursor-pointer transition-all border {client.status === 'CONNECTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-muted text-muted-foreground border-border hover:border-foreground/30'}"
-					title="Klik untuk toggle status koneksi adapter ini"
+					title="Click to toggle adapter connection status"
 				>
 					{client.status === 'CONNECTED' ? 'LIVE' : 'STANDBY'}
 				</button>
@@ -916,7 +916,7 @@
 						<text x="10" y="18" font-family="system-ui" font-size="11.5" font-weight="bold" fill="#3b82f6">📷 Tesseract Vision OCR</text>
 						<text x="10" y="34" font-family="monospace" font-size="10.5" fill="currentColor" class="text-foreground">Doc: INV/2026/001</text>
 						<text x="10" y="49" font-family="monospace" font-size="10.5" fill="currentColor" class="text-foreground">Bilingual: ind + eng</text>
-						<text x="10" y="64" font-family="monospace" font-size="10" fill="#3b82f6" font-weight="bold">Extract physical nota/faktur</text>
+						<text x="10" y="64" font-family="monospace" font-size="10" fill="#3b82f6" font-weight="bold">Extract physical invoices</text>
 					</g>
 
 					<g transform="translate(10, 190)">
@@ -1098,8 +1098,8 @@
 					<g transform="translate(10, 198)">
 						<rect x="0" y="0" width="160" height="54" rx="10" fill="currentColor" class="text-secondary/80" />
 						<text x="8" y="18" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Zero Direct Access</text>
-						<text x="8" y="33" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">Petugas tidak pernah</text>
-						<text x="8" y="46" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">mengetik query manual!</text>
+						<text x="8" y="33" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">Operators never type</text>
+						<text x="8" y="46" font-family="monospace" font-size="9.5" fill="currentColor" class="text-muted-foreground">manual SQL queries!</text>
 					</g>
 				</g>
 
@@ -1148,8 +1148,8 @@
 					<g transform="translate(10, 112)">
 						<rect x="0" y="0" width="200" height="48" rx="10" fill="#06b6d4" fill-opacity="0.08" stroke="#06b6d4" stroke-opacity="0.25" stroke-width="1" />
 						<text x="8" y="18" font-family="monospace" font-size="11.5" font-weight="bold" fill="#06b6d4">✓ Zero Raw SQL Execution</text>
-						<text x="8" y="33" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">Hanya parameterized mutations</text>
-						<text x="8" y="44" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">diteruskan ke target ERP/DB</text>
+						<text x="8" y="33" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">Only parameterized mutations</text>
+						<text x="8" y="44" font-family="monospace" font-size="10.5" fill="currentColor" class="text-muted-foreground">passed to target ERP/DB</text>
 					</g>
 				</g>
 
@@ -1218,10 +1218,10 @@
 
 					<g transform="translate(10, 42)">
 						<text x="6" y="15" font-family="monospace" font-size="11.5" font-weight="bold" fill="currentColor" class="text-foreground">Oracle 19c / SAP / ERP Prod:</text>
-						<text x="6" y="31" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• invoices (Buku Besar Faktur)</text>
-						<text x="6" y="46" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• customer_master (Pelanggan)</text>
-						<text x="6" y="61" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• ledger_balance (Akuntansi)</text>
-						<text x="6" y="74" font-family="monospace" font-size="11" fill="#2563eb" font-weight="bold">🔒 Terisolasi di balik MCP Server</text>
+						<text x="6" y="31" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• invoices (General Ledger Invoices)</text>
+						<text x="6" y="46" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• customer_master (Customer Master)</text>
+						<text x="6" y="61" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">• ledger_balance (Accounting Ledger)</text>
+						<text x="6" y="74" font-family="monospace" font-size="11" fill="#2563eb" font-weight="bold">🔒 Isolated Behind MCP Server</text>
 					</g>
 				</g>
 
@@ -1331,17 +1331,17 @@
 			</div>
 
 			<p class="text-xs text-muted-foreground leading-relaxed">
-				Penampung lokal terisolasi yang diakses langsung oleh Go Backend Core untuk staging pesan masuk omnichannel, antrean tiket persetujuan, log audit immutable, serta bobot pembelajaran AI.
+				Isolated local store accessed directly by the Go Backend Core for staging omnichannel inbound messages, human-in-the-loop approval queues, immutable HMAC audit logs, and self-learning AI patterns.
 			</p>
 
 			<div class="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
 				<div class="p-2.5 rounded-lg bg-secondary/40 border border-border/50">
-					<span class="text-muted-foreground block text-[10px]">Tabel Utama</span>
+					<span class="text-muted-foreground block text-[10px]">Core Tables</span>
 					<span class="font-bold text-foreground">inbound_messages, tickets</span>
 				</div>
 				<div class="p-2.5 rounded-lg bg-secondary/40 border border-border/50">
-					<span class="text-muted-foreground block text-[10px]">Akses ChatOps</span>
-					<span class="font-bold text-emerald-500">Staging Otomatis</span>
+					<span class="text-muted-foreground block text-[10px]">ChatOps Access</span>
+					<span class="font-bold text-emerald-500">Automated Staging</span>
 				</div>
 			</div>
 		</div>
@@ -1364,16 +1364,16 @@
 			</div>
 
 			<p class="text-xs text-muted-foreground leading-relaxed">
-				Database transaksi bisnis inti perusahaan. Terisolasi total dari ChatOps/LLM dengan jaminan <strong>Zero Raw SQL Injection</strong>. Hanya dapat dimutasi melalui Model Context Protocol (MCP) setelah disetujui petugas on-call.
+				Core enterprise business transaction database. Completely isolated from ChatOps/LLM with guaranteed <strong>Zero Raw SQL Injection</strong>. Mutations are exclusively performed via Model Context Protocol (MCP) upon on-call engineer sign-off.
 			</p>
 
 			<div class="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
 				<div class="p-2.5 rounded-lg bg-secondary/40 border border-border/50">
-					<span class="text-muted-foreground block text-[10px]">Protokol Eksekusi</span>
+					<span class="text-muted-foreground block text-[10px]">Execution Protocol</span>
 					<span class="font-bold text-foreground">MCP Tool JSON-RPC</span>
 				</div>
 				<div class="p-2.5 rounded-lg bg-secondary/40 border border-border/50">
-					<span class="text-muted-foreground block text-[10px]">Akses ChatOps</span>
+					<span class="text-muted-foreground block text-[10px]">ChatOps Access</span>
 					<span class="font-bold text-rose-500">Zero Direct SQL</span>
 				</div>
 			</div>

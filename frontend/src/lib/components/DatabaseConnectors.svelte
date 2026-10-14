@@ -259,15 +259,15 @@
 			name: "mutate_invoice_record",
 			version: "1.4.0",
 			category: "ERP_MUTATION",
-			description: "Memperbarui nama pelanggan dan status faktur pada PostgreSQL (novapilot_mcp_ref) via parameterized query tanpa raw SQL.",
+			description: "Update customer name and invoice status on PostgreSQL (novapilot_mcp_ref) via parameterized query without raw SQL.",
 			transport: "stdio / json-rpc 2.0",
 			inputSchema: {
 				type: "object",
 				properties: {
-					invoice_no: { type: "string", description: "Nomor faktur/nota resmi misal INV/2026/001" },
-					target_client: { type: "string", description: "Nama badan usaha pelanggan resmi baru" },
-					revised_amount: { type: "number", description: "Nominal revisi jika terdapat penyesuaian pajak" },
-					operator_note: { type: "string", description: "Catatan pengesahan dari petugas on-call" }
+					invoice_no: { type: "string", description: "Official invoice document number e.g. INV/2026/001" },
+					target_client: { type: "string", description: "New legal customer entity name" },
+					revised_amount: { type: "number", description: "Revised amount if tax adjustment is needed" },
+					operator_note: { type: "string", description: "Human reviewer approval note from on-call engineer" }
 				},
 				required: ["invoice_no", "target_client"]
 			}
@@ -276,13 +276,13 @@
 			name: "query_customer_master",
 			version: "1.2.0",
 			category: "READ_ONLY_REFERENCE",
-			description: "Kueri read-only data master nama legal PT/CV dan nomor registrasi pajak dari database referensi enterprise novapilot_mcp_ref.",
+			description: "Read-only query for corporate legal name and tax registration number from novapilot_mcp_ref reference database.",
 			transport: "stdio / json-rpc 2.0",
 			inputSchema: {
 				type: "object",
 				properties: {
-					query: { type: "string", description: "Nama parsial atau NPWP pelanggan misal Makmur atau 01.234" },
-					limit: { type: "integer", description: "Maksimal baris referensi (default 10)" }
+					query: { type: "string", description: "Partial legal name or Tax ID e.g. Makmur or 01.234" },
+					limit: { type: "integer", description: "Maximum reference records returned (default 10)" }
 				},
 				required: ["query"]
 			}
@@ -291,15 +291,15 @@
 			name: "mutate_invoice_record",
 			version: "1.4.0",
 			category: "ERP_MUTATION",
-			description: "Memperbarui nama pelanggan dan status faktur pada Oracle 19c Enterprise via parameterized query tanpa raw SQL.",
+			description: "Update customer name and invoice status on Oracle 19c Enterprise via parameterized query without raw SQL.",
 			transport: "stdio / json-rpc 2.0",
 			inputSchema: {
 				type: "object",
 				properties: {
-					invoice_no: { type: "string", description: "Nomor faktur/nota resmi misal INV/2026/001" },
-					target_client: { type: "string", description: "Nama badan usaha pelanggan resmi baru" },
-					revised_amount: { type: "number", description: "Nominal revisi jika terdapat penyesuaian pajak" },
-					operator_note: { type: "string", description: "Catatan pengesahan dari petugas on-call" }
+					invoice_no: { type: "string", description: "Official invoice document number e.g. INV/2026/001" },
+					target_client: { type: "string", description: "New legal customer entity name" },
+					revised_amount: { type: "number", description: "Revised amount if tax adjustment is needed" },
+					operator_note: { type: "string", description: "Human reviewer approval note from on-call engineer" }
 				},
 				required: ["invoice_no", "target_client"]
 			}
@@ -308,14 +308,14 @@
 			name: "query_customer_master_bapi",
 			version: "2.1.0",
 			category: "SAP_RFC_CONNECTOR",
-			description: "Kueri read-only data master nama legal PT/CV dan nomor registrasi pajak dari SAP S/4HANA BAPI Gateway.",
+			description: "Read-only query for corporate legal name and tax registration number from SAP S/4HANA BAPI Gateway.",
 			transport: "sse / http-rpc",
 			inputSchema: {
 				type: "object",
 				properties: {
-					customer_code: { type: "string", description: "Kode pelanggan SAP misal CUST-8820" },
-					tax_id: { type: "string", description: "Nomor NPWP 15/16 digit" },
-					company_code: { type: "string", description: "Company code unit bisnis SAP (default 1000)" }
+					customer_code: { type: "string", description: "SAP Customer Code e.g. CUST-8820" },
+					tax_id: { type: "string", description: "15/16 digit Tax Registration Number" },
+					company_code: { type: "string", description: "SAP business unit company code (default 1000)" }
 				},
 				required: ["customer_code"]
 			}
@@ -324,13 +324,13 @@
 			name: "verify_tax_registration",
 			version: "1.1.0",
 			category: "TAX_COMPLIANCE",
-			description: "Validasi status registrasi NPWP dan validitas faktur pajak terhadap database referensi enterprise atau portal DJP.",
+			description: "Validate Tax ID registration status and invoice compliance against enterprise reference database or DJP portal.",
 			transport: "stdio / json-rpc 2.0",
 			inputSchema: {
 				type: "object",
 				properties: {
-					tax_id: { type: "string", description: "15/16 digit format NPWP" },
-					invoice_serial: { type: "string", description: "Nomor seri faktur pajak (NSFP)" }
+					tax_id: { type: "string", description: "15/16 digit Tax ID format" },
+					invoice_serial: { type: "string", description: "Official tax invoice serial number (NSFP)" }
 				},
 				required: ["tax_id"]
 			}
@@ -339,14 +339,14 @@
 			name: "sync_branch_stock",
 			version: "1.0.0",
 			category: "INVENTORY_SYNC",
-			description: "Sinkronisasi saldo stok barang dan bukti surat jalan antara database pabrik cabang dan pusat.",
+			description: "Synchronize inventory balances and delivery documents between branch and central warehouse databases.",
 			transport: "stdio / json-rpc 2.0",
 			inputSchema: {
 				type: "object",
 				properties: {
-					branch_code: { type: "string", description: "Kode cabang pabrik (misal SBY-01, MDN-01)" },
-					sku: { type: "string", description: "Stock Keeping Unit kode produk" },
-					delta_quantity: { type: "number", description: "Perubahan jumlah barang" }
+					branch_code: { type: "string", description: "Warehouse branch code (e.g. SBY-01, MDN-01)" },
+					sku: { type: "string", description: "Product Stock Keeping Unit" },
+					delta_quantity: { type: "number", description: "Stock balance adjustment delta" }
 				},
 				required: ["branch_code", "sku"]
 			}
@@ -371,7 +371,7 @@
 				}
 			}
 		} catch (e) {
-			console.error("Gagal mengambil daftar MCP tools:", e);
+			console.error("Failed to fetch MCP tools:", e);
 		} finally {
 			isLoadingMcpTools = false;
 		}
@@ -390,7 +390,7 @@
 			uploadSuccess = null;
 		};
 		reader.onerror = () => {
-			uploadError = "Gagal membaca berkas manifest dari disk.";
+			uploadError = "Failed to read manifest file from disk.";
 		};
 		reader.readAsText(file);
 	}
@@ -400,7 +400,7 @@
 		uploadSuccess = null;
 
 		if (!uploadManifestText.trim()) {
-			uploadError = "Mohon isi atau pilih berkas manifest MCP terlebih dahulu.";
+			uploadError = "Please enter or select an MCP manifest file first.";
 			return;
 		}
 
@@ -408,12 +408,12 @@
 		try {
 			parsed = JSON.parse(uploadManifestText);
 		} catch (err: any) {
-			uploadError = `Format JSON tidak valid: ${err.message}. Pastikan sintaks JSON sesuai standar schema MCP.`;
+			uploadError = `Invalid JSON format: ${err.message}. Ensure JSON conforms to MCP schema specifications.`;
 			return;
 		}
 
 		if (!parsed.name) {
-			uploadError = "Manifest wajib memiliki atribut 'name' sebagai pengenal tool.";
+			uploadError = "Manifest must specify a 'name' attribute as the tool identifier.";
 			return;
 		}
 
@@ -427,11 +427,11 @@
 
 			const data = await res.json();
 			if (res.ok && data.ok) {
-				uploadSuccess = `Tool '${parsed.name}' versi ${parsed.version || '1.0.0'} berhasil diregistrasikan ke NovaPilot Protocol Catalog!`;
+				uploadSuccess = `Tool '${parsed.name}' v${parsed.version || '1.0.0'} successfully registered to NovaPilot Protocol Catalog!`;
 				uploadManifestText = "";
 				await fetchMCPTools();
 			} else {
-				uploadError = data.error || "Gagal meregistrasikan tool ke server MCP.";
+				uploadError = data.error || "Failed to register tool to MCP server.";
 			}
 		} catch (err: any) {
 			uploadError = `Network error: ${err.message}`;
@@ -499,15 +499,15 @@
 			} else {
 				toolTestExecutionResult = {
 					ok: false,
-					error: data.error || "Eksekusi tool gagal.",
-					timestamp: new Date().toLocaleTimeString("id-ID")
+					error: data.error || "Tool execution failed.",
+					timestamp: new Date().toLocaleTimeString("en-US")
 				};
 			}
 		} catch (err: any) {
 			toolTestExecutionResult = {
 				ok: false,
 				error: `Network error: ${err.message}`,
-				timestamp: new Date().toLocaleTimeString("id-ID")
+				timestamp: new Date().toLocaleTimeString("en-US")
 			};
 		} finally {
 			isExecutingToolTest = false;
@@ -518,18 +518,18 @@
 	// TABLES & CONFIG LOGIC
 	// =========================================================================
 	const systemTables = [
-		{ name: "tickets", count: "~12 baris", desc: "Antrean Human-in-the-Loop, mutasi usulan nota, status lifecycle approval" },
-		{ name: "audit_logs", count: "~50 baris", desc: "Log audit digital immutable, HMAC digest, IP operator, timestamp RFC3339" },
-		{ name: "inbound_messages", count: "~85 baris", desc: "Feed pesan masuk omnichannel (WhatsApp, Telegram, Discord)" },
-		{ name: "learned_patterns", count: "~6 baris", desc: "Koleksi regex dynamic dan klasifikasi intent dari loop self-learning" },
-		{ name: "documents", count: "~18 baris", desc: "Metadata file lampiran foto bukti nota, invoice PDF, dan ringkasan OCR" }
+		{ name: "tickets", count: "~12 rows", desc: "Human-in-the-Loop staging queue, invoice mutation proposals, approval lifecycle" },
+		{ name: "audit_logs", count: "~50 rows", desc: "Immutable digital audit log, HMAC digest, operator IP, RFC3339 timestamp" },
+		{ name: "inbound_messages", count: "~85 rows", desc: "Omnichannel inbound message stream (WhatsApp, Telegram, Discord)" },
+		{ name: "learned_patterns", count: "~6 rows", desc: "Dynamic regex rules and intent classifications from self-learning loop" },
+		{ name: "documents", count: "~18 rows", desc: "Attachment metadata for receipts, PDF invoices, and OCR extraction summaries" }
 	];
 
 	let mcpReferenceTables = $state([
-		{ name: "customer_master", desc: "Master nama PT/CV/Toko pelanggan, NPWP resmi, status enterprise" },
-		{ name: "erp_invoices", desc: "Faktur operasional, nomor nota, nama penerima, nominal, status OPEN/PAID" },
-		{ name: "tax_validations", desc: "Database validasi perpajakan, status PKP, status faktur pajak aktif" },
-		{ name: "item_inventory", desc: "Katalog SKU suku cadang, deskripsi barang, stok cabang, harga referensi" }
+		{ name: "customer_master", desc: "Customer master records, legal corporate names, tax IDs (NPWP), enterprise status" },
+		{ name: "erp_invoices", desc: "Operational ERP invoices, billing numbers, recipient names, amounts, OPEN/PAID status" },
+		{ name: "tax_validations", desc: "Tax authority compliance database, VAT/taxpayer verification, electronic tax invoices" },
+		{ name: "item_inventory", desc: "Spare parts SKU catalog, item descriptions, warehouse stock, reference price list" }
 	]);
 
 	async function fetchConfigAndTelemetry() {
@@ -576,16 +576,16 @@
 					// Dynamic detection of tables from backend
 					if (Array.isArray(cfg.mcp_ref_db.tables) && cfg.mcp_ref_db.tables.length > 0) {
 						const tableDescMap: Record<string, string> = {
-							customer_master: "Master nama PT/CV/Toko pelanggan, NPWP resmi, status enterprise",
-							erp_invoices: "Faktur operasional, nomor nota, nama penerima, nominal, status OPEN/PAID",
-							tax_validations: "Database validasi perpajakan, status PKP, status faktur pajak aktif",
-							item_inventory: "Katalog SKU suku cadang, deskripsi barang, stok cabang, harga referensi",
-							invoices: "Faktur operasional, nomor nota, nama pelanggan, nominal, status OPEN/CLOSED",
-							branches: "Daftar cabang resmi pabrik/gudang dan nomor kontak whitelist"
+							customer_master: "Customer master records, legal corporate names, tax IDs (NPWP), enterprise status",
+							erp_invoices: "Operational ERP invoices, billing numbers, recipient names, amounts, OPEN/PAID status",
+							tax_validations: "Tax authority compliance database, VAT/taxpayer verification, electronic tax invoices",
+							item_inventory: "Spare parts SKU catalog, item descriptions, warehouse stock, reference price list",
+							invoices: "Operational invoices, billing numbers, customer names, amounts, OPEN/CLOSED status",
+							branches: "Official enterprise plant/warehouse directory and whitelisted contact numbers"
 						};
 						mcpReferenceTables = cfg.mcp_ref_db.tables.map((tblName: string) => ({
 							name: tblName,
-							desc: tableDescMap[tblName] || "Tabel referensi data bisnis enterprise MCP"
+							desc: tableDescMap[tblName] || "Enterprise MCP business reference data table"
 						}));
 					}
 				}
@@ -595,7 +595,7 @@
 				telemetry = await telRes.json();
 			}
 		} catch (err) {
-			console.error("Gagal memuat konfigurasi database:", err);
+			console.error("Failed to load database configuration:", err);
 			sysStatus = "DISCONNECTED";
 			mcpStatus = "DISCONNECTED";
 		} finally {
@@ -627,15 +627,15 @@
 				sysTestResult = {
 					ok: true,
 					latency_ms: data.latency_ms,
-					message: data.message || "Koneksi database sistem berhasil diverifikasi!",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.message || "System database connection verified successfully!",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				sysStatus = "CONNECTED";
 			} else {
 				sysTestResult = {
 					ok: false,
-					message: data.error || "Gagal menghubungi database sistem.",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.error || "Failed to connect to system database.",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				sysStatus = "DISCONNECTED";
 			}
@@ -643,7 +643,7 @@
 			sysTestResult = {
 				ok: false,
 				message: `Network error: ${err.message}`,
-				time: new Date().toLocaleTimeString("id-ID")
+				time: new Date().toLocaleTimeString("en-US")
 			};
 			sysStatus = "DISCONNECTED";
 		} finally {
@@ -684,15 +684,15 @@
 				mcpTestResult = {
 					ok: true,
 					latency_ms: data.latency_ms,
-					message: data.message || `Koneksi database referensi ${mcpPlatform.toUpperCase()} via mode ${mcpMode.toUpperCase()} berhasil diverifikasi!`,
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.message || `${mcpPlatform.toUpperCase()} reference database connection verified via ${mcpMode.toUpperCase()} mode!`,
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				mcpStatus = "CONNECTED";
 			} else {
 				mcpTestResult = {
 					ok: false,
-					message: data.error || "Gagal menghubungi database referensi MCP.",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.error || "Failed to connect to MCP reference database.",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				mcpStatus = "DISCONNECTED";
 			}
@@ -700,7 +700,7 @@
 			mcpTestResult = {
 				ok: false,
 				message: `Network error: ${err.message}`,
-				time: new Date().toLocaleTimeString("id-ID")
+				time: new Date().toLocaleTimeString("en-US")
 			};
 			mcpStatus = "DISCONNECTED";
 		} finally {
@@ -730,23 +730,23 @@
 			if (data.ok) {
 				sysApplyResult = {
 					ok: true,
-					message: data.message || "Konfigurasi Database Internal Sistem berhasil diterapkan & disimpan!",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.message || "System Internal Database configuration applied and saved successfully!",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				sysStatus = "CONNECTED";
 				await fetchConfigAndTelemetry();
 			} else {
 				sysApplyResult = {
 					ok: false,
-					message: data.error || "Gagal menerapkan konfigurasi database sistem.",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.error || "Failed to apply system database configuration.",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 			}
 		} catch (err: any) {
 			sysApplyResult = {
 				ok: false,
 				message: `Network error: ${err.message}`,
-				time: new Date().toLocaleTimeString("id-ID")
+				time: new Date().toLocaleTimeString("en-US")
 			};
 		} finally {
 			isApplyingSys = false;
@@ -784,23 +784,23 @@
 			if (data.ok) {
 				mcpApplyResult = {
 					ok: true,
-					message: data.message || "Konfigurasi Database Referensi MCP & ERP berhasil diterapkan dan AKTIF SECARA LIVE!",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.message || "MCP & ERP Reference Database configuration applied and ACTIVE LIVE!",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 				mcpStatus = "CONNECTED";
 				await fetchConfigAndTelemetry();
 			} else {
 				mcpApplyResult = {
 					ok: false,
-					message: data.error || "Gagal menerapkan konfigurasi database referensi MCP.",
-					time: new Date().toLocaleTimeString("id-ID")
+					message: data.error || "Failed to apply MCP reference database configuration.",
+					time: new Date().toLocaleTimeString("en-US")
 				};
 			}
 		} catch (err: any) {
 			mcpApplyResult = {
 				ok: false,
 				message: `Network error: ${err.message}`,
-				time: new Date().toLocaleTimeString("id-ID")
+				time: new Date().toLocaleTimeString("en-US")
 			};
 		} finally {
 			isApplyingMcp = false;
@@ -809,7 +809,7 @@
 
 	function generateEnvSnippet() {
 		let snippet = `# ============================================================
-# 1. DATABASE INTERNAL SISTEM (Wajib PostgreSQL - Locked Engine)
+# 1. SYSTEM INTERNAL DATABASE (Required PostgreSQL - Locked Engine)
 # ============================================================
 SYSTEM_DB_ENGINE=postgresql
 SYSTEM_DB_HOST=${sysConfig.host}
@@ -828,7 +828,7 @@ POSTGRES_DB=${sysConfig.dbname}
 POSTGRES_SSLMODE=${sysConfig.sslmode}
 
 # ============================================================
-# 2. DATABASE REFERENSI MCP (Data Faktur & Master Pelanggan ERP)
+# 2. MCP REFERENCE DATABASE (ERP Invoices & Customer Master Records)
 # ============================================================
 MCP_REF_DB_PLATFORM=${mcpPlatform}
 MCP_REF_DB_MODE=${mcpMode}
@@ -842,7 +842,7 @@ MCP_REF_DB_TIMEOUT_MS=5000`;
 
 		if (mcpMode === "ssh") {
 			snippet += `\n
-# Parameter SSH Tunnel Bastion Host (DMZ Jump Host)
+# SSH Tunnel Bastion Host Parameters (DMZ Jump Host)
 MCP_REF_SSH_BASTION_HOST=${mcpSshConfig.bastionHost}
 MCP_REF_SSH_BASTION_PORT=${mcpSshConfig.bastionPort}
 MCP_REF_SSH_USER=${mcpSshConfig.user}
@@ -875,10 +875,10 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						Konfigurasi & Setup Database &amp; MCP
+						Database &amp; MCP Connectors Setup
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Pengaturan terisolasi untuk <strong>Database Internal Sistem</strong> (PostgreSQL Locked), <strong>Database Referensi MCP</strong> (Multi-Platform SSL/SSH), dan <strong>Katalog Tool MCP</strong>.
+						Isolated architecture for <strong>System Internal Database</strong> (PostgreSQL Locked), <strong>MCP Reference Database</strong> (Multi-Platform SSL/SSH), and <strong>MCP Tool Catalog</strong>.
 					</p>
 				</div>
 			</div>
@@ -892,7 +892,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				class="h-9 px-3.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isLoadingConfig ? 'animate-spin' : ''}" />
-				<span>{isLoadingConfig ? 'Memuat Ulang...' : 'Muat Ulang Status'}</span>
+				<span>{isLoadingConfig ? 'Reloading...' : 'Reload Status'}</span>
 			</button>
 		</div>
 	</div>
@@ -912,7 +912,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<div>
 						<div class="flex items-center gap-2 flex-wrap">
 							<h3 class="text-sm font-bold text-foreground tracking-tight">
-								Diagram Aliran Konektor Dual-DB
+								Dual-DB Connector Flow Diagram
 							</h3>
 							<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
 								LIVE ARCHITECTURE
@@ -922,16 +922,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							</span>
 						</div>
 						<p class="text-xs text-muted-foreground mt-0.5">
-							Visualisasi aliran data real-time, throughput socket, dan proteksi mutasi enterprise.
+							Real-time data flow visualization, socket throughput, and enterprise mutation safety.
 						</p>
 					</div>
 				</div>
 
 				<!-- Visual Canvas Hints -->
 				<div class="hidden md:flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-lg border border-border/50 shrink-0">
-					<span>🖐️ Drag geser</span>
+					<span>🖐️ Drag to pan</span>
 					<span class="text-border">•</span>
-					<span>Scroll zoom ({Math.round(zoom * 100)}%)</span>
+					<span>Scroll to zoom ({Math.round(zoom * 100)}%)</span>
 				</div>
 			</div>
 
@@ -940,7 +940,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<!-- Simulation Action Buttons -->
 				<div class="flex items-center gap-2.5 flex-wrap text-xs font-mono">
 					<span class="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
-						Simulasi I/O:
+						I/O Simulation:
 					</span>
 
 					<!-- DB 1 Button -->
@@ -949,7 +949,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						onclick={triggerDb1Burst}
 						disabled={isSimulatingDb1}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Memicu efek transmisi PROCESSING pada DB 1 (PostgreSQL Core)"
+						title="Trigger PROCESSING transmission pulse on DB 1 (PostgreSQL Core)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 1: Core</span>
@@ -964,7 +964,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						onclick={triggerDb2Burst}
 						disabled={isSimulatingDb2}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Memicu efek transmisi PROCESSING pada DB 2 (MCP Reference Store)"
+						title="Trigger PROCESSING transmission pulse on DB 2 (MCP Reference Store)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 2: MCP Ref</span>
@@ -978,14 +978,14 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={toggleMockStatusDb2}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-						title="Uji langsung switch status Link Online vs Offline pada DB 2"
+						title="Toggle online vs offline link state for DB 2"
 					>
 						{#if mcpStatus === 'CONNECTED'}
 							<span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-							<span>Putus Link DB 2</span>
+							<span>Disconnect DB 2 Link</span>
 						{:else}
 							<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-							<span>Hubung Link DB 2</span>
+							<span>Connect DB 2 Link</span>
 						{/if}
 					</button>
 				</div>
@@ -996,7 +996,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={resetPanZoom}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer shadow-2xs"
-						title="Reset kanvas ke ukuran normal (100%)"
+						title="Reset canvas viewport (100%)"
 					>
 						Reset View ({Math.round(zoom * 100)}%)
 					</button>
@@ -1009,15 +1009,15 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="flex items-center gap-3 text-[11px] font-mono flex-wrap">
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-					<span class="text-foreground font-medium">Connected:</span> Aliran data aktif &amp; platter beroperasi
+					<span class="text-foreground font-medium">Connected:</span> Active data pipeline &amp; operational platter
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-					<span class="text-foreground font-medium">Processing:</span> Strobo I/O &amp; laser scan cepat
+					<span class="text-foreground font-medium">Processing:</span> I/O strobe burst &amp; rapid laser seek
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-rose-500"></span>
-					<span class="text-foreground font-medium">Disconnected:</span> Pipa putus (zero packet, platter unlit)
+					<span class="text-foreground font-medium">Disconnected:</span> Severed link (zero packets, inactive platter)
 				</span>
 			</div>
 		</div>
@@ -1039,7 +1039,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={zoomIn} 
 					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
-					title="Perbesar (Zoom In)"
+					title="Zoom In (+)"
 				>
 					+
 				</button>
@@ -1047,7 +1047,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={zoomOut} 
 					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
-					title="Perkecil (Zoom Out)"
+					title="Zoom Out (-)"
 				>
 					-
 				</button>
@@ -1055,7 +1055,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={resetPanZoom} 
 					class="h-7 px-2 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-semibold text-[11px] cursor-pointer transition-colors" 
-					title="Reset Zoom &amp; Posisi (100%)"
+					title="Reset Zoom &amp; Position (100%)"
 				>
 					{Math.round(zoom * 100)}%
 				</button>
@@ -1304,7 +1304,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							fill-opacity={db1VisualState === 'DISCONNECTED' ? '0.08' : db1VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
 						/>
 						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : '#059669'}>
-							🗄️ Database Internal Sistem (PostgreSQL 14–18 Core - Locked)
+							🗄️ System Internal Database (PostgreSQL 14–18 Core - Locked)
 						</text>
 						
 						<!-- Status Indicator Badge -->
@@ -1325,7 +1325,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								Host: {sysConfig.host}:{sysConfig.port}/{sysConfig.dbname} (PostgreSQL Core Locked)
 							</text>
 							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
-								• Tabel: tickets, audit_logs (HMAC Signed), inbound_messages, learned_patterns
+								• Tables: tickets, audit_logs (HMAC Signed), inbound_messages, learned_patterns
 							</text>
 							<text x="0" y="50" font-family="monospace" font-size="10.5" fill="#10b981" font-weight="bold">
 								✓ Transactional ACID Staging Store • Atomic Rollback Guard
@@ -1333,11 +1333,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db1VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db1VisualState === 'CONNECTED'}
-									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Latensi Socket ~1.2ms
+									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Socket Latency ~1.2ms
 								{:else if db1VisualState === 'PROCESSING'}
-									⚡ Sedang Memproses Kueri Staging Tiket &amp; Penandatanganan Log Audit...
+									⚡ Executing Ticket Staging Query &amp; Signing Audit Logs...
 								{:else}
-									✕ Server Database Belum Terhubung • Pastikan PostgreSQL aktif pada port 5432
+									✕ Database Server Not Connected • Verify PostgreSQL is active on port 5432
 								{/if}
 							</text>
 						</g>
@@ -1510,7 +1510,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.08' : db2VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
 						/>
 						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'}>
-							🏢 Database Referensi MCP &amp; ERP ({mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname})
+							🏢 MCP Reference &amp; ERP Database ({mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname})
 						</text>
 						
 						<!-- Status Indicator Badge -->
@@ -1531,19 +1531,19 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel (Bastion 22)' : mcpMode === 'ssl' ? 'SSL/TLS Encrypted' : 'Local Direct'}
 							</text>
 							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
-								• Tabel Referensi: {mcpReferenceTables.map(t => t.name).join(', ')}
+								• Reference Tables: {mcpReferenceTables.map(t => t.name).join(', ')}
 							</text>
 							<text x="0" y="50" font-family="monospace" font-size="10.5" fill="#2563eb" font-weight="bold">
-								🔒 Terisolasi Total di Balik Protokol MCP • Parameterized Prepared Statements Saja
+								🔒 Fully Isolated Behind MCP Protocol • Parameterized Prepared Statements Only
 							</text>
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db2VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db2VisualState === 'CONNECTED'}
-									✓ Sumber Data Bisnis Terverifikasi • Akses Read/Write Terisolasi Aman
+									✓ Verified Enterprise Business Data Source • Secure Isolated Read/Write Access
 								{:else if db2VisualState === 'PROCESSING'}
-									⚡ Mengeksekusi Mutasi Terverifikasi melalui MCP Protocol RPC...
+									⚡ Executing Verified Mutation via MCP Protocol RPC...
 								{:else}
-									✕ Belum Terhubung • Konfigurasikan Platform &amp; Uji Koneksi di Tab 2
+									✕ Disconnected • Configure Platform &amp; Test Connection in Tab 2
 								{/if}
 							</text>
 						</g>
@@ -1616,7 +1616,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<ServerStack class="h-4 w-4" />
 					</div>
 					<div>
-						<div class="text-xs font-bold text-foreground">Database Internal Sistem</div>
+						<div class="text-xs font-bold text-foreground">System Internal Database</div>
 						<div class="text-[11px] font-mono text-muted-foreground">{sysConfig.host}:{sysConfig.port}/{sysConfig.dbname} (PostgreSQL)</div>
 					</div>
 				</div>
@@ -1627,7 +1627,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			</div>
 
 			<div class="text-[11px] text-muted-foreground leading-relaxed">
-				Menampung tiket approval, audit trail HMAC, raw messages chatops, dan pola regex self-learning.
+				Houses approval tickets, HMAC audit trails, chatops raw messages, and self-learning regex patterns.
 			</div>
 
 			<div class="flex items-center justify-between pt-2 border-t border-border/50 text-[11px]">
@@ -1637,7 +1637,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					onclick={() => activeTab = "system"}
 					class="text-xs text-primary hover:underline font-medium cursor-pointer"
 				>
-					Konfigurasi Sistem &rarr;
+					System Configuration &rarr;
 				</button>
 			</div>
 		</div>
@@ -1650,7 +1650,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<LockClosed class="h-4 w-4" />
 					</div>
 					<div>
-						<div class="text-xs font-bold text-foreground">Database Referensi MCP</div>
+						<div class="text-xs font-bold text-foreground">MCP Reference Database</div>
 						<div class="text-[11px] font-mono text-muted-foreground">
 							{mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} ({mcpPlatform.toUpperCase()})
 						</div>
@@ -1659,17 +1659,17 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 				{#if mcpStatus === 'CONNECTED'}
 					<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-						● CONNECTED (TERHUBUNG)
+						● CONNECTED (LIVE)
 					</span>
 				{:else}
 					<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-						● DISCONNECTED (BELUM TERHUBUNG)
+						● DISCONNECTED (OFFLINE)
 					</span>
 				{/if}
 			</div>
 
 			<div class="text-[11px] text-muted-foreground leading-relaxed">
-				Sumber data referensi faktur dan pelanggan bisnis yang diakses terkontrol oleh tool MCP (Zero Raw SQL).
+				Controlled business invoice and customer master reference data accessed via MCP tools (Zero Raw SQL).
 			</div>
 
 			<div class="flex items-center justify-between pt-2 border-t border-border/50 text-[11px]">
@@ -1679,7 +1679,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					onclick={() => activeTab = "mcp"}
 					class="text-xs text-primary hover:underline font-medium cursor-pointer"
 				>
-					Setup Referensi MCP &rarr;
+					Setup MCP Reference &rarr;
 				</button>
 			</div>
 		</div>
@@ -1693,7 +1693,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'system' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<ServerStack class="h-3.5 w-3.5" />
-			<span>1. Database Internal Sistem</span>
+			<span>1. System Internal Database</span>
 		</button>
 		<button
 			type="button"
@@ -1701,7 +1701,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CircleStack class="h-3.5 w-3.5" />
-			<span>2. Database Referensi MCP</span>
+			<span>2. MCP Reference Database</span>
 		</button>
 		<button
 			type="button"
@@ -1709,7 +1709,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp_tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CommandLine class="h-3.5 w-3.5" />
-			<span>3. Katalog &amp; Upload MCP ({mcpTools.length})</span>
+			<span>3. MCP Catalog &amp; Upload ({mcpTools.length})</span>
 		</button>
 		<button
 			type="button"
@@ -1717,7 +1717,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'env' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<ClipboardDocument class="h-3.5 w-3.5" />
-			<span>4. Setup File .env</span>
+			<span>4. .env File Setup</span>
 		</button>
 	</div>
 
@@ -1730,28 +1730,13 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/50">
 					<div>
-						<h2 class="text-sm font-bold text-foreground">Parameter Koneksi Database Internal Sistem</h2>
-						<p class="text-xs text-muted-foreground">Koneksi PostgreSQL yang digunakan oleh server Go untuk seluruh data operasional, tiket, dan audit.</p>
+						<h2 class="text-sm font-bold text-foreground">System Internal Database Connection Parameters</h2>
+						<p class="text-xs text-muted-foreground">PostgreSQL connection utilized by the Go server for operational ticketing, sessions, and HMAC audit trails.</p>
 					</div>
-					<div class="flex items-center gap-2 flex-wrap">
-						<button
-							type="button"
-							onclick={testSystemConnection}
-							disabled={isTestingSys}
-							class="h-9 px-3.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-						>
-							<ArrowPath class="h-3.5 w-3.5 {isTestingSys ? 'animate-spin' : ''}" />
-							<span>{isTestingSys ? 'Menguji...' : '⚡ Test Connection'}</span>
-						</button>
-						<button
-							type="button"
-							onclick={applySystemConfig}
-							disabled={isApplyingSys}
-							class="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-						>
-							<Check class="h-4 w-4" />
-							<span>{isApplyingSys ? 'Menerapkan...' : 'Terapkan (Apply)'}</span>
-						</button>
+					<div class="flex items-center gap-2">
+						<span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold {sysStatus === 'CONNECTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'}">
+							● {sysStatus}
+						</span>
 					</div>
 				</div>
 
@@ -1765,7 +1750,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						{/if}
 						<div class="flex-1 font-mono">
 							<div class="font-bold flex items-center justify-between">
-								<span>{sysTestResult.ok ? 'KONEKSI SISTEM TERVERIFIKASI' : 'GAGAL TERHUBUNG KE SISTEM'}</span>
+								<span>{sysTestResult.ok ? 'SYSTEM CONNECTION VERIFIED' : 'FAILED TO CONNECT TO SYSTEM'}</span>
 								<span class="text-[10px] opacity-75">{sysTestResult.time}</span>
 							</div>
 							<div class="mt-1">{sysTestResult.message}</div>
@@ -1784,7 +1769,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2.5">
 					<LockClosed class="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
 					<div class="leading-relaxed">
-						<strong>Persyaratan Wajib Engine Inti:</strong> Database internal sistem wajib menggunakan <strong>PostgreSQL (v14–v18)</strong> untuk menjamin integritas transaksi ACID antrean tiket, penandatanganan log audit immutable HMAC, dan pembaruan pola regex AI. Pilihan tipe DB ini <strong>dikunci permanen</strong> dan tidak dapat diubah ke platform lain.
+						<strong>Core Engine Requirement:</strong> System internal database strictly requires <strong>PostgreSQL (v14–v18)</strong> to guarantee ACID transactional integrity for ticket queues, HMAC immutable audit signing, and AI regex pattern persistence. This engine type is <strong>permanently locked</strong> and cannot be modified.
 					</div>
 				</div>
 
@@ -1793,9 +1778,9 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<!-- Locked Engine Selector -->
 					<div class="space-y-1 sm:col-span-2 md:col-span-3">
 						<label for="sys-engine" class="font-semibold text-muted-foreground flex items-center justify-between">
-							<span>Tipe Database Engine:</span>
+							<span>Database Engine Type:</span>
 							<span class="text-[10px] text-amber-500 font-mono font-bold flex items-center gap-1">
-								<LockClosed class="h-3 w-3" /> WAJIB / TERKUNCI (POSTGRESQL ONLY)
+								<LockClosed class="h-3 w-3" /> REQUIRED / LOCKED (POSTGRESQL ONLY)
 							</span>
 						</label>
 						<div class="relative">
@@ -1804,14 +1789,14 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								disabled
 								class="w-full h-9 px-3 pr-8 rounded-lg border border-input bg-muted/70 text-foreground font-mono text-xs cursor-not-allowed opacity-90 select-none"
 							>
-								<option value="postgres" selected>PostgreSQL 14 - 18 (Core Engine Requirement - Terkunci)</option>
+								<option value="postgres" selected>PostgreSQL 14 - 18 (Core Engine Requirement - Locked)</option>
 							</select>
 							<LockClosed class="h-4 w-4 text-amber-500 absolute right-2.5 top-2.5 pointer-events-none" />
 						</div>
 					</div>
 
 					<div class="space-y-1">
-						<label for="sys-host" class="font-semibold text-muted-foreground">Host Sistem:</label>
+						<label for="sys-host" class="font-semibold text-muted-foreground">System Host:</label>
 						<input
 							id="sys-host"
 							type="text"
@@ -1822,7 +1807,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="sys-port" class="font-semibold text-muted-foreground">Port Sistem:</label>
+						<label for="sys-port" class="font-semibold text-muted-foreground">System Port:</label>
 						<input
 							id="sys-port"
 							type="text"
@@ -1833,7 +1818,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="sys-dbname" class="font-semibold text-muted-foreground">Nama Database:</label>
+						<label for="sys-dbname" class="font-semibold text-muted-foreground">Database Name:</label>
 						<input
 							id="sys-dbname"
 							type="text"
@@ -1868,7 +1853,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								type="button"
 								onclick={() => showSysPass = !showSysPass}
 								class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-								title={showSysPass ? "Sembunyikan Password" : "Lihat Password"}
+								title={showSysPass ? "Hide Password" : "Show Password"}
 							>
 								{#if showSysPass}
 									<EyeSlash class="h-4 w-4" />
@@ -1904,7 +1889,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						{/if}
 						<div class="flex-1 font-mono">
 							<div class="font-bold flex items-center justify-between">
-								<span>{sysApplyResult.ok ? 'KONFIGURASI SISTEM BERHASIL DITERAPKAN' : 'GAGAL MENERAPKAN KONFIGURASI'}</span>
+								<span>{sysApplyResult.ok ? 'SYSTEM CONFIGURATION APPLIED SUCCESSFULLY' : 'FAILED TO APPLY CONFIGURATION'}</span>
 								<span class="text-[10px] opacity-75">{sysApplyResult.time}</span>
 							</div>
 							<div class="mt-1">{sysApplyResult.message}</div>
@@ -1923,7 +1908,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-secondary/50 border border-border/80 shadow-2xs">
 					<div class="text-xs text-muted-foreground flex items-center gap-2">
 						<span class="h-2.5 w-2.5 rounded-full {sysStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
-						<span>Status Aktif: <strong class="text-foreground font-mono">{sysStatus}</strong> ({sysConfig.dbname})</span>
+						<span>Active Status: <strong class="text-foreground font-mono">{sysStatus}</strong> ({sysConfig.dbname})</span>
 					</div>
 					<div class="flex items-center gap-2.5 flex-wrap justify-end">
 						<button
@@ -1933,7 +1918,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-9 px-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isTestingSys ? 'animate-spin' : ''}" />
-							<span>{isTestingSys ? 'Menguji Koneksi...' : '⚡ Test Connection'}</span>
+							<span>{isTestingSys ? 'Testing Connection...' : '⚡ Test Connection'}</span>
 						</button>
 						<button
 							type="button"
@@ -1942,7 +1927,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-9 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
 						>
 							<Check class="h-4 w-4" />
-							<span>{isApplyingSys ? 'Menerapkan...' : 'Terapkan & Simpan (Apply)'}</span>
+							<span>{isApplyingSys ? 'Applying...' : 'Apply & Save'}</span>
 						</button>
 					</div>
 				</div>
@@ -1951,7 +1936,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<!-- Pool Telemetry Stats -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
 				<div class="flex items-center justify-between pb-2 border-b border-border/50">
-					<div class="text-xs font-bold text-foreground">Metrik Connection Pool Database Sistem (Live)</div>
+					<div class="text-xs font-bold text-foreground">System Database Connection Pool Metrics (Live)</div>
 					<div class="text-[10px] font-mono text-muted-foreground">Driver: {telemetry?.database?.driver || 'lib/pq (PostgreSQL)'}</div>
 				</div>
 
@@ -1987,16 +1972,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				</div>
 			</div>
 
-			<!-- Tabel Terkelola Sistem -->
+			<!-- System Managed Tables -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
-				<div class="text-xs font-bold text-foreground">Tabel yang Dikelola oleh Sistem Internal ({systemTables.length})</div>
+				<div class="text-xs font-bold text-foreground">Tables Managed by Internal System ({systemTables.length})</div>
 				<div class="rounded-xl border border-border/60 overflow-hidden">
 					<table class="w-full text-xs text-left">
 						<thead class="bg-secondary/60 text-muted-foreground uppercase text-[10px] font-mono border-b border-border/50">
 							<tr>
-								<th class="py-2.5 px-3.5 font-bold">Nama Tabel</th>
-								<th class="py-2.5 px-3.5 font-bold">Estimasi Baris</th>
-								<th class="py-2.5 px-3.5 font-bold">Deskripsi &amp; Peran</th>
+								<th class="py-2.5 px-3.5 font-bold">Table Name</th>
+								<th class="py-2.5 px-3.5 font-bold">Estimated Rows</th>
+								<th class="py-2.5 px-3.5 font-bold">Description &amp; Role</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-border/40 font-mono">
@@ -2023,28 +2008,13 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/50">
 					<div>
-						<h2 class="text-sm font-bold text-foreground">Setup Database Referensi MCP &amp; ERP</h2>
-						<p class="text-xs text-muted-foreground">Sumber data faktur &amp; master pelanggan bisnis yang diakses oleh tool Model Context Protocol (Zero Raw SQL).</p>
+						<h2 class="text-sm font-bold text-foreground">MCP &amp; ERP Reference Database Setup</h2>
+						<p class="text-xs text-muted-foreground">Business invoices &amp; customer master data source accessed strictly via Model Context Protocol tools (Zero Raw SQL).</p>
 					</div>
-					<div class="flex items-center gap-2 flex-wrap">
-						<button
-							type="button"
-							onclick={testMCPReferenceConnection}
-							disabled={isTestingMcp}
-							class="h-9 px-3.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-						>
-							<ArrowPath class="h-3.5 w-3.5 {isTestingMcp ? 'animate-spin' : ''}" />
-							<span>{isTestingMcp ? 'Menguji...' : '⚡ Test Connection'}</span>
-						</button>
-						<button
-							type="button"
-							onclick={applyMCPReferenceConfig}
-							disabled={isApplyingMcp}
-							class="h-9 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-						>
-							<Check class="h-4 w-4" />
-							<span>{isApplyingMcp ? 'Menerapkan...' : 'Terapkan (Apply)'}</span>
-						</button>
+					<div class="flex items-center gap-2">
+						<span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold {mcpStatus === 'CONNECTED' ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'}">
+							● {mcpStatus}
+						</span>
 					</div>
 				</div>
 
@@ -2058,7 +2028,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						{/if}
 						<div class="flex-1 font-mono">
 							<div class="font-bold flex items-center justify-between">
-								<span>{mcpTestResult.ok ? 'KONEKSI REFERENSI MCP TERVERIFIKASI' : 'GAGAL TERHUBUNG KE REFERENSI MCP'}</span>
+								<span>{mcpTestResult.ok ? 'MCP REFERENCE CONNECTION VERIFIED' : 'FAILED TO CONNECT TO MCP REFERENCE'}</span>
 								<span class="text-[10px] opacity-75">{mcpTestResult.time}</span>
 							</div>
 							<div class="mt-1">{mcpTestResult.message}</div>
@@ -2078,7 +2048,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<!-- Platform Database Selector -->
 					<div class="space-y-1.5">
 						<label for="mcp-platform" class="text-xs font-bold text-foreground flex items-center gap-1.5">
-							<span>Platform Database Referensi:</span>
+							<span>Reference Database Platform:</span>
 						</label>
 						<select
 							id="mcp-platform"
@@ -2093,13 +2063,13 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<option value="mssql">Microsoft SQL Server (MSSQL Enterprise)</option>
 							<option value="custom_rest">Custom MCP REST / GraphQL Adapter</option>
 						</select>
-						<p class="text-[11px] text-muted-foreground">Port default otomatis disesuaikan dengan arsitektur platform yang dipilih.</p>
+						<p class="text-[11px] text-muted-foreground">Default port automatically adjusts to the selected platform architecture.</p>
 					</div>
 
 					<!-- Connection Mode (Local / SSL / SSH Tunnel) -->
 					<div class="space-y-1.5">
 						<span class="text-xs font-bold text-foreground block">
-							Mode Konektivitas &amp; Keamanan:
+							Connectivity &amp; Security Mode:
 						</span>
 						<div class="grid grid-cols-3 gap-1.5 bg-background p-1 rounded-lg border border-input">
 							<button
@@ -2126,11 +2096,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						</div>
 						<p class="text-[11px] text-muted-foreground">
 							{#if mcpMode === 'ssh'}
-								Melalui bastion jump host di perimeter DMZ pabrik untuk isolasi ketat.
+								Routes through a bastion jump host in the enterprise DMZ perimeter for strict network isolation.
 							{:else if mcpMode === 'ssl'}
-								Menggunakan enkripsi TLS terverifikasi untuk cloud DB atau managed instance.
+								Enforces TLS encrypted transport for managed cloud or remote instances.
 							{:else}
-								Koneksi langsung melalui jaringan lokal (LAN / intranet tanpa enkripsi tambahan).
+								Direct network connection via local intranet / LAN without extra tunneling.
 							{/if}
 						</p>
 					</div>
@@ -2141,7 +2111,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<div class="p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-3">
 						<div class="text-xs font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
 							<ShieldCheck class="h-4 w-4" />
-							<span>Konfigurasi SSH Tunnel (Bastion Jump Host)</span>
+							<span>SSH Tunnel Configuration (Bastion Jump Host)</span>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
 							<div class="space-y-1">
@@ -2181,7 +2151,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<!-- Inputs Grid for Target Database -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
 					<div class="space-y-1">
-						<label for="mcp-host" class="font-semibold text-muted-foreground">Host Endpoint Referensi:</label>
+						<label for="mcp-host" class="font-semibold text-muted-foreground">Reference Endpoint Host:</label>
 						<input
 							id="mcp-host"
 							type="text"
@@ -2192,7 +2162,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-port" class="font-semibold text-muted-foreground">Port Target:</label>
+						<label for="mcp-port" class="font-semibold text-muted-foreground">Target Port:</label>
 						<input
 							id="mcp-port"
 							type="text"
@@ -2203,7 +2173,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-dbname" class="font-semibold text-muted-foreground">Nama DB / SID / PDB:</label>
+						<label for="mcp-dbname" class="font-semibold text-muted-foreground">DB Name / SID / PDB:</label>
 						<input
 							id="mcp-dbname"
 							type="text"
@@ -2214,7 +2184,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-user" class="font-semibold text-muted-foreground">User Kredensial MCP:</label>
+						<label for="mcp-user" class="font-semibold text-muted-foreground">MCP Credential User:</label>
 						<input
 							id="mcp-user"
 							type="text"
@@ -2225,7 +2195,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-password" class="font-semibold text-muted-foreground">Password Kredensial:</label>
+						<label for="mcp-password" class="font-semibold text-muted-foreground">Credential Password:</label>
 						<div class="relative">
 							<input
 								id="mcp-password"
@@ -2238,7 +2208,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								type="button"
 								onclick={() => showMcpPass = !showMcpPass}
 								class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-								title={showMcpPass ? "Sembunyikan Password" : "Lihat Password"}
+								title={showMcpPass ? "Hide Password" : "Show Password"}
 							>
 								{#if showMcpPass}
 									<EyeSlash class="h-4 w-4" />
@@ -2250,16 +2220,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-sslmode" class="font-semibold text-muted-foreground">Tingkat Enkripsi SSL:</label>
+						<label for="mcp-sslmode" class="font-semibold text-muted-foreground">SSL Encryption Level:</label>
 						<select
 							id="mcp-sslmode"
 							bind:value={mcpConfig.sslmode}
 							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
 						>
-							<option value="disable">disable (Tanpa Enkripsi)</option>
-							<option value="require">require (Enkripsi Wajib)</option>
-							<option value="verify-ca">verify-ca (Validasi CA)</option>
-							<option value="verify-full">verify-full (Validasi CA + Hostname)</option>
+							<option value="disable">disable (No Encryption)</option>
+							<option value="require">require (Enforce TLS)</option>
+							<option value="verify-ca">verify-ca (Validate CA Certificate)</option>
+							<option value="verify-full">verify-full (Validate CA &amp; Hostname)</option>
 						</select>
 					</div>
 				</div>
@@ -2274,7 +2244,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						{/if}
 						<div class="flex-1 font-mono">
 							<div class="font-bold flex items-center justify-between">
-								<span>{mcpApplyResult.ok ? 'KONFIGURASI MCP REFERENSI BERHASIL DITERAPKAN' : 'GAGAL MENERAPKAN KONFIGURASI'}</span>
+								<span>{mcpApplyResult.ok ? 'MCP REFERENCE CONFIGURATION APPLIED SUCCESSFULLY' : 'FAILED TO APPLY CONFIGURATION'}</span>
 								<span class="text-[10px] opacity-75">{mcpApplyResult.time}</span>
 							</div>
 							<div class="mt-1">{mcpApplyResult.message}</div>
@@ -2293,7 +2263,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-secondary/50 border border-border/80 shadow-2xs">
 					<div class="text-xs text-muted-foreground flex items-center gap-2">
 						<span class="h-2.5 w-2.5 rounded-full {mcpStatus === 'CONNECTED' ? 'bg-cyan-500' : 'bg-rose-500'}"></span>
-						<span>Status Aktif: <strong class="text-foreground font-mono">{mcpStatus}</strong> ({mcpPlatform.toUpperCase()} &bull; {mcpConfig.dbname})</span>
+						<span>Active Status: <strong class="text-foreground font-mono">{mcpStatus}</strong> ({mcpPlatform.toUpperCase()} &bull; {mcpConfig.dbname})</span>
 					</div>
 					<div class="flex items-center gap-2.5 flex-wrap justify-end">
 						<button
@@ -2303,7 +2273,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-9 px-4 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isTestingMcp ? 'animate-spin' : ''}" />
-							<span>{isTestingMcp ? 'Menguji Koneksi...' : '⚡ Test Connection'}</span>
+							<span>{isTestingMcp ? 'Testing Connection...' : '⚡ Test Connection'}</span>
 						</button>
 						<button
 							type="button"
@@ -2312,7 +2282,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
 						>
 							<Check class="h-4 w-4" />
-							<span>{isApplyingMcp ? 'Menerapkan...' : 'Terapkan & Simpan (Apply)'}</span>
+							<span>{isApplyingMcp ? 'Applying...' : 'Apply & Save'}</span>
 						</button>
 					</div>
 				</div>
@@ -2322,27 +2292,27 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="p-5 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 space-y-3 shadow-xs text-xs">
 				<div class="flex items-center gap-2 font-bold text-cyan-600 dark:text-cyan-400">
 					<ShieldCheck class="h-4 w-4" />
-					<span>Kebijakan Keamanan: Zero Direct Raw SQL Execution</span>
+					<span>Security Policy: Zero Direct Raw SQL Execution</span>
 				</div>
 				<p class="text-muted-foreground leading-relaxed">
-					AI Agent dan bot chat <strong>tidak pernah memegang string SQL bebas</strong>. Seluruh komunikasi dilakukan melalui kontrak parameter tool terdaftar:
+					AI Agents and chat bots <strong>never receive direct SQL execution privileges</strong>. All data interactions are governed by registered tool parameter contracts:
 				</p>
 				<ul class="list-disc list-inside space-y-1 text-foreground font-mono text-[11px]">
-					<li><code>check_invoice(invoice_no)</code> &rarr; Membaca verifikasi data faktur dari {mcpPlatform.toUpperCase()} (read-only).</li>
-					<li><code>stage_invoice_update(...)</code> &rarr; Mengajukan usulan koreksi ke antrean tiket sistem tanpa eksekusi langsung.</li>
-					<li><code>mutate_invoice_record(...)</code> &rarr; Dijalankan secara atomik hanya setelah persetujuan 1-Click dari engineer on-call.</li>
+					<li><code>check_invoice(invoice_no)</code> &rarr; Reads and verifies invoice data from {mcpPlatform.toUpperCase()} (read-only).</li>
+					<li><code>stage_invoice_update(...)</code> &rarr; Stages proposed revisions into the system ticket queue without direct execution.</li>
+					<li><code>mutate_invoice_record(...)</code> &rarr; Executes atomically only upon 1-Click approval from on-call engineer.</li>
 				</ul>
 			</div>
 
-			<!-- Tabel Referensi yang Diakses Tool MCP -->
+			<!-- ERP Reference Tables Accessed by MCP Tools -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
-				<div class="text-xs font-bold text-foreground">Tabel Referensi ERP yang Diakses ({mcpReferenceTables.length})</div>
+				<div class="text-xs font-bold text-foreground">ERP Reference Tables Accessed ({mcpReferenceTables.length})</div>
 				<div class="rounded-xl border border-border/60 overflow-hidden">
 					<table class="w-full text-xs text-left">
 						<thead class="bg-secondary/60 text-muted-foreground uppercase text-[10px] font-mono border-b border-border/50">
 							<tr>
-								<th class="py-2.5 px-3.5 font-bold">Nama Tabel</th>
-								<th class="py-2.5 px-3.5 font-bold">Peran Data dalam MCP</th>
+								<th class="py-2.5 px-3.5 font-bold">Table Name</th>
+								<th class="py-2.5 px-3.5 font-bold">Data Role in MCP</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-border/40 font-mono">
@@ -2368,8 +2338,8 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
 					<div>
-						<h2 class="text-sm font-bold text-foreground">Katalog &amp; Pendaftaran Tool Model Context Protocol (MCP)</h2>
-						<p class="text-xs text-muted-foreground">Unggah manifest atau skema tool kustom (JSON / YAML) agar AI Agent dapat berinteraksi dengan database bisnis eksternal secara aman.</p>
+						<h2 class="text-sm font-bold text-foreground">Model Context Protocol (MCP) Tool Catalog &amp; Registration</h2>
+						<p class="text-xs text-muted-foreground">Upload custom tool manifests (JSON / YAML) allowing the AI Agent to interact securely with external enterprise databases.</p>
 					</div>
 					<div class="flex items-center gap-2">
 						<button
@@ -2379,7 +2349,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isLoadingMcpTools ? 'animate-spin' : ''}" />
-							<span>Muat Tool</span>
+							<span>{isLoadingMcpTools ? 'Loading...' : 'Reload Tools'}</span>
 						</button>
 					</div>
 				</div>
@@ -2412,7 +2382,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<!-- Upload Zone & Preset Buttons -->
 				<div class="space-y-3">
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-						<span class="font-bold text-foreground">Muat Template Preset Cepat:</span>
+						<span class="font-bold text-foreground">Load Quick Preset Templates:</span>
 						<div class="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
@@ -2462,7 +2432,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<!-- Drag & Drop / File Input -->
 					<div class="flex items-center gap-3">
 						<label class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
-							<span>Pilih Berkas (.json / .yaml)</span>
+							<span>Select File (.json / .yaml)</span>
 							<input
 								type="file"
 								accept=".json,.yaml,.yml,.txt"
@@ -2470,7 +2440,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								class="hidden"
 							/>
 						</label>
-						<span class="text-xs text-muted-foreground">atau tempel langsung kode manifest JSON di bawah ini:</span>
+						<span class="text-xs text-muted-foreground">or paste tool manifest JSON directly below:</span>
 					</div>
 
 					<!-- Manifest Textarea -->
@@ -2482,12 +2452,12 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
   "name": "mutate_custom_tool",
   "version": "1.0.0",
   "category": "ERP_INTEGRATION",
-  "description": "Deskripsi fungsi tool MCP",
+  "description": "MCP tool function description",
   "transport": "stdio / json-rpc 2.0",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "record_id": { "type": "string", "description": "ID entitas" }
+      "record_id": { "type": "string", "description": "Entity ID" }
     },
     "required": ["record_id"]
   }
@@ -2502,7 +2472,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							onclick={() => uploadManifestText = ""}
 							class="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
 						>
-							Bersihkan Formulir
+							Clear Form
 						</button>
 
 						<button
@@ -2512,7 +2482,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-9 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isUploadingTool ? 'animate-spin' : ''}" />
-							<span>{isUploadingTool ? 'Mendaftarkan Tool...' : 'Unggah &amp; Registrasikan Tool MCP'}</span>
+							<span>{isUploadingTool ? 'Registering Tool...' : 'Upload &amp; Register MCP Tool'}</span>
 						</button>
 					</div>
 				</div>
@@ -2521,7 +2491,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<!-- Registered Tools List -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
 				<div class="flex items-center justify-between pb-2 border-b border-border/50">
-					<div class="text-xs font-bold text-foreground">Daftar Tool MCP yang Aktif &amp; Terdaftar ({mcpTools.length})</div>
+					<div class="text-xs font-bold text-foreground">Active &amp; Registered MCP Tools ({mcpTools.length})</div>
 					<span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
 						ZERO RAW SQL ENFORCED
 					</span>
@@ -2552,7 +2522,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Schema Properties Preview -->
 							{#if tool.inputSchema?.properties}
 								<div class="p-2.5 rounded-lg bg-background/80 border border-border/60 space-y-1 font-mono text-[11px]">
-									<div class="text-[10px] font-bold text-muted-foreground uppercase">Parameter Input:</div>
+									<div class="text-[10px] font-bold text-muted-foreground uppercase">Input Parameters:</div>
 									{#each Object.entries(tool.inputSchema.properties) as [paramKey, paramVal]}
 										<div class="flex items-baseline justify-between gap-2 text-foreground">
 											<span class="font-bold text-cyan-600 dark:text-cyan-400">{paramKey}</span>
@@ -2568,7 +2538,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									onclick={() => openToolTestModal(tool)}
 									class="h-7 px-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 								>
-									<span>Uji Panggilan Tool (Dry-Run)</span>
+									<span>Test Tool Call (Dry-Run)</span>
 									<ArrowTopRightOnSquare class="h-3 w-3" />
 								</button>
 							</div>
@@ -2584,7 +2554,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<div class="flex items-center gap-2">
 							<CommandLine class="h-4 w-4 text-cyan-500" />
 							<h3 class="text-sm font-bold text-foreground">
-								Sandbox Simulasi Eksekusi: <span class="font-mono text-cyan-500">{activeToolForTest.name}</span>
+								Execution Simulation Sandbox: <span class="font-mono text-cyan-500">{activeToolForTest.name}</span>
 							</h3>
 						</div>
 						<button
@@ -2597,7 +2567,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 
 					<p class="text-xs text-muted-foreground">
-						Uji coba panggil tool MCP ini menggunakan data uji tanpa memodifikasi data produksi secara permanen.
+						Safely test calling this MCP tool with sample parameters without permanently altering production records.
 					</p>
 
 					<!-- Parameters Form -->
@@ -2620,7 +2590,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					{#if toolTestExecutionResult}
 						<div class="p-3.5 rounded-xl border text-xs font-mono space-y-2 {toolTestExecutionResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200' : 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200'}">
 							<div class="flex items-center justify-between font-bold">
-								<span>{toolTestExecutionResult.ok ? 'HASIL SIMULASI MCP PROTOCOL (SUKSES)' : 'GAGAL EKSEKUSI TOOL'}</span>
+								<span>{toolTestExecutionResult.ok ? 'MCP PROTOCOL SIMULATION RESULT (SUCCESS)' : 'TOOL EXECUTION FAILED'}</span>
 								<span class="text-[10px] opacity-75">{toolTestExecutionResult.timestamp}</span>
 							</div>
 							{#if toolTestExecutionResult.ok}
@@ -2640,7 +2610,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							onclick={() => activeToolForTest = null}
 							class="h-8 px-3 rounded-lg border border-border text-xs font-semibold hover:bg-muted cursor-pointer"
 						>
-							Tutup
+							Close
 						</button>
 						<button
 							type="button"
@@ -2649,7 +2619,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							class="h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isExecutingToolTest ? 'animate-spin' : ''}" />
-							<span>{isExecutingToolTest ? 'Mengeksekusi...' : 'Jalankan Simulasi MCP Tool'}</span>
+							<span>{isExecutingToolTest ? 'Executing...' : 'Run MCP Tool Simulation'}</span>
 						</button>
 					</div>
 				</div>
@@ -2664,8 +2634,8 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 		<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
 			<div class="flex items-center justify-between pb-2 border-b border-border/50">
 				<div>
-					<h2 class="text-sm font-bold text-foreground">Konfigurasi .env Terpadu</h2>
-					<p class="text-xs text-muted-foreground">Salin variabel lingkungan ini ke file <code>.env</code> root dan <code>backend/.env</code> untuk kedua database.</p>
+					<h2 class="text-sm font-bold text-foreground">Unified .env Configuration</h2>
+					<p class="text-xs text-muted-foreground">Copy these environment variables to root <code>.env</code> and <code>backend/.env</code> for both databases.</p>
 				</div>
 				<button
 					type="button"
@@ -2674,10 +2644,10 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				>
 					{#if copiedEnv}
 						<Check class="h-3.5 w-3.5 text-emerald-500" />
-						<span class="text-emerald-500">Tersalin!</span>
+						<span class="text-emerald-500">Copied!</span>
 					{:else}
 						<ClipboardDocument class="h-3.5 w-3.5" />
-						<span>Salin ke Clipboard</span>
+						<span>Copy to Clipboard</span>
 					{/if}
 				</button>
 			</div>
