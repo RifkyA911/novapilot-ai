@@ -148,6 +148,7 @@ func main() {
 		// Database Configuration & Connectivity
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)
 		api.POST("/database/test", apiHandler.TestDatabaseConnection)
+		api.POST("/database/apply", apiHandler.ApplyDatabaseConfig)
 
 		// MCP Tool Catalog & Manifest Upload
 		api.GET("/mcp/tools", apiHandler.ListMCPTools)

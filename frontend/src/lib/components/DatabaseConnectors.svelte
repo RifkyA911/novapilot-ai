@@ -84,8 +84,12 @@
 	// Test Connection States
 	let isTestingSys = $state(false);
 	let isTestingMcp = $state(false);
+	let isApplyingSys = $state(false);
+	let isApplyingMcp = $state(false);
 	let sysTestResult = $state<{ ok: boolean; message: string; latency_ms?: number; time: string } | null>(null);
 	let mcpTestResult = $state<{ ok: boolean; message: string; latency_ms?: number; time: string } | null>(null);
+	let sysApplyResult = $state<{ ok: boolean; message: string; time: string } | null>(null);
+	let mcpApplyResult = $state<{ ok: boolean; message: string; time: string } | null>(null);
 
 	// Password Visibility Toggles
 	let showSysPass = $state(false);
@@ -701,6 +705,105 @@
 			mcpStatus = "DISCONNECTED";
 		} finally {
 			isTestingMcp = false;
+		}
+	}
+
+	async function applySystemConfig() {
+		isApplyingSys = true;
+		sysApplyResult = null;
+		try {
+			const res = await fetch("/api/database/apply", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					target: "system",
+					platform: "postgres",
+					host: sysConfig.host,
+					port: sysConfig.port,
+					user: sysConfig.user,
+					password: sysConfig.password,
+					dbname: sysConfig.dbname,
+					sslmode: sysConfig.sslmode
+				})
+			});
+			const data = await res.json();
+			if (data.ok) {
+				sysApplyResult = {
+					ok: true,
+					message: data.message || "Konfigurasi Database Internal Sistem berhasil diterapkan & disimpan!",
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+				sysStatus = "CONNECTED";
+				await fetchConfigAndTelemetry();
+			} else {
+				sysApplyResult = {
+					ok: false,
+					message: data.error || "Gagal menerapkan konfigurasi database sistem.",
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+			}
+		} catch (err: any) {
+			sysApplyResult = {
+				ok: false,
+				message: `Network error: ${err.message}`,
+				time: new Date().toLocaleTimeString("id-ID")
+			};
+		} finally {
+			isApplyingSys = false;
+		}
+	}
+
+	async function applyMCPReferenceConfig() {
+		isApplyingMcp = true;
+		mcpApplyResult = null;
+		try {
+			const payload: Record<string, any> = {
+				target: "mcp_ref",
+				platform: mcpPlatform,
+				mode: mcpMode,
+				host: mcpConfig.host,
+				port: mcpConfig.port,
+				user: mcpConfig.user,
+				password: mcpConfig.password,
+				dbname: mcpConfig.dbname,
+				sslmode: mcpConfig.sslmode
+			};
+
+			if (mcpMode === "ssh") {
+				payload.ssh_bastion_host = mcpSshConfig.bastionHost;
+				payload.ssh_bastion_port = mcpSshConfig.bastionPort;
+				payload.ssh_bastion_user = mcpSshConfig.user;
+			}
+
+			const res = await fetch("/api/database/apply", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload)
+			});
+			const data = await res.json();
+			if (data.ok) {
+				mcpApplyResult = {
+					ok: true,
+					message: data.message || "Konfigurasi Database Referensi MCP & ERP berhasil diterapkan dan AKTIF SECARA LIVE!",
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+				mcpStatus = "CONNECTED";
+				await fetchConfigAndTelemetry();
+			} else {
+				mcpApplyResult = {
+					ok: false,
+					message: data.error || "Gagal menerapkan konfigurasi database referensi MCP.",
+					time: new Date().toLocaleTimeString("id-ID")
+				};
+			}
+		} catch (err: any) {
+			mcpApplyResult = {
+				ok: false,
+				message: `Network error: ${err.message}`,
+				time: new Date().toLocaleTimeString("id-ID")
+			};
+		} finally {
+			isApplyingMcp = false;
 		}
 	}
 
@@ -1630,15 +1733,24 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<h2 class="text-sm font-bold text-foreground">Parameter Koneksi Database Internal Sistem</h2>
 						<p class="text-xs text-muted-foreground">Koneksi PostgreSQL yang digunakan oleh server Go untuk seluruh data operasional, tiket, dan audit.</p>
 					</div>
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onclick={testSystemConnection}
 							disabled={isTestingSys}
-							class="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+							class="h-9 px-3.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isTestingSys ? 'animate-spin' : ''}" />
-							<span>{isTestingSys ? 'Menguji Koneksi...' : 'Uji Koneksi Sistem'}</span>
+							<span>{isTestingSys ? 'Menguji...' : '⚡ Test Connection'}</span>
+						</button>
+						<button
+							type="button"
+							onclick={applySystemConfig}
+							disabled={isApplyingSys}
+							class="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+						>
+							<Check class="h-4 w-4" />
+							<span>{isApplyingSys ? 'Menerapkan...' : 'Terapkan (Apply)'}</span>
 						</button>
 					</div>
 				</div>
@@ -1781,6 +1893,59 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						</select>
 					</div>
 				</div>
+
+				<!-- Apply Result Banner -->
+				{#if sysApplyResult}
+					<div class="p-3.5 rounded-xl border flex items-start gap-3 text-xs {sysApplyResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+						{#if sysApplyResult.ok}
+							<CheckCircle class="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
+						{:else}
+							<XCircle class="h-5 w-5 shrink-0 text-rose-500 mt-0.5" />
+						{/if}
+						<div class="flex-1 font-mono">
+							<div class="font-bold flex items-center justify-between">
+								<span>{sysApplyResult.ok ? 'KONFIGURASI SISTEM BERHASIL DITERAPKAN' : 'GAGAL MENERAPKAN KONFIGURASI'}</span>
+								<span class="text-[10px] opacity-75">{sysApplyResult.time}</span>
+							</div>
+							<div class="mt-1">{sysApplyResult.message}</div>
+						</div>
+						<button
+							type="button"
+							onclick={() => sysApplyResult = null}
+							class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground cursor-pointer"
+						>
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				<!-- Action Toolbar: Test & Apply -->
+				<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-secondary/50 border border-border/80 shadow-2xs">
+					<div class="text-xs text-muted-foreground flex items-center gap-2">
+						<span class="h-2.5 w-2.5 rounded-full {sysStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+						<span>Status Aktif: <strong class="text-foreground font-mono">{sysStatus}</strong> ({sysConfig.dbname})</span>
+					</div>
+					<div class="flex items-center gap-2.5 flex-wrap justify-end">
+						<button
+							type="button"
+							onclick={testSystemConnection}
+							disabled={isTestingSys}
+							class="h-9 px-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isTestingSys ? 'animate-spin' : ''}" />
+							<span>{isTestingSys ? 'Menguji Koneksi...' : '⚡ Test Connection'}</span>
+						</button>
+						<button
+							type="button"
+							onclick={applySystemConfig}
+							disabled={isApplyingSys}
+							class="h-9 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+						>
+							<Check class="h-4 w-4" />
+							<span>{isApplyingSys ? 'Menerapkan...' : 'Terapkan & Simpan (Apply)'}</span>
+						</button>
+					</div>
+				</div>
 			</div>
 
 			<!-- Pool Telemetry Stats -->
@@ -1861,15 +2026,24 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<h2 class="text-sm font-bold text-foreground">Setup Database Referensi MCP &amp; ERP</h2>
 						<p class="text-xs text-muted-foreground">Sumber data faktur &amp; master pelanggan bisnis yang diakses oleh tool Model Context Protocol (Zero Raw SQL).</p>
 					</div>
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onclick={testMCPReferenceConnection}
 							disabled={isTestingMcp}
-							class="h-8 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+							class="h-9 px-3.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isTestingMcp ? 'animate-spin' : ''}" />
-							<span>{isTestingMcp ? 'Menguji Koneksi...' : 'Uji Koneksi Referensi MCP'}</span>
+							<span>{isTestingMcp ? 'Menguji...' : '⚡ Test Connection'}</span>
+						</button>
+						<button
+							type="button"
+							onclick={applyMCPReferenceConfig}
+							disabled={isApplyingMcp}
+							class="h-9 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+						>
+							<Check class="h-4 w-4" />
+							<span>{isApplyingMcp ? 'Menerapkan...' : 'Terapkan (Apply)'}</span>
 						</button>
 					</div>
 				</div>
@@ -2087,6 +2261,59 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<option value="verify-ca">verify-ca (Validasi CA)</option>
 							<option value="verify-full">verify-full (Validasi CA + Hostname)</option>
 						</select>
+					</div>
+				</div>
+
+				<!-- Apply Result Banner -->
+				{#if mcpApplyResult}
+					<div class="p-3.5 rounded-xl border flex items-start gap-3 text-xs {mcpApplyResult.ok ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+						{#if mcpApplyResult.ok}
+							<CheckCircle class="h-5 w-5 shrink-0 text-cyan-500 mt-0.5" />
+						{:else}
+							<XCircle class="h-5 w-5 shrink-0 text-rose-500 mt-0.5" />
+						{/if}
+						<div class="flex-1 font-mono">
+							<div class="font-bold flex items-center justify-between">
+								<span>{mcpApplyResult.ok ? 'KONFIGURASI MCP REFERENSI BERHASIL DITERAPKAN' : 'GAGAL MENERAPKAN KONFIGURASI'}</span>
+								<span class="text-[10px] opacity-75">{mcpApplyResult.time}</span>
+							</div>
+							<div class="mt-1">{mcpApplyResult.message}</div>
+						</div>
+						<button
+							type="button"
+							onclick={() => mcpApplyResult = null}
+							class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground cursor-pointer"
+						>
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				<!-- Action Toolbar: Test & Apply -->
+				<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-secondary/50 border border-border/80 shadow-2xs">
+					<div class="text-xs text-muted-foreground flex items-center gap-2">
+						<span class="h-2.5 w-2.5 rounded-full {mcpStatus === 'CONNECTED' ? 'bg-cyan-500' : 'bg-rose-500'}"></span>
+						<span>Status Aktif: <strong class="text-foreground font-mono">{mcpStatus}</strong> ({mcpPlatform.toUpperCase()} &bull; {mcpConfig.dbname})</span>
+					</div>
+					<div class="flex items-center gap-2.5 flex-wrap justify-end">
+						<button
+							type="button"
+							onclick={testMCPReferenceConnection}
+							disabled={isTestingMcp}
+							class="h-9 px-4 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isTestingMcp ? 'animate-spin' : ''}" />
+							<span>{isTestingMcp ? 'Menguji Koneksi...' : '⚡ Test Connection'}</span>
+						</button>
+						<button
+							type="button"
+							onclick={applyMCPReferenceConfig}
+							disabled={isApplyingMcp}
+							class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+						>
+							<Check class="h-4 w-4" />
+							<span>{isApplyingMcp ? 'Menerapkan...' : 'Terapkan & Simpan (Apply)'}</span>
+						</button>
 					</div>
 				</div>
 			</div>

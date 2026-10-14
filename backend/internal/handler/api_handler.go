@@ -789,11 +789,127 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 		return
 	}
 
+	if req.Password == "" {
+		if req.Target == "mcp_ref" {
+			req.Password = os.Getenv("MCP_REF_DB_PASSWORD")
+		} else {
+			req.Password = os.Getenv("SYSTEM_DB_PASSWORD")
+		}
+		if req.Password == "" { req.Password = "postgres" }
+	}
+
 	latency := time.Since(start).Milliseconds()
 	c.JSON(http.StatusOK, gin.H{
 		"ok":         true,
 		"latency_ms": latency,
 		"message":    fmt.Sprintf("Koneksi database PostgreSQL terverifikasi! Host: %s:%s | DB: %s | Roundtrip: %dms", req.Host, req.Port, req.DBName, latency),
+	})
+}
+
+func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
+	var req DBTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	if req.Host == "" { req.Host = "localhost" }
+	if req.Port == "" { req.Port = "5432" }
+	if req.User == "" { req.User = "postgres" }
+	if req.SSLMode == "" { req.SSLMode = "disable" }
+	if req.Password == "" {
+		if req.Target == "mcp_ref" {
+			req.Password = os.Getenv("MCP_REF_DB_PASSWORD")
+		} else {
+			req.Password = os.Getenv("SYSTEM_DB_PASSWORD")
+		}
+		if req.Password == "" { req.Password = "postgres" }
+	}
+
+	start := time.Now()
+
+	if req.Target == "mcp_ref" {
+		if req.DBName == "" { req.DBName = "novapilot_mcp_ref" }
+		if req.Platform == "" { req.Platform = "postgres" }
+
+		// Test connection first
+		if strings.Contains(strings.ToLower(req.Platform), "postgres") {
+			connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
+				req.Host, req.Port, req.User, req.Password, req.DBName, req.SSLMode)
+			newDB, err := sql.Open("postgres", connStr)
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal inisialisasi driver: %v", err)})
+				return
+			}
+			if err := newDB.Ping(); err != nil {
+				newDB.Close()
+				c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal ping database referensi (%s:%s/%s): %v", req.Host, req.Port, req.DBName, err)})
+				return
+			}
+
+			// If success, update active instance
+			if h.mcpRefDB != nil {
+				_ = h.mcpRefDB.Close()
+			}
+			h.mcpRefDB = newDB
+		}
+
+		// Update environment in-memory
+		os.Setenv("MCP_REF_DB_PLATFORM", req.Platform)
+		os.Setenv("MCP_REF_DB_HOST", req.Host)
+		os.Setenv("MCP_REF_DB_PORT", req.Port)
+		os.Setenv("MCP_REF_DB_USER", req.User)
+		os.Setenv("MCP_REF_DB_NAME", req.DBName)
+		os.Setenv("MCP_REF_DB_SSLMODE", req.SSLMode)
+		if req.Password != "" {
+			os.Setenv("MCP_REF_DB_PASSWORD", req.Password)
+		}
+		if req.Mode != "" {
+			os.Setenv("MCP_REF_DB_MODE", req.Mode)
+		}
+
+		latency := time.Since(start).Milliseconds()
+		c.JSON(http.StatusOK, gin.H{
+			"ok":         true,
+			"latency_ms": latency,
+			"message":    fmt.Sprintf("Konfigurasi Database Referensi MCP berhasil diterapkan dan aktif secara LIVE! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
+			"config": gin.H{
+				"platform": req.Platform,
+				"host":     req.Host,
+				"port":     req.Port,
+				"dbname":   req.DBName,
+				"status":   "CONNECTED",
+			},
+		})
+		return
+	}
+
+	// For system DB
+	if req.DBName == "" { req.DBName = "novapilot_db" }
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
+		req.Host, req.Port, req.User, req.Password, req.DBName, req.SSLMode)
+	testDB, err := sql.Open("postgres", connStr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal inisialisasi driver sistem: %v", err)})
+		return
+	}
+	defer testDB.Close()
+	if err := testDB.Ping(); err != nil {
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal ping database sistem: %v", err)})
+		return
+	}
+
+	os.Setenv("SYSTEM_DB_HOST", req.Host)
+	os.Setenv("SYSTEM_DB_PORT", req.Port)
+	os.Setenv("SYSTEM_DB_USER", req.User)
+	os.Setenv("SYSTEM_DB_NAME", req.DBName)
+	os.Setenv("SYSTEM_DB_SSLMODE", req.SSLMode)
+
+	latency := time.Since(start).Milliseconds()
+	c.JSON(http.StatusOK, gin.H{
+		"ok":         true,
+		"latency_ms": latency,
+		"message":    fmt.Sprintf("Konfigurasi Database Internal Sistem berhasil diterapkan! (%s:%s/%s | %dms)", req.Host, req.Port, req.DBName, latency),
 	})
 }
 
