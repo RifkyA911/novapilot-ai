@@ -155,6 +155,15 @@ Di lingkungan laptop kantor, aktivitas dibatasi secara ketat pada ranah visual d
 6. **Arsitektur Navigasi Mobile-First (Slide-Over Sheet & Auto-Compact Navbar)**:
    - **Off-Canvas Slide-Over Drawer**: Mengganti dropdown header dengan drawer samping kiri modern ber-backdrop blur (`bg-black/60 z-50`) yang dapat ditutup via klik di luar atau tombol `Escape`.
    - **Ultra-Compact Header (<640px)**: Selector platform secara otomatis menyembunyikan label teks dan hanya menampilkan logo platform pada layar ponsel kecil (360px), menjaga ruang untuk tombol pencarian `⌘K` dan avatar user.
+7. **Modal Roster Anggota Grup WhatsApp (Role Inspection & Whitelist Filtering)**:
+   - Akses instan ke daftar anggota grup dengan mengklik nama grup, ikon, atau badge `X Anggota →`.
+   - Menampilkan metrik ringkas: Total anggota, Admin, On-Call PIC, dan Whitelisted members.
+   - Filter pencarian cepat untuk nama, nomor telepon, dan peran (*role*).
+   - Fitur toggle Whitelist granular per peserta: memastikan hanya anggota berwenang yang dapat memicu pembuatan tiket mutasi otomatis.
+8. **Penyederhanaan Form Pendaftaran Saluran (JID Guidance & Auto-Converter)**:
+   - **Bantuan Sumber JID**: Tombol toggle petunjuk `[? Dari mana dapat ID ini?]` untuk memandu operator awam tentang asal-usul ID grup WhatsApp, format nomor kontak, Telegram Chat ID, dan Discord Channel ID.
+   - **Konverter 1-Klik No. HP ke JID**: Mengonversi otomatis nomor PIC seperti `+62 812-3456-7890` menjadi format JID WhatsApp yang valid (`6281234567890@s.whatsapp.net`).
+   - **Pill Selector Cabang & Kartu Edukasi**: Memudahkan pemilihan cabang resmi perusahaan (`Surabaya Hub`, `Medan Hub`, `Head Office`, dll.) dan memberikan konteks mengapa pemetaan ke `branch_id` database sangat krusial bagi keamanan data.
 
 ---
 
@@ -228,7 +237,91 @@ Tombol **Simulasi** pada setiap baris kontak berfungsi untuk mengirim paket prob
 
 ---
 
-## 7. Strategi Sinkronisasi Kerja: Kantor vs. Rumah
+## 7. Arsitektur Multi-Tenancy Cabang & Resolusi JID Saluran (Database & Ingress Routing)
+
+### 7.1 Dari Mana JID / Identifier Saluran Didapatkan?
+**JID (*Jabber ID*)** adalah alamat pengenal unik standar protokol WhatsApp (berbasis turunan XMPP). Format bakunya adalah:
+- **Kontak Hotline PIC Perorangan**: `<nomor_hp_internasional>@s.whatsapp.net` (misal `6281234567890@s.whatsapp.net`).
+- **Grup WhatsApp**: `<id_unik_timestamp>@g.us` (misal `120363028192837492@g.us`).
+
+#### 3 Cara Praktis Mendapatkan JID di Lingkungan Nyata:
+1. **Cara 1: Membaca Terminal Log Baileys (Paling Mudah & Standar di NovaPilot)**
+   - Masukkan nomor bot WhatsApp ke dalam grup WA cabang kantor.
+   - Siapa pun di grup mengirimkan 1 chat uji coba (misal: *"Halo"*).
+   - Baileys Gateway seketika mencetak log di terminal dan menu `/admin/whatsapp`:
+     ```
+     [INCOMING CHAT from 120363028192837492@g.us (Ops Cabang Surabaya)]: Halo ...
+     ```
+   - Operator cukup menyalin ID berakhiran `@g.us` tersebut ke form pendaftaran saluran.
+2. **Cara 2: Lewat WhatsApp Web / Ferdium / Rambox**
+   - Buka grup di browser atau Ferdium/Rambox.
+   - Klik kanan pada nama grup -> *Inspect Element* (F12) -> ID grup tertera pada atribut data elemen percakapan.
+3. **Cara 3: Konverter Otomatis No. HP PIC di Form**
+   - Untuk kontak perorangan, operator cukup mengetikkan nomor HP lokal (misal `+62 812-3456-7890`).
+   - Form menyediakan tombol **"Konversi otomatis No. HP PIC ke JID"** yang otomatis memformatnya menjadi `6281234567890@s.whatsapp.net`.
+4. **Platform Lain**:
+   - **Telegram**: Chat ID numerik (misal `-100192837482`), didapat dari bot `@userinfobot`.
+   - **Discord**: Channel ID 18 digit, didapat dari klik kanan channel -> *Copy Channel ID* (aktifkan *Developer Mode*).
+   - **Slack**: Channel ID (misal `C0819283ABC`), didapat dari klik kanan channel -> *View channel details*.
+
+---
+
+### 7.2 Pengaruh Cabang / Regional Hub terhadap Struktur Database & Logika Aplikasi
+
+Bidang **Cabang / Regional Hub** adalah fondasi partisi data (**Multi-Tenancy**) dan sistem proteksi AI (**Guardrail**).
+
+#### A. Relasi di Struktur Database PostgreSQL (`01_schema.sql`)
+Di skema database inti (`backend/scripts/mock_db/01_schema.sql`):
+
+```mermaid
+erDiagram
+    BRANCHES ||--o{ INVOICES : "memiliki faktur (branch_id)"
+    BRANCHES ||--o{ TICKETS : "sumber request (branch_id)"
+
+    BRANCHES {
+        int id PK
+        string code "SBY-01, MDN-01"
+        string name "Surabaya Hub"
+        string wa_group_id "120363001@g.us"
+        string city "Surabaya"
+    }
+    INVOICES {
+        int id PK
+        string invoice_no "INV/2026/001"
+        int branch_id FK "Terikat cabang pembuat"
+        string customer_name
+        numeric amount
+    }
+    TICKETS {
+        int id PK
+        string ticket_no "TK-2026-001"
+        int branch_id FK "Cabang pengirim request"
+        string document_no
+        string proposed_value
+    }
+```
+
+1. **Partisi Kepemilikan Faktur**: Setiap faktur di tabel `invoices` (misal `INV/2026/001`) memiliki Foreign Key `branch_id INT REFERENCES branches(id)`. Ini berarti faktur tersebut secara legal dan akuntansi adalah aset milik **Cabang Surabaya Hub (ID: 1)**.
+2. **Pemetaan Otomatis Pesan Masuk**: Saat pesan masuk dari grup WhatsApp Surabaya (`120363001@g.us`), Go backend otomatis mencocokkan `wa_group_id` dengan tabel `branches` untuk menetapkan `ticket.branch_id = 1`.
+
+#### B. Pengaruh Terhadap Logika Aplikasi & AI Guardrail
+1. **Pencegahan Anomali Lintas Cabang (*Cross-Branch Mismatch Protection*)**:
+   - Jika grup WhatsApp **Cabang Medan** (`branch_id: 2`) mengirim pesan: *"Tolong ubah customer faktur INV/2026/001 menjadi CV Bintang Timur"*.
+   - AI Guardrail memeriksa database: faktur `INV/2026/001` adalah milik **Cabang Surabaya** (`branch_id: 1`).
+   - Sistem seketika mendeteksi **Branch Mismatch** dan memblokir eksekusi otomatis. Tiket ditandai `NEEDS_REVIEW` dengan peringatan merah:
+     > ⚠️ *"Peringatan Anomali: Permintaan mutasi berasal dari Cabang Medan, tetapi faktur terdaftar di Cabang Surabaya."*
+   - Fitur ini mencegah fraud tagihan, kesalahan kamar penagihan, atau modifikasi data antar gudang tanpa izin.
+2. **Routing Notifikasi Outbound Tepat Sasaran**:
+   - Ketika operator di Cockpit menyetujui mutasi dokumen, backend mencari `branches.wa_group_id` dari cabang bersangkutan.
+   - Notifikasi sukses **hanya dikirimkan balik ke grup cabang pengaju**, sehingga obrolan operasional tidak bocor ke grup cabang lain.
+3. **Multi-Tenancy & Pembatasan Otoritas Approval**:
+   - Kepala Gudang / Supervisor Surabaya hanya diizinkan meng-approve tiket yang memiliki `branch_id` Surabaya, menjaga tata kelola SOP enterprise (HITL).
+4. **Pill Selector Cabang di Form**:
+   - Disediakan tombol cepat untuk cabang yang sudah terdaftar di database (`Surabaya Hub`, `Medan Hub`, `Head Office`, `Semarang Hub`, `Cikarang Plant`, `Makassar Hub`).
+
+---
+
+## 8. Strategi Sinkronisasi Kerja: Kantor vs. Rumah
 
 ### Solusi Standar: Git Remote / Git Bundle
 1. **Opsi Rekomendasi (GitHub Private Repo)**:
@@ -255,7 +348,7 @@ Tombol **Simulasi** pada setiap baris kontak berfungsi untuk mengirim paket prob
 
 ---
 
-## 8. Status Pengujian & Quality Assurance
+## 9. Status Pengujian & Quality Assurance
 
 Sistem pengujian saat ini telah terstruktur rapi:
 
