@@ -132,47 +132,75 @@ try {
                 if ((url.pathname === "/api/exec" || url.pathname === "/exec") && req.method === "POST") {
                     try {
                         const rawText = await req.text();
-                        let cmd = "";
+                        let rawCmd = "";
                         try {
                             const parsed = JSON.parse(rawText);
-                            cmd = (parsed.command || "").trim().toLowerCase();
+                            rawCmd = (parsed.command || "").trim();
                         } catch {
-                            cmd = rawText.trim().replace(/^"|"$/g, "").toLowerCase();
+                            rawCmd = rawText.trim().replace(/^"|"$/g, "");
                         }
+                        const cmdLower = rawCmd.toLowerCase();
                         let output = "";
 
-                        if (cmd === "ping") {
+                        if (cmdLower === "ping") {
                             output = `PONG: Gateway daemon alive. Uptime: ${Math.floor(process.uptime())}s | Memory: ${(process.memoryUsage().rss / (1024 * 1024)).toFixed(1)} MB`;
-                        } else if (cmd === "status") {
+                        } else if (cmdLower === "status") {
                             if (activeSock?.user) {
                                 output = `CONNECTED: Logged in as ${activeSock.user.id} (${activeSock.user.name || "Baileys Multi-Device"}). Backend: ${BACKEND_URL}`;
                             } else {
                                 output = `AWAITING_HOOK: Baileys socket initialized, awaiting phone connection.`;
                             }
-                        } else if (cmd === "test_log" || cmd === "test") {
+                        } else if (cmdLower.startsWith("sales") || cmdLower.startsWith("mcp_sales")) {
+                            const kw = rawCmd.replace(/^(sales|mcp_sales)\s*/i, "").trim() || "Baja";
+                            const res = await queryMCPSalesRecords(kw);
+                            output = formatSalesRecordReply(res);
+                        } else if (cmdLower.startsWith("price") || cmdLower.startsWith("mcp_price")) {
+                            const kw = rawCmd.replace(/^(price|mcp_price)\s*/i, "").trim() || "Pipa";
+                            const res = await queryMCPProductPricing(kw);
+                            output = formatPricingCatalogReply(res);
+                        } else if (cmdLower.startsWith("simulate_inbound")) {
+                            const text = rawCmd.replace(/^simulate_inbound\s*/i, "").trim() || "Halo cek penjualan SO/2026/001";
+                            const isSales = text.toLowerCase().includes("penjualan") || text.toLowerCase().includes("so/2026");
+                            const mockPayload: InboundPayload = {
+                                platform: "whatsapp",
+                                sender_id: "6281234567890@s.whatsapp.net",
+                                sender_name: "Branch Staff Surabaya",
+                                raw_message: text,
+                                media_type: "text",
+                                classification: isSales ? "ACTIONABLE" : "CASUAL_BANTER",
+                                extracted_intent: isSales ? "MCP_SALES_QUERY" : "CHAT_INFO",
+                                extracted_target: isSales ? "SO/2026/001" : ""
+                            };
+                            await submitInboundMessage(mockPayload);
+                            output = `Simulated WhatsApp Inbound sent to Omnichannel Feed! (${mockPayload.raw_message})`;
+                        } else if (cmdLower.startsWith("simulate_ocr")) {
+                            const raw = rawCmd.replace(/^simulate_ocr\s*/i, "").trim() || "|NV / 2O26 / OO1 P.T. Sumber Makmur";
+                            const cleaned = cleanAndNormalizeOCRText(raw);
+                            output = `RAW OCR: "${raw}"\nNORMALIZED: "${cleaned}"`;
+                        } else if (cmdLower === "test_log" || cmdLower === "test") {
                             console.log("[DIAGNOSTIC TEST] Manual diagnostic ping executed from Web Terminal.");
                             output = "Diagnostic message successfully recorded in terminal feed.";
-                        } else if (cmd === "clear") {
+                        } else if (cmdLower === "clear") {
                             logBuffer.length = 0;
                             output = "Terminal log buffer wiped.";
-                        } else if (cmd === "qr" || cmd === "qr_status") {
+                        } else if (cmdLower === "qr" || cmdLower === "qr_status") {
                             if (fs.existsSync(QR_FILE)) {
                                 const qrData = JSON.parse(fs.readFileSync(QR_FILE, "utf-8"));
                                 output = `QR Status: ${qrData.status} (Updated: ${qrData.updatedAt})`;
                             } else {
                                 output = "QR file not yet generated or already authenticated.";
                             }
-                        } else if (cmd === "help") {
-                            output = "Available commands: ping, status, test_log, qr_status, clear, help";
+                        } else if (cmdLower === "help") {
+                            output = "Available commands: ping, status, sales [kw], price [kw], simulate_inbound [txt], simulate_ocr [txt], qr_status, clear, help";
                         } else {
-                            output = `Unknown command "${cmd}". Type "help" for available commands.`;
+                            output = `Unknown command "${rawCmd}". Type "help" for available commands.`;
                         }
 
-                        appendGatewayLog("EXEC", `> ${cmd} => ${output}`);
+                        appendGatewayLog("EXEC", `> ${rawCmd} => ${output}`);
 
                         return new Response(JSON.stringify({
                             ok: true,
-                            command: cmd,
+                            command: rawCmd,
                             output,
                             timestamp: new Date().toISOString()
                         }), { headers: corsHeaders });
@@ -211,9 +239,52 @@ interface ExtractionResult {
     confidence: number;
 }
 
+/**
+ * Intelligent OCR Text Normalizer:
+ * Cleans typical Tesseract OCR artifacts on camera shots and thermal receipts:
+ * - Fixes '|NV', '1NV', 'lNV', '!NV' -> 'INV'
+ * - Cleans spaced slashes: 'INV / 2026 / 001' or 'SO - 2026 - 001' -> 'INV/2026/001'
+ * - Replaces 'O' / 'o' with '0' inside year and document sequence digits
+ * - Normalizes corporate entity prefixes: 'P.T.' -> 'PT ', 'C.V.' -> 'CV '
+ */
+export function cleanAndNormalizeOCRText(raw: string): string {
+    if (!raw) return "";
+    let s = raw;
+
+    // 1. Normalize line breaks and multiple whitespace
+    s = s.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ");
+
+    // 2. Fix spaced slashes, OCR substitutions (|NV, 1NV, lNV) and letter O in document numbers
+    // e.g. '|NV / 2O26 / OO1' -> 'INV/2026/001', '1NV-2026-001' -> 'INV/2026/001'
+    s = s.replace(/(?:^|\b|[\s\(\[])([|!1liI]?NV|NOTA|SO)\s*[\/\\\|\.\-]\s*([0-9OoilI]{4})\s*[\/\\\|\.\-]\s*([0-9OoilI]{3,4})/gi, (_m, p, y, seq) => {
+        const cleanP = p.toUpperCase().includes("SO") ? "SO" : (p.toUpperCase().includes("NOTA") ? "NOTA" : "INV");
+        const cleanY = y.replace(/[Oo]/g, "0").replace(/[liI]/g, "1");
+        const cleanSeq = seq.replace(/[Oo]/g, "0").replace(/[liI]/g, "1");
+        return ` ${cleanP}/${cleanY}/${cleanSeq}`;
+    });
+
+    // 3. Fix standalone prefix artifacts
+    s = s.replace(/(?:^|[\s\(\[])[|!1liI]NV(?=[\s\/\-\\_.,;:)]|$)/gi, " INV");
+    s = s.replace(/\bN[0O]TA\b/gi, "NOTA");
+    s = s.replace(/\bS[0O]\b/gi, "SO");
+    s = s.replace(/\bS\.O\.\b/gi, "SO");
+
+    // 4. Normalize corporate entity prefixes: "P.T. " -> "PT ", "C.V. " -> "CV "
+    s = s.replace(/(?:^|[\s\(\[])P\.?\s*T\.?\s+/gi, " PT ");
+    s = s.replace(/(?:^|[\s\(\[])C\.?\s*V\.?\s+/gi, " CV ");
+    s = s.replace(/(?:^|[\s\(\[])U\.?\s*D\.?\s+/gi, " UD ");
+
+    // 5. Clean common noise artifacts
+    s = s.replace(/[~`^|—_]{2,}/g, " ");
+
+    return s.replace(/[ \t]+/g, " ").trim();
+}
+
 function extractTicketData(text: string): ExtractionResult | null {
-    // Invoice Pattern Matching: e.g. INV/2026/001, INV-2026-001, NOTA/2026/012
-    const docMatch = text.match(/\b(INV[\/\-]\d{4}[\/\-]\d{3}|NOTA[\/\-]\d{4}[\/\-]\d{3})\b/i);
+    const normalized = cleanAndNormalizeOCRText(text);
+
+    // Invoice & Order Pattern Matching: e.g. INV/2026/001, NOTA/2026/012, SO/2026/001
+    const docMatch = normalized.match(/\b(INV[\/\-]\d{4}[\/\-]\d{3,4}|NOTA[\/\-]\d{4}[\/\-]\d{3,4}|SO[\/\-]\d{4}[\/\-]\d{3,4})\b/i);
     if (!docMatch) {
         return null; // Not a targeted IT database change request
     }
@@ -224,13 +295,14 @@ function extractTicketData(text: string): ExtractionResult | null {
     // "menjadi PT Sumber Makmur Abadi"
     // "ke CV Bintang Timur"
     // "to PT Karya Abadi Perkasa"
+    // "koreksi jadi PT ..."
     let proposedValue = "";
-    const targetMatch = text.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\s+['"]?([^,\.\n\r"']+)['"]?/i);
+    const targetMatch = normalized.match(/(?:menjadi|ke|to|ubah ke|ganti jadi|koreksi ke|koreksi jadi)\s+['"]?([^,\.\n\r"']+)['"]?/i);
     if (targetMatch && targetMatch[1]) {
         proposedValue = targetMatch[1].trim();
     } else {
         // Fallback: search for corporate suffixes PT/CV/UD
-        const corpMatch = text.match(/\b(PT|CV|UD)\s+([A-Za-z0-9\s]{3,35})\b/i);
+        const corpMatch = normalized.match(/\b(PT|CV|UD)\s+([A-Za-z0-9\s]{3,35})\b/i);
         if (corpMatch) {
             proposedValue = `${corpMatch[1].toUpperCase()} ${corpMatch[2].trim()}`;
         }
@@ -247,6 +319,112 @@ function extractTicketData(text: string): ExtractionResult | null {
         intent: "UPDATE_CUSTOMER_NAME",
         confidence: 0.96
     };
+}
+
+// 2.1 MCP Live Data Integration (Sales Orders & Pricing Catalog)
+async function queryMCPSalesRecords(query: string): Promise<any> {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/mcp/test`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tool_name: "query_sales_records",
+                parameters: { query: query.trim() }
+            })
+        });
+        if (res.ok) {
+            return await res.json();
+        }
+    } catch (err: any) {
+        console.error("[MCP SALES QUERY ERROR]", err.message);
+    }
+    return null;
+}
+
+async function queryMCPProductPricing(productOrCode: string): Promise<any> {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/mcp/test`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tool_name: "check_product_pricing_discount",
+                parameters: { product_name_or_code: productOrCode.trim() }
+            })
+        });
+        if (res.ok) {
+            return await res.json();
+        }
+    } catch (err: any) {
+        console.error("[MCP PRICING QUERY ERROR]", err.message);
+    }
+    return null;
+}
+
+function fmtCurrencyIDR(val: number): string {
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
+}
+
+function formatSalesRecordReply(data: any): string {
+    const records = data?.result?.records || [];
+    if (records.length === 0) {
+        return `*[NovaPilot AI • Database MCP Penjualan]*\n\n` +
+            `⚠️ Tidak ditemukan data pesanan penjualan yang cocok dalam database referensi PostgreSQL (novapilot_mcp_ref).\n` +
+            `_Tips: Anda dapat mencari berdasarkan No Pesanan (misal: SO/2026/001), No Faktur (INV/2026/001), nama pelanggan (PT Sumber Makmur), atau produk (baja, pipa, semen)._`;
+    }
+
+    let text = `*[NovaPilot AI • Informasi Penjualan & Diskon]*\n`;
+    text += `_Ditemukan ${records.length} transaksi resmi via Model Context Protocol (novapilot_mcp_ref):_\n`;
+
+    records.slice(0, 3).forEach((r: any) => {
+        text += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📋 *No Pesanan:* \`${r.order_no}\`\n`;
+        text += `🧾 *No Faktur:* \`${r.invoice_no}\`\n`;
+        text += `🏢 *Pelanggan:* ${r.customer_name} (\`${r.customer_code}\`)\n`;
+        text += `🪪 *NPWP:* ${r.customer_tax_id}\n`;
+        text += `📦 *Produk:* ${r.product_name} (\`${r.product_code}\`)\n`;
+        text += `🏷️ *Kategori:* ${r.product_category}\n`;
+        text += `🔢 *Volume:* ${r.quantity} ${r.unit} @ ${fmtCurrencyIDR(r.unit_price)}\n`;
+        text += `💵 *Subtotal:* ${fmtCurrencyIDR(r.subtotal)}\n`;
+        text += `🎯 *Diskon:* ${r.discount_percent}% (-${fmtCurrencyIDR(r.discount_amount)})\n`;
+        text += `📑 *PPN (11%):* ${fmtCurrencyIDR(r.tax_amount)}\n`;
+        text += `💰 *TOTAL AKHIR:* *${fmtCurrencyIDR(r.total_price)}*\n`;
+        const payIcon = r.payment_status === "PAID" ? "✅ LUNAS" : (r.payment_status === "OVERDUE" ? "⚠️ JATUH TEMPO" : "⏳ BELUM DIBAYAR");
+        text += `💳 *Status Bayar:* ${payIcon}\n`;
+        text += `🚚 *Status Pengiriman:* ${r.order_status}\n`;
+        text += `👤 *Sales Rep:* ${r.sales_rep} (Cabang: ${r.branch_code})\n`;
+        if (r.notes) {
+            text += `📝 *Catatan:* _${r.notes}_\n`;
+        }
+    });
+
+    text += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `_Query dieksekusi secara aman & terisolasi (parameterized SQL, zero-raw risk)._`;
+    return text;
+}
+
+function formatPricingCatalogReply(data: any): string {
+    const products = data?.result?.products || [];
+    if (products.length === 0) {
+        return `*[NovaPilot AI • Katalog Harga & Plafon Diskon]*\n\n` +
+            `⚠️ Produk tidak ditemukan dalam katalog resmi enterprise.\n` +
+            `_Coba cari dengan kata kunci: Baja Ringan, Pipa Seamless, Gate Valve, Semen PCC, Plat Baja, Kawat Las._`;
+    }
+
+    let text = `*[NovaPilot AI • Katalog Harga & Plafon Diskon]*\n`;
+    text += `_Daftar harga resmi enterprise & batas diskon yang diizinkan (novapilot_mcp_ref):_\n`;
+
+    products.forEach((p: any) => {
+        text += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📦 *${p.product_name}*\n`;
+        text += `🏷️ *Kode SKU:* \`${p.product_code}\` | *Kategori:* ${p.product_category}\n`;
+        text += `💰 *Harga Resmi:* *${fmtCurrencyIDR(p.unit_price)}* / ${p.unit}\n`;
+        text += `🎯 *Plafon Maksimal Diskon:* *${p.max_allowed_discount_percent}%*\n`;
+        text += `🔖 *Diskon Standar:* ${p.standard_discount_applied}%\n`;
+    });
+
+    text += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `_Diskon di atas plafon memerlukan persetujuan khusus supervisor/manager._`;
+    return text;
 }
 
 // 3. Connect to NovaPilot Golang Backend
@@ -368,30 +546,84 @@ function startSSEListener(sendMessageFn: (jid: string, text: string) => Promise<
     };
 }
 
-// 5. Mock Simulation Runner (Test without physical phone)
+// 5. Mock Simulation Runner (Comprehensive Test Suite without physical phone)
 async function runMockSimulation() {
-    console.log("[SIMULATION] Running automated WhatsApp Chat Ingestion test...");
+    console.log("=============================================================");
+    console.log("   NovaPilot AI - Comprehensive ChatOps & MCP Test Suite");
+    console.log("=============================================================\n");
 
-    const sampleChat = "Halo Tim IT On-Call Surabaya, tolong ubah nama nota INV/2026/001 customer PT Sumber Makmur menjadi PT Sumber Makmur Abadi. Bukti faktur pajak terlampir. Makasih!";
-    const extracted = extractTicketData(sampleChat);
+    // Test 1: OCR Normalization & Document Extraction
+    console.log("--- [TEST 1: OCR Normalization & Invoice Ticket Creation] ---");
+    const noisyOCR = "Halo Tim IT On-Call Surabaya, tolong ubah nota |NV / 2O26 / OO1 customer P.T. Sumber Makmur menjadi PT Sumber Makmur Abadi. Bukti terlampir.";
+    const cleanedOCR = cleanAndNormalizeOCRText(noisyOCR);
+    console.log(`[OCR RAW]       : ${noisyOCR}`);
+    console.log(`[OCR NORMALIZED]: ${cleanedOCR}`);
+    const extracted = extractTicketData(cleanedOCR);
 
     if (!extracted) {
-        console.error("[SIMULATION FAILED] Extraction logic failed to parse sample chat.");
-        return;
+        console.error("❌ [TEST 1 FAILED] Extraction logic failed to parse OCR text.");
+    } else {
+        console.log("✅ [TEST 1 PASSED] Document:", extracted.documentNo, "-> Proposed:", extracted.proposedValue);
+        const ticket = await submitTicketToBackend(noisyOCR, extracted, "120363028472918293@g.us", 1);
+        if (ticket) {
+            console.log(`   Ticket created: ${ticket.ticket_no} (Status: ${ticket.status})`);
+        }
     }
 
-    console.log("[SIMULATION EXTRACTED]:", extracted);
-    const result = await submitTicketToBackend(sampleChat, extracted, "120363028472918293@g.us", 1);
-    
-    if (result) {
-        console.log(`\n🎉 [SIMULATION PASSED] Ticket created successfully!`);
-        console.log(`Ticket ID   : ${result.id}`);
-        console.log(`Ticket No   : ${result.ticket_no}`);
-        console.log(`Status      : ${result.status}`);
-        console.log(`View live in dashboard at http://localhost:3000/dashboard\n`);
+    // Test 2: MCP Sales Order Query (PostgreSQL novapilot_mcp_ref)
+    console.log("\n--- [TEST 2: MCP Sales Order Query (PostgreSQL novapilot_mcp_ref)] ---");
+    const salesQuery = "SO/2026/001";
+    console.log(`Querying MCP Tool 'query_sales_records' for: ${salesQuery}...`);
+    const salesData = await queryMCPSalesRecords(salesQuery);
+    if (salesData && salesData.ok) {
+        console.log("✅ [TEST 2 PASSED] MCP Sales Query succeeded!");
+        const reply = formatSalesRecordReply(salesData);
+        console.log("\n[WhatsApp Formatted Reply]:\n" + reply + "\n");
+
+        await submitInboundMessage({
+            platform: "whatsapp",
+            sender_id: "6281299887766@s.whatsapp.net",
+            sender_name: "Budi Santoso (Cabang Surabaya)",
+            raw_message: "Cek data penjualan SO/2026/001 baja ringan",
+            media_type: "text",
+            classification: "ACTIONABLE",
+            extracted_doc: "SO/2026/001",
+            extracted_intent: "MCP_SALES_QUERY",
+            extracted_target: "SO/2026/001"
+        });
     } else {
-        console.log("[SIMULATION NOTE] Backend might require seeded database or already has ticket.");
+        console.error("❌ [TEST 2 FAILED] Could not fetch sales records via MCP.");
     }
+
+    // Test 3: MCP Product Pricing & Plafon Diskon Query
+    console.log("\n--- [TEST 3: MCP Pricing & Plafon Diskon Catalog] ---");
+    const priceQuery = "Pipa";
+    console.log(`Querying MCP Tool 'check_product_pricing_discount' for: ${priceQuery}...`);
+    const pricingData = await queryMCPProductPricing(priceQuery);
+    if (pricingData && pricingData.ok) {
+        console.log("✅ [TEST 3 PASSED] MCP Pricing Query succeeded!");
+        const reply = formatPricingCatalogReply(pricingData);
+        console.log("\n[WhatsApp Formatted Reply]:\n" + reply + "\n");
+
+        await submitInboundMessage({
+            platform: "whatsapp",
+            sender_id: "6281333444555@s.whatsapp.net",
+            sender_name: "Dewi Lestari (Sales Staff)",
+            raw_message: "Tolong cek harga dan batas diskon pipa seamless",
+            media_type: "text",
+            classification: "ACTIONABLE",
+            extracted_doc: "PRD-PIPE-02",
+            extracted_intent: "MCP_PRICING_QUERY",
+            extracted_target: "Pipa Seamless Carbon Steel"
+        });
+    } else {
+        console.error("❌ [TEST 3 FAILED] Could not fetch pricing data via MCP.");
+    }
+
+    console.log("\n=============================================================");
+    console.log("🎉 All automated simulation tests completed!");
+    console.log("Cockpit dashboard at http://localhost:3000/dashboard should now have fresh feed records and triggered sound!");
+    console.log("=============================================================\n");
 }
 
 // 6. Live WhatsApp Multi-Device Connection (Baileys)
@@ -529,8 +761,12 @@ async function startLiveGateway() {
                         if (isImage) {
                             console.log(`[OCR PIPELINE] Running Tesseract on image attachment...`);
                             const ocrResult = await Tesseract.recognize(buffer, "eng+ind");
-                            ocrText = (ocrResult.data?.text || "").trim();
-                            console.log(`[OCR SUCCESS] Extracted ${ocrText.length} characters from attachment.`);
+                            const rawOcr = (ocrResult.data?.text || "").trim();
+                            ocrText = cleanAndNormalizeOCRText(rawOcr);
+                            console.log(`[OCR SUCCESS] Extracted ${ocrText.length} characters (Normalized).`);
+                            if (ocrText) {
+                                console.log(`[OCR CLEANED]: ${ocrText.replace(/\s+/g, ' ').substring(0, 120)}...`);
+                            }
                         }
                     }
                 } catch (mediaErr: any) {
@@ -554,21 +790,88 @@ async function startLiveGateway() {
 
             const senderName = msg.pushName || fromJid.split("@")[0] || "Branch Staff";
             console.log(`[INCOMING CHAT from ${fromJid} (${senderName})]: ${body}`);
-            if (ocrText) {
-                console.log(`[OCR EXTRACTED TEXT]: ${ocrText.replace(/\s+/g, ' ').substring(0, 100)}...`);
-            }
 
             // Combine chat body + OCR text for unified semantic extraction
             const combinedText = `${body} ${ocrText}`.trim();
-            const extracted = extractTicketData(combinedText);
+            const normalizedText = cleanAndNormalizeOCRText(combinedText);
+            const extracted = extractTicketData(normalizedText);
 
-            // Classification & heuristic detection for messages without full invoice pattern
+            const lower = normalizedText.toLowerCase();
+
+            // Detect Sales Orders Intent
+            const isSalesQuery = 
+                lower.includes("penjualan") || 
+                lower.includes("sales order") || 
+                lower.includes("so/2026") || 
+                lower.includes("cek so") || 
+                lower.includes("data so") || 
+                lower.includes("status pesanan") ||
+                lower.includes("order penjualan");
+
+            // Detect Pricing & Plafon Diskon Intent
+            const isPricingQuery = 
+                !isSalesQuery &&
+                (lower.includes("harga") || lower.includes("diskon") || lower.includes("pricelist") || lower.includes("plafon diskon") || lower.includes("katalog")) &&
+                !lower.includes("ubah") && !lower.includes("ganti") && !lower.includes("revisi") && !lower.includes("koreksi");
+
             let classification = "CASUAL_BANTER";
             let fallbackIntent = "";
             let fallbackTarget = "";
+            let mcpSalesReply = "";
+            let mcpPricingReply = "";
 
             if (extracted) {
                 classification = "ACTIONABLE";
+            } else if (isSalesQuery) {
+                classification = "ACTIONABLE";
+                fallbackIntent = "MCP_SALES_QUERY";
+
+                // Extract query target: SO/2026/..., INV/2026/..., or keyword (baja, pipa, semen, etc.)
+                let searchKw = "";
+                const docM = normalizedText.match(/\b(SO[\/\-]\d{4}[\/\-]\d{3,4}|INV[\/\-]\d{4}[\/\-]\d{3,4})\b/i);
+                if (docM) {
+                    searchKw = docM[1].toUpperCase().replace("-", "/");
+                } else {
+                    for (const kw of ["baja", "pipa", "valve", "semen", "plat", "kawat"]) {
+                        if (lower.includes(kw)) {
+                            searchKw = kw;
+                            break;
+                        }
+                    }
+                    if (!searchKw) {
+                        const kwMatch = normalizedText.match(/(?:penjualan|sales order|order|cek|data)\s+['"]?([^,\.\n\r"']+)['"]?/i);
+                        if (kwMatch && kwMatch[1]) {
+                            searchKw = kwMatch[1].trim();
+                        }
+                    }
+                }
+
+                fallbackTarget = searchKw || "All Orders";
+                console.log(`[MCP SALES QUERY]: Querying PostgreSQL novapilot_mcp_ref for "${searchKw}"...`);
+                const mcpData = await queryMCPSalesRecords(searchKw);
+                mcpSalesReply = formatSalesRecordReply(mcpData);
+
+            } else if (isPricingQuery) {
+                classification = "ACTIONABLE";
+                fallbackIntent = "MCP_PRICING_QUERY";
+
+                let productKw = "";
+                for (const kw of ["baja", "pipa", "valve", "semen", "plat", "kawat"]) {
+                    if (lower.includes(kw)) {
+                        productKw = kw;
+                        break;
+                    }
+                }
+                if (!productKw) {
+                    const priceM = normalizedText.match(/(?:harga|diskon|katalog)\s+['"]?([^,\.\n\r"']+)['"]?/i);
+                    if (priceM && priceM[1]) productKw = priceM[1].trim();
+                }
+
+                fallbackTarget = productKw || "All Products";
+                console.log(`[MCP PRICING QUERY]: Querying pricing catalog for "${productKw}"...`);
+                const mcpData = await queryMCPProductPricing(productKw);
+                mcpPricingReply = formatPricingCatalogReply(mcpData);
+
             } else {
                 // Check against learned patterns from backend (Self-Learning Loop)
                 const learnedPatterns = await fetchLearnedPatterns();
@@ -577,7 +880,7 @@ async function startLiveGateway() {
                     if (!pat.is_active || !pat.regex_pattern) continue;
                     try {
                         const regex = new RegExp(pat.regex_pattern, "i");
-                        if (regex.test(combinedText)) {
+                        if (regex.test(normalizedText)) {
                             classification = pat.classification || "NEEDS_REVIEW";
                             fallbackIntent = pat.target_intent || "UPDATE_CUSTOMER_NAME";
                             patternMatched = true;
@@ -588,9 +891,8 @@ async function startLiveGateway() {
                 }
 
                 if (!patternMatched) {
-                    const lower = combinedText.toLowerCase();
                     const hasMutationKeyword = lower.includes("ubah") || lower.includes("ganti") || lower.includes("revisi") || lower.includes("koreksi") || lower.includes("bisa diubah");
-                    const hasCompanyKeyword = /\b(pt|cv|ud)\b/i.test(combinedText);
+                    const hasCompanyKeyword = /\b(pt|cv|ud)\b/i.test(normalizedText);
                     const hasImageRef = isImage || lower.includes("gambar") || lower.includes("foto") || lower.includes("lampiran");
 
                     if (hasMutationKeyword || (hasCompanyKeyword && hasImageRef)) {
@@ -599,18 +901,18 @@ async function startLiveGateway() {
                     }
                 }
 
-                const targetMatch = combinedText.match(/(?:menjadi|ke|to|ubah ke|ganti jadi)\s+['"]?([^,\.\n\r"']+)['"]?/i);
+                const targetMatch = normalizedText.match(/(?:menjadi|ke|to|ubah ke|ganti jadi|koreksi jadi)\s+['"]?([^,\.\n\r"']+)['"]?/i);
                 if (targetMatch && targetMatch[1]) {
                     fallbackTarget = targetMatch[1].trim();
                 } else {
-                    const corpMatch = combinedText.match(/\b(PT|CV|UD)\s+([A-Za-z0-9\s]{3,35})\b/i);
+                    const corpMatch = normalizedText.match(/\b(PT|CV|UD)\s+([A-Za-z0-9\s]{3,35})\b/i);
                     if (corpMatch) {
                         fallbackTarget = `${corpMatch[1].toUpperCase()} ${corpMatch[2].trim()}`;
                     }
                 }
             }
 
-            // Ingest to Omnichannel Feed (Real-Time Ingestion for Dashboard Viewers)
+            // Ingest to Omnichannel Feed (Real-Time Ingestion for Dashboard Viewers - Triggers Cockpit SSE & Corporate Chime)
             await submitInboundMessage({
                 platform: "whatsapp",
                 sender_id: fromJid,
@@ -620,37 +922,40 @@ async function startLiveGateway() {
                 media_url: mediaUrl,
                 ocr_text: ocrText,
                 classification: classification,
-                extracted_doc: extracted?.documentNo || "",
+                extracted_doc: extracted?.documentNo || (isSalesQuery ? fallbackTarget : ""),
                 extracted_intent: extracted?.intent || fallbackIntent,
                 extracted_target: extracted?.proposedValue || fallbackTarget
             });
 
-            if (!extracted) {
+            // Dispatch appropriate replies
+            if (extracted) {
+                console.log(`[DETECTED REQUEST]: Document ${extracted.documentNo} -> ${extracted.proposedValue}`);
+                const ticket = await submitTicketToBackend(body, extracted, fromJid);
+
+                if (ticket && AUTO_REPLY) {
+                    const ackText = 
+                        `*[NovaPilot AI • Permintaan Dicatat]*\n\n` +
+                        `📋 *No Tiket:* ${ticket.ticket_no}\n` +
+                        `📄 *Dokumen:* ${extracted.documentNo}\n` +
+                        `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
+                        `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
+                        `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._`;
+
+                    await sock.sendMessage(fromJid, { text: ackText });
+                    console.log(`[ACK SENT] Replied to ${fromJid}`);
+                }
+            } else if (mcpSalesReply && AUTO_REPLY) {
+                await sock.sendMessage(fromJid, { text: mcpSalesReply });
+                console.log(`[MCP SALES SENT] Sent sales records reply to ${fromJid}`);
+            } else if (mcpPricingReply && AUTO_REPLY) {
+                await sock.sendMessage(fromJid, { text: mcpPricingReply });
+                console.log(`[MCP PRICING SENT] Sent pricing catalog reply to ${fromJid}`);
+            } else {
                 if (classification === "NEEDS_REVIEW") {
                     console.log(`[NEEDS REVIEW]: "${body}" contains mutation intent (${fallbackTarget || 'unknown'}) without full invoice number. Synced to Dashboard Feed for 1-click Staging.`);
                 } else {
                     console.log(`[CASUAL BANTER]: "${body}" marked as general conversation.`);
                 }
-                continue;
-            }
-
-            console.log(`[DETECTED REQUEST]: Document ${extracted.documentNo} -> ${extracted.proposedValue}`);
-
-            // Submit to NovaPilot Backend
-            const ticket = await submitTicketToBackend(body, extracted, fromJid);
-
-            // Send Acknowledgment back to WhatsApp group
-            if (ticket && AUTO_REPLY) {
-                const ackText = 
-                    `*[NovaPilot AI • Permintaan Dicatat]*\n\n` +
-                    `📋 *No Tiket:* ${ticket.ticket_no}\n` +
-                    `📄 *Dokumen:* ${extracted.documentNo}\n` +
-                    `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
-                    `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
-                    `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._`;
-
-                await sock.sendMessage(fromJid, { text: ackText });
-                console.log(`[ACK SENT] Replied to ${fromJid}`);
             }
         }
     });

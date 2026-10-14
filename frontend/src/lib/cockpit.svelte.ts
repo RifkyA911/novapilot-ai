@@ -1,5 +1,6 @@
 // Cockpit Shared State (Svelte 5 Runes)
 // Provides unified SSE, ticket cache, audit logs, telemetry, and multi-platform ChatOps state.
+import { sound } from "./audio";
 
 export interface Ticket {
 	id: number;
@@ -312,21 +313,25 @@ class CockpitState {
 				const newTicket: Ticket = JSON.parse(e.data);
 				this.tickets = [newTicket, ...this.tickets.filter(t => t.id !== newTicket.id)];
 				this.recordPlatformEvent("whatsapp");
+				sound.playInboundPing();
 			});
 			this.eventSource.addEventListener("ticket_approved", (e) => {
 				const updated: Ticket = JSON.parse(e.data);
 				this.tickets = this.tickets.map(t => t.id === updated.id ? updated : t);
 				this.fetchAuditLogs();
+				sound.playActionChime();
 			});
 			this.eventSource.addEventListener("ticket_rejected", (e) => {
 				const updated: Ticket = JSON.parse(e.data);
 				this.tickets = this.tickets.map(t => t.id === updated.id ? updated : t);
 				this.fetchAuditLogs();
+				sound.playAlertChime();
 			});
 			this.eventSource.addEventListener("inbound_message", (e) => {
 				const newMsg: InboundMessage = JSON.parse(e.data);
 				this.inboundMessages = [newMsg, ...this.inboundMessages.filter(m => m.id !== newMsg.id)];
 				this.recordPlatformEvent(newMsg.platform as ChatPlatform);
+				sound.playInboundPing();
 			});
 			this.eventSource.addEventListener("inbound_message_updated", (e) => {
 				const updatedMsg: InboundMessage = JSON.parse(e.data);

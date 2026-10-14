@@ -28,6 +28,7 @@
 		Cog6Tooth
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+	import SoundToggle from "$lib/components/SoundToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
 	import CommandPalette from "$lib/components/CommandPalette.svelte";
 	import PlatformSelect from "$lib/components/PlatformSelect.svelte";
@@ -441,8 +442,11 @@
 				</button>
 			</div>
 
-			<!-- Right: THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
-			<div class="flex items-center gap-2 sm:gap-3 shrink-0">
+			<!-- Right: SOUND TOGGLE, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
+			<div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+				<!-- Corporate AI Sound Toggle -->
+				<SoundToggle />
+
 				<!-- Theme Toggle -->
 				<ThemeToggle />
 
