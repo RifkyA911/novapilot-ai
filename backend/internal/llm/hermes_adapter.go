@@ -8,23 +8,33 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 )
 
-// Config defines connection parameters for an OpenAI-compatible Hermes 3 LLM endpoint (Ollama / vLLM / llama.cpp)
+// Config defines connection parameters for an OpenAI-compatible Hermes 3 LLM endpoint (Ollama / vLLM / llama.cpp / Hermes CLI)
 type Config struct {
+	Mode        string        // "auto", "http", or "cli"
 	BaseURL     string        // e.g. "http://localhost:11434/v1" or "http://localhost:8000/v1"
 	Model       string        // e.g. "hermes3:8b", "nous-hermes-3-8b"
 	APIKey      string        // Optional bearer token (default "ollama")
-	Timeout     time.Duration // Timeout for HTTP request (default 15s)
+	CLIPath     string        // Path to hermes.exe or hermes command
+	CLIProvider string        // Provider for hermes CLI (e.g. "copilot", "nous")
+	CLIModel    string        // Model for hermes CLI (e.g. "gpt-4o", "claude-3.5-sonnet")
+	Timeout     time.Duration // Timeout for HTTP/CLI execution (default 25s)
 	Temperature float64       // Low temperature for deterministic tool calling (default 0.1)
 	MaxTokens   int           // Max output tokens (default 1024)
 }
 
 // DefaultConfig loads configuration from environment variables or standard defaults
 func DefaultConfig() Config {
+	mode := os.Getenv("LLM_MODE")
+	if mode == "" {
+		mode = "auto"
+	}
 	baseURL := os.Getenv("LLM_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:11434/v1"
@@ -38,11 +48,35 @@ func DefaultConfig() Config {
 		apiKey = "ollama"
 	}
 
+	cliPath := os.Getenv("HERMES_CLI_PATH")
+	if cliPath == "" {
+		// Auto-detect standard Windows AppData user path
+		userHome, _ := os.UserHomeDir()
+		standardWinPath := filepath.Join(userHome, "AppData", "Local", "hermes", "bin", "hermes.exe")
+		if _, err := os.Stat(standardWinPath); err == nil {
+			cliPath = standardWinPath
+		} else {
+			cliPath = "hermes"
+		}
+	}
+	cliProvider := os.Getenv("HERMES_CLI_PROVIDER")
+	if cliProvider == "" {
+		cliProvider = "copilot"
+	}
+	cliModel := os.Getenv("HERMES_CLI_MODEL")
+	if cliModel == "" {
+		cliModel = "gpt-4o"
+	}
+
 	return Config{
+		Mode:        mode,
 		BaseURL:     strings.TrimRight(baseURL, "/"),
 		Model:       model,
 		APIKey:      apiKey,
-		Timeout:     15 * time.Second,
+		CLIPath:     cliPath,
+		CLIProvider: cliProvider,
+		CLIModel:    cliModel,
+		Timeout:     25 * time.Second,
 		Temperature: 0.1,
 		MaxTokens:   1024,
 	}
@@ -110,7 +144,7 @@ func NewHermesAdapter(cfg Config) *HermesAdapter {
 		cfg.Model = "hermes3:8b"
 	}
 	if cfg.Timeout <= 0 {
-		cfg.Timeout = 15 * time.Second
+		cfg.Timeout = 25 * time.Second
 	}
 	if cfg.Temperature <= 0 {
 		cfg.Temperature = 0.1
@@ -147,8 +181,50 @@ Step 4: Check for fraud or anomalies (amount change requested? If amount change 
 {"name": "stage_invoice_update", "arguments": {"document_no": "INV/2026/001", "proposed_value": "PT Sumber Makmur", "raw_message": "..."}}
 </tool_call>`
 
-// ProcessMessage sends a chat prompt to Hermes 3 and parses the structured thought and tool call
+// ProcessMessage sends a chat prompt to Hermes 3 (via HTTP, CLI, or Heuristic fallback)
 func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
+	// Mode 1: Forced CLI
+	if h.cfg.Mode == "cli" {
+		return h.ProcessViaCLI(ctx, rawMessage, branchContext)
+	}
+
+	// Mode 2: Forced HTTP (Ollama / vLLM)
+	if h.cfg.Mode == "http" {
+		return h.ProcessViaHTTP(ctx, rawMessage, branchContext)
+	}
+
+	// Mode 3: "auto" - Try HTTP first, then CLI, then Heuristic Fallback
+	res, err := h.ProcessViaHTTP(ctx, rawMessage, branchContext)
+	if err == nil && !res.IsFallback {
+		return res, nil
+	}
+
+	// If HTTP was fallback or failed, try CLI if binary is available
+	if h.hasCLI() {
+		cliRes, cliErr := h.ProcessViaCLI(ctx, rawMessage, branchContext)
+		if cliErr == nil && !cliRes.IsFallback {
+			return cliRes, nil
+		}
+	}
+
+	// Default to heuristic fallback
+	return h.FallbackHeuristic(rawMessage), nil
+}
+
+func (h *HermesAdapter) hasCLI() bool {
+	if h.cfg.CLIPath == "" {
+		return false
+	}
+	if filepath.IsAbs(h.cfg.CLIPath) {
+		_, err := os.Stat(h.cfg.CLIPath)
+		return err == nil
+	}
+	_, err := exec.LookPath(h.cfg.CLIPath)
+	return err == nil
+}
+
+// ProcessViaHTTP sends request to an OpenAI-compatible HTTP endpoint (Ollama / vLLM)
+func (h *HermesAdapter) ProcessViaHTTP(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
 	start := time.Now()
 
 	userPrompt := fmt.Sprintf("Incoming Chat Message:\n\"%s\"", rawMessage)
@@ -185,7 +261,6 @@ func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, b
 
 	resp, err := h.httpClient.Do(httpReq)
 	if err != nil {
-		// LLM engine is offline or unreachable - trigger seamless heuristic fallback
 		res := h.FallbackHeuristic(rawMessage)
 		res.LatencyMs = time.Since(start).Milliseconds()
 		return res, nil
@@ -218,7 +293,45 @@ func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, b
 		Thought:    thought,
 		ToolCall:   toolCall,
 		IsFallback: false,
-		ModelUsed:  h.cfg.Model,
+		ModelUsed:  fmt.Sprintf("http:%s", h.cfg.Model),
+		LatencyMs:  latency,
+	}, nil
+}
+
+// ProcessViaCLI executes Hermes 3 via local hermes.exe CLI in oneshot mode
+func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
+	start := time.Now()
+
+	userPrompt := fmt.Sprintf("%s\n\nIncoming Chat Message:\n\"%s\"", hermesSystemPrompt, rawMessage)
+	if branchContext != "" {
+		userPrompt += fmt.Sprintf("\n\nBranch Context: %s", branchContext)
+	}
+
+	cmdArgs := []string{
+		"--provider", h.cfg.CLIProvider,
+		"-m", h.cfg.CLIModel,
+		"-z", userPrompt,
+	}
+
+	cmd := exec.CommandContext(ctx, h.cfg.CLIPath, cmdArgs...)
+	outBytes, err := cmd.Output()
+	if err != nil {
+		res := h.FallbackHeuristic(rawMessage)
+		res.LatencyMs = time.Since(start).Milliseconds()
+		return res, nil
+	}
+
+	content := string(outBytes)
+	thought, toolCall := ParseHermesOutput(content)
+
+	latency := time.Since(start).Milliseconds()
+
+	return &HermesResult{
+		RawContent: content,
+		Thought:    thought,
+		ToolCall:   toolCall,
+		IsFallback: false,
+		ModelUsed:  fmt.Sprintf("hermes-cli:%s/%s", h.cfg.CLIProvider, h.cfg.CLIModel),
 		LatencyMs:  latency,
 	}, nil
 }

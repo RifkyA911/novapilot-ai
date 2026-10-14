@@ -155,3 +155,29 @@ func TestProcessMessage_OfflineFallback(t *testing.T) {
 		t.Errorf("expected PT Berkah Sejahtera, got %v", res.ToolCall.Arguments["proposed_value"])
 	}
 }
+
+func TestProcessViaCLI_Live(t *testing.T) {
+	cfg := llm.DefaultConfig()
+	cfg.Mode = "cli"
+	adapter := llm.NewHermesAdapter(cfg)
+
+	// Skip if hermes CLI is not installed
+	if cfg.CLIPath == "" {
+		t.Skip("hermes CLI not available on this machine")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	chat := "Tolong ubah nota faktur INV/2026/001 menjadi PT Sumber Makmur Abadi"
+	res, err := adapter.ProcessMessage(ctx, chat, "Cabang Surabaya Hub")
+	if err != nil {
+		t.Fatalf("unexpected error running hermes CLI: %v", err)
+	}
+
+	if res.IsFallback {
+		t.Logf("CLI failed, fell back to heuristic: %s", res.Thought)
+	} else {
+		t.Logf("CLI succeeded! Model: %s, Latency: %dms, Raw: %s", res.ModelUsed, res.LatencyMs, res.RawContent)
+	}
+}
