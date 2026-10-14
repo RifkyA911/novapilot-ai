@@ -22,7 +22,9 @@
 		XMark,
 		Plus,
 		Phone,
-		MagnifyingGlass
+		MagnifyingGlass,
+		InformationCircle,
+		QuestionMarkCircle
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import DataTable from "$lib/components/DataTable.svelte";
@@ -416,6 +418,30 @@
 	});
 
 	let formError = $state<string | null>(null);
+	let showJidGuide = $state(false);
+
+	const regionalBranchPresets = [
+		"Jawa Timur (Surabaya Hub)",
+		"Sumatera Utara (Medan Logistics Hub)",
+		"DKI Jakarta (Head Office & Finansial)",
+		"Jawa Tengah (Semarang Distribution)",
+		"Jawa Barat (Cikarang Industrial Plant)",
+		"Sulawesi Selatan (Makassar Central Hub)",
+		"Nasional (IT Infrastructure & Ops)"
+	];
+
+	function fillJidFromPhone() {
+		if (!newContact.contactPhone.trim()) return;
+		let clean = newContact.contactPhone.replace(/[^0-9]/g, "");
+		if (clean.startsWith("0")) {
+			clean = "62" + clean.substring(1);
+		}
+		newContact.jidOrChatId = `${clean}@s.whatsapp.net`;
+	}
+
+	function selectBranchPreset(branch: string) {
+		newContact.branch = branch;
+	}
 
 	function openAddModal() {
 		newContact = {
@@ -428,6 +454,7 @@
 			contactPhone: "",
 			isWhitelisted: true
 		};
+		showJidGuide = false;
 		formError = null;
 		isAddModalOpen = true;
 	}
@@ -1164,27 +1191,84 @@
 					<div class="space-y-1.5">
 						<div class="flex items-center justify-between">
 							<label class="font-semibold text-foreground">JID / Identifier Saluran</label>
-							<span class="text-[10px] font-mono text-muted-foreground">
-								{newContact.type === 'GROUP' ? 'Format WA: 120363xxx@g.us' : 'Format WA: 6281xxx@s.whatsapp.net'}
-							</span>
+							<button 
+								type="button" 
+								onclick={() => showJidGuide = !showJidGuide} 
+								class="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
+							>
+								<QuestionMarkCircle class="h-3.5 w-3.5" />
+								<span>{showJidGuide ? 'Tutup Panduan' : 'Dari mana dapat ID ini?'}</span>
+							</button>
 						</div>
+
+						{#if showJidGuide}
+							<div class="p-3 rounded-xl bg-primary/10 border border-primary/25 text-[11px] space-y-1.5 text-foreground animate-in fade-in duration-150">
+								<div class="font-bold flex items-center gap-1.5 text-primary">
+									<InformationCircle class="h-3.5 w-3.5" />
+									<span>Panduan Mendapatkan JID Saluran:</span>
+								</div>
+								<ul class="list-disc list-inside space-y-1 text-muted-foreground pl-0.5">
+									<li><strong class="text-foreground">Grup WhatsApp (@g.us):</strong> Masukkan nomor bot ke grup WA lalu kirim chat tes. Baileys otomatis mencetak ID grup di terminal log gateway (menu <code>/admin/whatsapp</code>). Formatnya: <code>120363xxx@g.us</code>.</li>
+									<li><strong class="text-foreground">Kontak Hotline PIC (@s.whatsapp.net):</strong> Menggunakan nomor telepon internasional (misal <code>6281234567890</code>). Anda dapat mengetik nomor HP di bawah lalu klik tombol isi otomatis.</li>
+									<li><strong class="text-foreground">Telegram / Discord / Slack:</strong> Salin Chat ID numerik atau Channel ID dari aplikasi bersangkutan.</li>
+								</ul>
+							</div>
+						{/if}
+
 						<input
 							type="text"
 							bind:value={newContact.jidOrChatId}
 							placeholder={newContact.type === 'GROUP' ? '120363028192837492@g.us' : '6281234567890'}
 							class="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs font-mono text-foreground placeholder:text-muted-foreground shadow-2xs focus:ring-1 focus:ring-ring"
 						/>
+
+						{#if newContact.type === 'INDIVIDUAL' && newContact.contactPhone}
+							<button
+								type="button"
+								onclick={fillJidFromPhone}
+								class="text-[10.5px] text-primary hover:underline inline-flex items-center gap-1 cursor-pointer font-medium"
+							>
+								<Bolt class="h-3 w-3" />
+								<span>Konversi otomatis No. HP PIC ({newContact.contactPhone}) ke JID</span>
+							</button>
+						{/if}
 					</div>
 
 					<!-- Cabang & Regional -->
-					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">Cabang / Regional Hub</label>
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<label class="font-semibold text-foreground">Cabang / Regional Hub</label>
+							<span class="text-[10px] text-muted-foreground">Menghubungkan ke <code>branch_id</code> DB</span>
+						</div>
+
+						<!-- Branch Preset Selector Pills -->
+						<div class="flex items-center gap-1.5 flex-wrap">
+							<span class="text-[10px] text-muted-foreground font-medium">Pilih Cepat:</span>
+							{#each regionalBranchPresets as preset}
+								<button
+									type="button"
+									onclick={() => selectBranchPreset(preset)}
+									class="px-2 py-0.5 rounded-lg text-[10px] border transition-all cursor-pointer {newContact.branch === preset ? 'bg-primary text-primary-foreground border-primary font-bold shadow-2xs' : 'bg-secondary/60 hover:bg-secondary border-border text-muted-foreground hover:text-foreground'}"
+								>
+									{preset.split(' (')[0]}
+								</button>
+							{/each}
+						</div>
+
 						<input
 							type="text"
 							bind:value={newContact.branch}
-							placeholder="mis. Jawa Tengah (Semarang Hub) / Head Office"
+							placeholder="mis. Jawa Timur (Surabaya Hub) / Head Office"
 							class="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground shadow-2xs focus:ring-1 focus:ring-ring"
 						/>
+
+						<!-- Impact of Branch on DB & App Card -->
+						<div class="p-2.5 rounded-xl bg-secondary/35 border border-border/70 text-[10.5px] leading-relaxed text-muted-foreground flex items-start gap-2">
+							<ShieldCheck class="h-4 w-4 text-primary shrink-0 mt-0.5" />
+							<div>
+								<strong class="text-foreground">Pengaruh Cabang terhadap Database:</strong> Saluran ini akan dipetakan ke <code>branch_id</code> di tabel <code>branches</code> &amp; <code>invoices</code>. Sistem AI Guardrail memvalidasi apakah pengirim pesan memiliki wewenang atas faktur cabang tersebut, mencegah mutasi tidak sah lintas wilayah (*Cross-Branch Protection*).
+							</div>
+						</div>
 					</div>
 
 					<!-- Contact Person & Telepon -->
