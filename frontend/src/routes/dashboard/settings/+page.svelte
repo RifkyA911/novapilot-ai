@@ -136,8 +136,9 @@
 			<div class="space-y-4 text-xs">
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1">
-						<label class="font-semibold text-foreground">Batas Threshold Nilai Faktur Tinggi (Rupiah):</label>
+						<label for="high-val-threshold" class="font-semibold text-foreground">Batas Threshold Nilai Faktur Tinggi (Rupiah):</label>
 						<input
+							id="high-val-threshold"
 							type="text"
 							bind:value={highValueThreshold}
 							class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs font-mono font-bold"
@@ -202,8 +203,9 @@
 					</div>
 
 					<div class="space-y-1">
-						<label class="font-semibold text-foreground">Daftar Whitelist Grup WhatsApp (JID, pisahkan koma):</label>
+						<label for="wa-whitelist-groups" class="font-semibold text-foreground">Daftar Whitelist Grup WhatsApp (JID, pisahkan koma):</label>
 						<textarea
+							id="wa-whitelist-groups"
 							bind:value={whitelistedGroups}
 							rows={3}
 							class="w-full p-2.5 rounded-lg border border-input bg-background text-xs font-mono"
@@ -225,20 +227,20 @@
 
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
 				<div class="space-y-1">
-					<label class="font-semibold text-muted-foreground">Host:</label>
-					<input type="text" bind:value={pgHost} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
+					<label for="pg-cfg-host" class="font-semibold text-muted-foreground">Host:</label>
+					<input id="pg-cfg-host" type="text" bind:value={pgHost} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
 				</div>
 				<div class="space-y-1">
-					<label class="font-semibold text-muted-foreground">Port:</label>
-					<input type="text" bind:value={pgPort} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
+					<label for="pg-cfg-port" class="font-semibold text-muted-foreground">Port:</label>
+					<input id="pg-cfg-port" type="text" bind:value={pgPort} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
 				</div>
 				<div class="space-y-1">
-					<label class="font-semibold text-muted-foreground">Database:</label>
-					<input type="text" bind:value={pgDB} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
+					<label for="pg-cfg-db" class="font-semibold text-muted-foreground">Database:</label>
+					<input id="pg-cfg-db" type="text" bind:value={pgDB} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
 				</div>
 				<div class="space-y-1">
-					<label class="font-semibold text-muted-foreground">Max Open Conns:</label>
-					<input type="number" bind:value={pgMaxConns} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
+					<label for="pg-cfg-conns" class="font-semibold text-muted-foreground">Max Open Conns:</label>
+					<input id="pg-cfg-conns" type="number" bind:value={pgMaxConns} class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono" />
 				</div>
 			</div>
 		</div>

@@ -20,6 +20,7 @@
 		Clock,
 		ExclamationTriangle
 	} from "svelte-heros-v2";
+	import DottedSurface from "$lib/components/DottedSurface.svelte";
 
 	// Interactive Simulation State
 	let isSimulating = $state(false);
@@ -129,8 +130,11 @@
 	></div>
 
 	<!-- HERO SECTION -->
-	<section class="relative pt-12 pb-16 md:pt-20 md:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="flex flex-col items-center text-center space-y-6 max-w-4xl mx-auto">
+	<section class="relative pt-12 pb-16 md:pt-20 md:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden">
+		<!-- 3D Three.js Animated Dotted Surface Wave Background (21st.dev @efferd reference) -->
+		<DottedSurface />
+
+		<div class="flex flex-col items-center text-center space-y-6 max-w-4xl mx-auto relative z-10">
 			
 			<!-- Aceternity Pill Announcement Badge -->
 			<div class="inline-flex items-center gap-2 rounded-full border border-border/80 bg-secondary/80 backdrop-blur-md px-3.5 py-1 text-xs font-mono text-muted-foreground shadow-xs transition-all hover:border-foreground/30">

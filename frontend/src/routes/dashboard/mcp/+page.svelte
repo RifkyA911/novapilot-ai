@@ -460,8 +460,9 @@
 
 				<div class="space-y-3 text-xs">
 					<div class="space-y-1">
-						<label class="font-semibold text-muted-foreground">Pilih Tool MCP:</label>
+						<label for="mcp-tool-select" class="font-semibold text-muted-foreground">Pilih Tool MCP:</label>
 						<select
+							id="mcp-tool-select"
 							bind:value={selectedTool}
 							class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold"
 						>
@@ -473,8 +474,9 @@
 
 					{#if selectedTool === "check_invoice" || selectedTool === "stage_invoice_update"}
 						<div class="space-y-1">
-							<label class="font-semibold text-muted-foreground">Nomor Faktur (invoice_no):</label>
+							<label for="mcp-invoice-no" class="font-semibold text-muted-foreground">Nomor Faktur (invoice_no):</label>
 							<input
+								id="mcp-invoice-no"
 								type="text"
 								bind:value={playgroundInvoiceNo}
 								placeholder="INV/2026/001"
@@ -485,8 +487,9 @@
 
 					{#if selectedTool === "stage_invoice_update"}
 						<div class="space-y-1">
-							<label class="font-semibold text-muted-foreground">Nama Baru yang Diajukan (proposed_value):</label>
+							<label for="mcp-proposed-val" class="font-semibold text-muted-foreground">Nama Baru yang Diajukan (proposed_value):</label>
 							<input
+								id="mcp-proposed-val"
 								type="text"
 								bind:value={playgroundProposedValue}
 								placeholder="PT Sumber Makmur Baru"

@@ -1059,15 +1059,12 @@
 		role="dialog" 
 		aria-modal="true" 
 		tabindex="-1"
-		class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4" 
-		onclick={() => imagePreviewUrl = null}
+		class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer" 
+		onclick={(e) => { if (e.target === e.currentTarget) imagePreviewUrl = null; }}
 		onkeydown={(e) => { if (e.key === 'Escape') imagePreviewUrl = null; }}
 	>
 		<div 
-			role="document"
-			class="relative max-w-4xl max-h-[90vh] flex flex-col items-center gap-3" 
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
+			class="relative max-w-4xl max-h-[90vh] flex flex-col items-center gap-3 cursor-default" 
 		>
 			<div class="w-full flex items-center justify-between text-white/80 pb-2">
 				<span class="text-xs font-mono font-bold flex items-center gap-1.5">

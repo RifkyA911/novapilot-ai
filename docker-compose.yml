@@ -1,0 +1,81 @@
+services:
+  # 1. PostgreSQL 16 (System Database - DB 1)
+  postgres:
+    image: postgres:16-alpine
+    container_name: novapilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: novapilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/scripts/mock_db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d novapilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Golang API Backend Core
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: novapilot-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: "8088"
+      GIN_MODE: "release"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_PASSWORD: "password"
+      DB_NAME: "novapilot"
+      DB_SSLMODE: "disable"
+    ports:
+      - "8088:8088"
+
+  # 3. SvelteKit Cockpit Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: novapilot-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      PUBLIC_API_URL: "http://backend:8088"
+    ports:
+      - "3000:3000"
+
+  # 4. WhatsApp ChatOps & OCR Gateway
+  whatsapp-gateway:
+    build:
+      context: ./whatsapp-gateway
+      dockerfile: Dockerfile
+    container_name: novapilot-wa-gateway
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      WA_GATEWAY_PORT: "3002"
+      NOVAPILOT_BACKEND_URL: "http://backend:8088"
+      SIMULATION_MODE: "true"
+      AUTO_REPLY_ENABLED: "true"
+    ports:
+      - "3002:3002"
+    volumes:
+      - uploads_data:/app/../uploads
+
+volumes:
+  pgdata:
+  uploads_data:
