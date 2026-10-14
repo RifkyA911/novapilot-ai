@@ -747,6 +747,35 @@
 						animation: activeGlowPulse 1.4s ease-in-out infinite;
 						stroke-width: 3px !important;
 					}
+					@keyframes dbLedBlinkFast {
+						0%, 100% { opacity: 0.25; }
+						50% { opacity: 1; }
+					}
+					@keyframes dbLedBlinkSlow {
+						0%, 100% { opacity: 0.35; }
+						50% { opacity: 1; }
+					}
+					@keyframes dbBeamScan {
+						0% { transform: translateY(0px); opacity: 0.3; }
+						50% { transform: translateY(28px); opacity: 0.95; }
+						100% { transform: translateY(0px); opacity: 0.3; }
+					}
+					@keyframes socketRipple {
+						0% { r: 4px; opacity: 1; stroke-width: 2px; }
+						100% { r: 14px; opacity: 0; stroke-width: 0.5px; }
+					}
+					.db-led-fast {
+						animation: dbLedBlinkFast 0.65s infinite;
+					}
+					.db-led-slow {
+						animation: dbLedBlinkSlow 1.3s infinite;
+					}
+					.db-socket-pulse {
+						animation: socketRipple 1.6s ease-out infinite;
+					}
+					.db-beam {
+						animation: dbBeamScan 1.8s ease-in-out infinite;
+					}
 				</style>
 
 				<!-- Gradients for Adapters -->
@@ -954,6 +983,25 @@
 					class="flowing-path-connected"
 				/>
 
+				<!-- DB 1 Connection Socket with Animated Pulse Ripple -->
+				<circle cx="627" cy="232" r="4.5" fill="#10b981" />
+				<circle cx="627" cy="232" r="5" fill="none" stroke="#10b981" class="db-socket-pulse" />
+
+				<!-- Continuous Live Data Packets: Core <-> DB 1 -->
+				<circle r="4" fill="#10b981" filter="url(#particleGlow)">
+					<animateMotion dur="1.5s" repeatCount="indefinite" path="M 627 194 L 627 232" />
+				</circle>
+				<circle r="3" fill="#34d399" filter="url(#particleGlow)">
+					<animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M 627 232 L 627 194" />
+				</circle>
+
+				<!-- Simulation Packet: Step 3 (Core -> DB 1 Staging Burst) -->
+				{#if isSimulating && simulationStep === 3}
+					<circle r="8" fill="#10b981" filter="url(#particleGlow)">
+						<animateMotion dur="0.45s" repeatCount="1" path="M 627 194 L 627 232" />
+					</circle>
+				{/if}
+
 				<!-- Bottom Box: DB 1 (PostgreSQL 18 System Store Local) -->
 				<g transform="translate(505, 232)">
 					<rect
@@ -964,6 +1012,31 @@
 					<!-- Title Banner -->
 					<rect x="0" y="0" width="245" height="34" rx="16" fill="#10b981" fill-opacity="0.18" />
 					<text x="14" y="23" font-family="system-ui" font-size="12.5" font-weight="bold" fill="#059669">🗄️ DB 1: System Store (PostgreSQL 18)</text>
+
+					<!-- Animated 3D Disk Platter Cylinder Stack on Right -->
+					<g transform="translate(192, 44)">
+						<!-- Laser Scanner Read/Write Beam -->
+						<line x1="-12" y1="0" x2="36" y2="0" stroke="#10b981" stroke-width="1.5" class="db-beam" filter="url(#particleGlow)" />
+						
+						<!-- Disk 1 (Top Platter) -->
+						<path d="M 0 10 v 9 a 18 6.5 0 0 0 36 0 v -9" fill="#059669" fill-opacity="0.45" stroke="#10b981" stroke-width="1" />
+						<ellipse cx="18" cy="10" rx="18" ry="6.5" fill="#10b981" fill-opacity="0.65" stroke="#10b981" stroke-width="1.2" />
+						
+						<!-- Disk 2 (Middle Platter) -->
+						<path d="M 0 23 v 9 a 18 6.5 0 0 0 36 0 v -9" fill="#047857" fill-opacity="0.55" stroke="#10b981" stroke-width="1" />
+						<ellipse cx="18" cy="23" rx="18" ry="6.5" fill="#059669" fill-opacity="0.75" stroke="#10b981" stroke-width="1.2" />
+
+						<!-- Disk 3 (Bottom Platter) -->
+						<path d="M 0 36 v 9 a 18 6.5 0 0 0 36 0 v -9" fill="#065f46" fill-opacity="0.65" stroke="#10b981" stroke-width="1" />
+						<ellipse cx="18" cy="36" rx="18" ry="6.5" fill="#047857" fill-opacity="0.85" stroke="#10b981" stroke-width="1.2" />
+
+						<!-- Blinking IO Activity LEDs -->
+						<circle cx="4" cy="54" r="2.5" fill="#10b981" class="db-led-fast" />
+						<text x="10" y="57" font-family="monospace" font-size="7.5" fill="#10b981" font-weight="bold">RD</text>
+
+						<circle cx="21" cy="54" r="2.5" fill="#f59e0b" class="db-led-slow" />
+						<text x="27" y="57" font-family="monospace" font-size="7.5" fill="#f59e0b" font-weight="bold">WR</text>
+					</g>
 
 					<!-- Tables List -->
 					<g transform="translate(12, 42)">
@@ -1058,13 +1131,18 @@
 					/>
 					<rect x="0" y="0" width="220" height="38" rx="18" fill="#06b6d4" fill-opacity="0.16" />
 					<text x="14" y="25" font-family="system-ui" font-size="13" font-weight="bold" fill="#06b6d4">🔌 Enterprise MCP Connector</text>
+					
+					<!-- Live Status Indicator -->
+					<circle cx="204" cy="18" r="3" fill="#06b6d4" class="db-led-fast" />
+					<text x="162" y="21" font-family="monospace" font-size="8.5" font-weight="bold" fill="#06b6d4">RPC: LIVE</text>
 
 					<!-- MCP Features -->
 					<g transform="translate(10, 48)">
 						<rect x="0" y="0" width="200" height="58" rx="10" fill="currentColor" class="text-secondary/60" />
+						<line x1="8" y1="48" x2="192" y2="48" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="6 4" class="flowing-path-connected" />
 						<text x="8" y="18" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Model Context Protocol</text>
 						<text x="8" y="33" font-family="monospace" font-size="10" fill="currentColor" class="text-muted-foreground">Tool: mutate_invoice_record()</text>
-						<text x="8" y="48" font-family="monospace" font-size="10" fill="#06b6d4">Standard Multiplatform Schema</text>
+						<text x="8" y="45" font-family="monospace" font-size="9" fill="#06b6d4">Standard Multiplatform Schema</text>
 					</g>
 
 					<g transform="translate(10, 112)">
@@ -1084,6 +1162,25 @@
 					class="flowing-path-connected"
 				/>
 
+				<!-- DB 2 Connection Socket with Animated Pulse Ripple -->
+				<circle cx="1130" cy="232" r="4.5" fill="#06b6d4" />
+				<circle cx="1130" cy="232" r="5" fill="none" stroke="#06b6d4" class="db-socket-pulse" />
+
+				<!-- Continuous Live Data Packets: MCP <-> DB 2 -->
+				<circle r="4.5" fill="#06b6d4" filter="url(#particleGlow)">
+					<animateMotion dur="1.4s" repeatCount="indefinite" path="M 1130 194 L 1130 232" />
+				</circle>
+				<circle r="3.5" fill="#38bdf8" filter="url(#particleGlow)">
+					<animateMotion dur="2.0s" begin="0.7s" repeatCount="indefinite" path="M 1130 232 L 1130 194" />
+				</circle>
+
+				<!-- Simulation Packet: Step 5 (MCP -> DB 2 Parameterized Burst) -->
+				{#if isSimulating && simulationStep === 5}
+					<circle r="8" fill="#06b6d4" filter="url(#particleGlow)">
+						<animateMotion dur="0.45s" repeatCount="1" path="M 1130 194 L 1130 232" />
+					</circle>
+				{/if}
+
 				<!-- Bottom Box: DB 2 (Enterprise Business Data Source) -->
 				<g transform="translate(1020, 232)">
 					<rect
@@ -1093,6 +1190,31 @@
 					/>
 					<rect x="0" y="0" width="220" height="34" rx="16" fill="#2563eb" fill-opacity="0.18" />
 					<text x="12" y="23" font-family="system-ui" font-size="12" font-weight="bold" fill="#2563eb">🏢 DB 2: Enterprise Data (ERP)</text>
+
+					<!-- Animated 3D Disk Platter Cylinder Stack on Right -->
+					<g transform="translate(170, 44)">
+						<!-- Laser Scanner Read/Write Beam -->
+						<line x1="-12" y1="0" x2="34" y2="0" stroke="#06b6d4" stroke-width="1.5" class="db-beam" filter="url(#particleGlow)" />
+						
+						<!-- Disk 1 (Top Platter) -->
+						<path d="M 0 10 v 9 a 17 6.5 0 0 0 34 0 v -9" fill="#0284c7" fill-opacity="0.45" stroke="#06b6d4" stroke-width="1" />
+						<ellipse cx="17" cy="10" rx="17" ry="6.5" fill="#06b6d4" fill-opacity="0.65" stroke="#06b6d4" stroke-width="1.2" />
+						
+						<!-- Disk 2 (Middle Platter) -->
+						<path d="M 0 23 v 9 a 17 6.5 0 0 0 34 0 v -9" fill="#0369a1" fill-opacity="0.55" stroke="#06b6d4" stroke-width="1" />
+						<ellipse cx="17" cy="23" rx="17" ry="6.5" fill="#0284c7" fill-opacity="0.75" stroke="#06b6d4" stroke-width="1.2" />
+
+						<!-- Disk 3 (Bottom Platter) -->
+						<path d="M 0 36 v 9 a 17 6.5 0 0 0 34 0 v -9" fill="#075985" fill-opacity="0.65" stroke="#06b6d4" stroke-width="1" />
+						<ellipse cx="17" cy="36" rx="17" ry="6.5" fill="#0369a1" fill-opacity="0.85" stroke="#06b6d4" stroke-width="1.2" />
+
+						<!-- Blinking IO Activity LEDs -->
+						<circle cx="4" cy="54" r="2.5" fill="#06b6d4" class="db-led-fast" />
+						<text x="10" y="57" font-family="monospace" font-size="7.5" fill="#06b6d4" font-weight="bold">TX</text>
+
+						<circle cx="20" cy="54" r="2.5" fill="#3b82f6" class="db-led-slow" />
+						<text x="26" y="57" font-family="monospace" font-size="7.5" fill="#3b82f6" font-weight="bold">OK</text>
+					</g>
 
 					<g transform="translate(10, 42)">
 						<text x="6" y="15" font-family="monospace" font-size="10.5" font-weight="bold" fill="currentColor" class="text-foreground">Oracle 19c / SAP / ERP Prod:</text>

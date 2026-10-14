@@ -77,6 +77,20 @@
 	let activeTab = $state<"system" | "mcp" | "env">("system");
 	let copiedEnv = $state(false);
 
+	// Animated SVG Connectors Simulation States
+	let isSimulatingDb1 = $state(false);
+	let isSimulatingDb2 = $state(false);
+
+	function triggerDb1Burst() {
+		isSimulatingDb1 = true;
+		setTimeout(() => { isSimulatingDb1 = false; }, 1400);
+	}
+
+	function triggerDb2Burst() {
+		isSimulatingDb2 = true;
+		setTimeout(() => { isSimulatingDb2 = false; }, 1400);
+	}
+
 	// Tables info
 	const systemTables = [
 		{ name: "tickets", count: "~12 baris", desc: "Antrean Human-in-the-Loop, mutasi usulan nota, status lifecycle approval" },
@@ -297,6 +311,309 @@ MCP_REF_DB_TIMEOUT_MS=5000`;
 				<ArrowPath class="h-3.5 w-3.5 {isLoadingConfig ? 'animate-spin' : ''}" />
 				<span>{isLoadingConfig ? 'Memuat Ulang...' : 'Muat Ulang Status'}</span>
 			</button>
+		</div>
+	</div>
+
+	<!-- ========================================================================= -->
+	<!-- ANIMATED SVG DUAL-DB CONNECTORS ARCHITECTURE                              -->
+	<!-- ========================================================================= -->
+	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 overflow-hidden relative">
+		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+			<div class="flex items-center gap-2.5">
+				<div class="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+					<CircleStack class="h-4 w-4" />
+				</div>
+				<div>
+					<h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+						Diagram Aliran Konektor Dual-DB (Live Architecture)
+						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+							REALTIME ANIMATED
+						</span>
+					</h3>
+					<p class="text-xs text-muted-foreground">Visualisasi pipa transmisi data internal sistem vs isolasi Model Context Protocol (MCP) ke ERP bisnis.</p>
+				</div>
+			</div>
+
+			<!-- Trigger Buttons -->
+			<div class="flex items-center gap-2 font-mono text-xs">
+				<button
+					type="button"
+					onclick={triggerDb1Burst}
+					disabled={isSimulatingDb1}
+					class="h-8 px-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+				>
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 {isSimulatingDb1 ? 'animate-ping' : ''}"></span>
+					<span>Simulasi Kueri DB 1</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={triggerDb2Burst}
+					disabled={isSimulatingDb2}
+					class="h-8 px-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+				>
+					<span class="h-1.5 w-1.5 rounded-full bg-cyan-500 {isSimulatingDb2 ? 'animate-ping' : ''}"></span>
+					<span>Simulasi Mutasi MCP DB 2</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- SVG Canvas -->
+		<div class="w-full overflow-x-auto py-2">
+			<svg
+				viewBox="0 0 960 230"
+				class="w-full min-w-[780px] h-[210px] select-none"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<defs>
+					<style>
+						@keyframes wireDashFlow {
+							from { stroke-dashoffset: 0; }
+							to { stroke-dashoffset: -24; }
+						}
+						@keyframes wireDashReturn {
+							from { stroke-dashoffset: 0; }
+							to { stroke-dashoffset: 24; }
+						}
+						@keyframes diskLedFast {
+							0%, 100% { opacity: 0.25; }
+							50% { opacity: 1; }
+						}
+						@keyframes diskLedSlow {
+							0%, 100% { opacity: 0.35; }
+							50% { opacity: 1; }
+						}
+						@keyframes diskBeam {
+							0% { transform: translateY(0px); opacity: 0.3; }
+							50% { transform: translateY(24px); opacity: 0.95; }
+							100% { transform: translateY(0px); opacity: 0.3; }
+						}
+						@keyframes socketPingRipple {
+							0% { r: 4px; opacity: 1; stroke-width: 2px; }
+							100% { r: 14px; opacity: 0; stroke-width: 0.5px; }
+						}
+						.wire-flow-forward {
+							stroke-dasharray: 6 4;
+							animation: wireDashFlow 0.85s linear infinite;
+						}
+						.wire-flow-backward {
+							stroke-dasharray: 6 4;
+							animation: wireDashReturn 1.1s linear infinite;
+						}
+						.conn-led-fast {
+							animation: diskLedFast 0.65s infinite;
+						}
+						.conn-led-slow {
+							animation: diskLedSlow 1.3s infinite;
+						}
+						.conn-socket-pulse {
+							animation: socketPingRipple 1.6s ease-out infinite;
+						}
+						.conn-beam {
+							animation: diskBeam 1.8s ease-in-out infinite;
+						}
+					</style>
+
+					<!-- Particle Glow Filter -->
+					<filter id="dbConnGlow" x="-30%" y="-30%" width="160%" height="160%">
+						<feGaussianBlur stdDeviation="3" result="blur" />
+						<feComposite in="SourceGraphic" in2="blur" operator="over" />
+					</filter>
+
+					<linearGradient id="connGradCoreToDB1" x1="0%" y1="0%" x2="100%" y2="0%">
+						<stop offset="0%" stop-color="#10b981" />
+						<stop offset="100%" stop-color="#059669" />
+					</linearGradient>
+
+					<linearGradient id="connGradCoreToMCP" x1="0%" y1="0%" x2="100%" y2="0%">
+						<stop offset="0%" stop-color="#10b981" />
+						<stop offset="100%" stop-color="#06b6d4" />
+					</linearGradient>
+
+					<linearGradient id="connGradMCPToDB2" x1="0%" y1="0%" x2="100%" y2="0%">
+						<stop offset="0%" stop-color="#06b6d4" />
+						<stop offset="100%" stop-color="#2563eb" />
+					</linearGradient>
+				</defs>
+
+				<!-- ========================================================= -->
+				<!-- LEFT BOX: NOVAPILOT CORE ENGINE (:8088 GO)                -->
+				<!-- ========================================================= -->
+				<g transform="translate(15, 20)">
+					<rect
+						x="0" y="0" width="185" height="190" rx="16"
+						fill="currentColor"
+						class="text-card stroke-emerald-500/80 stroke-[2px]"
+					/>
+					<rect x="0" y="0" width="185" height="34" rx="16" fill="#10b981" fill-opacity="0.16" />
+					<text x="12" y="22" font-family="system-ui" font-size="12" font-weight="bold" fill="currentColor" class="text-primary">🛡️ NovaPilot AI Core</text>
+					<text x="135" y="22" font-family="monospace" font-size="9.5" fill="#10b981" font-weight="bold">:8088 Go</text>
+
+					<g transform="translate(10, 44)">
+						<rect x="0" y="0" width="165" height="42" rx="8" fill="currentColor" class="text-secondary/60" />
+						<text x="8" y="16" font-family="monospace" font-size="9.5" font-weight="bold" fill="currentColor" class="text-foreground">Connection Pooler</text>
+						<text x="8" y="30" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">Pool: {telemetry?.database?.open_connections || 0} / 25 Conns</text>
+					</g>
+
+					<g transform="translate(10, 94)">
+						<rect x="0" y="0" width="165" height="40" rx="8" fill="currentColor" class="text-secondary/60" />
+						<text x="8" y="16" font-family="monospace" font-size="9.5" font-weight="bold" fill="currentColor" class="text-foreground">Dual-Engine Router</text>
+						<text x="8" y="29" font-family="monospace" font-size="8.5" fill="currentColor" class="text-muted-foreground">Internal vs ERP Isolation</text>
+					</g>
+
+					<g transform="translate(10, 142)">
+						<rect x="0" y="0" width="165" height="38" rx="8" fill="#10b981" fill-opacity="0.08" stroke="#10b981" stroke-opacity="0.25" stroke-width="1" />
+						<circle cx="10" cy="19" r="3" fill="#10b981" class="conn-led-fast" />
+						<text x="18" y="22" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">Uptime: {Math.floor((telemetry?.uptime_seconds || 0) / 60)} min</text>
+					</g>
+				</g>
+
+				<!-- ========================================================= -->
+				<!-- UPPER PIPE: CORE -> DB 1 SYSTEM STORE                     -->
+				<!-- ========================================================= -->
+				<path
+					d="M 200 65 L 430 65"
+					fill="none"
+					stroke="url(#connGradCoreToDB1)"
+					stroke-width="2.5"
+					class="wire-flow-forward"
+				/>
+
+				<!-- Socket Port 1 (DB 1) -->
+				<circle cx="430" cy="65" r="4.5" fill="#10b981" />
+				<circle cx="430" cy="65" r="5" fill="none" stroke="#10b981" class="conn-socket-pulse" />
+
+				<!-- Continuous Live Packets: Core <-> DB 1 -->
+				<circle r="4" fill="#10b981" filter="url(#dbConnGlow)">
+					<animateMotion dur="1.3s" repeatCount="indefinite" path="M 200 65 L 430 65" />
+				</circle>
+				<circle r="3" fill="#34d399" filter="url(#dbConnGlow)">
+					<animateMotion dur="1.8s" begin="0.5s" repeatCount="indefinite" path="M 430 65 L 200 65" />
+				</circle>
+
+				{#if isSimulatingDb1}
+					<circle r="8" fill="#10b981" filter="url(#dbConnGlow)">
+						<animateMotion dur="0.45s" repeatCount="1" path="M 200 65 L 430 65" />
+					</circle>
+				{/if}
+
+				<!-- ========================================================= -->
+				<!-- UPPER RIGHT: DB 1 (POSTGRESQL SYSTEM STORE)               -->
+				<!-- ========================================================= -->
+				<g transform="translate(430, 20)">
+					<rect
+						x="0" y="0" width="510" height="90" rx="14"
+						fill="currentColor"
+						class="text-card stroke-emerald-600/90 {isSimulatingDb1 ? 'active-box-glow' : 'stroke-[1.5px]'}"
+					/>
+					<rect x="0" y="0" width="510" height="30" rx="14" fill="#10b981" fill-opacity="0.16" />
+					<text x="12" y="20" font-family="system-ui" font-size="12" font-weight="bold" fill="#059669">🗄️ Database Internal Sistem (PostgreSQL 18 Local)</text>
+					<text x="430" y="20" font-family="monospace" font-size="9.5" font-weight="bold" fill="#10b981">● {sysStatus}</text>
+
+					<!-- Table Badges & Descriptions -->
+					<g transform="translate(12, 38)">
+						<text x="4" y="16" font-family="monospace" font-size="10" font-weight="bold" fill="currentColor" class="text-foreground">Host: {sysConfig.host}:{sysConfig.port}/{sysConfig.dbname}</text>
+						<text x="4" y="32" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">• tickets, audit_logs (HMAC Signed), inbound_messages, learned_patterns</text>
+						<text x="4" y="44" font-family="monospace" font-size="8.5" fill="#10b981" font-weight="bold">✓ Transactional ACID Staging Store • Auto-Rollback Guard</text>
+					</g>
+
+					<!-- 3D Database Disk Platters (DB 1) -->
+					<g transform="translate(455, 34)">
+						<line x1="-10" y1="0" x2="34" y2="0" stroke="#10b981" stroke-width="1.5" class="conn-beam" filter="url(#dbConnGlow)" />
+						<path d="M 0 8 v 7 a 15 5 0 0 0 30 0 v -7" fill="#059669" fill-opacity="0.45" stroke="#10b981" stroke-width="1" />
+						<ellipse cx="15" cy="8" rx="15" ry="5" fill="#10b981" fill-opacity="0.65" stroke="#10b981" stroke-width="1.2" />
+						<path d="M 0 19 v 7 a 15 5 0 0 0 30 0 v -7" fill="#047857" fill-opacity="0.55" stroke="#10b981" stroke-width="1" />
+						<ellipse cx="15" cy="19" rx="15" ry="5" fill="#059669" fill-opacity="0.75" stroke="#10b981" stroke-width="1.2" />
+						<circle cx="3" cy="38" r="2.5" fill="#10b981" class="conn-led-fast" />
+						<text x="8" y="40" font-family="monospace" font-size="7" fill="#10b981" font-weight="bold">RD</text>
+						<circle cx="18" cy="38" r="2.5" fill="#f59e0b" class="conn-led-slow" />
+						<text x="23" y="40" font-family="monospace" font-size="7" fill="#f59e0b" font-weight="bold">WR</text>
+					</g>
+				</g>
+
+				<!-- ========================================================= -->
+				<!-- LOWER PIPE: CORE -> MCP GATEWAY -> DB 2                   -->
+				<!-- ========================================================= -->
+				<path
+					d="M 200 165 L 290 165"
+					fill="none"
+					stroke="url(#connGradCoreToMCP)"
+					stroke-width="2.5"
+					class="wire-flow-forward"
+				/>
+
+				<!-- MCP Gateway Isolator Node -->
+				<g transform="translate(290, 142)">
+					<rect x="0" y="0" width="85" height="46" rx="10" fill="currentColor" class="text-card stroke-cyan-500/80 stroke-[1.5px]" />
+					<rect x="0" y="0" width="85" height="18" rx="10" fill="#06b6d4" fill-opacity="0.18" />
+					<text x="8" y="13" font-family="system-ui" font-size="9.5" font-weight="bold" fill="#06b6d4">🔌 MCP Tool</text>
+					<text x="6" y="30" font-family="monospace" font-size="7.5" fill="currentColor" class="text-foreground">mutate_invoice()</text>
+					<text x="6" y="40" font-family="monospace" font-size="7" fill="#06b6d4" font-weight="bold">Zero Raw SQL</text>
+				</g>
+
+				<path
+					d="M 375 165 L 430 165"
+					fill="none"
+					stroke="url(#connGradMCPToDB2)"
+					stroke-width="2.5"
+					class="wire-flow-forward"
+				/>
+
+				<!-- Socket Port 2 (DB 2) -->
+				<circle cx="430" cy="165" r="4.5" fill="#06b6d4" />
+				<circle cx="430" cy="165" r="5" fill="none" stroke="#06b6d4" class="conn-socket-pulse" />
+
+				<!-- Continuous Live Packets: MCP <-> DB 2 -->
+				<circle r="4" fill="#06b6d4" filter="url(#dbConnGlow)">
+					<animateMotion dur="1.4s" repeatCount="indefinite" path="M 200 165 L 290 165" />
+				</circle>
+				<circle r="4" fill="#06b6d4" filter="url(#dbConnGlow)">
+					<animateMotion dur="0.9s" begin="0.3s" repeatCount="indefinite" path="M 375 165 L 430 165" />
+				</circle>
+				<circle r="3" fill="#38bdf8" filter="url(#dbConnGlow)">
+					<animateMotion dur="1.7s" begin="0.6s" repeatCount="indefinite" path="M 430 165 L 375 165" />
+				</circle>
+
+				{#if isSimulatingDb2}
+					<circle r="8" fill="#06b6d4" filter="url(#dbConnGlow)">
+						<animateMotion dur="0.45s" repeatCount="1" path="M 375 165 L 430 165" />
+					</circle>
+				{/if}
+
+				<!-- ========================================================= -->
+				<!-- LOWER RIGHT: DB 2 (ENTERPRISE ERP STORE VIA MCP)          -->
+				<!-- ========================================================= -->
+				<g transform="translate(430, 120)">
+					<rect
+						x="0" y="0" width="510" height="90" rx="14"
+						fill="currentColor"
+						class="text-card stroke-blue-600/90 {isSimulatingDb2 ? 'active-box-glow' : 'stroke-[1.5px]'}"
+					/>
+					<rect x="0" y="0" width="510" height="30" rx="14" fill="#2563eb" fill-opacity="0.16" />
+					<text x="12" y="20" font-family="system-ui" font-size="12" font-weight="bold" fill="#2563eb">🏢 Database Referensi MCP &amp; ERP Store (Oracle 19c / ERP Prod)</text>
+					<text x="430" y="20" font-family="monospace" font-size="9.5" font-weight="bold" fill="#06b6d4">● {mcpStatus}</text>
+
+					<!-- Table Badges & Descriptions -->
+					<g transform="translate(12, 38)">
+						<text x="4" y="16" font-family="monospace" font-size="10" font-weight="bold" fill="currentColor" class="text-foreground">Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname}</text>
+						<text x="4" y="32" font-family="monospace" font-size="9" fill="currentColor" class="text-muted-foreground">• invoices (Buku Besar Transaksi), customer_master (Entitas Resmi)</text>
+						<text x="4" y="44" font-family="monospace" font-size="8.5" fill="#2563eb" font-weight="bold">🔒 Terisolasi Total di Balik Protokol MCP • Parameterized Prepared Statements Saja</text>
+					</g>
+
+					<!-- 3D Database Disk Platters (DB 2) -->
+					<g transform="translate(445, 34)">
+						<line x1="-10" y1="0" x2="34" y2="0" stroke="#06b6d4" stroke-width="1.5" class="conn-beam" filter="url(#dbConnGlow)" />
+						<path d="M 0 8 v 7 a 15 5 0 0 0 30 0 v -7" fill="#0284c7" fill-opacity="0.45" stroke="#06b6d4" stroke-width="1" />
+						<ellipse cx="15" cy="8" rx="15" ry="5" fill="#06b6d4" fill-opacity="0.65" stroke="#06b6d4" stroke-width="1.2" />
+						<path d="M 0 19 v 7 a 15 5 0 0 0 30 0 v -7" fill="#0369a1" fill-opacity="0.55" stroke="#06b6d4" stroke-width="1" />
+						<ellipse cx="15" cy="19" rx="15" ry="5" fill="#0284c7" fill-opacity="0.75" stroke="#06b6d4" stroke-width="1.2" />
+						<circle cx="3" cy="38" r="2.5" fill="#06b6d4" class="conn-led-fast" />
+						<text x="8" y="40" font-family="monospace" font-size="7" fill="#06b6d4" font-weight="bold">TX</text>
+						<circle cx="18" cy="38" r="2.5" fill="#3b82f6" class="conn-led-slow" />
+						<text x="23" y="40" font-family="monospace" font-size="7" fill="#3b82f6" font-weight="bold">OK</text>
+					</g>
+				</g>
+			</svg>
 		</div>
 	</div>
 
