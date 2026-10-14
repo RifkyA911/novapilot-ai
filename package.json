@@ -10,6 +10,15 @@
     "seed:db": "cd backend && go run cmd/seed/main.go",
     "build:frontend": "cd frontend && bun run build",
     "build:backend": "cd backend && go build -o bin/server.exe cmd/server/main.go",
-    "test:backend": "cd backend && go test -v -race -cover ./..."
+    "test:backend": "cd backend && go test -v -cover ./...",
+    "test:unit:backend": "cd backend && go test -v ./internal/...",
+    "test:unit:gateway": "cd whatsapp-gateway && bun test test/extractor.test.ts",
+    "test:unit:frontend": "cd frontend && bun test src/lib/utils.test.ts",
+    "test:unit": "bun run test:unit:backend && bun run test:unit:gateway && bun run test:unit:frontend",
+    "test:integration:backend": "cd backend && go test -v ./tests/integration/...",
+    "test:integration:gateway": "cd whatsapp-gateway && bun test test/gateway_integration.test.ts",
+    "test:integration": "bun run test:integration:backend && bun run test:integration:gateway",
+    "test:e2e": "bun test tests/e2e/e2e_flow.test.ts",
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e"
   }
 }
