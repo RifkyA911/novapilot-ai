@@ -40,6 +40,7 @@ whatsapp-gateway/.env
 baileys_store.json
 *.traineddata
 uploads/wa_attachments/
+uploads/avatars/
 uploads/whatsapp_qr.json
 
 # Local Databases & Logs

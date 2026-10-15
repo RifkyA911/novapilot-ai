@@ -12,6 +12,7 @@ export interface Translations {
 		history: string;
 		inbound: string;
 		agents: string;
+		agents_llm: string;
 		hooks: string;
 		contacts: string;
 		databases: string;
@@ -870,7 +871,8 @@ const dictionaries: Record<Locale, Translations> = {
 			queue: "Antrean Persetujuan",
 			history: "Riwayat Eksekusi",
 			inbound: "Pesan Masuk",
-			agents: "AI Agents",
+			agents: "AI Agents & LLM",
+			agents_llm: "AI Agents & LLM",
 			hooks: "Client Hook Flows",
 			contacts: "Kontak Saluran",
 			databases: "Database & Telemetri",
@@ -1727,7 +1729,8 @@ const dictionaries: Record<Locale, Translations> = {
 			queue: "Approval Queue",
 			history: "Execution History",
 			inbound: "Inbound Messages",
-			agents: "AI Agents",
+			agents: "AI Agents & LLM",
+			agents_llm: "AI Agents & LLM",
 			hooks: "Client Hook Flows",
 			contacts: "Channel Contacts",
 			databases: "Databases & Telemetry",

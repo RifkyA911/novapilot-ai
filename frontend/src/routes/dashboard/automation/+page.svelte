@@ -36,7 +36,7 @@
 		channels: string[];
 		trigger_intent: string;
 		pattern_regex: string;
-		mode: "TEMPLATE" | "HERMES_DRAFT" | "STAGED_REVIEW";
+		mode: "TEMPLATE" | "STAGED_REVIEW";
 		template: string;
 		typing_delay_ms: number;
 		cooldown_sec: number;
@@ -112,7 +112,7 @@
 	let ruleFormChannels = $state<string[]>(["whatsapp"]);
 	let ruleFormTrigger = $state("UPDATE_CUSTOMER_NAME");
 	let ruleFormRegex = $state("(?i)(ubah|ganti|revisi).*?(nama|customer|klien)");
-	let ruleFormMode = $state<"TEMPLATE" | "HERMES_DRAFT" | "STAGED_REVIEW">("TEMPLATE");
+	let ruleFormMode = $state<"TEMPLATE" | "STAGED_REVIEW">("TEMPLATE");
 	let ruleFormTemplate = $state("Permintaan perubahan nama pelanggan untuk invoice {{doc_no}} menjadi '{{target_value}}' telah masuk ke antrean validasi ERP. Tiket referensi: {{ticket_no}}.");
 	let ruleFormDelay = $state(1500);
 	let ruleFormCooldown = $state(180);
@@ -407,34 +407,31 @@
 </script>
 
 <svelte:head>
-	<title>Autonomous Auto-Reply Center | NovaPilot Enterprise</title>
+	<title>Auto-Reply Engine | NovaPilot Enterprise</title>
 </svelte:head>
 
 <div class="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-200">
 	<!-- ========================================================================= -->
-	<!-- 1. HEADER HERO BANNER & MASTER SWITCH                                     -->
+	<!-- 1. HEADER BANNER & MASTER SWITCH                                          -->
 	<!-- ========================================================================= -->
-	<div class="p-6 sm:p-7 rounded-3xl border border-border bg-card shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
-		<!-- Decorative Ambient Glow -->
-		<div class="absolute -right-12 -top-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-		<div class="space-y-1.5 relative">
-			<div class="flex items-center gap-2.5">
-				<div class="h-10 w-10 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-xs border border-emerald-500/30">
-					<Sparkles class="h-5 w-5" />
+	<div class="p-5 sm:p-6 rounded-2xl border border-border bg-card shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+		<div class="space-y-1">
+			<div class="flex items-center gap-3">
+				<div class="h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-xs border border-emerald-500/30 shrink-0">
+					<PaperAirplane class="h-5 w-5" />
 				</div>
 				<div>
 					<div class="flex items-center gap-2 flex-wrap">
 						<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-							Autonomous Auto-Reply Center
+							Auto-Reply Engine
 						</h1>
-						<span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+						<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
 							<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-							Engine Live (:3002 Gateway)
+							Gateway Active (:3002)
 						</span>
 					</div>
-					<p class="text-xs sm:text-sm text-muted-foreground mt-0.5">
-						Rule-based dynamic trigger interpolation, DLP security guardrails, and Hermes 3 contextual reply dispatching.
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Sistem balasan otomatis berbasis aturan kata kunci, jam operasional, dan template respon omnichannel.
 					</p>
 				</div>
 			</div>
@@ -443,14 +440,14 @@
 		<!-- Master Switch & Quick Actions -->
 		<div class="flex items-center gap-3 relative self-start md:self-auto flex-wrap">
 			<!-- Master Toggle Pill -->
-			<div class="p-1 rounded-2xl bg-secondary border border-border flex items-center gap-2 pr-3.5">
+			<div class="p-1 rounded-xl bg-secondary border border-border flex items-center gap-2 pr-3">
 				<button
 					type="button"
 					onclick={() => { config.master_enabled = !config.master_enabled; saveMasterConfig(); }}
-					class="h-9 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer {config.master_enabled ? 'bg-emerald-600 text-white shadow-xs' : 'bg-muted text-muted-foreground'}"
+					class="h-8 px-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer {config.master_enabled ? 'bg-emerald-600 text-white shadow-xs' : 'bg-muted text-muted-foreground'}"
 				>
 					<span class="h-2 w-2 rounded-full {config.master_enabled ? 'bg-white animate-pulse' : 'bg-muted-foreground'}"></span>
-					<span>{config.master_enabled ? 'MASTER ENGINE ACTIVE' : 'ENGINE STANDBY'}</span>
+					<span>{config.master_enabled ? 'ENGINE AKTIF' : 'STANDBY'}</span>
 				</button>
 				<span class="text-[11px] font-mono text-muted-foreground hidden sm:inline">
 					{config.master_enabled ? 'Auto-Dispatch ON' : 'Paused'}
@@ -461,10 +458,10 @@
 			<button
 				type="button"
 				onclick={openCreateRuleModal}
-				class="h-11 px-5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+				class="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold flex items-center gap-1.5 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer"
 			>
 				<Plus class="h-4 w-4" />
-				<span>Add New Rule</span>
+				<span>Tambah Aturan Baru</span>
 			</button>
 		</div>
 	</div>
@@ -474,59 +471,59 @@
 	<!-- ========================================================================= -->
 	<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 		<!-- Total Dispatched -->
-		<div class="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs space-y-1">
+		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-semibold">Total Auto-Replies</span>
+				<span class="text-xs font-medium">Total Balasan Otomatis</span>
 				<PaperAirplane class="h-4 w-4 text-emerald-500" />
 			</div>
 			<div class="text-2xl font-bold font-mono text-foreground tracking-tight">
 				{totalTriggered + 48}
 			</div>
 			<div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium flex items-center gap-1">
-				<span>↑ +24 today</span>
+				<span>↑ +24 hari ini</span>
 				<span class="text-muted-foreground">· 99.8% Success</span>
 			</div>
 		</div>
 
 		<!-- Active Rules -->
-		<div class="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs space-y-1">
+		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-semibold">Active Rules</span>
+				<span class="text-xs font-medium">Aturan Aktif</span>
 				<Bolt class="h-4 w-4 text-primary" />
 			</div>
 			<div class="text-2xl font-bold font-mono text-foreground tracking-tight">
 				{activeRulesCount} <span class="text-xs text-muted-foreground font-sans font-normal">/ {rules.length} online</span>
 			</div>
 			<div class="text-[11px] text-muted-foreground font-mono">
-				Zero-touch automation pipeline
+				Pipeline respon terstandarisasi
 			</div>
 		</div>
 
 		<!-- Average Latency & Delay -->
-		<div class="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs space-y-1">
+		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-semibold">Natural Typing Delay</span>
+				<span class="text-xs font-medium">Jeda Ketik Alami</span>
 				<Clock class="h-4 w-4 text-amber-500" />
 			</div>
 			<div class="text-2xl font-bold font-mono text-foreground tracking-tight">
 				1.6s
 			</div>
 			<div class="text-[11px] text-muted-foreground font-mono">
-				Simulates human operator typing
+				Simulasi kehadiran ketik operator
 			</div>
 		</div>
 
 		<!-- DLP Compliance -->
-		<div class="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs space-y-1">
+		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-semibold">DLP Guardrail Compliance</span>
+				<span class="text-xs font-medium">DLP Guardrail Compliance</span>
 				<ShieldCheck class="h-4 w-4 text-sky-500" />
 			</div>
 			<div class="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
 				100%
 			</div>
 			<div class="text-[11px] text-muted-foreground font-mono">
-				0 credential / PII leak detected
+				0 kredensial / rahasia bocor
 			</div>
 		</div>
 	</div>
@@ -534,23 +531,23 @@
 	<!-- ========================================================================= -->
 	<!-- 3. MAIN NAVIGATION TABS                                                   -->
 	<!-- ========================================================================= -->
-	<div class="flex items-center gap-2 border-b border-border/70 pb-2 overflow-x-auto scrollbar-none">
+	<div class="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto scrollbar-none">
 		<button
 			type="button"
 			onclick={() => { activeTab = "rules"; sound.playNavClick(); }}
-			class="h-10 px-4.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'rules' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="h-9 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'rules' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<Bolt class="h-4 w-4" />
-			<span>Automation Rules ({rules.length})</span>
+			<span>Aturan Balasan ({rules.length})</span>
 		</button>
 
 		<button
 			type="button"
 			onclick={() => { activeTab = "simulator"; sound.playNavClick(); }}
-			class="h-10 px-4.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'simulator' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="h-9 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'simulator' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<Play class="h-4 w-4" />
-			<span>Live Sandbox &amp; Simulator</span>
+			<span>Sandbox &amp; Simulator</span>
 			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold uppercase {activeTab === 'simulator' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'}">
 				TEST BENCH
 			</span>
@@ -559,19 +556,19 @@
 		<button
 			type="button"
 			onclick={() => { activeTab = "logs"; sound.playNavClick(); }}
-			class="h-10 px-4.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'logs' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="h-9 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'logs' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<Clock class="h-4 w-4" />
-			<span>Dispatch Audit Stream</span>
+			<span>Riwayat Pengiriman</span>
 		</button>
 
 		<button
 			type="button"
 			onclick={() => { activeTab = "settings"; sound.playNavClick(); }}
-			class="h-10 px-4.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'settings' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="h-9 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap {activeTab === 'settings' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<AdjustmentsHorizontal class="h-4 w-4" />
-			<span>Engine Settings</span>
+			<span>Pengaturan Engine</span>
 		</button>
 	</div>
 
@@ -616,15 +613,15 @@
 							</div>
 
 							<!-- Controls: Toggle & Action Buttons -->
-							<div class="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+							<div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
 								<!-- Edit Button -->
 								<button
 									type="button"
 									onclick={() => openEditRuleModal(rule)}
-									class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+									class="h-7.5 px-2.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
 									title="Edit Rule"
 								>
-									<PencilSquare class="h-4 w-4" />
+									<PencilSquare class="h-3.5 w-3.5" />
 									<span>Edit</span>
 								</button>
 
@@ -632,19 +629,19 @@
 								<button
 									type="button"
 									onclick={() => deleteRule(rule.id)}
-									class="h-9 w-9 rounded-xl border border-border bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+									class="h-7.5 w-7.5 rounded-lg border border-border bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
 									title="Delete Rule"
 								>
-									<Trash class="h-4 w-4" />
+									<Trash class="h-3.5 w-3.5" />
 								</button>
 
-								<!-- Big Switch Button -->
+								<!-- Switch Button -->
 								<button
 									type="button"
 									onclick={() => toggleRule(rule)}
-									class="h-10 px-4 rounded-xl font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs {rule.enabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-secondary border border-border text-muted-foreground hover:text-foreground'}"
+									class="h-7.5 px-3 rounded-full font-mono text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs {rule.enabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-secondary border border-border text-muted-foreground hover:text-foreground'}"
 								>
-									<span class="h-2 w-2 rounded-full {rule.enabled ? 'bg-white animate-pulse' : 'bg-muted-foreground'}"></span>
+									<span class="h-1.5 w-1.5 rounded-full {rule.enabled ? 'bg-white animate-pulse' : 'bg-muted-foreground'}"></span>
 									<span>{rule.enabled ? 'ACTIVE' : 'DISABLED'}</span>
 								</button>
 							</div>
@@ -897,13 +894,13 @@
 								type="button"
 								onclick={dispatchSimulatedReply}
 								disabled={simDispatching}
-								class="h-11 px-7 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center gap-2.5 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+								class="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-2 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50"
 							>
 								{#if simDispatching}
-									<ArrowPath class="h-4 w-4 animate-spin" />
+									<ArrowPath class="h-3.5 w-3.5 animate-spin" />
 									<span>Dispatching to WhatsApp...</span>
 								{:else}
-									<PaperAirplane class="h-4.5 w-4.5" />
+									<PaperAirplane class="h-3.5 w-3.5" />
 									<span>Dispatch Live via WhatsApp Gateway (:3002)</span>
 								{/if}
 							</button>
@@ -997,16 +994,16 @@
 					type="button"
 					onclick={saveMasterConfig}
 					disabled={isSavingConfig}
-					class="h-11 px-7 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+					class="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
 				>
 					{#if isSavingConfig}
-						<ArrowPath class="h-4 w-4 animate-spin" />
+						<ArrowPath class="h-3.5 w-3.5 animate-spin" />
 						<span>Saving...</span>
 					{:else if configSavedSuccess}
-						<Check class="h-4 w-4" />
+						<Check class="h-3.5 w-3.5" />
 						<span>Settings Saved!</span>
 					{:else}
-						<Check class="h-4 w-4" />
+						<Check class="h-3.5 w-3.5" />
 						<span>Save Policy Settings</span>
 					{/if}
 				</button>
@@ -1062,7 +1059,7 @@
 			</div>
 
 			<!-- Policy Toggles -->
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
 				<label class="p-4 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3.5 cursor-pointer">
 					<input
 						type="checkbox"
@@ -1084,6 +1081,18 @@
 					<div class="space-y-0.5">
 						<div class="font-bold text-foreground text-xs">Strict Outbound DLP Security Enforcement</div>
 						<p class="text-[11px] text-muted-foreground">Intercepts and masks database passwords and credentials before sending.</p>
+					</div>
+				</label>
+
+				<label class="p-4 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3.5 cursor-pointer">
+					<input
+						type="checkbox"
+						bind:checked={config.hermes_fallback}
+						class="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+					/>
+					<div class="space-y-0.5">
+						<div class="font-bold text-foreground text-xs">Eskalasi Otomatis ke Petugas</div>
+						<p class="text-[11px] text-muted-foreground">Eskalasi pesan ke antrean operator jika tidak ada aturan yang cocok.</p>
 					</div>
 				</label>
 			</div>
@@ -1120,15 +1129,15 @@
 				</div>
 
 				<div class="space-y-4 text-xs">
-					<!-- Rule Name & Category -->
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<div class="space-y-1">
+					<!-- Rule Name, Category & Mode -->
+					<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+						<div class="space-y-1 sm:col-span-1">
 							<label for="formRuleName" class="font-bold text-foreground block">Rule Name:</label>
 							<input
 								id="formRuleName"
 								type="text"
 								bind:value={ruleFormName}
-								placeholder="e.g. VIP Urgent Mutation Acknowledgement"
+								placeholder="e.g. VIP Mutation Ack"
 								class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
 							/>
 						</div>
@@ -1139,11 +1148,22 @@
 								bind:value={ruleFormCategory}
 								class="w-full h-10 px-3 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs cursor-pointer"
 							>
-								<option value="INVOICE">INVOICE (Mutation / Cancel / Price)</option>
-								<option value="OCR">OCR (Receipts &amp; Nota Confirmation)</option>
-								<option value="CUSTOMER_SERVICE">CUSTOMER_SERVICE (Support Inquiries)</option>
-								<option value="AFTER_HOURS">AFTER_HOURS (Out of Office)</option>
-								<option value="SECURITY">SECURITY (DLP / Credential Warning)</option>
+								<option value="INVOICE">INVOICE</option>
+								<option value="OCR">OCR</option>
+								<option value="CUSTOMER_SERVICE">CUSTOMER_SERVICE</option>
+								<option value="AFTER_HOURS">AFTER_HOURS</option>
+								<option value="SECURITY">SECURITY</option>
+							</select>
+						</div>
+						<div class="space-y-1">
+							<label for="formRuleMode" class="font-bold text-foreground block">Execution Mode:</label>
+							<select
+								id="formRuleMode"
+								bind:value={ruleFormMode}
+								class="w-full h-10 px-3 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs cursor-pointer"
+							>
+								<option value="TEMPLATE">TEMPLATE (Direct Dispatch)</option>
+								<option value="STAGED_REVIEW">STAGED_REVIEW (Staff Draft)</option>
 							</select>
 						</div>
 					</div>
@@ -1232,19 +1252,19 @@
 					</div>
 				</div>
 
-				<!-- Modal Actions (Generously Sized) -->
-				<div class="pt-3 flex items-center justify-end gap-3 border-t border-border/60">
+				<!-- Modal Actions -->
+				<div class="pt-3 flex items-center justify-end gap-2.5 border-t border-border/60">
 					<button
 						type="button"
 						onclick={() => ruleModalOpen = false}
-						class="h-11 px-6 rounded-xl border-2 border-border bg-card hover:bg-muted text-foreground text-sm font-bold flex items-center justify-center cursor-pointer transition-all shadow-2xs"
+						class="h-9 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center cursor-pointer transition-all shadow-2xs"
 					>
 						Cancel
 					</button>
 					<button
 						type="button"
 						onclick={saveRuleFromForm}
-						class="h-11 px-7 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold flex items-center gap-2 cursor-pointer shadow-md hover:shadow-lg active:scale-95 transition-all"
+						class="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
 					>
 						<Check class="h-4 w-4" />
 						<span>Save Rule to Engine</span>

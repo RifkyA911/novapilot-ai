@@ -18,7 +18,8 @@
 		CodeBracket,
 		ChatBubbleLeftRight,
 		Clock,
-		ArrowRight
+		ArrowRight,
+		Eye
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
 	import { sound } from "$lib/audio";
@@ -26,8 +27,105 @@
 	import BrandIcon from "$lib/components/BrandIcon.svelte";
 	import { i18n } from "$lib/i18n.svelte";
 
-	// Navigation Tabs: Hermes 3 vs OpenClaw only (9Router completely removed)
-	let activeTab = $state<"hermes" | "openclaw">("hermes");
+	// Navigation Tabs: Model APIs vs Hermes 3 vs OpenClaw
+	let activeTab = $state<"models" | "hermes" | "openclaw">("models");
+
+	// AI Model Providers State
+	interface ModelProvider {
+		id: string;
+		name: string;
+		description: string;
+		enabled: boolean;
+		is_primary: boolean;
+		api_key: string;
+		base_url: string;
+		model: string;
+		available_models: string[];
+		temperature: number;
+		max_tokens: number;
+		status: string;
+		latency_ms: number;
+	}
+
+	let providers = $state<ModelProvider[]>([]);
+	let providersLoading = $state(false);
+	let providersSaving = $state(false);
+	let providersSavedSuccess = $state(false);
+	let testingProviderId = $state<string | null>(null);
+	let showKeys = $state<Record<string, boolean>>({});
+	let providerSearch = $state("");
+
+	async function fetchProviders() {
+		providersLoading = true;
+		try {
+			const res = await fetch("/api/llm/providers");
+			if (res.ok) {
+				const data = await res.json();
+				if (data.providers) {
+					providers = data.providers;
+				}
+			}
+		} catch (e) {
+			console.error("Failed to load providers:", e);
+		} finally {
+			providersLoading = false;
+		}
+	}
+
+	async function saveAllProviders() {
+		providersSaving = true;
+		providersSavedSuccess = false;
+		try {
+			const res = await fetch("/api/llm/providers", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(providers)
+			});
+			if (res.ok) {
+				providersSavedSuccess = true;
+				sound.playActionChime();
+				setTimeout(() => providersSavedSuccess = false, 3000);
+			}
+		} catch (e) {
+			console.error("Failed to save providers:", e);
+		} finally {
+			providersSaving = false;
+		}
+	}
+
+	async function testProviderConnection(p: ModelProvider) {
+		testingProviderId = p.id;
+		try {
+			const res = await fetch("/api/llm/providers/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					id: p.id,
+					base_url: p.base_url,
+					api_key: p.api_key,
+					model: p.model
+				})
+			});
+			if (res.ok) {
+				const result = await res.json();
+				p.status = result.status;
+				p.latency_ms = result.latency_ms;
+				sound.playInboundPing();
+			}
+		} catch (e) {
+			console.error("Test failed:", e);
+		} finally {
+			testingProviderId = null;
+		}
+	}
+
+	function setAsPrimary(id: string) {
+		providers = providers.map(p => ({
+			...p,
+			is_primary: p.id === id
+		}));
+		sound.playNavClick();
+	}
 
 	// Engine Telemetry & Config State
 	let llmConfig = $state<{
@@ -281,17 +379,18 @@
 
 	onMount(() => {
 		loadConfig();
+		fetchProviders();
 		runReasoningEngine();
 	});
 </script>
 
 <svelte:head>
-	<title>AI Agents: Hermes 3 & OpenClaw | NovaPilot AI</title>
+	<title>AI Agents &amp; LLM Configuration Hub | NovaPilot Enterprise</title>
 </svelte:head>
 
 <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
 	<!-- ========================================================================= -->
-	<!-- 1. CLEAN HEADER (NO 9ROUTER, REAL LOGOS FROM SELFH.ST)                    -->
+	<!-- 1. CLEAN HEADER (AI AGENTS & LLM)                                         -->
 	<!-- ========================================================================= -->
 	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/80">
 		<div class="space-y-1">
@@ -304,17 +403,20 @@
 					<div class="h-10 w-10 rounded-xl bg-card border border-border p-2 shadow-xs flex items-center justify-center">
 						<BrandIcon name="openclaw" class="h-6 w-6" />
 					</div>
+					<div class="h-10 w-10 rounded-xl bg-primary/10 border border-primary/25 p-2 shadow-xs flex items-center justify-center text-primary">
+						<CpuChip class="h-6 w-6" />
+					</div>
 				</div>
 
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						{i18n.t.agents.hub_title}
+						AI Agents &amp; LLM
 						<span class="text-[11px] font-mono px-2 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
-							HERMES 3 &bull; OPENCLAW
+							MULTI-MODEL API &bull; HERMES 3 &bull; OPENCLAW
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						{i18n.t.agents.hub_subtitle}
+						Konfigurasi seluruh penyedia AI Model API (OpenAI, Claude, Gemini, Groq, Ollama, DeepSeek) serta orkestrasi agen otonom.
 					</p>
 				</div>
 			</div>
@@ -349,9 +451,25 @@
 	</div>
 
 	<!-- ========================================================================= -->
-	<!-- 2. TWO TABS ONLY: HERMES 3 vs OPENCLAW (NO 9ROUTER)                       -->
+	<!-- 2. THREE TABS: MULTI-MODEL APIS vs HERMES 3 vs OPENCLAW                   -->
 	<!-- ========================================================================= -->
-	<div class="flex items-center gap-2 border-b border-border pb-2">
+	<div class="flex items-center gap-2 border-b border-border pb-2 flex-wrap">
+		<!-- Tab 1: AI Model APIs -->
+		<button
+			type="button"
+			onclick={() => { activeTab = "models"; sound.playNavClick(); }}
+			class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2.5 cursor-pointer {activeTab === 'models' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+		>
+			<div class="h-6 w-6 rounded-lg flex items-center justify-center shrink-0 {activeTab === 'models' ? 'bg-primary-foreground/20' : 'bg-secondary'}">
+				<CpuChip class="h-4 w-4 {activeTab === 'models' ? 'text-primary-foreground' : 'text-sky-500'}" />
+			</div>
+			<span>AI Model APIs &amp; Providers</span>
+			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono {activeTab === 'models' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}">
+				{providers.filter(p => p.enabled).length}/{providers.length} AKTIF
+			</span>
+		</button>
+
+		<!-- Tab 2: Hermes 3 Neural Agent -->
 		<button
 			type="button"
 			onclick={() => { activeTab = "hermes"; sound.playNavClick(); }}
@@ -370,6 +488,7 @@
 			</div>
 		</button>
 
+		<!-- Tab 3: OpenClaw Harvester -->
 		<button
 			type="button"
 			onclick={() => { activeTab = "openclaw"; sound.playNavClick(); }}
@@ -389,7 +508,253 @@
 		</button>
 	</div>
 
-	{#if activeTab === "hermes"}
+	{#if activeTab === "models"}
+		<!-- ===================================================================== -->
+		<!-- TAB 0: ALL AI MODEL APIS & PROVIDERS CONFIGURATION                    -->
+		<!-- ===================================================================== -->
+		<div class="space-y-6">
+			<!-- Header Summary & Quick Actions -->
+			<div class="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+				<div class="space-y-1">
+					<div class="flex items-center gap-2.5">
+						<div class="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+							<CpuChip class="h-5 w-5" />
+						</div>
+						<div>
+							<h3 class="text-base font-bold text-foreground">Multi-Model LLM API Configuration Hub</h3>
+							<p class="text-xs text-muted-foreground">
+								Konfigurasi provider model AI untuk inferensi NovaPilot, ekstraksi faktur otomatis, dan pembuatan draf tiket.
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="flex items-center gap-3 flex-wrap">
+					<!-- Filter Search Input -->
+					<div class="relative w-48 sm:w-64">
+						<input
+							type="text"
+							bind:value={providerSearch}
+							placeholder="Cari provider / model..."
+							class="w-full h-9 pl-8 pr-3 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground shadow-xs"
+						/>
+						<span class="absolute left-2.5 top-2.5 text-muted-foreground">🔍</span>
+					</div>
+
+					<!-- Save All Button -->
+					<button
+						type="button"
+						onclick={saveAllProviders}
+						disabled={providersSaving}
+						class="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+					>
+						{#if providersSaving}
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+							<span>Menyimpan...</span>
+						{:else}
+							<Check class="h-3.5 w-3.5" />
+							<span>Simpan Semua Konfigurasi</span>
+						{/if}
+					</button>
+				</div>
+			</div>
+
+			{#if providersSavedSuccess}
+				<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 font-medium">
+					<CheckCircle class="h-4 w-4 shrink-0" />
+					<span>Seluruh konfigurasi API Model LLM berhasil disimpan dan disinkronkan ke sistem runtime backend!</span>
+				</div>
+			{/if}
+
+			<!-- Providers Cards Grid -->
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				{#each providers.filter(p => !providerSearch || p.name.toLowerCase().includes(providerSearch.toLowerCase()) || p.model.toLowerCase().includes(providerSearch.toLowerCase()) || p.id.toLowerCase().includes(providerSearch.toLowerCase())) as provider}
+					<div class="p-5 rounded-2xl bg-card border {provider.is_primary ? 'border-primary ring-1 ring-primary/30' : 'border-border'} shadow-xs space-y-4 transition-all">
+						<!-- Provider Card Header -->
+						<div class="flex items-start justify-between gap-3">
+							<div class="flex items-center gap-3 min-w-0">
+								<div class="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center shrink-0 border border-border/80 p-2">
+									{#if provider.id === 'hermes'}
+										<BrandIcon name="hermes" class="h-6 w-6" />
+									{:else if provider.id === 'openclaw'}
+										<BrandIcon name="openclaw" class="h-6 w-6" />
+									{:else if provider.id === 'ollama'}
+										<BrandIcon name="ollama" class="h-6 w-6" />
+									{:else}
+										<CpuChip class="h-5 w-5 text-primary" />
+									{/if}
+								</div>
+								<div class="min-w-0">
+									<div class="flex items-center gap-2">
+										<h4 class="text-sm font-bold text-foreground truncate">{provider.name}</h4>
+										{#if provider.is_primary}
+											<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-primary text-primary-foreground">
+												⭐ PRIMARY
+											</span>
+										{/if}
+									</div>
+									<p class="text-[11px] text-muted-foreground truncate">{provider.description}</p>
+								</div>
+							</div>
+
+							<!-- Master Enable Toggle -->
+							<button
+								type="button"
+								onclick={() => { provider.enabled = !provider.enabled; sound.playNavClick(); }}
+								class="h-6 px-2.5 rounded-full text-[10px] font-mono font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 {provider.enabled ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground border border-border'}"
+							>
+								<span class="h-1.5 w-1.5 rounded-full {provider.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}"></span>
+								<span>{provider.enabled ? 'ENABLED' : 'DISABLED'}</span>
+							</button>
+						</div>
+
+						<!-- Configuration Inputs -->
+						<div class="space-y-3 pt-1 border-t border-border/60 text-xs">
+							<!-- API Key Field -->
+							<div class="space-y-1">
+								<div class="flex items-center justify-between text-[11px]">
+									<label class="font-semibold text-foreground">API Secret Key / Token</label>
+									{#if provider.id === 'ollama' || provider.id === 'hermes' || provider.id === 'openclaw'}
+										<span class="text-muted-foreground text-[10px] italic">Lokal / Tidak wajib</span>
+									{:else}
+										<span class="text-amber-500 text-[10px] font-mono font-semibold">Tersimpan Aman (.env)</span>
+									{/if}
+								</div>
+								<div class="relative">
+									<input
+										type={showKeys[provider.id] ? "text" : "password"}
+										bind:value={provider.api_key}
+										placeholder={provider.id === 'ollama' || provider.id === 'hermes' ? 'Tidak diperlukan untuk model lokal' : 'Masukkan API Key resmi (sk-..., gsk_...)'}
+										class="w-full h-9 pl-3 pr-9 rounded-xl border border-input bg-background font-mono text-xs text-foreground placeholder:text-muted-foreground shadow-xs"
+									/>
+									<button
+										type="button"
+										onclick={() => showKeys[provider.id] = !showKeys[provider.id]}
+										class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+										title="Tampilkan / Sembunyikan Key"
+									>
+										<Eye class="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+
+							<!-- Endpoint Base URL -->
+							<div class="space-y-1">
+								<label class="font-semibold text-foreground text-[11px]">API Base URL / Host Endpoint</label>
+								<input
+									type="text"
+									bind:value={provider.base_url}
+									placeholder="https://api.openai.com/v1"
+									class="w-full h-9 px-3 rounded-xl border border-input bg-background font-mono text-xs text-foreground placeholder:text-muted-foreground shadow-xs"
+								/>
+							</div>
+
+							<!-- Model Name Selection -->
+							<div class="space-y-1">
+								<div class="flex items-center justify-between text-[11px]">
+									<label class="font-semibold text-foreground">Model Target / Deployment ID</label>
+									<span class="font-mono text-[10px] text-muted-foreground">Aktif: {provider.model}</span>
+								</div>
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									{#if provider.available_models && provider.available_models.length > 0}
+										<select
+											bind:value={provider.model}
+											class="h-9 rounded-xl border border-input bg-background px-2.5 font-mono text-xs text-foreground shadow-xs cursor-pointer"
+										>
+											{#each provider.available_models as m}
+												<option value={m}>{m}</option>
+											{/each}
+										</select>
+									{/if}
+									<input
+										type="text"
+										bind:value={provider.model}
+										placeholder="Custom model id..."
+										class="h-9 px-3 rounded-xl border border-input bg-background font-mono text-xs text-foreground placeholder:text-muted-foreground shadow-xs"
+									/>
+								</div>
+							</div>
+
+							<!-- Parameters (Temperature & Max Tokens) -->
+							<div class="grid grid-cols-2 gap-3 pt-1">
+								<div class="space-y-1">
+									<div class="flex items-center justify-between text-[11px]">
+										<span class="font-medium text-foreground">Temperature</span>
+										<span class="font-mono font-bold text-primary">{provider.temperature.toFixed(2)}</span>
+									</div>
+									<input
+										type="range"
+										min="0.0"
+										max="1.0"
+										step="0.05"
+										bind:value={provider.temperature}
+										class="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+									/>
+								</div>
+
+								<div class="space-y-1">
+									<div class="flex items-center justify-between text-[11px]">
+										<span class="font-medium text-foreground">Max Tokens</span>
+										<span class="font-mono text-muted-foreground">{provider.max_tokens}</span>
+									</div>
+									<input
+										type="number"
+										step="256"
+										min="512"
+										max="32768"
+										bind:value={provider.max_tokens}
+										class="w-full h-8 px-2.5 rounded-lg border border-input bg-background font-mono text-xs text-foreground shadow-xs"
+									/>
+								</div>
+							</div>
+						</div>
+
+						<!-- Card Footer Actions -->
+						<div class="pt-3 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
+							<div class="flex items-center gap-2">
+								<!-- Set as Primary Button -->
+								{#if !provider.is_primary}
+									<button
+										type="button"
+										onclick={() => setAsPrimary(provider.id)}
+										class="h-7.5 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+										title="Jadikan provider ini sebagai model utama NovaPilot"
+									>
+										<span>Jadikan Primary</span>
+									</button>
+								{/if}
+
+								<!-- Connection Status Badge -->
+								<div class="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-mono {provider.status === 'CONNECTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30' : 'bg-muted text-muted-foreground border border-border'}">
+									<span class="h-1.5 w-1.5 rounded-full {provider.status === 'CONNECTED' ? 'bg-emerald-500' : 'bg-muted-foreground'}"></span>
+									<span>{provider.status}</span>
+									{#if provider.latency_ms > 0}
+										<span>· {provider.latency_ms}ms</span>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Test Handshake Button -->
+							<button
+								type="button"
+								onclick={() => testProviderConnection(provider)}
+								disabled={testingProviderId === provider.id}
+								class="h-7.5 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+							>
+								{#if testingProviderId === provider.id}
+									<ArrowPath class="h-3 w-3 animate-spin" />
+									<span>Testing...</span>
+								{:else}
+									<Bolt class="h-3 w-3" />
+									<span>Test Handshake</span>
+								{/if}
+							</button>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{:else if activeTab === "hermes"}
 		<!-- ===================================================================== -->
 		<!-- TAB 1: HERMES 3 REASONING ENGINE                                      -->
 		<!-- ===================================================================== -->

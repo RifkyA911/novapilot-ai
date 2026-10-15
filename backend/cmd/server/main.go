@@ -168,10 +168,13 @@ func main() {
 		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
 		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 
-		// Hermes 3 Agentic LLM Engine
+		// Hermes 3 Agentic LLM Engine & Multi-Model Providers
 		api.GET("/llm/config", apiHandler.GetLLMConfig)
 		api.POST("/llm/config", apiHandler.UpdateLLMConfig)
 		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
+		api.GET("/llm/providers", apiHandler.GetLLMProviders)
+		api.POST("/llm/providers", apiHandler.SaveLLMProviders)
+		api.POST("/llm/providers/test", apiHandler.TestLLMProvider)
 
 		// WhatsApp Gateway Lifecycle Management (:3002)
 		api.GET("/gateway/status", apiHandler.GetGatewayStatus)

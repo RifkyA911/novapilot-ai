@@ -161,18 +161,7 @@
 					label: i18n.t.nav.automation,
 					icon: Sparkles,
 					iconColor: "text-emerald-500",
-					title: "Autonomous Inbound Reply Engine & Rules Automation",
-					badge: "AI",
-					badgeColor: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-				},
-				{
-					href: "/dashboard/hermes",
-					label: i18n.t.nav.agents,
-					icon: CpuChip,
-					iconColor: "text-sky-500",
-					title: "AI Agents: Hermes 3 Reasoning & OpenClaw Autonomous Engine",
-					badge: !cockpit.isHermesConfigured ? "SETUP" : undefined,
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+					title: "Inbound Auto-Reply Engine & Dispatch Rules"
 				},
 				{
 					href: "/dashboard/hooks",
@@ -219,6 +208,15 @@
 					icon: Cog6Tooth,
 					iconColor: "text-zinc-400",
 					title: "System Settings & Gatekeeper Policies"
+				},
+				{
+					href: "/dashboard/hermes",
+					label: i18n.t.nav.agents_llm || "AI Agents & LLM",
+					icon: CpuChip,
+					iconColor: "text-sky-500",
+					title: "AI Agents & Multi-Model LLM API Configuration Hub",
+					badge: !cockpit.isHermesConfigured ? "CONFIG" : undefined,
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
 					href: "/dashboard/about",

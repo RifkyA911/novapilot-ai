@@ -1018,10 +1018,10 @@
 							<button
 								type="button"
 								onclick={() => openReplyModal(msg)}
-								class="h-8.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:shadow-md active:scale-95"
+								class="h-7 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95"
 								title="Balas chat ini via WhatsApp Gateway"
 							>
-								<PaperAirplane class="h-3.5 w-3.5" />
+								<PaperAirplane class="h-3 w-3" />
 								<span>Balas Chat</span>
 							</button>
 
@@ -1506,37 +1506,11 @@
 						</div>
 					</div>
 
-					<!-- Recipient WhatsApp Badge (Locked & Verified Target) -->
-					<div class="flex items-center justify-between p-3 rounded-xl bg-secondary/50 border border-border/70 shadow-2xs">
-						<div class="flex items-center gap-3 min-w-0">
-							<div class="h-9 w-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
-								<BrandIcon name="whatsapp" class="h-5 w-5" />
-							</div>
-							<div class="min-w-0">
-								<div class="flex items-center gap-2">
-									<span class="text-xs font-bold text-foreground truncate">
-										{replyRecipientName}
-									</span>
-									<span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-										TARGET RECIPIENT
-									</span>
-								</div>
-								<div class="font-mono text-[11px] text-muted-foreground truncate">
-									{replyRecipientPhone}
-								</div>
-							</div>
-						</div>
-						<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border text-[10px] font-mono text-muted-foreground font-semibold shrink-0">
-							<ShieldCheck class="h-3.5 w-3.5 text-emerald-500" />
-							<span>Terkunci Otomatis</span>
-						</div>
-					</div>
-
 					<!-- Message Textarea -->
 					<div class="space-y-1">
 						<div class="flex items-center justify-between">
 							<label for="replyTextInput" class="font-semibold text-foreground">
-								Isi Pesan Balasan (WhatsApp Outbound Body): <span class="text-destructive">*</span>
+								Isi Pesan Balasan: <span class="text-destructive">*</span>
 							</label>
 							<span class="text-[10px] font-mono text-muted-foreground">
 								{replyText.length} karakter
@@ -1578,7 +1552,7 @@
 						<button
 							type="button"
 							onclick={() => replyModalMessage = null}
-							class="h-8.5 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
+							class="h-8 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
 						>
 							Batal
 						</button>
@@ -1586,13 +1560,13 @@
 							type="button"
 							onclick={handleSendReply}
 							disabled={replySending || !replyText.trim() || !replyRecipientPhone.trim()}
-							class="h-8.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
+							class="h-8 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
 						>
 							{#if replySending}
-								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+								<ArrowPath class="h-3 w-3 animate-spin" />
 								<span>Mengirim...</span>
 							{:else}
-								<PaperAirplane class="h-3.5 w-3.5" />
+								<PaperAirplane class="h-3 w-3" />
 								<span>Kirim Balasan via WA</span>
 							{/if}
 						</button>
