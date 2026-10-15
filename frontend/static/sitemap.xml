@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  
+  <!-- Root / Landing Overview -->
+  <url>
+    <loc>https://novapilot.internal/</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Interactive System Architecture & Flow -->
+  <url>
+    <loc>https://novapilot.internal/flow</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Operations Dashboard Home -->
+  <url>
+    <loc>https://novapilot.internal/dashboard</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Cockpit Overview & AI Analytics -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/cockpit</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- AI Agents Hub: Hermes 3 & OpenClaw -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/hermes</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Human-in-the-Loop Approval Queue -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/queue</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Execution Audit History -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/history</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Omnichannel Inbound Messages Stream -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/messages</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Channel Contacts Directory -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/contacts</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model Context Protocol (MCP) Knowledge Base -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/mcp</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Dual-DB Database Connectors -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/connectors</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ChatOps Platform Flows & Gateways -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/platforms</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Real-Time Ingestion Pipeline Simulator -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/simulator</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- System Telemetry & Probes -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/connectivity</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- System Logs & Audit Trail -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/logs</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- System Settings & Governance -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/settings</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- About & Architecture Manifesto -->
+  <url>
+    <loc>https://novapilot.internal/dashboard/about</loc>
+    <lastmod>2026-10-15T20:00:00+07:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>

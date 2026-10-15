@@ -52,6 +52,12 @@
 	}
 </script>
 
+<svelte:head>
+	<title>{i18n.t.nav.overview} • NovaPilot AI</title>
+	<link rel="canonical" href="https://novapilot.internal/dashboard" />
+	<meta name="description" content="Operations dashboard for real-time chat intake, guardrail assurance, dual-database paradigm monitoring, and on-call ticket staging." />
+</svelte:head>
+
 <!-- Inspect Plan Modal -->
 <InspectModal 
 	ticket={inspectedTicket} 

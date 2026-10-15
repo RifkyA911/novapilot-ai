@@ -1,0 +1,19 @@
+# ==============================================================================
+# NovaPilot AI — Web Crawler Directives & Robots.txt
+# https://github.com/RifkyA911/novapilot-ai
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Allow: /flow
+Allow: /dashboard
+Allow: /dashboard/*
+Disallow: /api/
+Disallow: /api/*
+
+# Host & XML Sitemap
+Host: https://novapilot.internal
+Sitemap: https://novapilot.internal/sitemap.xml
+
+# Crawl-delay for polite scraping
+Crawl-delay: 1

@@ -118,6 +118,54 @@
 	];
 </script>
 
+<svelte:head>
+	<title>NovaPilot AI — Autonomous ChatOps &amp; Database Gatekeeper</title>
+	<link rel="canonical" href="https://novapilot.internal/" />
+	<meta name="description" content="Next-Gen Autonomous ChatOps &amp; Database Gatekeeper for Enterprise On-Call Teams. Zero direct SQL mutations, Hermes 3 8B cognitive reasoning, Model Context Protocol (MCP), and human-in-the-loop audit verification." />
+	
+	<!-- Rich Snippet: FAQPage Structured Data -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		"mainEntity": [
+			{
+				"@type": "Question",
+				"name": "Does NovaPilot ever execute raw, unescaped SQL directly?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Never. Every chat request is parsed into structured parameters and verified against predefined parameterized query templates. Zero raw string interpolation is permitted, preventing accidental schema corruption and SQL injection."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How does NovaPilot hook into WhatsApp without getting banned?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "NovaPilot uses passive client-side DOM observers inside authorized enterprise clients (Ferdium recipes, Rambox scripts, browser userscripts, or desktop observers). It exclusively monitors authorized internal branch groups and only sends single confirmation replies upon human sign-off."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Can approved mutations be rolled back in an emergency?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Yes. Every single mutation automatically generates an inverse compensating rollback script prior to execution. The on-call engineer can trigger a one-click rollback from the cockpit at any time."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How is access controlled for on-call engineers?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "NovaPilot integrates with Better Auth and session-based cryptographic clearance. Only authenticated on-call personnel with active clearance tokens can approve pending mutations."
+				}
+			}
+		]
+	}
+	</script>
+</svelte:head>
+
 <div class="relative w-full overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
 	<!-- Background subtle grid & radial glow (Aceternity UI style) -->
 	<div 

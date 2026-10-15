@@ -1180,7 +1180,7 @@
 				<div class="space-y-4 text-xs font-sans">
 					<!-- Tipe Saluran -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">{i18n.t.contacts.channel_type}</label>
+						<span class="block font-semibold text-foreground">{i18n.t.contacts.channel_type}</span>
 						<div class="grid grid-cols-2 gap-2">
 							<button
 								type="button"
@@ -1210,8 +1210,9 @@
 
 					<!-- Platform -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">{i18n.t.contacts.platform_label}</label>
+						<label for="add-contact-platform" class="block font-semibold text-foreground">{i18n.t.contacts.platform_label}</label>
 						<select
+							id="add-contact-platform"
 							bind:value={newContact.platform}
 							class="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs focus:ring-1 focus:ring-ring"
 						>
@@ -1224,8 +1225,9 @@
 
 					<!-- Nama Saluran / Identitas -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">{i18n.t.contacts.channel_name}</label>
+						<label for="add-contact-name" class="block font-semibold text-foreground">{i18n.t.contacts.channel_name}</label>
 						<input
+							id="add-contact-name"
 							type="text"
 							bind:value={newContact.name}
 							placeholder={newContact.type === 'GROUP' ? i18n.t.contacts.name_placeholder_group : i18n.t.contacts.name_placeholder_individual}
@@ -1236,7 +1238,7 @@
 					<!-- JID / Chat ID Identifier -->
 					<div class="space-y-1.5">
 						<div class="flex items-center justify-between">
-							<label class="font-semibold text-foreground">{i18n.t.contacts.jid_label}</label>
+							<label for="add-contact-jid" class="font-semibold text-foreground">{i18n.t.contacts.jid_label}</label>
 							<button 
 								type="button" 
 								onclick={() => showJidGuide = !showJidGuide} 
@@ -1262,6 +1264,7 @@
 						{/if}
 
 						<input
+							id="add-contact-jid"
 							type="text"
 							bind:value={newContact.jidOrChatId}
 							placeholder={newContact.type === 'GROUP' ? '120363028192837492@g.us' : '6281234567890'}
@@ -1283,7 +1286,7 @@
 					<!-- Cabang & Regional -->
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<label class="font-semibold text-foreground">{i18n.t.contacts.branch_label}</label>
+							<label for="add-contact-branch" class="font-semibold text-foreground">{i18n.t.contacts.branch_label}</label>
 							<span class="text-[10px] text-muted-foreground">Menghubungkan ke <code>branch_id</code> DB</span>
 						</div>
 
@@ -1302,6 +1305,7 @@
 						</div>
 
 						<input
+							id="add-contact-branch"
 							type="text"
 							bind:value={newContact.branch}
 							placeholder="mis. Jawa Timur (Surabaya Hub) / Head Office"
@@ -1320,8 +1324,9 @@
 					<!-- Contact Person & Telepon -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div class="space-y-1.5">
-							<label class="block font-semibold text-foreground">{i18n.t.contacts.pic_name}</label>
+							<label for="add-contact-pic-name" class="block font-semibold text-foreground">{i18n.t.contacts.pic_name}</label>
 							<input
+								id="add-contact-pic-name"
 								type="text"
 								bind:value={newContact.contactPerson}
 								placeholder="mis. Budi Wicaksono"
@@ -1329,8 +1334,9 @@
 							/>
 						</div>
 						<div class="space-y-1.5">
-							<label class="block font-semibold text-foreground">{i18n.t.contacts.pic_phone}</label>
+							<label for="add-contact-pic-phone" class="block font-semibold text-foreground">{i18n.t.contacts.pic_phone}</label>
 							<input
+								id="add-contact-pic-phone"
 								type="text"
 								bind:value={newContact.contactPhone}
 								placeholder="+62 812-3456-7890"

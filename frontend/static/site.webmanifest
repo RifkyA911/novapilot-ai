@@ -1,0 +1,21 @@
+{
+  "name": "NovaPilot AI — Autonomous ChatOps & Database Gatekeeper",
+  "short_name": "NovaPilot",
+  "description": "Next-Gen Autonomous ChatOps & Database Gatekeeper for Enterprise On-Call Teams. Zero direct SQL mutations, Hermes 3 reasoning, and Model Context Protocol.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d16",
+  "theme_color": "#10b981",
+  "lang": "en",
+  "categories": ["business", "developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

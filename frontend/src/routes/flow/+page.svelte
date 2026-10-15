@@ -388,6 +388,37 @@ if humanCorrectedValue != aiExtractedValue {
 	}
 </script>
 
+<svelte:head>
+	<title>End-to-End System Flow &amp; Architecture • NovaPilot AI</title>
+	<link rel="canonical" href="https://novapilot.internal/flow" />
+	<meta name="description" content="Detailed 6-stage operational pipeline: ChatOps ingress, deterministic Hermes 3 AI parsing, enterprise pre-validation, dual-operator human sign-off, and physical dual-DB commits." />
+	<meta property="og:title" content="End-to-End System Flow &amp; Architecture • NovaPilot AI" />
+	<meta property="og:description" content="Explore NovaPilot AI's deterministic 6-stage ChatOps pipeline with Zero Direct SQL certification." />
+	<meta property="og:url" content="https://novapilot.internal/flow" />
+	<meta name="twitter:title" content="End-to-End System Flow &amp; Architecture • NovaPilot AI" />
+	<meta name="twitter:description" content="Explore NovaPilot AI's deterministic 6-stage ChatOps pipeline with Zero Direct SQL certification." />
+
+	<!-- Structured Data: TechArticle -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "TechArticle",
+		"headline": "NovaPilot AI End-to-End System Flow & Architecture",
+		"description": "Comprehensive 6-stage operational pipeline documentation for enterprise ChatOps automation.",
+		"author": {
+			"@type": "Person",
+			"name": "Rifky Akhmad F",
+			"url": "https://github.com/RifkyA911"
+		},
+		"publisher": {
+			"@type": "Organization",
+			"name": "NovaPilot AI",
+			"url": "https://github.com/RifkyA911/novapilot-ai"
+		}
+	}
+	</script>
+</svelte:head>
+
 <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-10 relative overflow-hidden font-sans">
 	<!-- Ambient Radial Glow -->
 	<span
