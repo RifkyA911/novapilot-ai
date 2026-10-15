@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"novapilot-ai/backend/internal/domain"
+	"novapilot-ai/backend/internal/guardrail"
 	"novapilot-ai/backend/internal/llm"
 	"novapilot-ai/backend/internal/service"
 	"os"
@@ -354,6 +355,22 @@ func (h *APIHandler) CreateInboundMessage(c *gin.Context) {
 	extractedIntent := input.ExtractedIntent
 	extractedTarget := input.ExtractedTarget
 	classification := domain.MessageClassification(input.Classification)
+
+	// 0. Security Guardrail Check (Prompt Injection, SQL Injection, and Unauthorized Field Mutations)
+	guardrailCheck := guardrail.InspectInboundMessage(combinedText, extractedTarget)
+	if !guardrailCheck.IsSafe {
+		classification = domain.ClassNeedsReview
+		if extractedIntent == "" {
+			extractedIntent = "FLAGGED_SECURITY_RISK"
+		}
+		if extractedTarget == "" {
+			extractedTarget = fmt.Sprintf("[%s]", guardrailCheck.Flag)
+		} else {
+			extractedTarget = fmt.Sprintf("[%s] %s", guardrailCheck.Flag, guardrailCheck.SanitizedTarget)
+		}
+	} else if guardrailCheck.SanitizedTarget != "" {
+		extractedTarget = guardrailCheck.SanitizedTarget
+	}
 
 	// 1. Auto-extract invoice document number from raw message or OCR if not provided
 	if extractedDoc == "" {
@@ -2092,6 +2109,17 @@ func (h *APIHandler) SendGatewayMessage(c *gin.Context) {
 
 	if strings.TrimSpace(req.Message) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Pesan WhatsApp wajib diisi."})
+		return
+	}
+
+	// Apply Outbound Guardrail: DLP (credential leak), Emergency Numbers, and Sliding-Window Rate Limiting
+	if err := guardrail.ValidateOutboundMessage(req.Phone, req.Message); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"ok":        false,
+			"error":     err.Error(),
+			"guardrail": "OUTBOUND_POLICY_BLOCKED",
+			"phone":     req.Phone,
+		})
 		return
 	}
 

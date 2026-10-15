@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"novapilot-ai/backend/internal/guardrail"
 )
 
 // Config defines connection parameters for an OpenAI-compatible Hermes 3 LLM endpoint (Ollama / vLLM / llama.cpp / Hermes CLI)
@@ -204,6 +206,19 @@ Step 4: Check for fraud or anomalies (amount change requested? If amount change 
 
 // ProcessMessage sends a chat prompt to Hermes 3 (via HTTP, CLI, or Heuristic fallback)
 func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
+	// Guardrail Check: Neutralize adversarial prompt injection or unauthorized mutation patterns
+	check := guardrail.InspectInboundMessage(rawMessage, "")
+	if !check.IsSafe {
+		return &HermesResult{
+			RawContent: fmt.Sprintf("[SECURITY GUARDRAIL INTERCEPT] %s", check.Reason),
+			Thought:    fmt.Sprintf("[GUARDRAIL ALERT: %s] %s. Tool call execution blocked.", check.Flag, check.Reason),
+			ToolCall:   nil,
+			IsFallback: true,
+			ModelUsed:  "guardrail-shield-v1",
+			LatencyMs:  0,
+		}, nil
+	}
+
 	// Mode 1: Forced CLI
 	if h.cfg.Mode == "cli" {
 		return h.ProcessViaCLI(ctx, rawMessage, branchContext)

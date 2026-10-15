@@ -78,6 +78,35 @@ function formatWhatsAppJID(raw: string): string {
     return `${clean}@s.whatsapp.net`;
 }
 
+const DLP_PATTERNS = [
+    /(?:postgres|postgresql|mysql|oracle|mongodb):\/\/[^\s]+/i,
+    /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/,
+    /\bBearer\s+[A-Za-z0-9\-\._~\+\/]{20,}=*\b/i,
+    /-----BEGIN[ A-Z0-9_-]*PRIVATE KEY-----/i,
+    /(?:password|secret|api_key|token)\s*[:=]\s*['"][^\s'"]{6,}['"]/i
+];
+
+const EMERGENCY_NUMBERS = new Set(["110", "112", "113", "115", "118", "119", "911", "999"]);
+
+function validateOutboundSecurity(targetPhone: string, text: string): { ok: boolean; reason?: string } {
+    const cleanDigits = (targetPhone || "").replace(/\D/g, "");
+    if (!cleanDigits) {
+        return { ok: false, reason: "Invalid phone number: no digits found." };
+    }
+    if (EMERGENCY_NUMBERS.has(cleanDigits)) {
+        return { ok: false, reason: "Security Policy: Outbound dispatch to emergency numbers is strictly prohibited." };
+    }
+    if (cleanDigits.length < 8 || cleanDigits.length > 16) {
+        return { ok: false, reason: `Invalid phone number length: must be between 8 and 16 digits (got ${cleanDigits.length}).` };
+    }
+    for (const pat of DLP_PATTERNS) {
+        if (pat.test(text)) {
+            return { ok: false, reason: "DLP Guardrail: Outbound message contains sensitive credentials or secret tokens." };
+        }
+    }
+    return { ok: true };
+}
+
 const origConsoleLog = console.log;
 const origConsoleWarn = console.warn;
 const origConsoleError = console.error;
@@ -171,6 +200,33 @@ try {
                         }
 
                         const jid = formatWhatsAppJID(targetPhone);
+
+                        // Guardrail: Outbound DLP and Emergency Number Validation
+                        const secCheck = validateOutboundSecurity(targetPhone, text);
+                        if (!secCheck.ok) {
+                            appendGatewayLog("WARN", `[GUARDRAIL BLOCKED] ${secCheck.reason} (Target: ${targetPhone})`);
+                            return new Response(JSON.stringify({
+                                ok: false,
+                                error: secCheck.reason,
+                                guardrail: "OUTBOUND_POLICY_BLOCKED",
+                                phone: targetPhone
+                            }), { status: 422, headers: corsHeaders });
+                        }
+
+                        // Guardrail: Loop Prevention (Prevent self-dispatch reflection)
+                        if (activeSock?.user?.id) {
+                            const selfCleanJid = activeSock.user.id.split(":")[0] + "@s.whatsapp.net";
+                            if (jid === selfCleanJid) {
+                                appendGatewayLog("WARN", `[GUARDRAIL BLOCKED] Self-dispatch loop prevented for ${jid}`);
+                                return new Response(JSON.stringify({
+                                    ok: false,
+                                    error: "Self-dispatch blocked to prevent infinite reflection loops.",
+                                    guardrail: "LOOP_PREVENTION_BLOCKED",
+                                    phone: targetPhone
+                                }), { status: 400, headers: corsHeaders });
+                            }
+                        }
+
                         appendGatewayLog("INFO", `[DISPATCH REQUEST] Outbound WhatsApp to ${jid} (${targetPhone}): "${text.slice(0, 80)}"`);
 
                         if (!activeSock) {
@@ -289,7 +345,10 @@ try {
                                 msgBody = match[2].trim();
                             }
                             const jid = formatWhatsAppJID(target);
-                            if (activeSock?.user && typeof activeSock.sendMessage === "function") {
+                            const secCheck = validateOutboundSecurity(target, msgBody);
+                            if (!secCheck.ok) {
+                                output = `GUARDRAIL BLOCKED: ${secCheck.reason}`;
+                            } else if (activeSock?.user && typeof activeSock.sendMessage === "function") {
                                 await activeSock.sendMessage(jid, { text: msgBody });
                                 output = `SUCCESS: WhatsApp message delivered to ${jid} (${target}): "${msgBody}"`;
                             } else {

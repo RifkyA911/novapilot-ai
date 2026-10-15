@@ -116,6 +116,148 @@ func NewRepository(db *sql.DB) *Repository {
 			{ID: 2, TicketID: 3, Action: "APPROVED", PerformedBy: "John Doe", OldState: `{"status": "PENDING_APPROVAL"}`, NewState: `{"status": "APPROVED"}`, IPAddress: "192.168.1.104", CreatedAt: time.Now().Add(-2 * time.Hour)},
 		},
 		messages: initialMessages,
+		channels: []domain.ContactChannel{
+			{
+				ID: "ch_wa_grp_1", Type: "GROUP", Name: "Ops Cabang Surabaya & Gudang Timur",
+				Branch: "Jawa Timur (Surabaya Hub)", Platform: "whatsapp", JidOrChatId: "120363028192837492@g.us",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Bambang Santoso (Kepala Gudang)",
+				ContactPhone: "+62 812-3456-7890", TotalMessages: 284, ActionableTickets: 32, LatencyMs: 78,
+				LastActivity: "4 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_sby_1", Name: "Bambang Santoso", Phone: "+62 812-3456-7890", Role: "ADMIN", IsWhitelisted: true, LastActive: "4 mnt yang lalu"},
+					{ID: "mem_sby_2", Name: "Rifky Firdaus (Regional Tech Lead)", Phone: "+62 812-9876-1122", Role: "ON_CALL", IsWhitelisted: true, LastActive: "12 mnt yang lalu"},
+					{ID: "mem_sby_3", Name: "Siti Aminah (Logistik Hub)", Phone: "+62 813-9876-5432", Role: "MEMBER", IsWhitelisted: true, LastActive: "35 mnt yang lalu"},
+					{ID: "mem_sby_4", Name: "Dedi Kurniawan (Admin Gudang)", Phone: "+62 856-4321-8765", Role: "MEMBER", IsWhitelisted: true, LastActive: "2 jam yang lalu"},
+					{ID: "mem_sby_5", Name: "Eko Prasetyo (Driver Armada)", Phone: "+62 878-1122-3344", Role: "MEMBER", IsWhitelisted: false, LastActive: "1 hari yang lalu"},
+					{ID: "mem_sby_6", Name: "Maya Indah (Staff Timbangan)", Phone: "+62 821-5566-7788", Role: "MEMBER", IsWhitelisted: true, LastActive: "5 jam yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_ind_1", Type: "INDIVIDUAL", Name: "Rifky Firdaus (On-Call Regional Lead)",
+				Branch: "Jawa Timur (Surabaya)", Platform: "whatsapp", JidOrChatId: "6281234567890@s.whatsapp.net",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Rifky Firdaus", ContactPhone: "+62 812-3456-7890",
+				TotalMessages: 142, ActionableTickets: 18, LatencyMs: 65, LastActivity: "12 menit yang lalu",
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_grp_2", Type: "GROUP", Name: "Logistik Medan Priority & Distribusi",
+				Branch: "Sumatera Utara (Medan)", Platform: "whatsapp", JidOrChatId: "120363098172635412@g.us",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Hendra Wijaya (Supervisor Logistik)",
+				ContactPhone: "+62 813-8821-4910", TotalMessages: 198, ActionableTickets: 24, LatencyMs: 112,
+				LastActivity: "25 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_mdn_1", Name: "Hendra Wijaya", Phone: "+62 813-8821-4910", Role: "ADMIN", IsWhitelisted: true, LastActive: "25 mnt yang lalu"},
+					{ID: "mem_mdn_2", Name: "Surya Dharma (Dispatch On-Call)", Phone: "+62 812-7766-5544", Role: "ON_CALL", IsWhitelisted: true, LastActive: "1 jam yang lalu"},
+					{ID: "mem_mdn_3", Name: "Rudi Tabuti (Checker Belawan)", Phone: "+62 852-3344-5566", Role: "MEMBER", IsWhitelisted: true, LastActive: "4 jam yang lalu"},
+					{ID: "mem_mdn_4", Name: "Linda Siregar (Admin Surat Jalan)", Phone: "+62 821-9988-7711", Role: "MEMBER", IsWhitelisted: false, LastActive: "1 hari yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_ind_2", Type: "INDIVIDUAL", Name: "Dewi Lestari (Lead AR/AP Finance)",
+				Branch: "DKI Jakarta (Head Office)", Platform: "whatsapp", JidOrChatId: "6281192837411@s.whatsapp.net",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Dewi Lestari", ContactPhone: "+62 811-9283-7411",
+				TotalMessages: 412, ActionableTickets: 56, LatencyMs: 72, LastActivity: "2 menit yang lalu",
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_grp_3", Type: "GROUP", Name: "Finansial Kantor Pusat Jakarta",
+				Branch: "DKI Jakarta (Head Office)", Platform: "whatsapp", JidOrChatId: "120363012938475610@g.us",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Siti Rahmawati (Manajer Keuangan)",
+				ContactPhone: "+62 812-9900-1122", TotalMessages: 540, ActionableTickets: 72, LatencyMs: 82,
+				LastActivity: "8 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_jkt_1", Name: "Siti Rahmawati", Phone: "+62 812-9900-1122", Role: "SUPERADMIN", IsWhitelisted: true, LastActive: "8 mnt yang lalu"},
+					{ID: "mem_jkt_2", Name: "Dewi Lestari (AR/AP Lead)", Phone: "+62 811-9283-7411", Role: "ON_CALL", IsWhitelisted: true, LastActive: "2 mnt yang lalu"},
+					{ID: "mem_jkt_3", Name: "Kevin Gunawan (Tax Compliance)", Phone: "+62 812-4433-2211", Role: "ADMIN", IsWhitelisted: true, LastActive: "15 mnt yang lalu"},
+					{ID: "mem_jkt_4", Name: "Anisa Tri (Kasir Utama)", Phone: "+62 813-7766-1122", Role: "MEMBER", IsWhitelisted: true, LastActive: "1 jam yang lalu"},
+					{ID: "mem_jkt_5", Name: "Farhan Malik (Auditor Internal)", Phone: "+62 857-8899-0011", Role: "MEMBER", IsWhitelisted: true, LastActive: "3 jam yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_grp_4", Type: "GROUP", Name: "Plant Operations Cikarang II",
+				Branch: "Jawa Barat (Cikarang Industrial)", Platform: "whatsapp", JidOrChatId: "120363077889900112@g.us",
+				Status: "STANDBY", IsWhitelisted: true, ContactPerson: "Agus Pratama (Plant Manager)",
+				ContactPhone: "+62 821-7788-9900", TotalMessages: 96, ActionableTickets: 11, LatencyMs: 95,
+				LastActivity: "1 jam yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_ckr_1", Name: "Agus Pratama", Phone: "+62 821-7788-9900", Role: "ADMIN", IsWhitelisted: true, LastActive: "1 jam yang lalu"},
+					{ID: "mem_ckr_2", Name: "Wahyu Hidayat (Maintenance On-Call)", Phone: "+62 812-3344-9988", Role: "ON_CALL", IsWhitelisted: true, LastActive: "2 jam yang lalu"},
+					{ID: "mem_ckr_3", Name: "Dani Ramadhan (QC Line 1)", Phone: "+62 856-1122-3344", Role: "MEMBER", IsWhitelisted: true, LastActive: "5 jam yang lalu"},
+					{ID: "mem_ckr_4", Name: "Slamet Riyadi (Shift Supervisor)", Phone: "+62 878-9900-1122", Role: "MEMBER", IsWhitelisted: false, LastActive: "2 hari yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_ind_3", Type: "INDIVIDUAL", Name: "Joko Anwar (Warehouse Dispatcher Semarang)",
+				Branch: "Jawa Tengah (Semarang)", Platform: "whatsapp", JidOrChatId: "6285671239870@s.whatsapp.net",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Joko Anwar", ContactPhone: "+62 856-7123-9870",
+				TotalMessages: 88, ActionableTickets: 9, LatencyMs: 90, LastActivity: "35 menit yang lalu",
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_tg_grp_1", Type: "GROUP", Name: "Telegram On-Call Incident Alerts",
+				Branch: "Nasional (IT Infrastructure)", Platform: "telegram", JidOrChatId: "-100192837482",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "Rudi Hartono (SRE Lead)",
+				ContactPhone: "@rudi_oncall", TotalMessages: 165, ActionableTickets: 21, LatencyMs: 145,
+				LastActivity: "18 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_tg_1", Name: "Rudi Hartono (SRE Lead)", Phone: "@rudi_oncall", Role: "ADMIN", IsWhitelisted: true, LastActive: "18 mnt yang lalu"},
+					{ID: "mem_tg_2", Name: "NovaBot Incident Forwarder", Phone: "@novapilot_bot", Role: "ON_CALL", IsWhitelisted: true, LastActive: "Aktif terus"},
+					{ID: "mem_tg_3", Name: "Ari Wibowo (DevOps)", Phone: "@ari_wibowo", Role: "MEMBER", IsWhitelisted: true, LastActive: "4 jam yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_dc_grp_1", Type: "GROUP", Name: "Discord #warehouse-ops Guild",
+				Branch: "Regional Plant IT Automation", Platform: "discord", JidOrChatId: "channel_119283749281920195",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "DevOps Ops Bot",
+				ContactPhone: "ops-bot#1049", TotalMessages: 130, ActionableTickets: 14, LatencyMs: 120,
+				LastActivity: "40 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_dc_1", Name: "DevOps Ops Bot", Phone: "ops-bot#1049", Role: "ADMIN", IsWhitelisted: true, LastActive: "40 mnt yang lalu"},
+					{ID: "mem_dc_2", Name: "Rifky Firdaus (Lead)", Phone: "rifky#0001", Role: "ON_CALL", IsWhitelisted: true, LastActive: "12 mnt yang lalu"},
+					{ID: "mem_dc_3", Name: "Warehouse Webhook Pipe", Phone: "pipe-bot#9999", Role: "MEMBER", IsWhitelisted: true, LastActive: "1 jam yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_sl_grp_1", Type: "GROUP", Name: "Slack #it-helpdesk Enterprise",
+				Branch: "Kantor Pusat Jakarta", Platform: "slack", JidOrChatId: "C0819283ABC",
+				Status: "ACTIVE", IsWhitelisted: true, ContactPerson: "IT Support Escalation Bot",
+				ContactPhone: "U06ABC1234", TotalMessages: 220, ActionableTickets: 29, LatencyMs: 110,
+				LastActivity: "15 menit yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_sl_1", Name: "IT Support Escalation Bot", Phone: "U06ABC1234", Role: "ADMIN", IsWhitelisted: true, LastActive: "15 mnt yang lalu"},
+					{ID: "mem_sl_2", Name: "Dewi Lestari (Finance)", Phone: "U07XYZ5678", Role: "ON_CALL", IsWhitelisted: true, LastActive: "2 mnt yang lalu"},
+					{ID: "mem_sl_3", Name: "Budi Santoso (Helpdesk)", Phone: "U08QWE9012", Role: "MEMBER", IsWhitelisted: true, LastActive: "3 jam yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_grp_5", Type: "GROUP", Name: "Ekspedisi Cargo Makassar Hub",
+				Branch: "Sulawesi Selatan (Makassar)", Platform: "whatsapp", JidOrChatId: "120363066554433221@g.us",
+				Status: "MUTED", IsWhitelisted: false, ContactPerson: "Andi Mallarangeng",
+				ContactPhone: "+62 813-4455-6677", TotalMessages: 45, ActionableTickets: 2, LatencyMs: 230,
+				LastActivity: "4 jam yang lalu",
+				Members: []domain.GroupMember{
+					{ID: "mem_mks_1", Name: "Andi Mallarangeng", Phone: "+62 813-4455-6677", Role: "ADMIN", IsWhitelisted: false, LastActive: "4 jam yang lalu"},
+					{ID: "mem_mks_2", Name: "Daeng Rusli (Gudang Pelabuhan)", Phone: "+62 812-9988-1122", Role: "MEMBER", IsWhitelisted: false, LastActive: "1 hari yang lalu"},
+					{ID: "mem_mks_3", Name: "Nur Hasanah (Admin Manifest)", Phone: "+62 852-7788-9900", Role: "MEMBER", IsWhitelisted: false, LastActive: "3 hari yang lalu"},
+				},
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+			{
+				ID: "ch_wa_ind_4", Type: "INDIVIDUAL", Name: "Vendor Support Oracle Database",
+				Branch: "Third-Party SLA", Platform: "whatsapp", JidOrChatId: "6289988776655@s.whatsapp.net",
+				Status: "STANDBY", IsWhitelisted: true, ContactPerson: "Senior DBA Support",
+				ContactPhone: "+62 899-8877-6655", TotalMessages: 19, ActionableTickets: 4, LatencyMs: 160,
+				LastActivity: "2 hari yang lalu",
+				CreatedAt: time.Now().Add(-72 * time.Hour), UpdatedAt: time.Now(),
+			},
+		},
 	}
 
 	if db != nil {
@@ -128,6 +270,36 @@ func NewRepository(db *sql.DB) *Repository {
 			`
 			for _, m := range initialMessages {
 				_, _ = db.Exec(query, m.Platform, m.SenderID, m.SenderName, m.RawMessage, m.MediaType, m.Classification, m.ExtractedDoc, m.ExtractedIntent, m.ExtractedTarget, m.TicketNo, m.CreatedAt)
+			}
+		}
+
+		// Ensure channels table exists and seed if empty
+		_, _ = db.Exec(`
+			CREATE TABLE IF NOT EXISTS channels (
+				id VARCHAR(100) PRIMARY KEY,
+				type VARCHAR(50) NOT NULL DEFAULT 'GROUP',
+				name VARCHAR(255) NOT NULL,
+				branch VARCHAR(255) NOT NULL,
+				platform VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
+				jid_or_chat_id VARCHAR(255) NOT NULL,
+				status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+				is_whitelisted BOOLEAN NOT NULL DEFAULT TRUE,
+				contact_person VARCHAR(255) DEFAULT '',
+				contact_phone VARCHAR(100) DEFAULT '',
+				total_messages INT DEFAULT 0,
+				actionable_tickets INT DEFAULT 0,
+				latency_ms INT DEFAULT 75,
+				last_activity VARCHAR(100) DEFAULT 'Baru saja',
+				members_json JSONB DEFAULT '[]'::jsonb,
+				created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+		var chCount int
+		_ = db.QueryRow("SELECT COUNT(*) FROM channels").Scan(&chCount)
+		if chCount == 0 {
+			for _, ch := range repo.channels {
+				_ = repo.SaveChannel(&ch)
 			}
 		}
 	}

@@ -25,7 +25,9 @@
 		Phone,
 		MagnifyingGlass,
 		InformationCircle,
-		QuestionMarkCircle
+		QuestionMarkCircle,
+		ChatBubbleLeftRight,
+		PaperAirplane
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
@@ -344,11 +346,150 @@
 		setTimeout(() => { copiedMemberPhone = null; }, 1800);
 	}
 
-	function toggleMemberWhitelist(memberId: string) {
+	async function toggleMemberWhitelist(memberId: string) {
 		if (!selectedGroupForMembers || !selectedGroupForMembers.members) return;
 		const member = selectedGroupForMembers.members.find(m => m.id === memberId);
 		if (member) {
 			member.isWhitelisted = !member.isWhitelisted;
+			try {
+				await fetch("/api/channels", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(selectedGroupForMembers)
+				});
+			} catch (e) {
+				console.error("Failed to persist member whitelist toggle:", e);
+			}
+		}
+	}
+
+	// Add new member to group
+	let isAddingMember = $state(false);
+	let newMemberName = $state("");
+	let newMemberPhone = $state("");
+	let newMemberRole = $state<"ADMIN" | "MEMBER" | "ON_CALL" | "SUPERADMIN">("MEMBER");
+	let newMemberError = $state<string | null>(null);
+
+	async function addMemberToGroup() {
+		if (!selectedGroupForMembers) return;
+		if (!newMemberName.trim()) {
+			newMemberError = "Nama anggota wajib diisi.";
+			return;
+		}
+		if (!newMemberPhone.trim()) {
+			newMemberError = "Nomor kontak / ID wajib diisi.";
+			return;
+		}
+		newMemberError = null;
+
+		const createdMember: GroupMember = {
+			id: `mem_${Date.now()}`,
+			name: newMemberName.trim(),
+			phone: newMemberPhone.trim(),
+			role: newMemberRole,
+			isWhitelisted: true,
+			lastActive: "Baru saja ditambahkan"
+		};
+
+		if (!selectedGroupForMembers.members) {
+			selectedGroupForMembers.members = [];
+		}
+		selectedGroupForMembers.members = [...selectedGroupForMembers.members, createdMember];
+
+		// Persist to backend
+		try {
+			await fetch("/api/channels", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(selectedGroupForMembers)
+			});
+		} catch (e) {
+			console.error("Failed to persist new member to backend:", e);
+		}
+
+		newMemberName = "";
+		newMemberPhone = "";
+		newMemberRole = "MEMBER";
+		isAddingMember = false;
+	}
+
+	async function removeMemberFromGroup(memberId: string) {
+		if (!selectedGroupForMembers || !selectedGroupForMembers.members) return;
+		selectedGroupForMembers.members = selectedGroupForMembers.members.filter(m => m.id !== memberId);
+		try {
+			await fetch("/api/channels", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(selectedGroupForMembers)
+			});
+		} catch (e) {
+			console.error("Failed to persist member removal:", e);
+		}
+	}
+
+	// =========================================================================
+	// OUTBOUND WHATSAPP DISPATCH MODAL STATE
+	// =========================================================================
+	let chatTargetChannel = $state<ContactChannel | null>(null);
+	let chatMessage = $state("");
+	let isSendingChat = $state(false);
+	let chatFeedback = $state<{ type: "success" | "error"; text: string } | null>(null);
+
+	function openChatModal(channel: ContactChannel) {
+		chatTargetChannel = channel;
+		chatMessage = `Halo ${channel.contactPerson || channel.name}, ini pesan verifikasi dari NovaPilot AI Gatekeeper.`;
+		chatFeedback = null;
+	}
+
+	function closeChatModal() {
+		chatTargetChannel = null;
+		chatMessage = "";
+		chatFeedback = null;
+	}
+
+	async function sendOutboundChat() {
+		if (!chatTargetChannel || !chatMessage.trim()) return;
+		isSendingChat = true;
+		chatFeedback = null;
+
+		try {
+			let phone = chatTargetChannel.contactPhone;
+			if (!phone || phone === "-" || phone.includes("@")) {
+				phone = chatTargetChannel.jidOrChatId.split("@")[0];
+			}
+			phone = phone.replace(/[^0-9]/g, "");
+
+			const res = await fetch("/api/gateway/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: phone,
+					message: chatMessage.trim()
+				})
+			});
+
+			const data = await res.json();
+			if (res.ok && data.ok) {
+				chatFeedback = {
+					type: "success",
+					text: `Pesan terkirim via WhatsApp Gateway (${data.delivery || "DELIVERED"}) ke ${data.phone || phone}!`
+				};
+				chatTargetChannel.totalMessages++;
+				chatTargetChannel.lastActivity = "Baru saja";
+				cockpit.recordPlatformEvent("whatsapp");
+			} else {
+				chatFeedback = {
+					type: "error",
+					text: data.error || "Gagal mengirim pesan melalui gateway."
+				};
+			}
+		} catch (err: any) {
+			chatFeedback = {
+				type: "error",
+				text: `Koneksi gagal: ${err.message}`
+			};
+		} finally {
+			isSendingChat = false;
 		}
 	}
 
@@ -1105,6 +1246,19 @@
 
 			{:else if column.id === "actions"}
 				<div class="flex items-center justify-end gap-1.5">
+					<!-- Outbound WhatsApp Dispatch -->
+					{#if row.platform === 'whatsapp'}
+						<button
+							type="button"
+							onclick={() => openChatModal(row)}
+							class="h-7 px-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+							title="Kirim pesan langsung ke {row.name} via WhatsApp Gateway"
+						>
+							<PaperAirplane class="h-3 w-3" />
+							<span>Chat WA</span>
+						</button>
+					{/if}
+
 					<!-- Simulasi Inbound Ping -->
 					<button
 						type="button"
@@ -1535,6 +1689,82 @@
 					</div>
 				</div>
 
+				<!-- Add Member Toggle / Form -->
+				<div class="space-y-2 shrink-0">
+					<div class="flex items-center justify-between">
+						<button
+							type="button"
+							onclick={() => isAddingMember = !isAddingMember}
+							class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+						>
+							{#if isAddingMember}
+								<XMark class="h-3.5 w-3.5" />
+								<span>Batal Tambah</span>
+							{:else}
+								<Plus class="h-3.5 w-3.5" />
+								<span>+ Tambah Anggota ke Grup</span>
+							{/if}
+						</button>
+					</div>
+
+					{#if isAddingMember}
+						<div class="p-3 rounded-xl border border-primary/25 bg-primary/5 space-y-3 animate-in fade-in duration-150">
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+								<div>
+									<label class="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nama Anggota</label>
+									<input
+										type="text"
+										bind:value={newMemberName}
+										placeholder="e.g. Budi Santoso"
+										class="w-full h-8 px-2.5 rounded-lg border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div>
+									<label class="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nomor Telepon / ID</label>
+									<input
+										type="text"
+										bind:value={newMemberPhone}
+										placeholder="+62 812-xxxx-xxxx"
+										class="w-full h-8 px-2.5 rounded-lg border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div>
+									<label class="text-[10px] font-semibold text-muted-foreground block mb-0.5">Role Otoritas</label>
+									<select
+										bind:value={newMemberRole}
+										class="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-ring"
+									>
+										<option value="MEMBER">MEMBER (Staff)</option>
+										<option value="ADMIN">ADMIN (Supervisor)</option>
+										<option value="ON_CALL">ON_CALL (Hotline)</option>
+										<option value="SUPERADMIN">SUPERADMIN (Lead)</option>
+									</select>
+								</div>
+							</div>
+							{#if newMemberError}
+								<p class="text-[11px] text-rose-500 font-medium">⚠️ {newMemberError}</p>
+							{/if}
+							<div class="flex items-center justify-end gap-2">
+								<button
+									type="button"
+									onclick={() => isAddingMember = false}
+									class="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+								>
+									Batal
+								</button>
+								<button
+									type="button"
+									onclick={addMemberToGroup}
+									class="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-1"
+								>
+									<Check class="h-3.5 w-3.5" />
+									<span>Simpan Anggota</span>
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+
 				<!-- Scrollable Members Roster List -->
 				<div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px] max-h-[360px]">
 					{#if filteredMembers.length === 0}
@@ -1580,7 +1810,7 @@
 									</div>
 								</div>
 
-								<!-- Right: Whitelist Toggle Switch -->
+								<!-- Right: Actions & Whitelist Toggle Switch -->
 								<div class="flex items-center gap-2 shrink-0">
 									<div class="text-right hidden sm:block">
 										<span class="text-[10px] font-mono font-semibold {member.isWhitelisted ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}">
@@ -1596,6 +1826,16 @@
 										<span
 											class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out {member.isWhitelisted ? 'translate-x-4' : 'translate-x-0'}"
 										></span>
+									</button>
+
+									<!-- Remove member button -->
+									<button
+										type="button"
+										onclick={() => removeMemberFromGroup(member.id)}
+										class="p-1 rounded text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+										title="Keluarkan dari daftar grup"
+									>
+										<Trash class="h-3 w-3" />
 									</button>
 								</div>
 							</div>
@@ -1615,6 +1855,134 @@
 						class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs transition-colors cursor-pointer"
 					>
 						{i18n.t.contacts.close_roster}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- ========================================================================= -->
+	<!-- MODAL: KIRIM PESAN OUTBOUND WHATSAPP (LIVE GATEWAY DISPATCH)              -->
+	<!-- ========================================================================= -->
+	{#if chatTargetChannel}
+		<div 
+			class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+			role="dialog"
+			aria-modal="true"
+		>
+			<div 
+				class="w-full max-w-lg rounded-2xl bg-card border border-border text-card-foreground shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
+			>
+				<!-- Modal Header -->
+				<div class="flex items-start justify-between pb-3 border-b border-border/60">
+					<div class="flex items-center gap-3">
+						<div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">
+							<PaperAirplane class="h-5 w-5" />
+						</div>
+						<div>
+							<h3 class="text-sm font-bold text-foreground">Kirim WhatsApp Outbound</h3>
+							<p class="text-xs text-muted-foreground">Kirim pesan langsung ke {chatTargetChannel.name} ({chatTargetChannel.contactPhone || chatTargetChannel.jidOrChatId})</p>
+						</div>
+					</div>
+					<button 
+						type="button" 
+						onclick={closeChatModal}
+						class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+					>
+						<XMark class="h-5 w-5" />
+					</button>
+				</div>
+
+				<!-- Channel Metadata Badge -->
+				<div class="p-3 rounded-xl bg-secondary/50 border border-border/70 text-xs space-y-1">
+					<div class="flex items-center justify-between">
+						<span class="text-muted-foreground">Penerima:</span>
+						<strong class="text-foreground">{chatTargetChannel.name}</strong>
+					</div>
+					<div class="flex items-center justify-between">
+						<span class="text-muted-foreground">Cabang:</span>
+						<span>{chatTargetChannel.branch}</span>
+					</div>
+					<div class="flex items-center justify-between">
+						<span class="text-muted-foreground">JID WhatsApp:</span>
+						<span class="font-mono text-muted-foreground">{chatTargetChannel.jidOrChatId}</span>
+					</div>
+				</div>
+
+				<!-- Quick Templates -->
+				<div class="space-y-1.5">
+					<span class="text-[11px] font-semibold text-muted-foreground">Template Cepat:</span>
+					<div class="flex items-center gap-1.5 flex-wrap">
+						<button
+							type="button"
+							onclick={() => chatMessage = "Halo tim operasional cabang, mohon konfirmasi revisi faktur INV/2026/001 customer PT Sumber Makmur."}
+							class="text-[10px] px-2 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
+						>
+							Konfirmasi Faktur
+						</button>
+						<button
+							type="button"
+							onclick={() => chatMessage = "Pemberitahuan: Sistem sinkronisasi ERP telah aktif untuk branch Anda."}
+							class="text-[10px] px-2 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
+						>
+							Notifikasi Sistem
+						</button>
+						<button
+							type="button"
+							onclick={() => chatMessage = "Halo, ini tes konektivitas outbound messaging NovaPilot AI WhatsApp Gateway."}
+							class="text-[10px] px-2 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
+						>
+							Tes Koneksi
+						</button>
+					</div>
+				</div>
+
+				<!-- Message Textarea -->
+				<div class="space-y-1.5">
+					<label class="text-xs font-semibold text-foreground">Isi Pesan WhatsApp</label>
+					<textarea
+						bind:value={chatMessage}
+						rows="3"
+						placeholder="Ketik pesan yang ingin dikirim..."
+						class="w-full p-2.5 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+					></textarea>
+				</div>
+
+				<!-- Guardrail DLP Alert Notice -->
+				<div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+					<ShieldCheck class="h-4 w-4 shrink-0 text-amber-500" />
+					<span>Dilindungi DLP Guardrail: Kredensial DB string, JWT, dan nomor darurat otomatis dicegah bocor.</span>
+				</div>
+
+				<!-- Feedback banner -->
+				{#if chatFeedback}
+					<div class="p-3 rounded-xl border text-xs {chatFeedback.type === 'success' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+						{chatFeedback.text}
+					</div>
+				{/if}
+
+				<!-- Modal Footer -->
+				<div class="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+					<button
+						type="button"
+						onclick={closeChatModal}
+						class="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+					>
+						Tutup
+					</button>
+					<button
+						type="button"
+						onclick={sendOutboundChat}
+						disabled={isSendingChat || !chatMessage.trim()}
+						class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+					>
+						{#if isSendingChat}
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+							<span>Mengirim...</span>
+						{:else}
+							<PaperAirplane class="h-3.5 w-3.5" />
+							<span>Kirim Sekarang</span>
+						{/if}
 					</button>
 				</div>
 			</div>
