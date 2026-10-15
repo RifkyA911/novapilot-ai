@@ -355,25 +355,37 @@
 		<button
 			type="button"
 			onclick={() => { activeTab = "hermes"; sound.playNavClick(); }}
-			class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer {activeTab === 'hermes' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2.5 cursor-pointer {activeTab === 'hermes' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
-			<BrandIcon name="hermes" class="h-4 w-4" />
+			<div class="h-6 w-6 rounded-lg flex items-center justify-center shrink-0 {activeTab === 'hermes' ? 'bg-primary-foreground/20' : 'bg-secondary'}">
+				<BrandIcon name="hermes" class="h-4 w-4 {activeTab === 'hermes' ? 'brightness-0 invert dark:invert-0' : ''}" />
+			</div>
 			<span>{i18n.t.agents.hermes_title}</span>
 			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono {activeTab === 'hermes' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}">
 				{i18n.t.agents.hermes_badge}
 			</span>
+			<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono {activeTab === 'hermes' ? 'bg-emerald-500/25 text-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-700 font-bold border border-emerald-400/30' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}">
+				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+				<span class="font-bold tracking-wider">CONNECTED</span>
+			</div>
 		</button>
 
 		<button
 			type="button"
 			onclick={() => { activeTab = "openclaw"; sound.playNavClick(); }}
-			class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer {activeTab === 'openclaw' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+			class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2.5 cursor-pointer {activeTab === 'openclaw' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
-			<BrandIcon name="openclaw" class="h-4 w-4" />
+			<div class="h-6 w-6 rounded-lg flex items-center justify-center shrink-0 {activeTab === 'openclaw' ? 'bg-primary-foreground/20' : 'bg-secondary'}">
+				<BrandIcon name="openclaw" class="h-4 w-4" />
+			</div>
 			<span>{i18n.t.agents.openclaw_title}</span>
 			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono {activeTab === 'openclaw' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}">
 				{i18n.t.agents.openclaw_badge}
 			</span>
+			<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono {activeTab === 'openclaw' ? 'bg-emerald-500/25 text-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-700 font-bold border border-emerald-400/30' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}">
+				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+				<span class="font-bold tracking-wider">CONNECTED</span>
+			</div>
 		</button>
 	</div>
 

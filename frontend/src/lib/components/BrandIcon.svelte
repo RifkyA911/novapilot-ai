@@ -19,6 +19,6 @@
 <img
 	src={iconMap[name] || "/icons/hermes-agent.svg"}
 	alt="{name} icon"
-	class="{className} object-contain inline-block select-none pointer-events-none"
+	class="{className} object-contain inline-block select-none pointer-events-none {name === 'hermes' ? 'dark:brightness-0 dark:invert' : ''}"
 	loading="lazy"
 />

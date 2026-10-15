@@ -260,12 +260,12 @@
 			<!-- Left: Show Entries | Search -->
 			<div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
 				<!-- Show Entries Dropdown -->
-				<div class="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-secondary/50 h-10 px-3 py-1.5 rounded-xl border border-input/60 shrink-0">
+				<div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/50 h-8 px-2.5 py-1 rounded-lg border border-input/60 shrink-0">
 					<span>{i18n.t.common.rows_per_page}</span>
 					<select
 						bind:value={pageSize}
 						onchange={() => currentPage = 1}
-						class="bg-transparent font-bold text-foreground text-xs sm:text-sm focus:outline-none cursor-pointer pr-1"
+						class="bg-transparent font-bold text-foreground text-[10px] sm:text-[11px] focus:outline-none cursor-pointer pr-1"
 					>
 						<option value={5}>5</option>
 						<option value={10}>10</option>
@@ -395,18 +395,18 @@
 		</div>
 
 		<!-- Pagination Footer -->
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-secondary/20 text-[11px] sm:text-xs font-mono">
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-secondary/20 text-[10px] sm:text-[11px] font-mono">
 			<div class="text-muted-foreground">
 				{i18n.t.common.showing} <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> {i18n.t.common.of} <strong class="text-foreground">{totalItems}</strong> {i18n.t.common.records}
 				{#if totalItems !== data.length}
-					<span class="text-[11px] sm:text-xs text-primary font-medium">({i18n.t.common.filtered_from} {data.length} {i18n.t.common.records})</span>
+					<span class="text-[10px] sm:text-[11px] text-primary font-medium">({i18n.t.common.filtered_from} {data.length} {i18n.t.common.records})</span>
 				{/if}
 			</div>
 
 			<!-- Pagination Navigation & Jump-to-Page Input -->
-			<div class="flex flex-wrap items-center gap-3">
+			<div class="flex flex-wrap items-center gap-2.5">
 				<!-- Jump to Page Input -->
-				<div class="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+				<div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground">
 					<span class="whitespace-nowrap font-medium">{i18n.t.common.jump_to}</span>
 					<input
 						type="number"
@@ -419,19 +419,19 @@
 							}
 						}}
 						placeholder={String(validPage)}
-						class="h-9 w-16 px-2 text-center rounded-xl border border-input/60 bg-card text-foreground text-xs sm:text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-2xs"
+						class="h-7 w-12 px-1 text-center rounded-lg border border-input/60 bg-card text-foreground text-[10px] sm:text-[11px] font-mono focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-2xs"
 					/>
 					<span class="font-mono text-muted-foreground">/ {totalPages}</span>
 					<button
 						type="button"
 						onclick={handleJumpPage}
-						class="h-9 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs sm:text-sm font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
+						class="h-7 px-2 rounded-lg border border-border bg-card hover:bg-muted text-[10px] sm:text-[11px] font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
 					>
 						{i18n.t.common.go}
 					</button>
 				</div>
 
-				<div class="h-5 w-px bg-border hidden sm:block"></div>
+				<div class="h-4 w-px bg-border hidden sm:block"></div>
 
 				<!-- Page Navigation Buttons -->
 				<div class="flex items-center gap-1 font-mono">
@@ -439,10 +439,10 @@
 						type="button"
 						onclick={() => currentPage = Math.max(1, validPage - 1)}
 						disabled={validPage <= 1}
-						class="h-9 w-9 rounded-xl border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+						class="h-7 w-7 rounded-lg border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
 						aria-label="Previous Page"
 					>
-						<ChevronLeft class="h-4 w-4" />
+						<ChevronLeft class="h-3 w-3" />
 					</button>
 
 					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum}
@@ -450,12 +450,12 @@
 							<button
 								type="button"
 								onclick={() => currentPage = pageNum}
-								class="h-9 min-w-[36px] px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer {validPage === pageNum ? 'bg-primary text-primary-foreground border-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted'}"
+								class="h-7 min-w-[28px] px-2 rounded-lg border text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer {validPage === pageNum ? 'bg-primary text-primary-foreground border-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted'}"
 							>
 								{pageNum}
 							</button>
 						{:else if Math.abs(pageNum - validPage) === 2}
-							<span class="px-1 text-muted-foreground">...</span>
+							<span class="px-1 text-[10px] text-muted-foreground">...</span>
 						{/if}
 					{/each}
 
@@ -463,10 +463,10 @@
 						type="button"
 						onclick={() => currentPage = Math.min(totalPages, validPage + 1)}
 						disabled={validPage >= totalPages}
-						class="h-9 w-9 rounded-xl border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+						class="h-7 w-7 rounded-lg border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
 						aria-label="Next Page"
 					>
-						<ChevronRight class="h-4 w-4" />
+						<ChevronRight class="h-3 w-3" />
 					</button>
 				</div>
 			</div>
