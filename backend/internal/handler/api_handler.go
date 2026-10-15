@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -36,6 +37,14 @@ type APIHandler struct {
 	mcpRefDB      *sql.DB
 	hermesAdapter *llm.HermesAdapter
 	startTime     time.Time
+
+	lanIPCache    string
+	lanIPExpiry   time.Time
+	lanIPMu       sync.RWMutex
+
+	gwStatusCache  gin.H
+	gwStatusExpiry time.Time
+	gwStatusMu     sync.RWMutex
 }
 
 func (h *APIHandler) SetMCPRefDB(db *sql.DB) {
@@ -83,17 +92,28 @@ func (h *APIHandler) HealthCheck(c *gin.Context) {
 }
 
 func (h *APIHandler) GetTelemetry(c *gin.Context) {
-	// 1. Resolve host active LAN IP
-	lanIP := "127.0.0.1"
-	if addrs, err := net.InterfaceAddrs(); err == nil {
-		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-				if ipnet.IP.To4() != nil {
-					lanIP = ipnet.IP.String()
-					break
+	// 1. Resolve host active LAN IP (cached with 60s TTL to eliminate Win32 syscall overhead)
+	h.lanIPMu.RLock()
+	lanIP := h.lanIPCache
+	lanExpired := time.Now().After(h.lanIPExpiry)
+	h.lanIPMu.RUnlock()
+
+	if lanIP == "" || lanExpired {
+		lanIP = "127.0.0.1"
+		if addrs, err := net.InterfaceAddrs(); err == nil {
+			for _, addr := range addrs {
+				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+					if ipnet.IP.To4() != nil {
+						lanIP = ipnet.IP.String()
+						break
+					}
 				}
 			}
 		}
+		h.lanIPMu.Lock()
+		h.lanIPCache = lanIP
+		h.lanIPExpiry = time.Now().Add(60 * time.Second)
+		h.lanIPMu.Unlock()
 	}
 
 	// 2. Resolve database connection pool statistics
@@ -1901,26 +1921,52 @@ var (
 )
 
 func (h *APIHandler) GetGatewayStatus(c *gin.Context) {
-	client := http.Client{Timeout: 900 * time.Millisecond}
+	// 1. Fast cache check (2s TTL) to prevent repeated TCP roundtrips/timeouts
+	h.gwStatusMu.RLock()
+	cached := h.gwStatusCache
+	expired := time.Now().After(h.gwStatusExpiry)
+	h.gwStatusMu.RUnlock()
+
+	if cached != nil && !expired {
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
+	client := http.Client{Timeout: 350 * time.Millisecond}
 	resp, err := client.Get("http://127.0.0.1:3002/api/status")
+	var result gin.H
 	if err == nil && resp.StatusCode == http.StatusOK {
 		defer resp.Body.Close()
 		var body map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&body); err == nil {
-			c.JSON(http.StatusOK, gin.H{
+			result = gin.H{
 				"running": true,
 				"data":    body,
-			})
-			return
+			}
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"running": false,
-		"status":  "STOPPED",
-		"port":    3002,
-		"message": "Gateway process is offline or not reachable on :3002",
-	})
+	if result == nil {
+		result = gin.H{
+			"running": false,
+			"status":  "STOPPED",
+			"port":    3002,
+			"message": "Gateway process is offline or not reachable on :3002",
+		}
+	}
+
+	defaultPhone := os.Getenv("WA_TEST_RECIPIENT")
+	if defaultPhone == "" {
+		defaultPhone = "081228632195"
+	}
+	result["default_test_phone"] = defaultPhone
+
+	h.gwStatusMu.Lock()
+	h.gwStatusCache = result
+	h.gwStatusExpiry = time.Now().Add(2 * time.Second)
+	h.gwStatusMu.Unlock()
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *APIHandler) StartGateway(c *gin.Context) {
@@ -2023,6 +2069,57 @@ func (h *APIHandler) RestartGateway(c *gin.Context) {
 	h.StopGateway(c)
 	time.Sleep(1 * time.Second)
 	h.StartGateway(c)
+}
+
+type GatewaySendRequest struct {
+	Phone   string `json:"phone"`
+	Message string `json:"message"`
+}
+
+func (h *APIHandler) SendGatewayMessage(c *gin.Context) {
+	var req GatewaySendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Format request tidak valid."})
+		return
+	}
+
+	if strings.TrimSpace(req.Phone) == "" {
+		req.Phone = os.Getenv("WA_TEST_RECIPIENT")
+		if req.Phone == "" {
+			req.Phone = "081228632195"
+		}
+	}
+
+	if strings.TrimSpace(req.Message) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Pesan WhatsApp wajib diisi."})
+		return
+	}
+
+	payloadBytes, err := json.Marshal(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Gagal merangkai payload pengiriman."})
+		return
+	}
+
+	client := http.Client{Timeout: 6 * time.Second}
+	resp, err := client.Post("http://127.0.0.1:3002/api/send", "application/json", bytes.NewReader(payloadBytes))
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"ok":    false,
+			"error": fmt.Sprintf("Gagal menghubungi WhatsApp Gateway (:3002): %v. Pastikan gateway berjalan di menu Platforms.", err),
+			"phone": req.Phone,
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var gwResp map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&gwResp); err != nil {
+		c.JSON(resp.StatusCode, gin.H{"ok": false, "error": "Gagal memproses balasan dari WhatsApp Gateway."})
+		return
+	}
+
+	c.JSON(resp.StatusCode, gwResp)
 }
 
 

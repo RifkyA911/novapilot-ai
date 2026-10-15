@@ -7,6 +7,8 @@ import (
 	"novapilot-ai/backend/internal/domain"
 	"sync"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Repository struct {
@@ -183,6 +185,9 @@ func (r *Repository) GetAll(statusFilter string) ([]domain.Ticket, error) {
 	defer rows.Close()
 
 	var tickets []domain.Ticket
+	var ticketIDs []int
+	ticketMap := make(map[int]int)
+
 	for rows.Next() {
 		var t domain.Ticket
 		var approvedBy, rejectionReason sql.NullString
@@ -202,9 +207,33 @@ func (r *Repository) GetAll(statusFilter string) ([]domain.Ticket, error) {
 			t.RejectionReason = &rejectionReason.String
 		}
 
-		docs, _ := r.GetDocumentsByTicketID(t.ID)
-		t.Documents = docs
+		ticketMap[t.ID] = len(tickets)
+		ticketIDs = append(ticketIDs, t.ID)
 		tickets = append(tickets, t)
+	}
+
+	// Batch load all documents in a single SQL query instead of N individual queries (eliminates N+1 query bottleneck)
+	if len(ticketIDs) > 0 {
+		docQuery := `
+			SELECT id, ticket_id, file_name, file_path, mime_type, file_size, uploaded_by, created_at
+			FROM documents
+			WHERE ticket_id = ANY($1)
+		`
+		if docRows, err := r.db.Query(docQuery, pq.Array(ticketIDs)); err == nil {
+			defer docRows.Close()
+			for docRows.Next() {
+				var doc domain.Document
+				if err := docRows.Scan(
+					&doc.ID, &doc.TicketID, &doc.FileName, &doc.FilePath,
+				); err == nil {
+					if doc.TicketID != nil {
+						if idx, ok := ticketMap[*doc.TicketID]; ok {
+							tickets[idx].Documents = append(tickets[idx].Documents, doc)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	return tickets, nil

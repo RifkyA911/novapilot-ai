@@ -500,89 +500,93 @@
 	<!-- ========================================================================= -->
 	<!-- 3. FILTERING & SEARCH CONTROLS                                            -->
 	<!-- ========================================================================= -->
-	<div class="p-3.5 rounded-xl border border-border/60 bg-card/40 backdrop-blur-xs space-y-3 shadow-xs">
-		<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+	<div class="p-3.5 rounded-2xl border border-border/70 bg-card/60 backdrop-blur-md space-y-3 shadow-xs">
+		<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
 			<!-- Platform Filter Tabs -->
-			<div class="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-secondary/50 border border-border/50 text-xs">
-				<button
-					type="button"
-					onclick={() => selectedPlatform = "all"}
-					class="px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer {selectedPlatform === 'all' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-				>
-					{i18n.t.messages.all_platforms}
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedPlatform = "whatsapp"}
-					class="px-2.5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 cursor-pointer {selectedPlatform === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-				>
-					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-					WhatsApp
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedPlatform = "telegram"}
-					class="px-2.5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 cursor-pointer {selectedPlatform === 'telegram' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-				>
-					<span class="h-2 w-2 rounded-full bg-sky-500"></span>
-					Telegram
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedPlatform = "discord"}
-					class="px-2.5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 cursor-pointer {selectedPlatform === 'discord' ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-				>
-					<span class="h-2 w-2 rounded-full bg-indigo-500"></span>
-					Discord
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedPlatform = "slack"}
-					class="px-2.5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 cursor-pointer {selectedPlatform === 'slack' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
-				>
-					<span class="h-2 w-2 rounded-full bg-amber-500"></span>
-					Slack
-				</button>
+			<div class="flex items-center gap-2 overflow-x-auto pb-0.5 xl:pb-0 no-scrollbar">
+				<div class="flex items-center gap-1 p-1 rounded-xl bg-secondary/60 border border-border/60 text-xs shrink-0">
+					<button
+						type="button"
+						onclick={() => selectedPlatform = "all"}
+						class="px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap cursor-pointer shrink-0 {selectedPlatform === 'all' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						{i18n.t.messages.all_platforms}
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedPlatform = "whatsapp"}
+						class="px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 {selectedPlatform === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						<span class="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
+						WhatsApp
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedPlatform = "telegram"}
+						class="px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 {selectedPlatform === 'telegram' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						<span class="h-2 w-2 rounded-full bg-sky-500 shrink-0"></span>
+						Telegram
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedPlatform = "discord"}
+						class="px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 {selectedPlatform === 'discord' ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						<span class="h-2 w-2 rounded-full bg-indigo-500 shrink-0"></span>
+						Discord
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedPlatform = "slack"}
+						class="px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 {selectedPlatform === 'slack' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						<span class="h-2 w-2 rounded-full bg-amber-500 shrink-0"></span>
+						Slack
+					</button>
+				</div>
 			</div>
 
 			<!-- Classification Filter Tabs -->
-			<div class="flex flex-wrap items-center gap-1.5 text-xs">
-				<button
-					type="button"
-					onclick={() => selectedClassification = "all"}
-					class="px-2.5 py-1 rounded-md border transition-all cursor-pointer {selectedClassification === 'all' ? 'bg-primary text-primary-foreground border-primary font-semibold' : 'border-border/70 text-muted-foreground hover:text-foreground bg-card'}"
-				>
-					{i18n.t.messages.all_classes}
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedClassification = "NEEDS_REVIEW"}
-					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'NEEDS_REVIEW' ? 'bg-amber-500 text-white border-amber-500 font-semibold' : 'border-border/70 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 bg-card'}"
-				>
-					<ExclamationTriangle class="h-3.5 w-3.5" />
-					<span>{i18n.t.messages.needs_review}</span>
-					{#if cockpit.needsReviewCount > 0}
-						<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">
-							{cockpit.needsReviewCount}
-						</span>
-					{/if}
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedClassification = "ACTIONABLE"}
-					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'ACTIONABLE' ? 'bg-emerald-600 text-white border-emerald-600 font-semibold' : 'border-border/70 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 bg-card'}"
-				>
-					<CheckCircle class="h-3.5 w-3.5" />
-					<span>{i18n.t.messages.actionable}</span>
-				</button>
-				<button
-					type="button"
-					onclick={() => selectedClassification = "CASUAL_BANTER"}
-					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'CASUAL_BANTER' ? 'bg-muted-foreground text-background border-muted-foreground font-semibold' : 'border-border/70 text-muted-foreground hover:text-foreground bg-card'}"
-				>
-					<ChatBubbleOvalLeftEllipsis class="h-3.5 w-3.5" />
-					<span>{i18n.t.messages.casual_banter}</span>
-				</button>
+			<div class="flex items-center gap-2 overflow-x-auto pb-0.5 xl:pb-0 no-scrollbar">
+				<div class="flex items-center gap-1.5 p-1 rounded-xl bg-secondary/60 border border-border/60 text-xs shrink-0">
+					<button
+						type="button"
+						onclick={() => selectedClassification = "all"}
+						class="px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 font-medium {selectedClassification === 'all' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						{i18n.t.messages.all_classes}
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedClassification = "NEEDS_REVIEW"}
+						class="px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 font-medium {selectedClassification === 'NEEDS_REVIEW' ? 'bg-amber-500 text-white font-semibold shadow-xs' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'}"
+					>
+						<ExclamationTriangle class="h-3.5 w-3.5 shrink-0" />
+						<span>{i18n.t.messages.needs_review}</span>
+						{#if cockpit.needsReviewCount > 0}
+							<span class="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] {selectedClassification === 'NEEDS_REVIEW' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'} font-mono font-bold leading-none shrink-0">
+								{cockpit.needsReviewCount}
+							</span>
+						{/if}
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedClassification = "ACTIONABLE"}
+						class="px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 font-medium {selectedClassification === 'ACTIONABLE' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'}"
+					>
+						<CheckCircle class="h-3.5 w-3.5 shrink-0" />
+						<span>{i18n.t.messages.actionable}</span>
+					</button>
+					<button
+						type="button"
+						onclick={() => selectedClassification = "CASUAL_BANTER"}
+						class="px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 font-medium {selectedClassification === 'CASUAL_BANTER' ? 'bg-foreground text-background font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+					>
+						<ChatBubbleOvalLeftEllipsis class="h-3.5 w-3.5 shrink-0" />
+						<span>{i18n.t.messages.casual_banter}</span>
+					</button>
+				</div>
 			</div>
 		</div>
 

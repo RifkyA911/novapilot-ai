@@ -169,7 +169,7 @@
 			category: "ChatOps & Hooks",
 			url: "/dashboard/simulator",
 			icon: PaperAirplane,
-			badge: "DMY",
+			badge: "EXP",
 			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline", "experimental"]
 		},
 		{

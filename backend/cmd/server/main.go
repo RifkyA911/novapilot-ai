@@ -175,6 +175,7 @@ func main() {
 		api.POST("/gateway/start", apiHandler.StartGateway)
 		api.POST("/gateway/restart", apiHandler.RestartGateway)
 		api.POST("/gateway/stop", apiHandler.StopGateway)
+		api.POST("/gateway/send", apiHandler.SendGatewayMessage)
 	}
 
 	// 5. Connect MCP Reference Database (Database 2 - Enterprise ERP Source)

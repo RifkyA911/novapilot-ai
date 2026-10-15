@@ -8,7 +8,9 @@
 		CheckCircle, 
 		Clock, 
 		Sparkles,
-		ArrowPath
+		ArrowPath,
+		ExclamationTriangle,
+		Phone
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
@@ -21,6 +23,61 @@
 	let simLoading = $state(false);
 	let simStep = $state(0);
 	let simSuccess = $state(false);
+
+	// Real WhatsApp Dispatch (EXP) - Configurable via .env: WA_TEST_RECIPIENT
+	let testPhone = $state("081228632195");
+	let isDispatching = $state(false);
+	let dispatchResult = $state<{ ok: boolean; message: string; recipient?: string } | null>(null);
+	let sendRealWhatsAppOnSim = $state(false);
+
+	$effect(() => {
+		fetch("/api/gateway/status")
+			.then(r => r.json())
+			.then(data => {
+				if (data.default_test_phone) {
+					testPhone = data.default_test_phone;
+				}
+			})
+			.catch(() => {});
+	});
+
+	async function sendRealWhatsAppMessage() {
+		if (isDispatching) return;
+		isDispatching = true;
+		dispatchResult = null;
+		try {
+			const res = await fetch("/api/gateway/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: testPhone || "081228632195",
+					message: simMessage
+				})
+			});
+			const data = await res.json();
+			if (res.ok && data.ok) {
+				dispatchResult = {
+					ok: true,
+					recipient: data.recipient,
+					message: i18n.locale === 'id' 
+						? `Pesan WhatsApp berhasil dikirim ke ${data.recipient || testPhone}!` 
+						: `Real WhatsApp message delivered to ${data.recipient || testPhone}!`
+				};
+			} else {
+				dispatchResult = {
+					ok: false,
+					message: data.error || (i18n.locale === 'id' ? "Gagal mengirim pesan melalui WhatsApp Gateway." : "Failed to dispatch message via WhatsApp Gateway.")
+				};
+			}
+		} catch (err: any) {
+			dispatchResult = {
+				ok: false,
+				message: `Network error: ${err.message}`
+			};
+		} finally {
+			isDispatching = false;
+		}
+	}
 
 	async function runSimulation() {
 		if (simLoading) return;
@@ -116,6 +173,9 @@
 				cockpit.recordPlatformEvent(cockpit.chatPlatform);
 				simSuccess = true;
 				await cockpit.fetchTickets();
+				if (sendRealWhatsAppOnSim) {
+					sendRealWhatsAppMessage();
+				}
 			}
 		} catch (err) {
 			console.error("Simulation error:", err);
@@ -284,6 +344,88 @@
 				</button>
 			</div>
 		</div>
+	</div>
+
+	<!-- Real Outbound WhatsApp Live Dispatcher [EXP] -->
+	<div class="p-4 sm:p-5 rounded-2xl bg-secondary/40 border border-border/80 space-y-3 shadow-xs">
+		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+			<div class="flex items-center gap-2.5">
+				<div class="h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+					<Phone class="h-4 w-4" />
+				</div>
+				<div>
+					<div class="text-xs font-semibold text-foreground flex items-center gap-2 flex-wrap">
+						<span>{i18n.locale === 'id' ? 'Kirim Pesan WhatsApp Real [EXP]' : 'Real WhatsApp Live Dispatch [EXP]'}</span>
+						<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30">
+							EXP
+						</span>
+						<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground border border-border">
+							ENV: WA_TEST_RECIPIENT
+						</span>
+					</div>
+					<p class="text-[11px] text-muted-foreground mt-0.5">
+						{i18n.locale === 'id' ? 'Kirim pesan live secara aktual ke nomor tujuan melalui WhatsApp Gateway daemon (:3002).' : 'Dispatch real outbound WhatsApp message to recipient phone via active gateway (:3002).'}
+					</p>
+				</div>
+			</div>
+
+			<div class="flex items-center gap-2 self-start sm:self-auto">
+				<label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+					<input 
+						type="checkbox" 
+						bind:checked={sendRealWhatsAppOnSim} 
+						class="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5"
+					/>
+					<span class="text-[11px] font-medium">{i18n.locale === 'id' ? 'Kirim otomatis saat simulasi dijalankan' : 'Auto-send on simulation execute'}</span>
+				</label>
+			</div>
+		</div>
+
+		<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+			<div class="relative flex-1">
+				<Phone class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+				<input
+					type="text"
+					bind:value={testPhone}
+					placeholder="081228632195"
+					class="w-full h-9 pl-9 pr-3 rounded-lg border border-input bg-background text-xs font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				/>
+			</div>
+
+			<button
+				type="button"
+				onclick={sendRealWhatsAppMessage}
+				disabled={isDispatching}
+				class="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
+			>
+				{#if isDispatching}
+					<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+					<span>{i18n.locale === 'id' ? 'Mengirim ke WhatsApp...' : 'Sending to WhatsApp...'}</span>
+				{:else}
+					<PaperAirplane class="h-3.5 w-3.5" />
+					<span>{i18n.locale === 'id' ? `Kirim Pesan Live ke ${testPhone}` : `Send Live Message to ${testPhone}`}</span>
+				{/if}
+			</button>
+		</div>
+
+		{#if dispatchResult}
+			<div class="p-3 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in duration-200 {dispatchResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+				{#if dispatchResult.ok}
+					<CheckCircle class="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+				{:else}
+					<ExclamationTriangle class="h-4 w-4 shrink-0 text-rose-500 mt-0.5" />
+				{/if}
+				<div class="flex-1 space-y-0.5">
+					<div class="font-semibold">{dispatchResult.message}</div>
+					{#if !dispatchResult.ok}
+						<div class="text-[11px] opacity-90 flex items-center gap-2 mt-1">
+							<span>Periksa status koneksi WhatsApp di menu Platforms & Hubs.</span>
+							<a href="/dashboard/platforms" class="underline font-bold hover:opacity-80">Buka Platforms →</a>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	{#if simSuccess}

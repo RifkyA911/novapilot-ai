@@ -187,7 +187,7 @@
 					icon: PaperAirplane,
 					iconColor: "text-foreground",
 					title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
-					badge: "DMY",
+					badge: "EXP",
 					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{

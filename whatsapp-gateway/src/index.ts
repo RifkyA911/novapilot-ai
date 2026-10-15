@@ -63,6 +63,21 @@ function appendGatewayLog(level: "INFO" | "WARN" | "ERROR" | "EXEC", ...args: an
     }
 }
 
+function formatWhatsAppJID(raw: string): string {
+    let clean = (raw || "").trim();
+    if (clean.includes("@")) {
+        return clean;
+    }
+    // Remove non-digit characters (+, -, spaces, parentheses)
+    clean = clean.replace(/\D/g, "");
+    if (clean.startsWith("0")) {
+        clean = "62" + clean.slice(1);
+    } else if (clean.startsWith("8")) {
+        clean = "62" + clean;
+    }
+    return `${clean}@s.whatsapp.net`;
+}
+
 const origConsoleLog = console.log;
 const origConsoleWarn = console.warn;
 const origConsoleError = console.error;
@@ -114,6 +129,7 @@ try {
                         uptime_seconds: Math.floor(process.uptime()),
                         memory_rss_mb: (process.memoryUsage().rss / (1024 * 1024)).toFixed(1),
                         whitelisted_groups: WHITELISTED_GROUPS,
+                        test_recipient: process.env.WA_TEST_RECIPIENT || "081228632195",
                         timestamp: new Date().toISOString()
                     }), { headers: corsHeaders });
                 }
@@ -133,6 +149,73 @@ try {
                     console.log("[GATEWAY] Shutdown requested via WebUI.");
                     setTimeout(() => { process.exit(0); }, 300);
                     return new Response(JSON.stringify({ ok: true, message: "Gateway daemon shutting down..." }), { headers: corsHeaders });
+                }
+
+                if ((url.pathname === "/api/send" || url.pathname === "/send") && req.method === "POST") {
+                    try {
+                        const rawText = await req.text();
+                        let body: any = {};
+                        try {
+                            body = JSON.parse(rawText);
+                        } catch {}
+
+                        const defaultRecipient = process.env.WA_TEST_RECIPIENT || "081228632195";
+                        const targetPhone = (body.phone || defaultRecipient).trim();
+                        const text = (body.message || "").trim();
+
+                        if (!text) {
+                            return new Response(JSON.stringify({
+                                ok: false,
+                                error: "Pesan (message) wajib diisi."
+                            }), { status: 400, headers: corsHeaders });
+                        }
+
+                        const jid = formatWhatsAppJID(targetPhone);
+                        appendGatewayLog("INFO", `[DISPATCH REQUEST] Outbound WhatsApp to ${jid} (${targetPhone}): "${text.slice(0, 80)}"`);
+
+                        if (!activeSock) {
+                            return new Response(JSON.stringify({
+                                ok: false,
+                                error: "Gateway socket offline. Silakan nyalakan gateway terlebih dahulu.",
+                                recipient: jid,
+                                phone: targetPhone
+                            }), { status: 503, headers: corsHeaders });
+                        }
+
+                        if (!activeSock.user && !IS_SIMULATION) {
+                            return new Response(JSON.stringify({
+                                ok: false,
+                                error: "Gateway belum terhubung ke WhatsApp. Tautkan akun via QR di menu Platforms atau Terminal.",
+                                recipient: jid,
+                                phone: targetPhone,
+                                status: "AWAITING_HOOK"
+                            }), { status: 400, headers: corsHeaders });
+                        }
+
+                        let sendResult: any = null;
+                        if (activeSock && typeof activeSock.sendMessage === "function") {
+                            sendResult = await activeSock.sendMessage(jid, { text });
+                            appendGatewayLog("INFO", `[DISPATCH SUCCESS] Delivered to ${jid}`);
+                        } else {
+                            appendGatewayLog("WARN", `[DISPATCH MOCK] Simulation mode active. Dispatched to ${jid}`);
+                        }
+
+                        return new Response(JSON.stringify({
+                            ok: true,
+                            status: "SENT",
+                            recipient: jid,
+                            phone: targetPhone,
+                            message: text,
+                            delivery: sendResult ? "DELIVERED" : "SIMULATED",
+                            timestamp: new Date().toISOString()
+                        }), { headers: corsHeaders });
+                    } catch (err: any) {
+                        appendGatewayLog("ERROR", `[DISPATCH ERROR] Failed to send message: ${err.message}`);
+                        return new Response(JSON.stringify({
+                            ok: false,
+                            error: err.message
+                        }), { status: 500, headers: corsHeaders });
+                    }
                 }
 
                 if ((url.pathname === "/api/exec" || url.pathname === "/exec") && req.method === "POST") {
@@ -196,8 +279,24 @@ try {
                             } else {
                                 output = "QR file not yet generated or already authenticated.";
                             }
+                        } else if (cmdLower.startsWith("send")) {
+                            const parts = rawCmd.replace(/^send\s*/i, "").trim();
+                            let target = process.env.WA_TEST_RECIPIENT || "081228632195";
+                            let msgBody = parts;
+                            const match = parts.match(/^(\+?[0-9\-\s]+)\s+(.+)$/);
+                            if (match) {
+                                target = match[1].trim();
+                                msgBody = match[2].trim();
+                            }
+                            const jid = formatWhatsAppJID(target);
+                            if (activeSock?.user && typeof activeSock.sendMessage === "function") {
+                                await activeSock.sendMessage(jid, { text: msgBody });
+                                output = `SUCCESS: WhatsApp message delivered to ${jid} (${target}): "${msgBody}"`;
+                            } else {
+                                output = `WARNING: Active socket not connected to WhatsApp. Simulated dispatch to ${jid}: "${msgBody}"`;
+                            }
                         } else if (cmdLower === "help") {
-                            output = "Available commands: ping, status, sales [kw], price [kw], simulate_inbound [txt], simulate_ocr [txt], qr_status, clear, help";
+                            output = "Available commands: ping, status, send [phone] [txt], sales [kw], price [kw], simulate_inbound [txt], simulate_ocr [txt], qr_status, clear, help";
                         } else {
                             output = `Unknown command "${rawCmd}". Type "help" for available commands.`;
                         }
