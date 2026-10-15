@@ -65,6 +65,8 @@
 	}
 
 	function handleWheel(e: WheelEvent) {
+		// Only zoom when Ctrl or Cmd is held so normal page scrolling is not intercepted
+		if (!e.ctrlKey && !e.metaKey) return;
 		e.preventDefault();
 		const zoomDelta = e.deltaY < 0 ? 0.12 : -0.12;
 		const nextZoom = Math.min(Math.max(zoom + zoomDelta, 0.6), 2.5);
@@ -701,7 +703,7 @@
 			</button>
 			<div class="h-4 w-px bg-border"></div>
 			<span class="text-[10px] text-muted-foreground px-2 font-mono hidden md:inline">
-				🖐️ Drag kanvas • 🔍 Scroll mouse zoom
+				🖐️ Drag kanvas • 🔍 Ctrl + Scroll zoom
 			</span>
 		</div>
 

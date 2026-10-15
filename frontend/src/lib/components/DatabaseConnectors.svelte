@@ -145,6 +145,8 @@
 	}
 
 	function handleWheel(e: WheelEvent) {
+		// Only zoom when Ctrl or Cmd is held so normal page scrolling is not intercepted
+		if (!e.ctrlKey && !e.metaKey) return;
 		e.preventDefault();
 		const zoomDelta = e.deltaY < 0 ? 0.12 : -0.12;
 		const nextZoom = Math.min(Math.max(zoom + zoomDelta, 0.5), 2.5);
@@ -913,26 +915,26 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<div>
 						<div class="flex items-center gap-2 flex-wrap">
 							<h3 class="text-sm font-bold text-foreground tracking-tight">
-								Dual-DB Connector Flow Diagram
+								{i18n.locale === 'id' ? 'Diagram Alur Konektor Dual-DB' : 'Dual-DB Connector Flow Diagram'}
 							</h3>
 							<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-								LIVE ARCHITECTURE
+								{i18n.locale === 'id' ? 'ARSITEKTUR REALTIME' : 'LIVE ARCHITECTURE'}
 							</span>
 							<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-secondary text-muted-foreground border border-border">
-								PAN &amp; ZOOMABLE
+								PAN &amp; ZOOM
 							</span>
 						</div>
 						<p class="text-xs text-muted-foreground mt-0.5">
-							Real-time data flow visualization, socket throughput, and enterprise mutation safety.
+							{i18n.locale === 'id' ? 'Visualisasi aliran data real-time, throughput soket, dan keamanan mutasi enterprise.' : 'Real-time data flow visualization, socket throughput, and enterprise mutation safety.'}
 						</p>
 					</div>
 				</div>
 
 				<!-- Visual Canvas Hints -->
 				<div class="hidden md:flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-lg border border-border/50 shrink-0">
-					<span>🖐️ Drag to pan</span>
+					<span>🖐️ {i18n.locale === 'id' ? 'Drag kanvas' : 'Drag to pan'}</span>
 					<span class="text-border">•</span>
-					<span>Scroll to zoom ({Math.round(zoom * 100)}%)</span>
+					<span>{i18n.locale === 'id' ? 'Ctrl + Scroll untuk zoom' : 'Ctrl + Scroll to zoom'} ({Math.round(zoom * 100)}%)</span>
 				</div>
 			</div>
 
@@ -979,14 +981,14 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={toggleMockStatusDb2}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-						title="Toggle online vs offline link state for DB 2"
+						title={i18n.locale === 'id' ? 'Alihkan status tautan online vs offline DB 2' : 'Toggle online vs offline link state for DB 2'}
 					>
 						{#if mcpStatus === 'CONNECTED'}
 							<span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-							<span>Disconnect DB 2 Link</span>
+							<span>{i18n.locale === 'id' ? 'Putus Tautan DB 2' : 'Disconnect DB 2 Link'}</span>
 						{:else}
 							<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-							<span>Connect DB 2 Link</span>
+							<span>{i18n.locale === 'id' ? 'Hubungkan Tautan DB 2' : 'Connect DB 2 Link'}</span>
 						{/if}
 					</button>
 				</div>
@@ -997,9 +999,9 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						type="button"
 						onclick={resetPanZoom}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer shadow-2xs"
-						title="Reset canvas viewport (100%)"
+						title={i18n.locale === 'id' ? 'Reset viewport kanvas (100%)' : 'Reset canvas viewport (100%)'}
 					>
-						Reset View ({Math.round(zoom * 100)}%)
+						{i18n.locale === 'id' ? 'Reset Tampilan' : 'Reset View'} ({Math.round(zoom * 100)}%)
 					</button>
 				</div>
 			</div>
@@ -1010,15 +1012,15 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			<div class="flex items-center gap-3 text-[11px] font-mono flex-wrap">
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-					<span class="text-foreground font-medium">Connected:</span> Active data pipeline &amp; operational platter
+					<span class="text-foreground font-medium">{i18n.locale === 'id' ? 'Terhubung:' : 'Connected:'}</span> {i18n.locale === 'id' ? 'Pipeline data aktif & platter operasional' : 'Active data pipeline & operational platter'}
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-					<span class="text-foreground font-medium">Processing:</span> I/O strobe burst &amp; rapid laser seek
+					<span class="text-foreground font-medium">{i18n.locale === 'id' ? 'Memproses:' : 'Processing:'}</span> {i18n.locale === 'id' ? 'Strobe burst I/O & seek laser cepat' : 'I/O strobe burst & rapid laser seek'}
 				</span>
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-rose-500"></span>
-					<span class="text-foreground font-medium">Disconnected:</span> Severed link (zero packets, inactive platter)
+					<span class="text-foreground font-medium">{i18n.locale === 'id' ? 'Terputus:' : 'Disconnected:'}</span> {i18n.locale === 'id' ? 'Tautan terputus (nol paket, platter nonaktif)' : 'Severed link (zero packets, inactive platter)'}
 				</span>
 			</div>
 		</div>
@@ -1040,7 +1042,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={zoomIn} 
 					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
-					title="Zoom In (+)"
+					title={i18n.locale === 'id' ? 'Perbesar (+)' : 'Zoom In (+)'}
 				>
 					+
 				</button>
@@ -1048,7 +1050,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={zoomOut} 
 					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
-					title="Zoom Out (-)"
+					title={i18n.locale === 'id' ? 'Perkecil (-)' : 'Zoom Out (-)'}
 				>
 					-
 				</button>
@@ -1056,7 +1058,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					type="button"
 					onclick={resetPanZoom} 
 					class="h-7 px-2 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-semibold text-[11px] cursor-pointer transition-colors" 
-					title="Reset Zoom &amp; Position (100%)"
+					title={i18n.locale === 'id' ? 'Reset Zoom & Posisi (100%)' : 'Reset Zoom & Position (100%)'}
 				>
 					{Math.round(zoom * 100)}%
 				</button>

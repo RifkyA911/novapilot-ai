@@ -453,7 +453,7 @@
 
 		<!-- Bottom Hint -->
 		<div class="absolute bottom-2.5 right-3 text-[10px] font-mono text-muted-foreground bg-background/80 px-2 py-0.5 rounded-md border border-border/60 pointer-events-none">
-			Gunakan drag &amp; scroll untuk pan/zoom topologi
+			Gunakan drag kanvas &amp; tombol +/- untuk pan/zoom topologi
 		</div>
 	</div>
 </div>
