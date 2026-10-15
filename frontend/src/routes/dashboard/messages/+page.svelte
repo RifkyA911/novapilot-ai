@@ -24,6 +24,7 @@
 		CpuChip
 	} from "svelte-heros-v2";
 	import { cockpit, type InboundMessage, type Ticket } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import { timeAgo } from "$lib/utils";
 
 	// Filter & Search State
@@ -336,14 +337,14 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						Omnichannel Inbound Feed
+						{i18n.t.messages.title}
 						<span class="text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
 							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
 							REALTIME INGRESS
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Unified live message stream from WhatsApp, Telegram, Discord, and Slack with heuristic classification and 1-click ticket staging.
+						{i18n.t.messages.subtitle}
 					</p>
 				</div>
 			</div>
@@ -358,14 +359,14 @@
 				class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}" />
-				<span>Refresh Feed</span>
+				<span>{i18n.t.actions.refresh}</span>
 			</button>
 
 			<a
 				href="/dashboard/queue"
 				class="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all"
 			>
-				<span>Approval Queue</span>
+				<span>{i18n.t.nav.queue}</span>
 				{#if cockpit.pendingCount > 0}
 					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-primary-foreground/20 text-primary-foreground font-mono font-bold">
 						{cockpit.pendingCount}
@@ -390,7 +391,7 @@
 				title="Buka Real-time Terminal WhatsApp Gateway Daemon (:3002)"
 			>
 				<CommandLine class="h-4 w-4" />
-				<span>Exec Terminal WA Gateway</span>
+				<span>{i18n.t.messages.terminal_btn}</span>
 				<span class="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/30">
 					<span class="h-1.5 w-1.5 rounded-full {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
 					{terminalStatus?.status || "LIVE :3002"}
@@ -404,7 +405,7 @@
 				class="h-9 px-3.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
 				title="Buka Kamus Pola Self-Learning AI"
 			>
-				<span>🧠 Memory Pola AI</span>
+				<span>{i18n.t.messages.pattern_memory_btn}</span>
 				<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-500/20 font-mono font-bold">
 					{cockpit.learnedPatterns.length}
 				</span>
@@ -420,7 +421,7 @@
 				title="Buka GUI Hermes 3 Agentic Engine & Reasoning Inspector"
 			>
 				<CpuChip class="h-4 w-4 text-sky-500" />
-				<span>Hermes 3 AI Engine</span>
+				<span>{i18n.t.messages.hermes_engine_btn}</span>
 				<span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-700 dark:text-sky-300 font-bold">8B</span>
 			</a>
 
@@ -430,7 +431,7 @@
 				class="h-9 px-3 rounded-xl border border-border bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all"
 			>
 				<Bolt class="h-3.5 w-3.5 text-primary" />
-				<span>Platform Flows</span>
+				<span>{i18n.t.messages.platform_flows_btn}</span>
 			</a>
 		</div>
 	</div>
@@ -442,56 +443,56 @@
 		<!-- Total Messages Ingested -->
 		<div class="p-4 rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs space-y-1 shadow-xs">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Total Messages</span>
+				<span class="text-xs font-medium">{i18n.t.messages.total_messages_kpi}</span>
 				<ChatBubbleLeftRight class="h-4 w-4 text-primary" />
 			</div>
 			<div class="text-2xl font-bold font-mono tracking-tight text-foreground">
 				{cockpit.inboundMessages.length}
 			</div>
 			<p class="text-[11px] text-muted-foreground line-clamp-1">
-				Packets ingested across all platforms
+				{i18n.t.messages.total_messages_sub}
 			</p>
 		</div>
 
 		<!-- Actionable Tickets -->
 		<div class="p-4 rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs space-y-1 shadow-xs">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Actionable Tickets</span>
+				<span class="text-xs font-medium">{i18n.t.messages.actionable_kpi}</span>
 				<CheckCircle class="h-4 w-4 text-emerald-500" />
 			</div>
 			<div class="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
 				{cockpit.actionableCount}
 			</div>
 			<p class="text-[11px] text-muted-foreground line-clamp-1">
-				Invoice matched & staged automatically
+				{i18n.t.messages.actionable_sub}
 			</p>
 		</div>
 
 		<!-- Needs Review / Ambiguous -->
 		<div class="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-xs space-y-1 shadow-xs">
 			<div class="flex items-center justify-between text-amber-600 dark:text-amber-400">
-				<span class="text-xs font-semibold">Needs Review</span>
+				<span class="text-xs font-semibold">{i18n.t.messages.needs_review_kpi}</span>
 				<ExclamationTriangle class="h-4 w-4 text-amber-500" />
 			</div>
 			<div class="text-2xl font-bold font-mono tracking-tight text-amber-600 dark:text-amber-400">
 				{cockpit.needsReviewCount}
 			</div>
 			<p class="text-[11px] text-amber-600/80 dark:text-amber-400/80 line-clamp-1">
-				Mutation intent detected without doc ID
+				{i18n.t.messages.needs_review_sub}
 			</p>
 		</div>
 
 		<!-- Casual Banter / Discarded -->
 		<div class="p-4 rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs space-y-1 shadow-xs">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Casual Banter</span>
+				<span class="text-xs font-medium">{i18n.t.messages.casual_banter_kpi}</span>
 				<ChatBubbleOvalLeftEllipsis class="h-4 w-4 text-slate-400" />
 			</div>
 			<div class="text-2xl font-bold font-mono tracking-tight text-muted-foreground">
 				{cockpit.casualBanterCount}
 			</div>
 			<p class="text-[11px] text-muted-foreground line-clamp-1">
-				Filtered conversations (zero DB mutation)
+				{i18n.t.messages.casual_banter_sub}
 			</p>
 		</div>
 	</div>
@@ -508,7 +509,7 @@
 					onclick={() => selectedPlatform = "all"}
 					class="px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer {selectedPlatform === 'all' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'}"
 				>
-					All Platforms
+					{i18n.t.messages.all_platforms}
 				</button>
 				<button
 					type="button"
@@ -551,7 +552,7 @@
 					onclick={() => selectedClassification = "all"}
 					class="px-2.5 py-1 rounded-md border transition-all cursor-pointer {selectedClassification === 'all' ? 'bg-primary text-primary-foreground border-primary font-semibold' : 'border-border/70 text-muted-foreground hover:text-foreground bg-card'}"
 				>
-					All Status
+					{i18n.t.messages.all_classes}
 				</button>
 				<button
 					type="button"
@@ -559,7 +560,7 @@
 					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'NEEDS_REVIEW' ? 'bg-amber-500 text-white border-amber-500 font-semibold' : 'border-border/70 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 bg-card'}"
 				>
 					<ExclamationTriangle class="h-3.5 w-3.5" />
-					Needs Review
+					<span>{i18n.t.messages.needs_review}</span>
 					{#if cockpit.needsReviewCount > 0}
 						<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">
 							{cockpit.needsReviewCount}
@@ -572,7 +573,7 @@
 					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'ACTIONABLE' ? 'bg-emerald-600 text-white border-emerald-600 font-semibold' : 'border-border/70 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 bg-card'}"
 				>
 					<CheckCircle class="h-3.5 w-3.5" />
-					Actionable
+					<span>{i18n.t.messages.actionable}</span>
 				</button>
 				<button
 					type="button"
@@ -580,7 +581,7 @@
 					class="px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 cursor-pointer {selectedClassification === 'CASUAL_BANTER' ? 'bg-muted-foreground text-background border-muted-foreground font-semibold' : 'border-border/70 text-muted-foreground hover:text-foreground bg-card'}"
 				>
 					<ChatBubbleOvalLeftEllipsis class="h-3.5 w-3.5" />
-					Casual Banter
+					<span>{i18n.t.messages.casual_banter}</span>
 				</button>
 			</div>
 		</div>
@@ -591,7 +592,7 @@
 			<input
 				type="text"
 				bind:value={searchQuery}
-				placeholder="Search messages by content, sender ID, invoice number, or target company name..."
+				placeholder={i18n.t.messages.search_placeholder}
 				class="w-full h-9 pl-9 pr-4 rounded-lg border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
 			/>
 		</div>

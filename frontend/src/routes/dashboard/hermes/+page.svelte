@@ -387,7 +387,7 @@
 				<!-- Provider -->
 				<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span class="text-xs font-medium">Model Architecture</span>
+						<span class="text-xs font-medium">{i18n.t.agents.model_architecture}</span>
 						<BrandIcon name="hermes" class="h-4 w-4" />
 					</div>
 					<div class="text-sm font-semibold font-mono text-foreground truncate">
@@ -401,7 +401,7 @@
 				<!-- Mode -->
 				<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span class="text-xs font-medium">Execution Mode</span>
+						<span class="text-xs font-medium">{i18n.t.agents.execution_mode}</span>
 						<Server class="h-4 w-4 text-muted-foreground" />
 					</div>
 					<div class="text-sm font-semibold font-mono uppercase text-foreground flex items-center gap-1.5">
@@ -416,7 +416,7 @@
 				<!-- Reasoning Contract -->
 				<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span class="text-xs font-medium">Reasoning Contract</span>
+						<span class="text-xs font-medium">{i18n.t.agents.reasoning_contract}</span>
 						<CodeBracket class="h-4 w-4 text-muted-foreground" />
 					</div>
 					<div class="text-sm font-semibold font-mono text-foreground">
@@ -430,7 +430,7 @@
 				<!-- Resilience Net -->
 				<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1">
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span class="text-xs font-medium">Offline Resilience</span>
+						<span class="text-xs font-medium">{i18n.t.agents.offline_resilience}</span>
 						<ShieldCheck class="h-4 w-4 text-emerald-500" />
 					</div>
 					<div class="text-sm font-semibold font-mono text-foreground flex items-center gap-1.5">
@@ -438,7 +438,7 @@
 						Regex Heuristic Net
 					</div>
 					<div class="text-[11px] text-muted-foreground">
-						Zero-downtime offline fallback
+						{i18n.t.agents.offline_resilience_sub}
 					</div>
 				</div>
 			</div>
@@ -456,11 +456,11 @@
 									{llmConfig.cli_name || 'Hermes Agent CLI (Windows Native)'}
 								</h3>
 								<span class="text-[10px] font-mono px-2 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
-									TERDETEKSI
+									{i18n.t.agents.cli_detected}
 								</span>
 								{#if llmConfig.mode === 'cli'}
 									<span class="text-[10px] font-mono px-2 py-0.2 rounded bg-primary text-primary-foreground font-medium">
-										ENGINE AKTIF
+										{i18n.t.agents.cli_active}
 									</span>
 								{/if}
 							</div>
@@ -474,7 +474,7 @@
 						{#if llmConfig.mode === 'cli'}
 							<div class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-1.5 border border-emerald-500/20">
 								<CheckCircle class="h-4 w-4" />
-								<span>Menggunakan CLI</span>
+								<span>{i18n.t.agents.cli_using}</span>
 							</div>
 						{:else}
 							<button
@@ -483,7 +483,7 @@
 								class="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 							>
 								<Bolt class="h-3.5 w-3.5" />
-								<span>Gunakan Engine CLI</span>
+								<span>{i18n.t.agents.cli_activate}</span>
 							</button>
 						{/if}
 					</div>
@@ -494,8 +494,8 @@
 			<div class="p-5 rounded-xl bg-card border border-border shadow-xs space-y-4">
 				<div class="flex items-center justify-between border-b border-border/60 pb-3">
 					<div>
-						<h3 class="text-sm font-semibold text-foreground">Konfigurasi Endpoint &amp; Model Hermes</h3>
-						<p class="text-xs text-muted-foreground">Koneksi lokal ke instance Ollama, vLLM, atau Hermes CLI wrapper.</p>
+						<h3 class="text-sm font-semibold text-foreground">{i18n.t.agents.config_title}</h3>
+						<p class="text-xs text-muted-foreground">{i18n.t.agents.config_subtitle}</p>
 					</div>
 
 					<button
@@ -505,26 +505,26 @@
 						class="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
 					>
 						<Bolt class="h-3.5 w-3.5" />
-						<span>{configLoading ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
+						<span>{configLoading ? i18n.t.agents.saving : i18n.t.agents.save_config}</span>
 					</button>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
 					<div class="space-y-1">
-						<label for="modeSelect" class="font-medium text-muted-foreground">Mode Eksekusi</label>
+						<label for="modeSelect" class="font-medium text-muted-foreground">{i18n.t.agents.mode_label}</label>
 						<select
 							id="modeSelect"
 							bind:value={editMode}
 							class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
 						>
-							<option value="auto">Auto (Prioritas Ollama HTTP, Fallback Heuristic)</option>
-							<option value="cli">CLI Native (hermes.cmd)</option>
-							<option value="http">HTTP Dedicated (Ollama / vLLM)</option>
+							<option value="auto">{i18n.t.agents.mode_auto}</option>
+							<option value="cli">{i18n.t.agents.mode_cli}</option>
+							<option value="http">{i18n.t.agents.mode_http}</option>
 						</select>
 					</div>
 
 					<div class="space-y-1">
-						<label for="baseUrlInput" class="font-medium text-muted-foreground">Base URL API</label>
+						<label for="baseUrlInput" class="font-medium text-muted-foreground">{i18n.t.agents.base_url_label}</label>
 						<input
 							id="baseUrlInput"
 							type="text"
@@ -535,7 +535,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="modelInput" class="font-medium text-muted-foreground">Nama Model LLM</label>
+						<label for="modelInput" class="font-medium text-muted-foreground">{i18n.t.agents.model_name_label}</label>
 						<input
 							id="modelInput"
 							type="text"
@@ -546,7 +546,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="cliPathInput" class="font-medium text-muted-foreground">Path CLI Executable</label>
+						<label for="cliPathInput" class="font-medium text-muted-foreground">{i18n.t.agents.cli_path_label}</label>
 						<input
 							id="cliPathInput"
 							type="text"
@@ -560,7 +560,7 @@
 				{#if configSaved}
 					<div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
 						<CheckCircle class="h-4 w-4 shrink-0" />
-						<span>Konfigurasi LLM berhasil disimpan ke runtime NovaPilot!</span>
+						<span>{i18n.t.agents.saved}</span>
 					</div>
 				{/if}
 
@@ -580,7 +580,7 @@
 						<div class="flex items-center justify-between border-b border-border/60 pb-3">
 							<div class="flex items-center gap-2">
 								<CommandLine class="h-4 w-4 text-muted-foreground" />
-								<h2 class="text-sm font-semibold text-foreground">Interactive Prompt Console</h2>
+								<h2 class="text-sm font-semibold text-foreground">{i18n.t.agents.interactive_console}</h2>
 							</div>
 							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
 								Zero Temp
@@ -590,7 +590,7 @@
 						<!-- Quick Presets -->
 						<div class="space-y-1.5">
 							<span class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider block">
-								Preset Skenario Percakapan:
+								{i18n.t.agents.presets_label}
 							</span>
 							<div class="grid grid-cols-1 gap-1.5">
 								{#each presets as p}
@@ -619,21 +619,21 @@
 						<!-- Prompt Textarea -->
 						<div class="space-y-1.5">
 							<label for="promptInputArea" class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider block">
-								Pesan / Perintah Chat:
+								{i18n.t.agents.prompt_label_chat}
 							</label>
 							<textarea
 								id="promptInputArea"
 								bind:value={promptInput}
 								rows="3"
 								class="w-full p-2.5 rounded-lg border border-border bg-background text-foreground font-mono text-xs focus:outline-hidden focus:ring-1 focus:ring-primary leading-relaxed resize-none"
-								placeholder="Ketik instruksi chat WhatsApp/Telegram..."
+								placeholder={i18n.t.agents.prompt_placeholder}
 							></textarea>
 						</div>
 
 						<!-- Branch Context -->
 						<div class="space-y-1.5">
 							<label for="branchContextInput" class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider block">
-								Konteks Cabang Regional:
+								{i18n.t.agents.branch_context_label}
 							</label>
 							<input
 								id="branchContextInput"
@@ -652,7 +652,7 @@
 							class="w-full h-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
 						>
 							<Bolt class="h-3.5 w-3.5 {isProcessing ? 'animate-spin' : ''}" />
-							<span>{isProcessing ? 'Menganalisis Penalaran...' : 'Jalankan Inferensi'}</span>
+							<span>{isProcessing ? i18n.t.agents.running_inference : i18n.t.agents.run_inference}</span>
 						</button>
 					</div>
 				</div>
@@ -663,7 +663,7 @@
 						<div class="flex items-center justify-between border-b border-border/60 pb-3 flex-wrap gap-2">
 							<div class="flex items-center gap-2">
 								<Sparkles class="h-4 w-4 text-primary" />
-								<h3 class="text-sm font-semibold text-foreground">Hasil Inferensi &amp; Ekstraksi</h3>
+								<h3 class="text-sm font-semibold text-foreground">{i18n.t.agents.inference_result}</h3>
 							</div>
 
 							{#if processResult}
@@ -687,14 +687,14 @@
 						{#if isProcessing}
 							<div class="p-12 text-center space-y-2">
 								<ArrowPath class="h-6 w-6 text-primary animate-spin mx-auto" />
-								<p class="text-xs text-muted-foreground font-mono">Memproses prompt melalui Hermes 3...</p>
+								<p class="text-xs text-muted-foreground font-mono">{i18n.t.agents.running_inference}</p>
 							</div>
 						{:else if processResult}
 							<!-- 1. Reasoning Thought Block -->
 							<div class="space-y-1.5">
 								<div class="flex items-center justify-between">
 									<span class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-										Penalaran Kognitif (&lt;thought&gt;):
+										{i18n.t.agents.reasoning_thought}
 									</span>
 									<button
 										type="button"
@@ -703,15 +703,15 @@
 									>
 										{#if copiedField === "thought"}
 											<Check class="h-3 w-3 text-emerald-500" />
-											<span class="text-emerald-500">Copied</span>
+											<span class="text-emerald-500">{i18n.t.agents.copied}</span>
 										{:else}
 											<ClipboardDocument class="h-3 w-3" />
-											<span>Salin</span>
+											<span>{i18n.t.agents.copy_code}</span>
 										{/if}
 									</button>
 								</div>
 								<div class="p-3.5 rounded-lg bg-muted/30 border border-border font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap">
-									{processResult.thought || "Tidak ada blok pemikiran terpisah (direct output)."}
+									{processResult.thought || (i18n.locale === 'id' ? "Tidak ada blok pemikiran terpisah (direct output)." : "No separate thought block (direct output).")}
 								</div>
 							</div>
 
@@ -720,7 +720,7 @@
 								<div class="space-y-1.5">
 									<div class="flex items-center justify-between">
 										<span class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-											Ekstraksi Parameter Terstruktur (&lt;tool_call&gt;):
+											{i18n.t.agents.tool_arguments}
 										</span>
 										<button
 											type="button"
@@ -729,10 +729,10 @@
 										>
 											{#if copiedField === "tool"}
 												<Check class="h-3 w-3 text-emerald-500" />
-												<span class="text-emerald-500">Copied</span>
+												<span class="text-emerald-500">{i18n.t.agents.copied}</span>
 											{:else}
 												<ClipboardDocument class="h-3 w-3" />
-												<span>Salin JSON</span>
+												<span>{i18n.locale === 'id' ? 'Salin JSON' : 'Copy JSON'}</span>
 											{/if}
 										</button>
 									</div>
@@ -750,7 +750,7 @@
 										class="w-full h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
 									>
 										<Bolt class="h-3.5 w-3.5" />
-										<span>{stagingLoading ? 'Menyimpan Tiket...' : 'Stage ke Antrean Approval (PostgreSQL)'}</span>
+										<span>{stagingLoading ? i18n.t.agents.staging_in_progress : i18n.t.agents.staging_ticket_queue}</span>
 									</button>
 								</div>
 							{/if}
@@ -771,7 +771,7 @@
 						{:else}
 							<div class="p-12 text-center space-y-1">
 								<CpuChip class="h-6 w-6 text-muted-foreground mx-auto" />
-								<p class="text-xs text-muted-foreground">Ketik prompt dan klik "Jalankan Inferensi" untuk melihat penalaran Hermes 3.</p>
+								<p class="text-xs text-muted-foreground">{i18n.t.agents.prompt_hint}</p>
 							</div>
 						{/if}
 					</div>

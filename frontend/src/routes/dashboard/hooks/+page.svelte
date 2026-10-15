@@ -10,6 +10,7 @@
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import TutorialModal from "$lib/components/TutorialModal.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let showTutorial = $state(false);
 	let copied = $state(false);
@@ -35,6 +36,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>{i18n.t.nav.hooks} • NovaPilot AI</title>
+</svelte:head>
+
 <!-- Tutorial Guide Modal -->
 <TutorialModal 
 	open={showTutorial} 
@@ -51,13 +56,15 @@
 				</div>
 				<div>
 					<h1 class="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						<span>Client Hook Ecosystem</span>
+						<span>{i18n.t.nav.hooks}</span>
 						<span class="text-xs px-2.5 py-0.5 rounded-full font-mono font-medium border {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'}">
-							{cockpit.platformStatuses[cockpit.chatPlatform].name} ({cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'LIVE' : 'AWAITING HOOK'})
+							{cockpit.platformStatuses[cockpit.chatPlatform].name} ({cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? (i18n.current === 'id' ? 'AKTIF LIVE' : 'LIVE') : (i18n.current === 'id' ? 'MENUNGGU HOOK' : 'AWAITING HOOK')})
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Multi-platform client hook visualizer and webhook payload contracts for {cockpit.platformStatuses[cockpit.chatPlatform].name}.
+						{i18n.current === 'id' 
+							? `Visualisasi ekosistem hook multiplatform dan kontrak webhook untuk ${cockpit.platformStatuses[cockpit.chatPlatform].name}.`
+							: `Multi-platform client hook visualizer and webhook payload contracts for ${cockpit.platformStatuses[cockpit.chatPlatform].name}.`}
 					</p>
 				</div>
 			</div>
@@ -72,10 +79,10 @@
 				>
 					{#if copied}
 						<Check class="h-4 w-4 text-emerald-500" />
-						<span class="text-emerald-500">Copied Script!</span>
+						<span class="text-emerald-500">{i18n.t.actions.copied}</span>
 					{:else}
 						<ClipboardDocument class="h-4 w-4" />
-						<span>Copy Userscript</span>
+						<span>{i18n.current === 'id' ? 'Salin Userscript' : 'Copy Userscript'}</span>
 					{/if}
 				</button>
 			{/if}
@@ -86,7 +93,7 @@
 				class="h-9 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
 			>
 				<BookOpen class="h-4 w-4" />
-				<span>Installation Tutorial</span>
+				<span>{i18n.current === 'id' ? 'Panduan Instalasi' : 'Installation Tutorial'}</span>
 			</button>
 		</div>
 	</div>

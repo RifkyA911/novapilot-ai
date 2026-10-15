@@ -17,6 +17,7 @@
 		ServerStack
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import CockpitTelemetryVisualizer from "$lib/components/CockpitTelemetryVisualizer.svelte";
 
 	let timeRange = $state<"24h" | "7d" | "30d">("7d");
@@ -47,14 +48,14 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						Cockpit Overview &amp; AI Analytics
+						{i18n.t.cockpit.title}
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
 							<span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
 							DMY
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Analisa komprehensif performa inferensi AI, akurasi OCR Tesseract, visualisasi sirkuit ChatOps, dan invariant transaksi SQL.
+						{i18n.t.cockpit.subtitle}
 					</p>
 				</div>
 			</div>
@@ -90,7 +91,7 @@
 				type="button"
 				onclick={refreshAnalytics}
 				class="h-8 w-8 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-				title="Refresh Metrik Analitik"
+				title={i18n.t.actions.refresh}
 			>
 				<ArrowPath class="h-4 w-4 {isRefreshing ? 'animate-spin' : ''}" />
 			</button>
@@ -101,9 +102,9 @@
 	<div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs flex items-start gap-3 text-amber-800 dark:text-amber-200">
 		<ExclamationTriangle class="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
 		<div class="space-y-0.5 leading-relaxed">
-			<span class="font-bold">Mode Pratinjau Model &amp; Evaluasi (Synthetic Preview):</span>
+			<span class="font-bold">{i18n.t.cockpit.preview_notice_title}</span>
 			<p class="text-amber-700 dark:text-amber-300">
-				Metrik di halaman ini merefleksikan model benchmark operasional NovaPilot AI (Tesseract Vision + Local Small LLM Gatekeeper + PostgreSQL 18 Local). Data telah dikurasi untuk simulasi beban kerja pabrik dan audit compliance.
+				{i18n.t.cockpit.preview_notice_desc}
 			</p>
 		</div>
 	</div>
@@ -115,7 +116,7 @@
 		<!-- Card 1 -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-2">
 			<div class="flex items-center justify-between text-muted-foreground text-xs font-mono">
-				<span>INTENT ACCURACY</span>
+				<span>{i18n.t.cockpit.intent_accuracy}</span>
 				<span class="text-emerald-500 font-bold flex items-center gap-1">
 					<span>+2.4%</span>
 				</span>
@@ -132,7 +133,7 @@
 		<!-- Card 2 -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-2">
 			<div class="flex items-center justify-between text-muted-foreground text-xs font-mono">
-				<span>OCR CONFIDENCE</span>
+				<span>{i18n.t.cockpit.ocr_precision}</span>
 				<span class="text-blue-500 font-bold">Bilingual Ind/Eng</span>
 			</div>
 			<div class="text-2xl font-bold font-mono text-foreground">
@@ -147,7 +148,7 @@
 		<!-- Card 3 -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-2">
 			<div class="flex items-center justify-between text-muted-foreground text-xs font-mono">
-				<span>AVG INFERENCE TIME</span>
+				<span>{i18n.t.cockpit.avg_latency}</span>
 				<span class="text-purple-500 font-bold">Sub-Second</span>
 			</div>
 			<div class="text-2xl font-bold font-mono text-foreground">
@@ -162,7 +163,7 @@
 		<!-- Card 4 -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-2">
 			<div class="flex items-center justify-between text-muted-foreground text-xs font-mono">
-				<span>GUARDRAIL BLOCK RATE</span>
+				<span>{i18n.t.cockpit.gatekeeper_block_rate}</span>
 				<span class="text-emerald-500 font-bold">Zero Leakage</span>
 			</div>
 			<div class="text-2xl font-bold font-mono text-emerald-500">

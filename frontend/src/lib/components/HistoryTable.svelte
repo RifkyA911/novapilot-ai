@@ -47,65 +47,65 @@
 		tickets.filter(t => t.status !== "PENDING_APPROVAL")
 	);
 
-	// Table column definitions
-	const columns: ColumnDef<TicketItem>[] = [
+	// Table column definitions (reactive to locale changes)
+	let columns = $derived<ColumnDef<TicketItem>[]>([
 		{
 			id: "ticket_no",
-			header: "Tiket #",
+			header: i18n.t.history.col_ticket,
 			accessorKey: "ticket_no",
 			sortable: true
 		},
 		{
 			id: "document_no",
-			header: "No Faktur / Dokumen",
+			header: i18n.t.history.col_doc,
 			accessorKey: "document_no",
 			sortable: true
 		},
 		{
 			id: "branch_name",
-			header: "Cabang / Hub",
+			header: i18n.t.history.col_branch,
 			accessorKey: (row: TicketItem) => row.branch_name || "Surabaya HQ",
 			sortable: true
 		},
 		{
 			id: "mutation",
-			header: "Target Mutasi ERP",
+			header: i18n.t.history.col_mutation,
 			sortable: false
 		},
 		{
 			id: "status",
-			header: "Status Audit",
+			header: i18n.t.history.col_status,
 			accessorKey: "status",
 			sortable: true,
 			align: "center"
 		},
 		{
 			id: "approved_by",
-			header: "Penandatangan",
+			header: i18n.t.history.col_approved_by,
 			accessorKey: (row: TicketItem) => row.approved_by || "System Automated",
 			sortable: true
 		},
 		{
 			id: "created_at",
-			header: "Waktu Eksekusi",
+			header: i18n.t.history.col_executed_at,
 			accessorKey: (row: TicketItem) => row.updated_at || row.created_at,
 			sortable: true
 		},
 		{
 			id: "actions",
-			header: "Aksi / Rollback",
+			header: i18n.t.history.col_actions,
 			sortable: false,
 			align: "center"
 		}
-	];
+	]);
 
-	// Filter options for Status
-	const filterOptions = [
-		{ label: "Semua Status", value: "ALL" },
-		{ label: "EXECUTED (Tereksekusi)", value: "EXECUTED" },
-		{ label: "REJECTED (Ditolak)", value: "REJECTED" },
-		{ label: "APPROVED (Disetujui)", value: "APPROVED" }
-	];
+	// Filter options for Status (reactive to locale changes)
+	let filterOptions = $derived([
+		{ label: i18n.t.history.filter_all, value: "ALL" },
+		{ label: i18n.t.history.filter_executed, value: "EXECUTED" },
+		{ label: i18n.t.history.filter_rejected, value: "REJECTED" },
+		{ label: i18n.t.history.filter_approved, value: "APPROVED" }
+	]);
 
 	// Modal detail & rollback state
 	let activeDetailTicket = $state<TicketItem | null>(null);
@@ -138,16 +138,16 @@
 	<DataTable
 		data={historyData}
 		{columns}
-		title="Tabel Rekam Jejak Eksekusi (Execution Audit Log)"
-		subtitle="Log mutasi ERP yang telah diaudit, ditandatangani oleh operator, dilengkapi skrip rollback dan verifikasi status."
-		searchPlaceholder="Cari nomor tiket, no faktur, nama cabang, atau penandatangan..."
+		title={i18n.t.history.table_title}
+		subtitle={i18n.t.history.table_subtitle}
+		searchPlaceholder={i18n.t.history.search_placeholder}
 		searchKeys={["ticket_no", "document_no", "branch_name", "proposed_value", "approved_by"]}
 		filterKey="status"
 		{filterOptions}
 		defaultPageSize={10}
 		enableExport={true}
 		exportFilename="novapilot_execution_audit_history"
-		emptyMessage="Tidak ditemukan rekam jejak audit yang sesuai"
+		emptyMessage={i18n.t.history.empty_message}
 	>
 		<!-- Custom Cell Rendering via Svelte Snippet -->
 		{#snippet rowCell({ row, column })}
@@ -186,7 +186,7 @@
 					</div>
 					{#if row.current_value}
 						<div class="text-[10px] text-muted-foreground truncate max-w-[260px]">
-							Semula: <span class="line-through">{row.current_value}</span>
+							{i18n.t.history.originally} <span class="line-through">{row.current_value}</span>
 						</div>
 					{/if}
 				</div>
@@ -228,10 +228,10 @@
 						type="button"
 						onclick={() => openAuditDetails(row)}
 						class="h-7 px-2.5 rounded-lg border border-border/80 bg-secondary/50 hover:bg-secondary text-[11px] font-medium text-foreground flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-						title="Buka Skrip Kompensasi Rollback &amp; Detail Audit"
+						title={i18n.t.history.modal_rollback_title}
 					>
 						<CodeBracket class="h-3.5 w-3.5 text-primary" />
-						<span>Rollback</span>
+						<span>{i18n.t.history.rollback_btn}</span>
 					</button>
 				</div>
 			{/if}
@@ -262,7 +262,7 @@
 							</span>
 						</h3>
 						<p class="text-xs text-muted-foreground mt-0.5">
-							Dokumen: {activeDetailTicket.document_no} • {activeDetailTicket.branch_name || "Surabaya HQ"}
+							{activeDetailTicket.document_no} • {activeDetailTicket.branch_name || "Surabaya HQ"}
 						</p>
 					</div>
 				</div>
@@ -301,7 +301,7 @@
 				<div class="flex items-center justify-between text-xs">
 					<span class="font-semibold text-foreground flex items-center gap-1.5">
 						<CommandLine class="h-3.5 w-3.5 text-primary" />
-						Skrip Kompensasi Rollback SQL (Atomic Safe)
+						{i18n.t.history.modal_rollback_title}
 					</span>
 					<button
 						type="button"
@@ -310,10 +310,10 @@
 					>
 						{#if copiedScript}
 							<Check class="h-3.5 w-3.5 text-emerald-500" />
-							<span class="text-emerald-500">Tersalin!</span>
+							<span class="text-emerald-500">{i18n.t.history.modal_copied}</span>
 						{:else}
 							<ClipboardDocument class="h-3.5 w-3.5" />
-							<span>Salin Skrip</span>
+							<span>{i18n.t.history.modal_copy_script}</span>
 						{/if}
 					</button>
 				</div>
@@ -330,7 +330,7 @@ COMMIT;</code></pre>
 
 			<!-- Raw Inbound Message Context -->
 			<div class="space-y-1 text-xs">
-				<span class="font-semibold text-muted-foreground text-[11px]">Pesan Awal ChatOps:</span>
+				<span class="font-semibold text-muted-foreground text-[11px]">{i18n.t.history.modal_raw_msg}</span>
 				<div class="p-3 rounded-xl bg-secondary/20 border border-border/40 text-[11px] text-muted-foreground italic">
 					"{activeDetailTicket.raw_message}"
 				</div>
@@ -343,7 +343,7 @@ COMMIT;</code></pre>
 					onclick={closeAuditDetails}
 					class="h-9 px-4 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
 				>
-					Tutup
+					{i18n.t.history.modal_close}
 				</button>
 			</div>
 		</div>

@@ -8,10 +8,11 @@
 		Heart, 
 		CpuChip, 
 		CircleStack, 
-		Cube,
-		Check,
-		ClipboardDocument
+		Cube, 
+		Check, 
+		ClipboardDocument 
 	} from "svelte-heros-v2";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let copiedClone = $state(false);
 
@@ -23,7 +24,7 @@
 </script>
 
 <svelte:head>
-	<title>Tentang NovaPilot AI & Kreator • Cockpit</title>
+	<title>{i18n.t.about.title} • NovaPilot AI</title>
 </svelte:head>
 
 <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto w-full font-sans">
@@ -33,13 +34,13 @@
 			<div class="space-y-1.5">
 				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-mono font-bold text-primary">
 					<Sparkles class="h-3.5 w-3.5" />
-					<span>NOVAPILOT AI • CHATOPS GATEKEEPER v1.0.0</span>
+					<span>{i18n.t.about.badge}</span>
 				</div>
 				<h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-					Tentang NovaPilot AI & Tim Pengembang
+					{i18n.t.about.title}
 				</h1>
 				<p class="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
-					Sistem ChatOps AI otonom kelas enterprise yang bertindak sebagai <em>Human-in-the-Loop Gatekeeper</em> untuk melindungi database bisnis (ERP) dari halusinasi bot chat dan akses SQL langsung.
+					{i18n.t.about.subtitle}
 				</p>
 			</div>
 
@@ -51,7 +52,7 @@
 					class="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-2 shadow-md transition-colors"
 				>
 					<CodeBracket class="h-4 w-4" />
-					<span>Buka GitHub Repo</span>
+					<span>{i18n.t.about.open_github}</span>
 					<ArrowTopRightOnSquare class="h-3.5 w-3.5 opacity-75" />
 				</a>
 			</div>
@@ -68,7 +69,7 @@
 						<InformationCircle class="h-5 w-5" />
 					</div>
 					<div>
-						<h2 class="text-sm font-bold text-foreground">Tentang Kreator</h2>
+						<h2 class="text-sm font-bold text-foreground">{i18n.t.about.creator_title}</h2>
 						<p class="text-[11px] text-muted-foreground">Architect & Lead Developer</p>
 					</div>
 				</div>
@@ -91,7 +92,9 @@
 						Full-Stack Engineer & AI Systems Architect
 					</div>
 					<p class="text-[11px] text-muted-foreground leading-relaxed pt-1">
-						Fokus pada perancangan arsitektur sistem otonom yang aman, zero-trust backend pipelines, multi-agent frameworks, dan integrasi enterprise data berbasis Model Context Protocol (MCP).
+						{i18n.current === 'id' 
+							? 'Fokus pada perancangan arsitektur sistem otonom yang aman, zero-trust backend pipelines, multi-agent frameworks, dan integrasi enterprise data berbasis Model Context Protocol (MCP).' 
+							: 'Specializing in secure autonomous systems design, zero-trust backend pipelines, multi-agent reasoning frameworks, and Model Context Protocol (MCP) enterprise data grounding.'}
 					</p>
 				</div>
 			</div>
@@ -111,11 +114,11 @@
 					</a>
 				</div>
 				<div class="flex items-center justify-between p-2.5 rounded-xl border border-border/40">
-					<span class="font-medium text-muted-foreground">Spesialisasi:</span>
+					<span class="font-medium text-muted-foreground">{i18n.current === 'id' ? 'Spesialisasi:' : 'Specialization:'}</span>
 					<span class="font-medium text-foreground">Go, SvelteKit, Bun, MCP, Python, PostgreSQL</span>
 				</div>
 				<div class="flex items-center justify-between p-2.5 rounded-xl border border-border/40">
-					<span class="font-medium text-muted-foreground">Lokasi:</span>
+					<span class="font-medium text-muted-foreground">{i18n.current === 'id' ? 'Lokasi:' : 'Location:'}</span>
 					<span class="font-medium text-foreground">Indonesia 🇮🇩</span>
 				</div>
 			</div>
@@ -129,7 +132,7 @@
 						<CodeBracket class="h-5 w-5" />
 					</div>
 					<div>
-						<h2 class="text-sm font-bold text-foreground">Repositori Resmi</h2>
+						<h2 class="text-sm font-bold text-foreground">{i18n.current === 'id' ? 'Repositori Resmi' : 'Official Repository'}</h2>
 						<p class="text-[11px] text-muted-foreground">Open-Source Project</p>
 					</div>
 				</div>
@@ -149,19 +152,23 @@
 					</span>
 				</div>
 				<p class="text-xs text-muted-foreground leading-relaxed">
-					Next-gen multiplatform ChatOps automation platform designed for on-call engineers, preventing direct SQL mutation via Model Context Protocol & Human-in-the-Loop verification.
+					{i18n.current === 'id'
+						? 'Platform otomasi ChatOps multiplatform generasi baru untuk teknisi on-call, mencegah mutasi SQL langsung melalui Model Context Protocol & verifikasi Human-in-the-Loop.'
+						: 'Next-gen multiplatform ChatOps automation platform designed for on-call engineers, preventing direct SQL mutation via Model Context Protocol & Human-in-the-Loop verification.'}
 				</p>
 
 				<!-- Git Clone Command Box -->
 				<div class="pt-2">
-					<div class="text-[10px] font-mono uppercase text-muted-foreground font-semibold mb-1">Clone Repository:</div>
+					<div class="text-[10px] font-mono uppercase text-muted-foreground font-semibold mb-1">
+						{i18n.current === 'id' ? 'Clone Repositori:' : 'Clone Repository:'}
+					</div>
 					<div class="flex items-center justify-between p-2 rounded-xl bg-black/60 border border-zinc-800 text-[11px] font-mono text-zinc-300">
 						<span class="truncate">git clone https://github.com/RifkyA911/novapilot-ai.git</span>
 						<button
 							type="button"
 							onclick={copyCloneCmd}
 							class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0 ml-2"
-							title="Salin perintah clone"
+							title={i18n.t.about.copy_clone}
 						>
 							{#if copiedClone}
 								<Check class="h-3.5 w-3.5 text-emerald-400" />
@@ -175,7 +182,9 @@
 
 			<!-- Tech Stack Chips -->
 			<div class="space-y-1.5">
-				<div class="text-[10px] font-mono uppercase font-bold text-muted-foreground">Teknologi yang Digunakan:</div>
+				<div class="text-[10px] font-mono uppercase font-bold text-muted-foreground">
+					{i18n.current === 'id' ? 'Teknologi yang Digunakan:' : 'Technologies Used:'}
+				</div>
 				<div class="flex items-center gap-1.5 flex-wrap text-[10px] font-mono">
 					<span class="px-2 py-1 rounded bg-secondary border border-border text-foreground font-semibold">Go 1.24 (Clean Arch)</span>
 					<span class="px-2 py-1 rounded bg-secondary border border-border text-foreground font-semibold">SvelteKit 2 + Svelte 5 Runes</span>
@@ -193,28 +202,34 @@
 	<div class="p-6 rounded-3xl border border-border/80 bg-card/70 space-y-4 shadow-xs">
 		<h2 class="text-sm font-bold text-foreground flex items-center gap-2">
 			<ShieldCheck class="h-4 w-4 text-emerald-500" />
-			<span>Manifesto Desain NovaPilot AI</span>
+			<span>{i18n.t.about.architecture_title}</span>
 		</h2>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
 			<div class="p-4 rounded-2xl bg-secondary/40 border border-border/40 space-y-2">
 				<div class="font-bold text-foreground">1. Zero Direct SQL</div>
 				<p class="text-muted-foreground leading-relaxed">
-					Petugas lapangan dan chatbot tidak pernah diizinkan mengetik atau mengirimkan query SQL langsung ke database produksi ERP.
+					{i18n.current === 'id'
+						? 'Petugas lapangan dan chatbot tidak pernah diizinkan mengetik atau mengirimkan query SQL langsung ke database produksi ERP.'
+						: 'Field staff and chatbots are never permitted to type or transmit raw SQL queries directly to production ERP databases.'}
 				</p>
 			</div>
 
 			<div class="p-4 rounded-2xl bg-secondary/40 border border-border/40 space-y-2">
 				<div class="font-bold text-foreground">2. Human-in-the-Loop Gatekeeper</div>
 				<p class="text-muted-foreground leading-relaxed">
-					AI hanya bertindak mengekstrak intent dan mengajukan proposal (*staging*). Hanya teknisi on-call berwenang yang dapat menekan tombol sign-off.
+					{i18n.current === 'id'
+						? 'AI hanya bertindak mengekstrak intent dan mengajukan proposal (staging). Hanya teknisi on-call berwenang yang dapat menekan tombol sign-off.'
+						: 'AI acts strictly as an intent extractor and mutation proposer (staging). Only authorized on-call engineers can authorize changes.'}
 				</p>
 			</div>
 
 			<div class="p-4 rounded-2xl bg-secondary/40 border border-border/40 space-y-2">
 				<div class="font-bold text-foreground">3. Dual-DB Physical Separation</div>
 				<p class="text-muted-foreground leading-relaxed">
-					Database operasional internal (tiket, chat) dipisahkan secara fisik dari database buku besar finansial (Oracle / SAP).
+					{i18n.current === 'id'
+						? 'Database operasional internal (tiket, chat) dipisahkan secara fisik dari database buku besar finansial (Oracle / SAP).'
+						: 'Internal operational databases (tickets, chat logs) remain physically isolated from primary financial ledgers (Oracle / SAP).'}
 				</p>
 			</div>
 		</div>

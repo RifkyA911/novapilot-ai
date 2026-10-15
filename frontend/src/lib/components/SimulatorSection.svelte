@@ -11,6 +11,7 @@
 		ArrowPath
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import SimulatorPipelineVisualizer from "$lib/components/SimulatorPipelineVisualizer.svelte";
 
 	let simMessage = $state("Hello IT Support, please update invoice INV/2026/001 customer name from PT Sumber Makmur to PT Sumber Makmur Abadi due to branch tax invoice amendment. Thanks!");
@@ -169,7 +170,7 @@
 		<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simStep >= 1 ? 'bg-primary/10 border-primary/40 font-semibold text-foreground' : 'bg-muted/30 border-border text-muted-foreground'}">
 			<div class="flex items-center gap-2">
 				<Radio class="h-4 w-4 {simStep === 1 ? 'text-emerald-500 animate-pulse' : 'text-primary'}" />
-				<span>01. WA Ingest</span>
+				<span>{i18n.t.simulator.step_1}</span>
 			</div>
 			{#if simStep === 1}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
 		</div>
@@ -177,7 +178,7 @@
 		<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simStep >= 2 ? 'bg-purple-500/10 border-purple-500/40 font-semibold text-foreground' : 'bg-muted/30 border-border text-muted-foreground'}">
 			<div class="flex items-center gap-2">
 				<CpuChip class="h-4 w-4 text-purple-500" />
-				<span>02. LLM Extract</span>
+				<span>{i18n.t.simulator.step_2}</span>
 			</div>
 			{#if simStep === 2}<span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>{/if}
 		</div>
@@ -185,7 +186,7 @@
 		<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simStep >= 3 ? 'bg-amber-500/10 border-amber-500/40 font-semibold text-foreground' : 'bg-muted/30 border-border text-muted-foreground'}">
 			<div class="flex items-center gap-2">
 				<ServerStack class="h-4 w-4 text-amber-500" />
-				<span>03. DB Pre-Check</span>
+				<span>{i18n.t.simulator.step_3}</span>
 			</div>
 			{#if simStep === 3}<span class="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>{/if}
 		</div>
@@ -193,7 +194,7 @@
 		<div class="p-3 rounded-xl border flex items-center justify-between transition-colors {simStep >= 4 ? 'bg-emerald-500/10 border-emerald-500/40 font-semibold text-foreground' : 'bg-muted/30 border-border text-muted-foreground'}">
 			<div class="flex items-center gap-2">
 				<ShieldCheck class="h-4 w-4 text-emerald-500" />
-				<span>04. Stage in Queue</span>
+				<span>{i18n.t.simulator.step_4}</span>
 			</div>
 			{#if simStep === 4}<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>{/if}
 		</div>
@@ -204,7 +205,7 @@
 		<div class="space-y-3">
 			<div>
 				<label for="sim-raw-msg" class="block font-medium text-foreground mb-1.5">
-					Simulated WhatsApp Chat Message:
+					{i18n.t.simulator.chat_msg_label}
 				</label>
 				<textarea
 					id="sim-raw-msg"
@@ -217,7 +218,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				<div>
 					<label for="sim-branch" class="block font-medium text-foreground mb-1">
-						Originating Branch:
+						{i18n.t.simulator.branch_source_label}
 					</label>
 					<select
 						id="sim-branch"
@@ -233,7 +234,7 @@
 
 				<div>
 					<label for="sim-doc-no" class="block font-medium text-foreground mb-1">
-						Document Number:
+						{i18n.t.simulator.invoice_target_label}
 					</label>
 					<input
 						id="sim-doc-no"
@@ -248,7 +249,7 @@
 		<div class="space-y-3 flex flex-col justify-between">
 			<div>
 				<label for="sim-proposed-val" class="block font-medium text-foreground mb-1.5">
-					Proposed Mutation Value:
+					{i18n.t.simulator.value_target_label}
 				</label>
 				<input
 					id="sim-proposed-val"
@@ -257,14 +258,14 @@
 					class="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 				/>
 				<p class="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
-					The engine executes a read-only query against the database to fetch the current customer name (<code>PT Sumber Makmur</code>) and ensures invoice status is not <code>CLOSED</code> before creating the staging ticket.
+					{i18n.locale === 'id' ? 'Engine mengeksekusi query read-only terhadap database untuk mengambil nama customer saat ini (PT Sumber Makmur) dan memastikan status faktur bukan CLOSED sebelum membuat tiket approval.' : 'The engine executes a read-only query against the database to fetch the current customer name (PT Sumber Makmur) and ensures invoice status is not CLOSED before creating the staging ticket.'}
 				</p>
 			</div>
 
 			<div class="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
 				<div class="text-xs">
 					<div class="font-semibold text-foreground">Zero Raw SQL Guard</div>
-					<div class="text-[11px] text-muted-foreground">Parameterized binding enforced on sign-off</div>
+					<div class="text-[11px] text-muted-foreground">{i18n.locale === 'id' ? 'Binding berparameter diterapkan saat sign-off' : 'Parameterized binding enforced on sign-off'}</div>
 				</div>
 
 				<button
@@ -275,10 +276,10 @@
 				>
 					{#if simLoading}
 						<ArrowPath class="h-4 w-4 animate-spin" />
-						<span>Processing Step 0{simStep}...</span>
+						<span>{i18n.locale === 'id' ? `Memproses Langkah 0${simStep}...` : `Processing Step 0${simStep}...`}</span>
 					{:else}
 						<PaperAirplane class="h-4 w-4" />
-						<span>Execute Ingestion Test</span>
+						<span>{i18n.t.simulator.run_simulation}</span>
 					{/if}
 				</button>
 			</div>
@@ -289,10 +290,10 @@
 		<div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between animate-in fade-in duration-200">
 			<div class="flex items-center gap-2 font-medium">
 				<CheckCircle class="h-4 w-4" />
-				<span>Simulation complete! Mutation ticket created and staged into the <strong>Approval Queue</strong>.</span>
+				<span>{i18n.locale === 'id' ? 'Simulasi selesai! Tiket mutasi berhasil dibuat dan di-stage ke Antrean Persetujuan.' : 'Simulation complete! Mutation ticket created and staged into the Approval Queue.'}</span>
 			</div>
 			<a href="/dashboard/queue" class="font-semibold underline hover:opacity-80">
-				View in Approval Queue &rarr;
+				{i18n.locale === 'id' ? 'Buka di Antrean Persetujuan →' : 'View in Approval Queue →'}
 			</a>
 		</div>
 	{/if}

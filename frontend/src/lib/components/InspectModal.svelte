@@ -10,6 +10,7 @@
 		ExclamationTriangle
 	} from "svelte-heros-v2";
 	import type { Ticket } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let { 
 		ticket = null, 
@@ -32,7 +33,7 @@
 			class="w-full max-w-2xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Inspect Mutation Plan"
+			aria-label={i18n.t.modals.inspect_title}
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
@@ -45,7 +46,7 @@
 					</div>
 					<div>
 						<h3 class="text-base font-semibold text-foreground flex items-center gap-2">
-							<span>Mutation Plan: {ticket.ticket_no}</span>
+							<span>{i18n.t.modals.inspect_title} {ticket.ticket_no}</span>
 							<span class="text-xs px-2 py-0.5 rounded font-mono font-medium {ticket.confidence_score >= 0.9 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">
 								{(ticket.confidence_score * 100).toFixed(0)}% Confidence
 							</span>
@@ -66,40 +67,40 @@
 			<!-- Paradigm Selector Bar -->
 			<div class="border-b border-border bg-muted/30 px-5 py-2.5 flex items-center justify-between text-xs">
 				<div class="flex items-center gap-2">
-					<span class="font-medium text-foreground">Target Engine Plan:</span>
+					<span class="font-medium text-foreground">{i18n.t.modals.target_engine}</span>
 					<div class="flex items-center rounded-lg border border-border bg-background p-0.5">
 						<button
 							type="button"
 							onclick={() => (paradigm = "relational")}
 							class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {paradigm === 'relational' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 						>
-							Relational SQL
+							{i18n.t.modals.relational_sql}
 						</button>
 						<button
 							type="button"
 							onclick={() => (paradigm = "non_relational")}
 							class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {paradigm === 'non_relational' ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 						>
-							Non-Relational BSON
+							{i18n.t.modals.non_relational_bson}
 						</button>
 					</div>
 				</div>
 
-				<span class="text-[11px] font-mono text-muted-foreground">Zero Raw SQL Guard Certified</span>
+				<span class="text-[11px] font-mono text-muted-foreground">{i18n.t.modals.zero_sql_guard}</span>
 			</div>
 
 			<!-- Body -->
 			<div class="p-5 overflow-y-auto space-y-4 text-xs font-mono">
 				<!-- Diff Preview -->
 				<div class="p-3.5 rounded-xl bg-muted/40 border border-border space-y-2">
-					<div class="text-[11px] font-semibold text-foreground uppercase tracking-wider">Side-by-Side Verification Diff</div>
+					<div class="text-[11px] font-semibold text-foreground uppercase tracking-wider">{i18n.t.modals.diff_title}</div>
 					<div class="grid grid-cols-2 gap-3 text-xs">
 						<div class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
-							<div class="text-[10px] text-muted-foreground">CURRENT DB VALUE:</div>
+							<div class="text-[10px] text-muted-foreground">{i18n.t.modals.current_val}</div>
 							<div class="font-bold line-through mt-0.5">{ticket.current_value}</div>
 						</div>
 						<div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-							<div class="text-[10px] text-muted-foreground">PROPOSED MUTATION:</div>
+							<div class="text-[10px] text-muted-foreground">{i18n.t.modals.proposed_val}</div>
 							<div class="font-bold mt-0.5">{ticket.proposed_value}</div>
 						</div>
 					</div>
@@ -153,7 +154,7 @@ db.invoices.updateOne(
 
 				<!-- Raw Message Context -->
 				<div class="p-3.5 rounded-xl bg-muted/40 border border-border space-y-1.5 text-xs font-sans">
-					<div class="font-semibold text-foreground text-[11px] font-mono uppercase tracking-wider">Original WhatsApp Inbound Message:</div>
+					<div class="font-semibold text-foreground text-[11px] font-mono uppercase tracking-wider">Original Inbound Message:</div>
 					<p class="text-muted-foreground italic bg-background p-2.5 rounded-lg border border-border">"{ticket.raw_message}"</p>
 				</div>
 			</div>
@@ -165,7 +166,7 @@ db.invoices.updateOne(
 					onclick={onclose}
 					class="h-9 px-4 rounded-md border border-input bg-background hover:bg-muted text-xs font-medium cursor-pointer"
 				>
-					Close Inspector
+					{i18n.t.modals.close}
 				</button>
 			</div>
 		</div>

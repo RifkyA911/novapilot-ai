@@ -16,6 +16,7 @@
 		ExclamationTriangle
 	} from "svelte-heros-v2";
 	import { cockpit, type AuditLog } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	interface LogEntry {
 		id: string;
@@ -198,7 +199,7 @@
 </script>
 
 <svelte:head>
-	<title>System Logs & Telemetry • NovaPilot AI</title>
+	<title>{i18n.t.logs.title} • NovaPilot AI</title>
 </svelte:head>
 
 <div class="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full font-sans">
@@ -214,14 +215,14 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						System Logs &amp; Daemon Telemetry
+						{i18n.t.logs.title}
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
 							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
 							STREAMING
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Audit jejak runtime Go Core (:8088), PostgreSQL 18 Local (:5432), WhatsApp Gateway Baileys (:3002), dan Enterprise MCP Server.
+						{i18n.t.logs.subtitle}
 					</p>
 				</div>
 			</div>
@@ -236,10 +237,10 @@
 			>
 				{#if isPaused}
 					<Play class="h-3.5 w-3.5 text-emerald-500" />
-					<span>Resume</span>
+					<span>{i18n.t.logs.resume_stream}</span>
 				{:else}
 					<Pause class="h-3.5 w-3.5 text-amber-500" />
-					<span>Pause</span>
+					<span>{i18n.t.logs.pause_stream}</span>
 				{/if}
 			</button>
 
@@ -247,20 +248,20 @@
 				type="button"
 				onclick={clearLogs}
 				class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-				title="Kosongkan Tampilan Log"
+				title={i18n.t.logs.clear_logs}
 			>
 				<Trash class="h-3.5 w-3.5 text-muted-foreground" />
-				<span>Clear</span>
+				<span>{i18n.t.logs.clear_logs}</span>
 			</button>
 
 			<button
 				type="button"
 				onclick={exportLogs}
 				class="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-				title="Ekspor Seluruh Log ke JSON"
+				title={i18n.t.logs.export_logs}
 			>
 				<ArrowDownTray class="h-3.5 w-3.5" />
-				<span>Export Logs</span>
+				<span>{i18n.t.logs.export_logs}</span>
 			</button>
 		</div>
 	</div>
@@ -275,7 +276,7 @@
 			<input
 				type="text"
 				bind:value={searchQuery}
-				placeholder="Filter teks log (misal: INV/2026/001, OCR, pgxpool, approval)..."
+				placeholder={i18n.t.logs.search_placeholder}
 				class="w-full h-9 pl-9 pr-3 rounded-lg bg-secondary/50 border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
 			/>
 		</div>
@@ -300,7 +301,7 @@
 				bind:value={selectedService}
 				class="h-8 rounded-lg border border-input bg-background px-2 text-xs font-medium text-foreground shadow-xs cursor-pointer focus:outline-none"
 			>
-				<option value="ALL">All Services</option>
+				<option value="ALL">{i18n.t.logs.all_services}</option>
 				<option value="CORE_ENGINE">Core Engine (:8088)</option>
 				<option value="POSTGRES_DB1">PostgreSQL 18 (:5432)</option>
 				<option value="WA_GATEWAY">WhatsApp Gateway (:3002)</option>
@@ -323,10 +324,10 @@
 				<span class="ml-2 text-[11px] font-semibold text-zinc-300">novapilot-daemon.log (LIVE STDOUT)</span>
 			</div>
 			<div class="flex items-center gap-3 text-[11px]">
-				<span>Total Entri: <strong class="text-zinc-200">{filteredLogs.length}</strong></span>
+				<span>{i18n.t.logs.total_entries} <strong class="text-zinc-200">{filteredLogs.length}</strong></span>
 				<label class="flex items-center gap-1.5 cursor-pointer text-zinc-300">
 					<input type="checkbox" bind:checked={autoScroll} class="rounded accent-primary" />
-					<span>Auto-scroll</span>
+					<span>{i18n.t.logs.auto_scroll}</span>
 				</label>
 			</div>
 		</div>
@@ -339,7 +340,7 @@
 			{#if filteredLogs.length === 0}
 				<div class="h-full flex flex-col items-center justify-center text-zinc-500 space-y-2">
 					<DocumentText class="h-8 w-8 text-zinc-600" />
-					<span>Tidak ada log yang cocok dengan filter aktif.</span>
+					<span>{i18n.t.logs.no_logs_match}</span>
 				</div>
 			{:else}
 				{#each filteredLogs as log (log.id)}

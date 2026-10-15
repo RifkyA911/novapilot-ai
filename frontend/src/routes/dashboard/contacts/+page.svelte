@@ -28,6 +28,7 @@
 		QuestionMarkCircle
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import DataTable from "$lib/components/DataTable.svelte";
 	import type { ColumnDef } from "$lib/types/table";
 
@@ -572,17 +573,17 @@
 	}
 
 	// TanStack Table Column Definitions
-	const tableColumns: ColumnDef<ContactChannel>[] = [
+	const tableColumns = $derived<ColumnDef<ContactChannel>[]>([
 		{
 			id: "name",
-			header: "Saluran & Identitas",
+			header: i18n.t.contacts.col_channel,
 			sortable: true,
 			accessorKey: "name",
 			exportValue: (row) => `${row.name} (${row.type}) - ${row.branch}`
 		},
 		{
 			id: "platform",
-			header: "Platform",
+			header: i18n.t.contacts.col_platform,
 			sortable: true,
 			align: "center",
 			accessorKey: "platform",
@@ -590,14 +591,14 @@
 		},
 		{
 			id: "jidOrChatId",
-			header: "JID / Identifier",
+			header: i18n.t.contacts.col_jid,
 			sortable: true,
 			accessorKey: "jidOrChatId",
 			exportValue: (row) => row.jidOrChatId
 		},
 		{
 			id: "status",
-			header: "Monitoring Probe",
+			header: i18n.t.contacts.col_probe,
 			sortable: true,
 			align: "center",
 			accessorKey: "status",
@@ -605,14 +606,14 @@
 		},
 		{
 			id: "telemetry",
-			header: "Volume Telemetry",
+			header: i18n.t.contacts.col_telemetry,
 			sortable: true,
 			accessorKey: "totalMessages",
 			exportValue: (row) => `${row.totalMessages} chat, ${row.actionableTickets} tiket`
 		},
 		{
 			id: "whitelist",
-			header: "Whitelist Intake",
+			header: i18n.t.contacts.col_whitelist,
 			sortable: true,
 			align: "center",
 			accessorKey: "isWhitelisted",
@@ -620,17 +621,17 @@
 		},
 		{
 			id: "actions",
-			header: "Aksi",
+			header: i18n.t.contacts.col_actions,
 			sortable: false,
 			align: "right"
 		}
-	];
+	]);
 
 	// Filter options for dropdown
-	const filterOptions = [
-		{ label: "Grup WhatsApp (@g.us)", value: "GROUP" },
-		{ label: "Kontak Perorangan (@s.whatsapp.net)", value: "INDIVIDUAL" }
-	];
+	const filterOptions = $derived([
+		{ label: i18n.t.contacts.filter_group, value: "GROUP" },
+		{ label: i18n.t.contacts.filter_individual, value: "INDIVIDUAL" }
+	]);
 
 	// Telemetry Calculations for Analytics Header
 	const totalChannelsCount = $derived(channels.length);
@@ -661,14 +662,14 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						Direktori Saluran Ingress &amp; Kontak ChatOps
+						{i18n.t.contacts.title}
 						<span class="text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
 							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-							MONITORING AKTIF
+							{i18n.t.contacts.monitoring_active}
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Manajemen grup WhatsApp cabang, hotline darurat perorangan, dan saluran bot yang terintegrasi dengan filter AI Guardrail.
+						{i18n.t.contacts.subtitle}
 					</p>
 				</div>
 			</div>
@@ -682,7 +683,7 @@
 				class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs transition-all cursor-pointer"
 			>
 				<UserPlus class="h-4 w-4" />
-				<span>Tambah Kontak / Grup</span>
+				<span>{i18n.t.contacts.add_contact}</span>
 			</button>
 
 			<a
@@ -690,7 +691,7 @@
 				class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-all shadow-xs"
 			>
 				<CommandLine class="h-3.5 w-3.5 text-primary" />
-				<span>Lihat Alur E2E Flow</span>
+				<span>{i18n.t.contacts.e2e_flow}</span>
 			</a>
 		</div>
 	</div>
@@ -707,19 +708,19 @@
 				</div>
 				<div>
 					<div class="flex items-center gap-2 flex-wrap">
-						<h3 class="text-sm font-bold text-foreground">Topologi Aliran Ingress Saluran &amp; Whitelist Gatekeeper</h3>
+						<h3 class="text-sm font-bold text-foreground">{i18n.t.contacts.topology_title}</h3>
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
 							LIVE TOPOLOGY
 						</span>
 					</div>
-					<p class="text-xs text-muted-foreground mt-0.5">Visualisasi rute pesan masuk dari saluran grup &amp; hotline menuju filter AI Guardrail.</p>
+					<p class="text-xs text-muted-foreground mt-0.5">{i18n.t.contacts.topology_subtitle}</p>
 				</div>
 			</div>
 
 			<div class="flex items-center gap-3 text-[11px] font-mono text-muted-foreground">
 				<span class="flex items-center gap-1.5">
 					<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-					<strong class="text-foreground">Inbound Stream:</strong> {channels.filter(c => c.isWhitelisted).length} Saluran Terverifikasi
+					<strong class="text-foreground">{i18n.t.contacts.inbound_stream}</strong> {channels.filter(c => c.isWhitelisted).length} {i18n.t.contacts.verified_channels}
 				</span>
 			</div>
 		</div>
@@ -878,7 +879,7 @@
 		<!-- Card 1: Channel Ingress Coverage -->
 		<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 relative overflow-hidden">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Saluran Terdaftar</span>
+				<span class="text-xs font-medium">{i18n.t.contacts.stat_channels}</span>
 				<div class="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
 					<Radio class="h-4 w-4" />
 				</div>
@@ -888,9 +889,9 @@
 					{totalChannelsCount} <span class="text-xs font-normal text-muted-foreground">Channel</span>
 				</div>
 				<p class="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
-					<span class="text-emerald-500 font-semibold">{totalGroupsCount} Grup WA</span>
+					<span class="text-emerald-500 font-semibold">{totalGroupsCount} {i18n.t.contacts.stat_groups}</span>
 					<span class="text-border">·</span>
-					<span class="text-cyan-500 font-semibold">{totalIndividualsCount} Hotline Kontak</span>
+					<span class="text-cyan-500 font-semibold">{totalIndividualsCount} {i18n.t.contacts.stat_hotlines}</span>
 				</p>
 			</div>
 			<div class="w-full bg-secondary h-1 rounded-full overflow-hidden">
@@ -901,7 +902,7 @@
 		<!-- Card 2: Monitoring Probe Health -->
 		<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 relative overflow-hidden">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Monitoring Health</span>
+				<span class="text-xs font-medium">{i18n.t.contacts.stat_health}</span>
 				<div class="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
 					<Signal class="h-4 w-4" />
 				</div>
@@ -912,7 +913,7 @@
 				</div>
 				<p class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
 					<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-					99.8% Uptime Ingress Socket
+					99.8% {i18n.t.contacts.stat_uptime}
 				</p>
 			</div>
 			<div class="w-full bg-secondary h-1 rounded-full overflow-hidden">
@@ -923,7 +924,7 @@
 		<!-- Card 3: Ingested Traffic & Ticket Yield -->
 		<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 relative overflow-hidden">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Traffic &amp; Tiket Yield</span>
+				<span class="text-xs font-medium">{i18n.t.contacts.stat_yield}</span>
 				<div class="h-8 w-8 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
 					<ChartBar class="h-4 w-4" />
 				</div>
@@ -933,7 +934,7 @@
 					{totalIngestedChats} <span class="text-xs font-normal text-muted-foreground">Pesan</span>
 				</div>
 				<p class="text-[11px] text-muted-foreground mt-1">
-					<strong class="text-foreground">{totalActionableTickets} Tiket</strong> staging terverifikasi AI
+					<strong class="text-foreground">{totalActionableTickets}</strong> {i18n.t.contacts.stat_staged_tickets}
 				</p>
 			</div>
 			<div class="w-full bg-secondary h-1 rounded-full overflow-hidden">
@@ -944,17 +945,17 @@
 		<!-- Card 4: Whitelist Gatekeeper -->
 		<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 relative overflow-hidden">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Whitelist Gatekeeper</span>
+				<span class="text-xs font-medium">{i18n.t.contacts.stat_gatekeeper}</span>
 				<div class="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
 					<ShieldCheck class="h-4 w-4" />
 				</div>
 			</div>
 			<div>
 				<div class="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-					{whitelistedCount} <span class="text-xs font-normal text-muted-foreground">dari {totalChannelsCount} aktif</span>
+					{whitelistedCount} <span class="text-xs font-normal text-muted-foreground">{i18n.t.common.of} {totalChannelsCount} {i18n.t.contacts.active}</span>
 				</div>
 				<p class="text-[11px] text-muted-foreground mt-1">
-					{totalChannelsCount - whitelistedCount} saluran dalam status muted/standby
+					{totalChannelsCount - whitelistedCount} {i18n.t.contacts.stat_muted}
 				</p>
 			</div>
 			<div class="w-full bg-secondary h-1 rounded-full overflow-hidden">
@@ -969,16 +970,16 @@
 	<DataTable
 		data={channels}
 		columns={tableColumns}
-		title="Tabel Manajemen Saluran & Kontak"
-		subtitle="Daftar lengkap grup dan kontak dengan pencarian multi-kolom, filter jenis, pengurutan, dan ekspor instan."
-		searchPlaceholder="Cari nama grup/kontak, cabang, nomor HP, atau JID..."
+		title={i18n.t.contacts.table_title}
+		subtitle={i18n.t.contacts.table_subtitle}
+		searchPlaceholder={i18n.t.contacts.table_search_placeholder}
 		searchKeys={["name", "branch", "jidOrChatId", "contactPerson", "contactPhone"]}
 		filterKey="type"
 		{filterOptions}
 		defaultPageSize={10}
 		enableExport={true}
 		exportFilename="novapilot_contacts_directory"
-		emptyMessage="Tidak ditemukan saluran atau kontak yang cocok"
+		emptyMessage={i18n.t.contacts.empty_table}
 	>
 		<!-- Custom Cell Rendering -->
 		{#snippet rowCell({ row, column })}
@@ -1110,14 +1111,14 @@
 						onclick={() => pingChannel(row)}
 						disabled={testPingId === row.id}
 						class="h-7 px-2.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer disabled:opacity-60"
-						title="Kirim pesan simulasi dari saluran ini"
+						title={i18n.t.contacts.action_sim}
 					>
 						{#if testPingId === row.id}
 							<Check class="h-3 w-3 text-emerald-500" />
-							<span class="text-emerald-500 font-bold">Terkirim</span>
+							<span class="text-emerald-500 font-bold">{i18n.t.contacts.action_sent}</span>
 						{:else}
 							<Bolt class="h-3 w-3 text-primary" />
-							<span>Simulasi</span>
+							<span>{i18n.t.contacts.action_sim}</span>
 						{/if}
 					</button>
 
@@ -1126,7 +1127,7 @@
 						type="button"
 						onclick={() => promptDelete(row)}
 						class="h-7 w-7 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
-						title="Hapus saluran ini dari direktori"
+						title={i18n.t.contacts.action_delete}
 					>
 						<Trash class="h-3.5 w-3.5" />
 					</button>
@@ -1154,12 +1155,12 @@
 							<UserPlus class="h-5 w-5" />
 						</div>
 						<div>
-							<h3 class="text-sm font-bold text-foreground">Tambah Saluran Ingress Baru</h3>
-							<p class="text-xs text-muted-foreground">Daftarkan grup atau kontak perorangan ke whitelist direktori.</p>
+							<h3 class="text-sm font-bold text-foreground">{i18n.t.contacts.modal_add_title}</h3>
+							<p class="text-xs text-muted-foreground">{i18n.t.contacts.modal_add_subtitle}</p>
 						</div>
 					</div>
 					<button 
-						type="button"
+						type="button" 
 						onclick={() => isAddModalOpen = false}
 						class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
 					>
@@ -1179,7 +1180,7 @@
 				<div class="space-y-4 text-xs font-sans">
 					<!-- Tipe Saluran -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">Tipe Saluran Ingress</label>
+						<label class="block font-semibold text-foreground">{i18n.t.contacts.channel_type}</label>
 						<div class="grid grid-cols-2 gap-2">
 							<button
 								type="button"
@@ -1188,8 +1189,8 @@
 							>
 								<UserGroup class="h-4 w-4" />
 								<div>
-									<div class="font-semibold text-xs">Grup Cabang / Divisi</div>
-									<div class="text-[10px] opacity-75">Target: @g.us</div>
+									<div class="font-semibold text-xs">{i18n.t.contacts.type_group}</div>
+									<div class="text-[10px] opacity-75">{i18n.t.contacts.type_group_sub}</div>
 								</div>
 							</button>
 
@@ -1200,8 +1201,8 @@
 							>
 								<User class="h-4 w-4" />
 								<div>
-									<div class="font-semibold text-xs">Kontak Hotline PIC</div>
-									<div class="text-[10px] opacity-75">Target: @s.whatsapp.net</div>
+									<div class="font-semibold text-xs">{i18n.t.contacts.type_individual}</div>
+									<div class="text-[10px] opacity-75">{i18n.t.contacts.type_individual_sub}</div>
 								</div>
 							</button>
 						</div>
@@ -1209,7 +1210,7 @@
 
 					<!-- Platform -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">Platform Pesan</label>
+						<label class="block font-semibold text-foreground">{i18n.t.contacts.platform_label}</label>
 						<select
 							bind:value={newContact.platform}
 							class="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs focus:ring-1 focus:ring-ring"
@@ -1223,11 +1224,11 @@
 
 					<!-- Nama Saluran / Identitas -->
 					<div class="space-y-1.5">
-						<label class="block font-semibold text-foreground">Nama Saluran / Identitas Resmi</label>
+						<label class="block font-semibold text-foreground">{i18n.t.contacts.channel_name}</label>
 						<input
 							type="text"
 							bind:value={newContact.name}
-							placeholder={newContact.type === 'GROUP' ? 'mis. Ops Cabang Semarang & Gudang' : 'mis. Budi Wicaksono (Lead AR Finance)'}
+							placeholder={newContact.type === 'GROUP' ? i18n.t.contacts.name_placeholder_group : i18n.t.contacts.name_placeholder_individual}
 							class="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground shadow-2xs focus:ring-1 focus:ring-ring"
 						/>
 					</div>
@@ -1235,14 +1236,14 @@
 					<!-- JID / Chat ID Identifier -->
 					<div class="space-y-1.5">
 						<div class="flex items-center justify-between">
-							<label class="font-semibold text-foreground">JID / Identifier Saluran</label>
+							<label class="font-semibold text-foreground">{i18n.t.contacts.jid_label}</label>
 							<button 
 								type="button" 
 								onclick={() => showJidGuide = !showJidGuide} 
 								class="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
 							>
 								<QuestionMarkCircle class="h-3.5 w-3.5" />
-								<span>{showJidGuide ? 'Tutup Panduan' : 'Dari mana dapat ID ini?'}</span>
+								<span>{showJidGuide ? i18n.t.contacts.jid_guide_close : i18n.t.contacts.jid_guide_open}</span>
 							</button>
 						</div>
 
@@ -1274,7 +1275,7 @@
 								class="text-[10.5px] text-primary hover:underline inline-flex items-center gap-1 cursor-pointer font-medium"
 							>
 								<Bolt class="h-3 w-3" />
-								<span>Konversi otomatis No. HP PIC ({newContact.contactPhone}) ke JID</span>
+								<span>{i18n.t.contacts.auto_convert_phone.replace('{phone}', newContact.contactPhone)}</span>
 							</button>
 						{/if}
 					</div>
@@ -1282,7 +1283,7 @@
 					<!-- Cabang & Regional -->
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<label class="font-semibold text-foreground">Cabang / Regional Hub</label>
+							<label class="font-semibold text-foreground">{i18n.t.contacts.branch_label}</label>
 							<span class="text-[10px] text-muted-foreground">Menghubungkan ke <code>branch_id</code> DB</span>
 						</div>
 
@@ -1311,7 +1312,7 @@
 						<div class="p-2.5 rounded-xl bg-secondary/35 border border-border/70 text-[10.5px] leading-relaxed text-muted-foreground flex items-start gap-2">
 							<ShieldCheck class="h-4 w-4 text-primary shrink-0 mt-0.5" />
 							<div>
-								<strong class="text-foreground">Pengaruh Cabang terhadap Database:</strong> Saluran ini akan dipetakan ke <code>branch_id</code> di tabel <code>branches</code> &amp; <code>invoices</code>. Sistem AI Guardrail memvalidasi apakah pengirim pesan memiliki wewenang atas faktur cabang tersebut, mencegah mutasi tidak sah lintas wilayah (*Cross-Branch Protection*).
+								<strong class="text-foreground">{i18n.t.contacts.branch_impact_title}</strong> {i18n.t.contacts.branch_impact_desc}
 							</div>
 						</div>
 					</div>
@@ -1319,7 +1320,7 @@
 					<!-- Contact Person & Telepon -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div class="space-y-1.5">
-							<label class="block font-semibold text-foreground">Nama PIC / Penanggung Jawab</label>
+							<label class="block font-semibold text-foreground">{i18n.t.contacts.pic_name}</label>
 							<input
 								type="text"
 								bind:value={newContact.contactPerson}
@@ -1328,7 +1329,7 @@
 							/>
 						</div>
 						<div class="space-y-1.5">
-							<label class="block font-semibold text-foreground">Nomor Telepon / Handle</label>
+							<label class="block font-semibold text-foreground">{i18n.t.contacts.pic_phone}</label>
 							<input
 								type="text"
 								bind:value={newContact.contactPhone}
@@ -1341,8 +1342,8 @@
 					<!-- Whitelist Intake Switch -->
 					<div class="p-3 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between">
 						<div>
-							<div class="font-semibold text-foreground">Otomatiskan Whitelist Intake</div>
-							<div class="text-[11px] text-muted-foreground">Pesan yang masuk dari saluran ini langsung diproses Guardrail.</div>
+							<div class="font-semibold text-foreground">{i18n.t.contacts.auto_whitelist_label}</div>
+							<div class="text-[11px] text-muted-foreground">{i18n.t.contacts.auto_whitelist_desc}</div>
 						</div>
 						<input 
 							type="checkbox" 
@@ -1359,7 +1360,7 @@
 						onclick={() => isAddModalOpen = false}
 						class="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
 					>
-						Batal
+						{i18n.t.contacts.cancel}
 					</button>
 					<button
 						type="button"
@@ -1367,7 +1368,7 @@
 						class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
 					>
 						<Check class="h-4 w-4" />
-						<span>Simpan Saluran</span>
+						<span>{i18n.t.contacts.save_channel}</span>
 					</button>
 				</div>
 			</div>
@@ -1391,18 +1392,18 @@
 						<Trash class="h-5 w-5" />
 					</div>
 					<div>
-						<h3 class="text-sm font-bold text-foreground">Hapus Saluran dari Direktori?</h3>
-						<p class="text-xs text-muted-foreground">Tindakan ini akan mencabut izin saluran dari ingress filter.</p>
+						<h3 class="text-sm font-bold text-foreground">{i18n.t.contacts.modal_delete_title}</h3>
+						<p class="text-xs text-muted-foreground">{i18n.t.contacts.modal_delete_desc}</p>
 					</div>
 				</div>
 
 				<div class="p-3.5 rounded-xl bg-secondary/50 border border-border/60 text-xs space-y-1.5">
 					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Nama Saluran:</span>
+						<span class="text-muted-foreground">{i18n.t.contacts.channel_name}:</span>
 						<strong class="text-foreground">{channelToDelete.name}</strong>
 					</div>
 					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">Tipe / Platform:</span>
+						<span class="text-muted-foreground">{i18n.t.contacts.channel_type} / {i18n.t.contacts.platform_label}:</span>
 						<span class="font-mono">{channelToDelete.type} ({channelToDelete.platform})</span>
 					</div>
 					<div class="flex items-center justify-between">
@@ -1412,7 +1413,7 @@
 				</div>
 
 				<p class="text-xs text-rose-600 dark:text-rose-400">
-					⚠️ Pesan masuk atau gambar faktur dari saluran ini selanjutnya akan diabaikan dan tidak dibuatkan tiket staging.
+					⚠️ {i18n.t.contacts.delete_warning}
 				</p>
 
 				<div class="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
@@ -1421,7 +1422,7 @@
 						onclick={() => isDeleteModalOpen = false}
 						class="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
 					>
-						Batal
+						{i18n.t.contacts.cancel}
 					</button>
 					<button
 						type="button"
@@ -1429,7 +1430,7 @@
 						class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
 					>
 						<Trash class="h-3.5 w-3.5" />
-						<span>Ya, Hapus Saluran</span>
+						<span>{i18n.t.contacts.confirm_delete}</span>
 					</button>
 				</div>
 			</div>
@@ -1458,7 +1459,7 @@
 							<div class="flex items-center gap-2 flex-wrap">
 								<h3 class="text-sm font-bold text-foreground">{selectedGroupForMembers.name}</h3>
 								<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-									ROSTER ANGGOTA
+									{i18n.t.contacts.roster_badge}
 								</span>
 								<span class="text-[10px] px-2 py-0.5 rounded-full font-mono uppercase bg-secondary text-muted-foreground border border-border">
 									{selectedGroupForMembers.platform}
@@ -1473,10 +1474,10 @@
 						</div>
 					</div>
 					<button 
-						type="button"
+						type="button" 
 						onclick={closeGroupMembers}
 						class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
-						title="Tutup dialog"
+						title={i18n.t.modals.close}
 					>
 						<XMark class="h-5 w-5" />
 					</button>
@@ -1487,14 +1488,14 @@
 					<div class="flex items-center justify-between font-semibold text-foreground">
 						<span class="flex items-center gap-1.5 text-primary">
 							<ShieldCheck class="h-3.5 w-3.5" />
-							<span>Resolusi Pengirim Multi-Device (`msg.key.participant`)</span>
+							<span>{i18n.t.contacts.roster_notice_title}</span>
 						</span>
 						<span class="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
 							BAILEYS &amp; FERDIUM READY
 						</span>
 					</div>
 					<p class="text-muted-foreground">
-						Ketika pesan masuk ke grup WhatsApp ini, gateway secara granular membaca nomor HP pengirim individual. Anggota bertanda <strong class="text-emerald-600 dark:text-emerald-400">Whitelisted</strong> dapat langsung memicu staging tiket AI tanpa disaring keluar.
+						{i18n.t.contacts.roster_notice_desc}
 					</p>
 				</div>
 
@@ -1505,25 +1506,25 @@
 						<input
 							type="text"
 							bind:value={memberSearchQuery}
-							placeholder="Cari nama anggota, nomor telepon/JID, atau role..."
+							placeholder={i18n.t.contacts.search_member}
 							class="w-full h-9 pl-9 pr-3 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground shadow-2xs focus:ring-1 focus:ring-ring"
 						/>
 					</div>
 
 					<div class="flex items-center justify-between text-[11px] px-1 text-muted-foreground flex-wrap gap-2">
 						<div class="flex items-center gap-2">
-							<span class="font-semibold text-foreground">Total: {selectedGroupForMembers.members?.length || 0} Anggota</span>
+							<span class="font-semibold text-foreground">{i18n.t.contacts.total_members.replace('{count}', String(selectedGroupForMembers.members?.length || 0))}</span>
 							<span class="text-border">·</span>
 							<span class="text-blue-600 dark:text-blue-400 font-medium">
-								{selectedGroupForMembers.members?.filter(m => m.role === 'ADMIN' || m.role === 'SUPERADMIN').length || 0} Admin
+								{selectedGroupForMembers.members?.filter(m => m.role === 'ADMIN' || m.role === 'SUPERADMIN').length || 0} {i18n.t.contacts.admin_count}
 							</span>
 							<span class="text-border">·</span>
 							<span class="text-emerald-600 dark:text-emerald-400 font-medium">
-								{selectedGroupForMembers.members?.filter(m => m.role === 'ON_CALL').length || 0} On-Call PIC
+								{selectedGroupForMembers.members?.filter(m => m.role === 'ON_CALL').length || 0} {i18n.t.contacts.oncall_count}
 							</span>
 						</div>
 						<div class="font-mono text-[10px]">
-							{selectedGroupForMembers.members?.filter(m => m.isWhitelisted).length || 0} Whitelisted
+							{selectedGroupForMembers.members?.filter(m => m.isWhitelisted).length || 0} {i18n.t.contacts.whitelisted}
 						</div>
 					</div>
 				</div>
@@ -1532,8 +1533,8 @@
 				<div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px] max-h-[360px]">
 					{#if filteredMembers.length === 0}
 						<div class="p-8 text-center rounded-xl border border-dashed border-border text-muted-foreground space-y-1">
-							<p class="text-xs font-semibold text-foreground">Tidak ditemukan anggota</p>
-							<p class="text-[11px]">Tidak ada peserta yang cocok dengan kata kunci "{memberSearchQuery}".</p>
+							<p class="text-xs font-semibold text-foreground">{i18n.t.contacts.no_members_found}</p>
+							<p class="text-[11px]">{i18n.t.common.no_data}</p>
 						</div>
 					{:else}
 						{#each filteredMembers as member (member.id)}
@@ -1577,7 +1578,7 @@
 								<div class="flex items-center gap-2 shrink-0">
 									<div class="text-right hidden sm:block">
 										<span class="text-[10px] font-mono font-semibold {member.isWhitelisted ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}">
-											{member.isWhitelisted ? "Whitelisted" : "Muted"}
+											{member.isWhitelisted ? i18n.t.contacts.whitelisted : "Muted"}
 										</span>
 									</div>
 									<button
@@ -1607,7 +1608,7 @@
 						onclick={closeGroupMembers}
 						class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs transition-colors cursor-pointer"
 					>
-						Selesai &amp; Tutup
+						{i18n.t.contacts.close_roster}
 					</button>
 				</div>
 			</div>

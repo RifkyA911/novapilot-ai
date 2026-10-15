@@ -18,6 +18,7 @@
 		CommandLine,
 		ArrowTopRightOnSquare
 	} from "svelte-heros-v2";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Database Connection Form States
 	let sysConfig = $state({
@@ -875,10 +876,10 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						Database &amp; MCP Connectors Setup
+						{i18n.t.connectors.title}
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Isolated architecture for <strong>System Internal Database</strong> (PostgreSQL Locked), <strong>MCP Reference Database</strong> (Multi-Platform SSL/SSH), and <strong>MCP Tool Catalog</strong>.
+						{i18n.t.connectors.subtitle}
 					</p>
 				</div>
 			</div>
@@ -1693,7 +1694,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'system' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<ServerStack class="h-3.5 w-3.5" />
-			<span>1. System Internal Database</span>
+			<span>1. {i18n.t.connectors.tab_system}</span>
 		</button>
 		<button
 			type="button"
@@ -1701,7 +1702,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CircleStack class="h-3.5 w-3.5" />
-			<span>2. MCP Reference Database</span>
+			<span>2. {i18n.t.connectors.tab_mcp}</span>
 		</button>
 		<button
 			type="button"
@@ -1709,7 +1710,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp_tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CommandLine class="h-3.5 w-3.5" />
-			<span>3. MCP Catalog &amp; Upload ({mcpTools.length})</span>
+			<span>3. {i18n.t.connectors.tab_tools} ({mcpTools.length})</span>
 		</button>
 		<button
 			type="button"
@@ -1717,7 +1718,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'env' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<ClipboardDocument class="h-3.5 w-3.5" />
-			<span>4. .env File Setup</span>
+			<span>4. {i18n.t.connectors.tab_env}</span>
 		</button>
 	</div>
 

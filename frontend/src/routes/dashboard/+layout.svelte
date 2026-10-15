@@ -146,7 +146,7 @@
 			]
 		},
 		{
-			title: "ChatOps Gateways",
+			title: i18n.t.nav.chatops_gateways,
 			items: [
 				{
 					href: "/dashboard/messages",
@@ -183,7 +183,7 @@
 				},
 				{
 					href: "/dashboard/simulator",
-					label: "Simulator",
+					label: i18n.t.nav.simulator,
 					icon: PaperAirplane,
 					iconColor: "text-foreground",
 					title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
@@ -213,7 +213,7 @@
 				},
 				{
 					href: "/dashboard/about",
-					label: "About & Repo",
+					label: i18n.t.nav.about,
 					icon: InformationCircle,
 					iconColor: "text-purple-500",
 					title: "About NovaPilot AI & Creator"
@@ -442,8 +442,8 @@
 				>
 					<span class="flex items-center gap-2 truncate">
 						<MagnifyingGlass class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-						<span class="hidden sm:inline truncate">Search menus, tickets, docs...</span>
-						<span class="sm:hidden">Search...</span>
+						<span class="hidden sm:inline truncate">{i18n.t.actions.search}</span>
+						<span class="sm:hidden">{i18n.t.actions.search}</span>
 					</span>
 					<kbd class="ml-2 inline-flex items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] text-muted-foreground shrink-0">
 						⌘K

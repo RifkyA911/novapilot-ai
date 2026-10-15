@@ -14,6 +14,7 @@
 		CpuChip,
 		ArrowPath
 	} from "svelte-heros-v2";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Active Tab State
 	let activeTab = $state<"dual-db" | "resources" | "tools" | "playground">("dual-db");
@@ -200,7 +201,7 @@
 </script>
 
 <svelte:head>
-	<title>Model Context Protocol (MCP) Knowledge • NovaPilot AI</title>
+	<title>{i18n.t.mcp.title} • NovaPilot AI</title>
 </svelte:head>
 
 <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full font-sans">
@@ -213,13 +214,13 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						MCP Knowledge Base & Dual-DB Architecture
+						{i18n.t.mcp.title}
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
 							SPECIFICATION v1.0
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Model Context Protocol (JSON-RPC 2.0) tooling, enterprise ERP data governance, dan spesifikasi pemisahan Dual-DB.
+						{i18n.t.mcp.subtitle}
 					</p>
 				</div>
 			</div>
@@ -246,7 +247,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'dual-db' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CircleStack class="h-4 w-4" />
-			<span>1. Arsitektur Isolasi Database</span>
+			<span>1. {i18n.t.mcp.tab_dual_db}</span>
 		</button>
 		<button
 			type="button"
@@ -254,7 +255,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'resources' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<DocumentText class="h-4 w-4" />
-			<span>2. MCP Resources ({mcpResources.length})</span>
+			<span>2. {i18n.t.mcp.tab_resources} ({mcpResources.length})</span>
 		</button>
 		<button
 			type="button"
@@ -262,7 +263,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CpuChip class="h-4 w-4" />
-			<span>3. MCP Tools Schema ({mcpTools.length})</span>
+			<span>3. {i18n.t.mcp.tab_tools} ({mcpTools.length})</span>
 		</button>
 		<button
 			type="button"
@@ -270,7 +271,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'playground' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CommandLine class="h-4 w-4" />
-			<span>4. Interactive Playground</span>
+			<span>4. {i18n.t.mcp.tab_playground}</span>
 		</button>
 	</div>
 

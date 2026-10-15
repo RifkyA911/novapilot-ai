@@ -26,6 +26,7 @@
 		CursorArrowRays
 	} from "svelte-heros-v2";
 	import { sound } from "$lib/audio";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Active Navigation Tab
 	type SettingsTab = "gatekeeper" | "ai_model" | "chatops" | "database" | "alerts" | "interface";
@@ -342,13 +343,13 @@
 				</div>
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						System Settings &amp; Gatekeeper Policies
+						{i18n.t.settings.title}
 						<span class="text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-							ENTERPRISE v2.4
+							{i18n.t.settings.enterprise_badge}
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Konfigurasi komprehensif pipeline AI, ambang batas SOP finansial, multiplatform ChatOps, dan arsitektur Dual-DB.
+						{i18n.t.settings.subtitle}
 					</p>
 				</div>
 			</div>
@@ -360,20 +361,20 @@
 				type="button"
 				onclick={exportConfigJSON}
 				class="h-9 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-				title="Ekspor seluruh konfigurasi ke berkas JSON"
+				title={i18n.t.settings.export_json}
 			>
 				<ArrowDownTray class="h-3.5 w-3.5 text-primary" />
-				<span class="hidden sm:inline">Ekspor JSON</span>
+				<span class="hidden sm:inline">{i18n.t.settings.export_json}</span>
 			</button>
 
 			<button
 				type="button"
 				onclick={() => resetConfirmOpen = true}
 				class="h-9 px-3 rounded-xl border border-destructive/30 hover:border-destructive/60 bg-card hover:bg-destructive/10 text-xs font-semibold text-destructive flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-				title="Reset seluruh pengaturan ke nilai default"
+				title={i18n.t.settings.reset_default}
 			>
 				<ArrowPath class="h-3.5 w-3.5" />
-				<span class="hidden sm:inline">Reset Default</span>
+				<span class="hidden sm:inline">{i18n.t.settings.reset_default}</span>
 			</button>
 
 			<button
@@ -384,12 +385,12 @@
 			>
 				{#if isSaving}
 					<ArrowPath class="h-3.5 w-3.5 animate-spin" />
-					<span>Menyimpan...</span>
+					<span>{i18n.t.settings.saving}</span>
 				{:else if saveSuccess}
 					<Check class="h-3.5 w-3.5 text-primary-foreground" />
-					<span>Tersimpan!</span>
+					<span>{i18n.t.settings.saved}</span>
 				{:else}
-					<span>Simpan Perubahan</span>
+					<span>{i18n.t.settings.save_changes}</span>
 				{/if}
 			</button>
 		</div>
@@ -400,9 +401,9 @@
 		<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-medium text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
 			<div class="flex items-center gap-2.5">
 				<Check class="h-4 w-4 text-emerald-500 shrink-0" />
-				<span>Seluruh konfigurasi sistem, kebijakan SOP, dan preferensi konektor berhasil disimpan ke penyimpanan lokal.</span>
+				<span>{i18n.t.settings.saved_toast}</span>
 			</div>
-			<span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Tersinkronisasi</span>
+			<span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{i18n.t.settings.synced}</span>
 		</div>
 	{/if}
 
@@ -411,7 +412,7 @@
 		<div class="p-4 rounded-2xl bg-destructive/10 border border-destructive/30 text-xs text-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
 			<div class="flex items-center gap-2.5">
 				<ExclamationTriangle class="h-4 w-4 text-destructive shrink-0" />
-				<span>Apakah Anda yakin ingin mereset seluruh preferensi dan kebijakan ke nilai default pabrik? Tindakan ini tidak dapat dibatalkan.</span>
+				<span>{i18n.t.settings.reset_confirm_title}</span>
 			</div>
 			<div class="flex items-center gap-2 shrink-0">
 				<button
@@ -419,14 +420,14 @@
 					onclick={() => resetConfirmOpen = false}
 					class="h-8 px-3 rounded-lg border border-border bg-card text-xs font-semibold cursor-pointer hover:bg-muted"
 				>
-					Batal
+					{i18n.t.settings.cancel}
 				</button>
 				<button
 					type="button"
 					onclick={resetToDefaults}
 					class="h-8 px-3 rounded-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-bold cursor-pointer shadow-2xs"
 				>
-					Ya, Reset Sekarang
+					{i18n.t.settings.confirm_reset}
 				</button>
 			</div>
 		</div>
@@ -442,7 +443,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'gatekeeper' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<ShieldCheck class="h-4 w-4" />
-			<span>Gatekeeper SOP</span>
+			<span>{i18n.t.settings.tab_gatekeeper}</span>
 		</button>
 
 		<button
@@ -451,7 +452,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'ai_model' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<Sparkles class="h-4 w-4" />
-			<span>Model AI &amp; Guardrails</span>
+			<span>{i18n.t.settings.tab_ai}</span>
 		</button>
 
 		<button
@@ -460,7 +461,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'chatops' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<ChatBubbleLeftRight class="h-4 w-4" />
-			<span>ChatOps &amp; Gateway</span>
+			<span>{i18n.t.settings.tab_chatops}</span>
 		</button>
 
 		<button
@@ -469,7 +470,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'database' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<CircleStack class="h-4 w-4" />
-			<span>Dual-DB &amp; MCP</span>
+			<span>{i18n.t.settings.tab_database}</span>
 		</button>
 
 		<button
@@ -478,7 +479,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'alerts' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<Bell class="h-4 w-4" />
-			<span>Alert &amp; Notifikasi</span>
+			<span>{i18n.t.settings.tab_alerts}</span>
 		</button>
 
 		<button
@@ -487,7 +488,7 @@
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'interface' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
 			<WrenchScrewdriver class="h-4 w-4" />
-			<span>Cockpit UI</span>
+			<span>{i18n.t.settings.tab_interface}</span>
 		</button>
 	</div>
 
@@ -506,8 +507,8 @@
 							<ShieldCheck class="h-4 w-4" />
 						</div>
 						<div>
-							<h3 class="text-sm font-bold text-foreground">Batas Threshold Nilai Faktur Tinggi (High-Value Policy)</h3>
-							<p class="text-xs text-muted-foreground">Faktur di atas nilai ini mewajibkan persetujuan ganda (Two-Man Rule / Supervisor Override).</p>
+							<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.threshold_title}</h3>
+							<p class="text-xs text-muted-foreground">{i18n.t.settings.threshold_desc}</p>
 						</div>
 					</div>
 					<span class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -582,8 +583,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Wajibkan Verifikasi Supervisor (Dual Sign-off)</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Memblokir eksekusi 1-klik untuk tiket di atas batas threshold tanpa konfirmasi akun level Supervisor.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.supervisor_override}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.supervisor_override_desc}</div>
 						</div>
 					</label>
 
@@ -594,8 +595,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Kunci Faktur Berstatus CLOSED / ARCHIVED</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Faktur yang telah ditutup atau direkonsiliasi di ERP tidak dapat diubah namanya sama sekali.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.block_closed}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.block_closed_desc}</div>
 						</div>
 					</label>
 
@@ -606,8 +607,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Wajibkan Alasan Audit Sebelum Eksekusi</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Teknisi on-call harus mengetik alasan atau melampirkan nomor memo resmi sebelum tombol Approve aktif.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.mandatory_audit_reason}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.mandatory_audit_reason_desc}</div>
 						</div>
 					</label>
 
@@ -618,8 +619,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Auto-Approve Typo Ringan (&lt; Rp 1 Juta)</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Otomatisasi 100% untuk perbaikan ejaan nama PT dengan jarak Levenshtein &le; 2 karakter pada grup whitelisted.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.auto_approve_low_risk}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.auto_approve_low_risk_desc}</div>
 						</div>
 					</label>
 				</div>
@@ -627,8 +628,8 @@
 				<!-- Rate Limiter Slider -->
 				<div class="pt-4 border-t border-border/60 space-y-2">
 					<div class="flex items-center justify-between text-xs">
-						<span class="font-semibold text-foreground">Rate Limiting Mutasi Ingress per Cabang:</span>
-						<span class="font-mono font-bold text-primary">{rateLimitPerBranch} request / menit</span>
+						<span class="font-semibold text-foreground">{i18n.t.settings.rate_limit}:</span>
+						<span class="font-mono font-bold text-primary">{rateLimitPerBranch} req/min</span>
 					</div>
 					<input
 						type="range"
@@ -639,7 +640,7 @@
 						class="w-full h-2 rounded-lg bg-secondary appearance-none cursor-pointer accent-primary"
 					/>
 					<p class="text-[11px] text-muted-foreground">
-						Membatasi frekuensi bot WhatsApp cabang agar tidak membanjiri antrean saat terjadi lonjakan pesan spam.
+						{i18n.t.settings.rate_limit_desc}
 					</p>
 				</div>
 			</div>
@@ -652,8 +653,8 @@
 			<!-- Section 2.1: Model Provider Selection -->
 			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
 				<div class="pb-3 border-b border-border/60">
-					<h3 class="text-sm font-bold text-foreground">Penyedia Model LLM (AI Inference Engine)</h3>
-					<p class="text-xs text-muted-foreground">Pilih model kecerdasan buatan yang bertugas mengekstraksi maksud, nama dokumen, dan entitas customer dari pesan chat.</p>
+					<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.ai_engine_title}</h3>
+					<p class="text-xs text-muted-foreground">{i18n.t.settings.ai_engine_desc}</p>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
@@ -666,7 +667,7 @@
 						<div>
 							<div class="flex items-center justify-between">
 								<span class="font-bold text-foreground">Gemini 2.5 Flash</span>
-								<span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-primary/20 text-primary">REKOMENDASI</span>
+								<span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-primary/20 text-primary">RECOMMENDED</span>
 							</div>
 							<p class="text-[11px] text-muted-foreground mt-1.5">Latensi ultra cepat &lt;200ms, format JSON terstruktur sangat stabil.</p>
 						</div>
@@ -725,7 +726,7 @@
 				<!-- API Key & Endpoint -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
 					<div class="space-y-1 text-xs">
-						<label for="ai-api-key" class="font-semibold text-foreground">API Key / Token Otentikasi:</label>
+						<label for="ai-api-key" class="font-semibold text-foreground">{i18n.t.settings.api_key}:</label>
 						<div class="relative">
 							<Key class="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
 							<input
@@ -751,7 +752,7 @@
 					</div>
 
 					<div class="space-y-1 text-xs">
-						<label for="ai-endpoint" class="font-semibold text-foreground">Base Endpoint URL Override:</label>
+						<label for="ai-endpoint" class="font-semibold text-foreground">{i18n.t.settings.api_endpoint}:</label>
 						<input
 							id="ai-endpoint"
 							type="text"
@@ -765,15 +766,15 @@
 			<!-- Section 2.2: Sliders & Guardrails -->
 			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
 				<h3 class="text-sm font-bold text-foreground pb-2 border-b border-border/60">
-					Parameter Inferensi &amp; Keamanan Prompt Injection
+					{i18n.t.settings.ai_engine_title}
 				</h3>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
 					<!-- Temperature -->
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<span class="font-semibold text-foreground">Temperatur Ekstraksi (Randomness):</span>
-							<span class="font-mono font-bold text-primary">{aiTemperature} (Deterministik)</span>
+							<span class="font-semibold text-foreground">{i18n.t.settings.temperature}:</span>
+							<span class="font-mono font-bold text-primary">{aiTemperature}</span>
 						</div>
 						<input
 							type="range"
@@ -791,7 +792,7 @@
 					<!-- Confidence Threshold -->
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<span class="font-semibold text-foreground">Confidence Threshold Minimal:</span>
+							<span class="font-semibold text-foreground">{i18n.t.settings.confidence_threshold}:</span>
 							<span class="font-mono font-bold text-emerald-500">{confidenceThreshold}%</span>
 						</div>
 						<input
@@ -816,8 +817,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Sanitasi Prompt Injection</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Blokir trik seperti "abaikan instruksi sebelumnya" atau "hapus seluruh tabel".</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.injection_defense}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.injection_defense_desc}</div>
 						</div>
 					</label>
 
@@ -828,8 +829,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Strict JSON Schema Output</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Memaksa AI mengeluarkan format JSON valid sesuai tipe Go struct tanpa markdown sampah.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.strict_json}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.strict_json_desc}</div>
 						</div>
 					</label>
 
@@ -840,8 +841,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">RAG Grounding ERP Master</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Cocokkan nama PT tujuan dengan daftar customer resmi yang tersimpan di database ERP.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.rag_grounding}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.rag_grounding_desc}</div>
 						</div>
 					</label>
 				</div>
@@ -860,8 +861,8 @@
 							<ChatBubbleLeftRight class="h-4 w-4" />
 						</div>
 						<div>
-							<h3 class="text-sm font-bold text-foreground">WhatsApp Gateway (Baileys Node.js Socket)</h3>
-							<p class="text-xs text-muted-foreground">Konfigurasi endpoint ingress gateway, template balasan otomatis, dan whitelist grup cabang.</p>
+							<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.chatops_title}</h3>
+							<p class="text-xs text-muted-foreground">{i18n.t.settings.chatops_desc}</p>
 						</div>
 					</div>
 					<span class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -871,7 +872,7 @@
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
 					<div class="space-y-1">
-						<label for="wa-gateway-url" class="font-semibold text-foreground">URL Endpoint Ingress Gateway:</label>
+						<label for="wa-gateway-url" class="font-semibold text-foreground">{i18n.t.settings.wa_gateway_url}:</label>
 						<input
 							id="wa-gateway-url"
 							type="text"
@@ -887,7 +888,7 @@
 								bind:checked={autoReplyEnabled}
 								class="h-4 w-4 rounded border-input text-primary focus:ring-primary"
 							/>
-							<span class="font-bold text-foreground">Kirim Balasan Otomatis (Auto-Reply ACK)</span>
+							<span class="font-bold text-foreground">{i18n.t.settings.auto_reply}</span>
 						</label>
 
 						<label class="flex items-center gap-2.5 cursor-pointer">
@@ -896,7 +897,7 @@
 								bind:checked={autoOcrEnabled}
 								class="h-4 w-4 rounded border-input text-primary focus:ring-primary"
 							/>
-							<span class="font-bold text-foreground">OCR Tesseract pada Lampiran</span>
+							<span class="font-bold text-foreground">{i18n.t.settings.auto_ocr}</span>
 						</label>
 					</div>
 				</div>
@@ -904,7 +905,7 @@
 				<!-- Template Auto-Reply -->
 				{#if autoReplyEnabled}
 					<div class="space-y-1.5 text-xs pt-2">
-						<label for="auto-reply-tpl" class="font-semibold text-foreground">Template Pesan Balasan WhatsApp (Dynamic Variables):</label>
+						<label for="auto-reply-tpl" class="font-semibold text-foreground">{i18n.t.settings.auto_reply_template}:</label>
 						<textarea
 							id="auto-reply-tpl"
 							bind:value={autoReplyTemplate}
@@ -912,7 +913,7 @@
 							class="w-full p-3 rounded-xl border border-input bg-secondary/30 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
 						></textarea>
 						<p class="text-[11px] text-muted-foreground">
-							Variabel yang didukung: <code class="font-mono text-primary font-bold">{'{sender_name}'}</code>, <code class="font-mono text-primary font-bold">{'{ticket_no}'}</code>, <code class="font-mono text-primary font-bold">{'{doc_no}'}</code>.
+							Variabel: <code class="font-mono text-primary font-bold">{'{sender_name}'}</code>, <code class="font-mono text-primary font-bold">{'{ticket_no}'}</code>, <code class="font-mono text-primary font-bold">{'{doc_no}'}</code>.
 						</p>
 					</div>
 				{/if}
@@ -920,7 +921,7 @@
 				<!-- Whitelist & Blacklist -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/60 text-xs">
 					<div class="space-y-1">
-						<label for="wa-whitelist" class="font-semibold text-foreground">Whitelist JID Grup Cabang (Pisahkan koma):</label>
+						<label for="wa-whitelist" class="font-semibold text-foreground">{i18n.t.settings.whitelisted_groups}:</label>
 						<textarea
 							id="wa-whitelist"
 							bind:value={whitelistedGroups}
@@ -931,7 +932,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="wa-blacklist" class="font-semibold text-foreground">Blacklist JID / Nomor Spam (Abaikan pesan):</label>
+						<label for="wa-blacklist" class="font-semibold text-foreground">{i18n.t.settings.blacklisted_jids}:</label>
 						<textarea
 							id="wa-blacklist"
 							bind:value={blacklistSpamJids}
@@ -946,7 +947,7 @@
 			<!-- Telegram, Discord & Slack Webhooks Section -->
 			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-4">
 				<div class="flex items-center justify-between pb-3 border-b border-border/60">
-					<h3 class="text-sm font-bold text-foreground">Kanal ChatOps Telegram, Discord &amp; Slack</h3>
+					<h3 class="text-sm font-bold text-foreground">Telegram, Discord &amp; Slack Gateways</h3>
 					<button
 						type="button"
 						onclick={testWebhookPing}
@@ -961,14 +962,14 @@
 							<span class="text-emerald-500 font-bold">Terkirim!</span>
 						{:else}
 							<Bolt class="h-3 w-3 text-primary" />
-							<span>Kirim Pesan Uji Coba</span>
+							<span>{i18n.t.settings.test_webhook}</span>
 						{/if}
 					</button>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
 					<div class="space-y-1">
-						<label for="tg-bot-token" class="font-semibold text-foreground">Telegram Bot Token:</label>
+						<label for="tg-bot-token" class="font-semibold text-foreground">{i18n.t.settings.telegram_token}:</label>
 						<input
 							id="tg-bot-token"
 							type="password"
@@ -979,7 +980,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="tg-chat-id" class="font-semibold text-foreground">Telegram Admin Alert Chat ID:</label>
+						<label for="tg-chat-id" class="font-semibold text-foreground">{i18n.t.settings.telegram_chat_id}:</label>
 						<input
 							id="tg-chat-id"
 							type="text"
@@ -989,7 +990,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="dc-webhook" class="font-semibold text-foreground">Discord Incoming Webhook URL:</label>
+						<label for="dc-webhook" class="font-semibold text-foreground">{i18n.t.settings.discord_webhook}:</label>
 						<input
 							id="dc-webhook"
 							type="text"
@@ -1000,7 +1001,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="sl-webhook" class="font-semibold text-foreground">Slack Incoming Webhook URL:</label>
+						<label for="sl-webhook" class="font-semibold text-foreground">{i18n.t.settings.slack_webhook}:</label>
 						<input
 							id="sl-webhook"
 							type="text"
@@ -1025,8 +1026,8 @@
 							<CircleStack class="h-4 w-4" />
 						</div>
 						<div>
-							<h3 class="text-sm font-bold text-foreground">DB 1: Cockpit Staging &amp; Audit Database (PostgreSQL)</h3>
-							<p class="text-xs text-muted-foreground">Penyimpanan internal antrean tiket, log percakapan WhatsApp, dan riwayat audit approval.</p>
+							<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.db_title}</h3>
+							<p class="text-xs text-muted-foreground">{i18n.t.settings.db_desc}</p>
 						</div>
 					</div>
 
@@ -1042,7 +1043,7 @@
 							<span>Menghubungi...</span>
 						{:else}
 							<Signal class="h-3 w-3 text-emerald-500" />
-							<span>Tes Koneksi (Ping)</span>
+							<span>{i18n.t.settings.test_db_conn}</span>
 						{/if}
 					</button>
 				</div>
@@ -1056,26 +1057,26 @@
 
 				<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
 					<div class="space-y-1">
-						<label for="db1-host" class="font-semibold text-muted-foreground">Host:</label>
+						<label for="db1-host" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_host}:</label>
 						<input id="db1-host" type="text" bind:value={pgHost} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 					<div class="space-y-1">
-						<label for="db1-port" class="font-semibold text-muted-foreground">Port:</label>
+						<label for="db1-port" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_port}:</label>
 						<input id="db1-port" type="text" bind:value={pgPort} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 					<div class="space-y-1">
-						<label for="db1-db" class="font-semibold text-muted-foreground">Database:</label>
+						<label for="db1-db" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_db}:</label>
 						<input id="db1-db" type="text" bind:value={pgDB} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 					<div class="space-y-1">
-						<label for="db1-user" class="font-semibold text-muted-foreground">Username:</label>
+						<label for="db1-user" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_user}:</label>
 						<input id="db1-user" type="text" bind:value={pgUser} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
 					<div class="space-y-1">
-						<label for="db1-pass" class="font-semibold text-muted-foreground">Password:</label>
+						<label for="db1-pass" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_password}:</label>
 						<div class="relative">
 							<input
 								id="db1-pass"
@@ -1099,12 +1100,12 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="db1-max-conn" class="font-semibold text-muted-foreground">Max Open Connections:</label>
+						<label for="db1-max-conn" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_max_conns}:</label>
 						<input id="db1-max-conn" type="number" bind:value={pgMaxConns} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 
 					<div class="space-y-1">
-						<label for="db1-idle-conn" class="font-semibold text-muted-foreground">Max Idle Connections:</label>
+						<label for="db1-idle-conn" class="font-semibold text-muted-foreground">{i18n.t.settings.pg_idle_conns}:</label>
 						<input id="db1-idle-conn" type="number" bind:value={pgIdleConns} class="w-full h-10 px-3 rounded-xl border border-input bg-secondary/30 font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
 					</div>
 				</div>
@@ -1130,7 +1131,7 @@
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
 					<div class="space-y-1">
-						<label for="erp-type" class="font-semibold text-foreground">Jenis Sistem ERP Target:</label>
+						<label for="erp-type" class="font-semibold text-foreground">{i18n.t.settings.target_erp}:</label>
 						<select
 							id="erp-type"
 							bind:value={targetErpType}
@@ -1144,7 +1145,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label for="mcp-endpoint" class="font-semibold text-foreground">Model Context Protocol (MCP) Endpoint:</label>
+						<label for="mcp-endpoint" class="font-semibold text-foreground">{i18n.t.settings.mcp_endpoint}:</label>
 						<input
 							id="mcp-endpoint"
 							type="text"
@@ -1164,11 +1165,11 @@
 						/>
 						<div>
 							<div class="text-xs font-bold text-foreground flex items-center gap-2">
-								Safe Dry-Run Mode (Simulasi Mutasi Terisolasi)
-								<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">AKTIF</span>
+								{i18n.t.settings.safe_dry_run}
+								<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">ACTIVE</span>
 							</div>
 							<div class="text-[11px] text-muted-foreground mt-0.5">
-								Bila aktif, persetujuan tiket hanya mensimulasikan mutasi SQL dengan <code class="font-mono text-emerald-500 font-bold">ROLLBACK</code> tanpa merusak database produksi ERP asli.
+								{i18n.t.settings.safe_dry_run_desc}
 							</div>
 						</div>
 					</label>
@@ -1187,8 +1188,8 @@
 							<SpeakerWave class="h-4 w-4" />
 						</div>
 						<div>
-							<h3 class="text-sm font-bold text-foreground">Efek Suara &amp; Audio Cues Cockpit</h3>
-							<p class="text-xs text-muted-foreground">Bunyikan nada lembut sintetik di browser saat ada tiket mendesak masuk ke antrean staging.</p>
+							<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.alerts_title}</h3>
+							<p class="text-xs text-muted-foreground">{i18n.t.settings.alerts_desc}</p>
 						</div>
 					</div>
 
@@ -1199,7 +1200,7 @@
 							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 						>
 							<SpeakerWave class="h-3.5 w-3.5 text-purple-500" />
-							<span>Uji Nada Dering</span>
+							<span>{i18n.t.settings.test_sound}</span>
 						</button>
 						<button
 							type="button"
@@ -1207,7 +1208,7 @@
 							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 						>
 							<CursorArrowRays class="h-3.5 w-3.5 text-primary" />
-							<span>Uji Klik Navigasi</span>
+							<span>{i18n.t.settings.test_nav_click}</span>
 						</button>
 					</div>
 				</div>
@@ -1221,14 +1222,14 @@
 							class="h-4 w-4 rounded border-input text-primary focus:ring-primary shrink-0 cursor-pointer"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Aktifkan Efek Suara (Audio Notification)</div>
-							<div class="text-[11px] text-muted-foreground">Memutar chord synthesizer saat webhook mendeteksi pesan berkategori ACTIONABLE.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.sound_alerts}</div>
+							<div class="text-[11px] text-muted-foreground">{i18n.t.settings.sound_alerts_desc}</div>
 						</div>
 					</label>
 
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<span class="font-semibold text-foreground">Volume Nada Suara:</span>
+							<span class="font-semibold text-foreground">{i18n.t.settings.sound_volume}:</span>
 							<span class="font-mono font-bold text-purple-500">{soundVolume}%</span>
 						</div>
 						<input
@@ -1257,10 +1258,10 @@
 						<div>
 							<div class="font-bold text-foreground flex items-center gap-2">
 								<CursorArrowRays class="h-4 w-4 text-primary" />
-								<span>Suara Navigasi Menu (Menu Navigation Sound Feedback)</span>
+								<span>{i18n.t.settings.nav_sound}</span>
 							</div>
 							<div class="text-[11px] text-muted-foreground mt-0.5">
-								Bunyikan haptic micro-click yang halus saat berpindah antar halaman atau mengklik item menu sidebar &amp; command palette.
+								{i18n.t.settings.nav_sound_desc}
 							</div>
 						</div>
 					</label>
@@ -1274,8 +1275,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Browser Desktop Push Notifications</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Tampilkan pop-up notifikasi OS Windows/Mac saat tab browser sedang berjalan di latar belakang.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.push_alerts}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.push_alerts_desc}</div>
 						</div>
 					</label>
 
@@ -1286,8 +1287,8 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Eskalasi Darurat Tiket High-Value</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Otomatis kirim broadcast ke channel Telegram SRE jika tiket &gt; Rp 50 Juta belum ditinjau dalam 15 menit.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.escalation}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.escalation_desc}</div>
 						</div>
 					</label>
 				</div>
@@ -1300,8 +1301,8 @@
 		<div class="space-y-6 animate-in fade-in duration-150">
 			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
 				<div class="pb-3 border-b border-border/60">
-					<h3 class="text-sm font-bold text-foreground">Preferensi Tampilan Cockpit &amp; Pengalaman Pengguna</h3>
-					<p class="text-xs text-muted-foreground">Atur tata letak tabel antrean, frekuensi polling telemetri, dan durasi penguncian sesi teknisi on-call.</p>
+					<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.ui_title}</h3>
+					<p class="text-xs text-muted-foreground">{i18n.t.settings.ui_desc}</p>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -1313,14 +1314,14 @@
 							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0"
 						/>
 						<div>
-							<div class="font-bold text-foreground">Mode Tabel Ramping (Compact View)</div>
-							<div class="text-[11px] text-muted-foreground mt-0.5">Kurangi padding vertikal baris tabel antrean dan kontak agar memuat lebih banyak baris di layar.</div>
+							<div class="font-bold text-foreground">{i18n.t.settings.compact_table}</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">{i18n.t.settings.compact_table_desc}</div>
 						</div>
 					</label>
 
 					<!-- Telemetry Refresh Rate -->
 					<div class="p-4 rounded-2xl border border-border/70 bg-secondary/20 space-y-2">
-						<div class="font-bold text-foreground">Interval Refresh Telemetri:</div>
+						<div class="font-bold text-foreground">{i18n.t.settings.telemetry_rate}:</div>
 						<select
 							bind:value={telemetryRefreshRate}
 							class="w-full h-9 px-3 rounded-xl border border-input bg-card text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
@@ -1336,7 +1337,7 @@
 
 					<!-- Session Auto-Lock -->
 					<div class="p-4 rounded-2xl border border-border/70 bg-secondary/20 space-y-2">
-						<div class="font-bold text-foreground">Kunci Sesi Otomatis (Idle Lock):</div>
+						<div class="font-bold text-foreground">{i18n.t.settings.session_lock}:</div>
 						<select
 							bind:value={sessionAutoLock}
 							class="w-full h-9 px-3 rounded-xl border border-input bg-card text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
@@ -1353,7 +1354,7 @@
 				<!-- Default Export Format -->
 				<div class="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
 					<div>
-						<div class="font-bold text-foreground">Format Ekspor Laporan Default:</div>
+						<div class="font-bold text-foreground">{i18n.t.settings.export_format}:</div>
 						<p class="text-[11px] text-muted-foreground">Format baku yang dipilih saat mengekspor riwayat audit dan direktori saluran.</p>
 					</div>
 

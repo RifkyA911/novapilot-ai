@@ -21,6 +21,7 @@
 		ArrowTopRightOnSquare
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Platform definitions with official logos
 	const platforms = [
@@ -486,13 +487,15 @@
 				</div>
 				<div>
 					<h1 class="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						<span>ChatOps Platform Settings & Logic Flows</span>
+						<span>{i18n.current === 'id' ? 'Pengaturan Platform & Alur Logika ChatOps' : 'ChatOps Platform Settings & Logic Flows'}</span>
 						<span class="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-medium border border-primary/20">
 							Multi-Channel Hub
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.
+						{i18n.current === 'id'
+							? 'Konfigurasi kredensial, filter whitelist, pembatasan laju (rate-limiting), dan logika ingesti tiap platform chat.'
+							: 'Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.'}
 					</p>
 				</div>
 			</div>
@@ -506,7 +509,7 @@
 				class="h-9 px-3 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
 			>
 				<ArrowPath class="h-4 w-4 {pinging ? 'animate-spin' : ''}" />
-				<span>{pinging ? "Testing..." : `Test ${selectedPlatform.name} Ingress`}</span>
+				<span>{pinging ? (i18n.current === 'id' ? 'Menguji...' : 'Testing...') : `${i18n.t.actions.test_connection} (${selectedPlatform.name})`}</span>
 			</button>
 
 			<button
@@ -517,9 +520,12 @@
 			>
 				{#if saveSuccess}
 					<Check class="h-4 w-4" />
-					<span>Saved!</span>
+					<span>{i18n.current === 'id' ? 'Tersimpan!' : 'Saved!'}</span>
+				{:else if saving}
+					<ArrowPath class="h-4 w-4 animate-spin" />
+					<span>{i18n.t.common.loading}</span>
 				{:else}
-					<span>Save Configuration</span>
+					<span>{i18n.t.actions.save}</span>
 				{/if}
 			</button>
 		</div>

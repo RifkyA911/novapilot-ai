@@ -14,6 +14,7 @@
 		PaperAirplane
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import InspectModal from "$lib/components/InspectModal.svelte";
 	import RejectModal from "$lib/components/RejectModal.svelte";
 	import { timeAgo } from "$lib/utils";
@@ -112,15 +113,15 @@
 				</div>
 				<div>
 					<h1 class="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						<span>Approval Queue</span>
+						<span>{i18n.t.queue.title}</span>
 						{#if cockpit.pendingCount > 0}
 							<span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">
-								{cockpit.pendingCount} pending
+								{cockpit.pendingCount} {i18n.t.status.pending}
 							</span>
 						{/if}
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Side-by-side verification diffs for incoming WhatsApp mutation requests. Zero raw SQL certified.
+						{i18n.t.queue.subtitle}
 					</p>
 				</div>
 			</div>
@@ -133,7 +134,7 @@
 				class="h-9 px-3 rounded-lg border border-input bg-background hover:bg-accent text-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer"
 			>
 				<ArrowPath class="h-4 w-4 {cockpit.loading ? 'animate-spin' : ''}" />
-				<span>Refresh</span>
+				<span>{i18n.t.actions.refresh}</span>
 			</button>
 		</div>
 	</div>
@@ -147,7 +148,7 @@
 				<input
 					type="text"
 					bind:value={searchQuery}
-					placeholder="Search ticket, invoice, customer, raw text..."
+					placeholder={i18n.t.queue.search_placeholder}
 					class="h-9 w-full rounded-md border border-input bg-background pl-9 pr-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-sans shadow-xs transition-colors"
 				/>
 				{#if searchQuery}
@@ -167,7 +168,7 @@
 					bind:value={filterBranch}
 					class="h-9 rounded-md border border-input bg-background px-3 text-sm font-sans text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
 				>
-					<option value="all">All Regional Branches</option>
+					<option value="all">{i18n.t.queue.all_branches}</option>
 					<option value="Surabaya HQ">Surabaya HQ</option>
 					<option value="Medan Hub">Medan Hub</option>
 					<option value="Semarang DC">Semarang DC</option>
@@ -181,9 +182,9 @@
 					bind:value={filterConfidence}
 					class="h-9 rounded-md border border-input bg-background px-3 text-sm font-sans text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
 				>
-					<option value="all">All Confidence Levels</option>
-					<option value="high">High Confidence (&ge; 90%)</option>
-					<option value="review">Needs Manual Review (&lt; 90%)</option>
+					<option value="all">{i18n.t.queue.all_confidence}</option>
+					<option value="high">{i18n.t.queue.high_confidence}</option>
+					<option value="review">{i18n.t.queue.needs_review}</option>
 				</select>
 			</div>
 		</div>
@@ -195,9 +196,9 @@
 				bind:value={sortBy}
 				class="h-9 rounded-md border border-input bg-background px-3 text-sm font-sans text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
 			>
-				<option value="newest">Newest First</option>
-				<option value="oldest">Oldest First</option>
-				<option value="confidence">Highest Confidence</option>
+				<option value="newest">{i18n.t.queue.sort_newest}</option>
+				<option value="oldest">{i18n.t.queue.sort_oldest}</option>
+				<option value="confidence">{i18n.t.queue.sort_confidence}</option>
 			</select>
 		</div>
 	</div>
@@ -208,11 +209,11 @@
 			<div class="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
 				<CheckCircle class="h-6 w-6" />
 			</div>
-			<div class="text-base font-semibold text-foreground">No Pending Tickets</div>
+			<div class="text-base font-semibold text-foreground">{i18n.t.queue.no_pending}</div>
 			<p class="text-xs text-muted-foreground max-w-md mx-auto">
 				{searchQuery || filterBranch !== "all" || filterConfidence !== "all" 
-					? "No tickets match your active search filters. Try clearing filters."
-					: "The queue is clean! All inbound WhatsApp requests have been reviewed."}
+					? i18n.t.queue.no_match_desc
+					: i18n.t.queue.no_pending_desc}
 			</p>
 			{#if searchQuery || filterBranch !== "all" || filterConfidence !== "all"}
 				<button
@@ -220,7 +221,7 @@
 					onclick={() => { searchQuery = ""; filterBranch = "all"; filterConfidence = "all"; }}
 					class="px-3 py-1.5 rounded-lg border border-input bg-background hover:bg-muted text-xs font-medium cursor-pointer"
 				>
-					Clear All Filters
+					{i18n.t.queue.clear_filters}
 				</button>
 			{:else}
 				<a
@@ -228,7 +229,7 @@
 					class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
 				>
 					<PaperAirplane class="h-3.5 w-3.5" />
-					<span>Send Simulated Inbound Chat</span>
+					<span>{i18n.t.queue.send_simulated}</span>
 				</a>
 			{/if}
 		</div>
@@ -247,23 +248,23 @@
 								</span>
 							{/if}
 							<span class="text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold {ticket.confidence_score >= 0.9 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">
-								{(ticket.confidence_score * 100).toFixed(0)}% AI Confidence
+								{(ticket.confidence_score * 100).toFixed(0)}% {i18n.t.queue.ai_confidence}
 							</span>
 						</div>
 
 						<div class="text-[11px] font-mono text-muted-foreground">
-							Received {timeAgo(ticket.created_at)}
+							{i18n.t.queue.received} {timeAgo(ticket.created_at, i18n.current)}
 						</div>
 					</div>
 
 					<!-- Side by Side Diff Comparison -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border text-xs font-mono">
 						<div class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
-							<div class="text-[10px] text-muted-foreground font-sans">CURRENT DATABASE STATE ({ticket.field_target}):</div>
+							<div class="text-[10px] text-muted-foreground font-sans">{i18n.t.queue.current_db_state} ({ticket.field_target}):</div>
 							<div class="font-bold line-through mt-0.5">{ticket.current_value}</div>
 						</div>
 						<div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-							<div class="text-[10px] text-muted-foreground font-sans">PROPOSED MUTATION:</div>
+							<div class="text-[10px] text-muted-foreground font-sans">{i18n.t.queue.proposed_mutation}:</div>
 							<div class="font-bold mt-0.5">{ticket.proposed_value}</div>
 						</div>
 					</div>
@@ -276,7 +277,7 @@
 					<!-- Document Attachments if any -->
 					{#if ticket.documents && ticket.documents.length > 0}
 						<div class="pt-2 flex items-center gap-2 flex-wrap">
-							<span class="text-[11px] font-mono text-muted-foreground">Proof Attachments:</span>
+							<span class="text-[11px] font-mono text-muted-foreground">{i18n.t.queue.proof_attachments}</span>
 							{#each ticket.documents as doc}
 								<a
 									href={doc.file_path}
@@ -297,10 +298,10 @@
 							type="button"
 							onclick={() => (inspectedTicket = ticket)}
 							class="h-8 px-3 rounded-lg border border-input bg-background hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
-							title="Inspect Prepared SQL and Schema Diffs"
+							title={i18n.t.queue.inspect_plan}
 						>
 							<Eye class="h-3.5 w-3.5" />
-							<span>Inspect Plan</span>
+							<span>{i18n.t.queue.inspect_plan}</span>
 						</button>
 
 						<div class="flex items-center gap-2">
@@ -309,7 +310,7 @@
 								onclick={() => (selectedTicketForReject = ticket)}
 								class="h-8 px-3 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs font-medium cursor-pointer transition-colors"
 							>
-								Reject
+								{i18n.t.queue.reject}
 							</button>
 
 							<button
@@ -319,7 +320,7 @@
 								class="h-8 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs transition-colors"
 							>
 								<Check class="h-3.5 w-3.5" />
-								<span>Approve & Mutate</span>
+								<span>{i18n.t.queue.approve_mutate}</span>
 							</button>
 						</div>
 					</div>

@@ -21,6 +21,9 @@ export interface Translations {
 		logs: string;
 		settings: string;
 		flows: string;
+		about: string;
+		simulator: string;
+		chatops_gateways: string;
 	};
 	actions: {
 		approve: string;
@@ -39,6 +42,11 @@ export interface Translations {
 		copied: string;
 		view_details: string;
 		close: string;
+		inspect: string;
+		clear: string;
+		confirm: string;
+		back: string;
+		next: string;
 	};
 	status: {
 		pending: string;
@@ -51,6 +59,9 @@ export interface Translations {
 		connected: string;
 		disconnected: string;
 		healthy: string;
+		active: string;
+		standby: string;
+		whitelisted: string;
 	};
 	agents: {
 		hub_title: string;
@@ -75,6 +86,466 @@ export interface Translations {
 		task_instruction: string;
 		dispatch_to_openclaw: string;
 		stage_to_approval: string;
+		model_architecture: string;
+		execution_mode: string;
+		offline_resilience: string;
+		offline_resilience_sub: string;
+		cli_detected: string;
+		cli_active: string;
+		cli_using: string;
+		cli_activate: string;
+		config_title: string;
+		config_subtitle: string;
+		save_config: string;
+		saving: string;
+		saved: string;
+		mode_label: string;
+		mode_auto: string;
+		mode_cli: string;
+		mode_http: string;
+		base_url_label: string;
+		model_name_label: string;
+		cli_path_label: string;
+		interactive_console: string;
+		prompt_label_chat: string;
+		branch_context_label: string;
+		run_inference: string;
+		running_inference: string;
+		inference_result: string;
+		copy_code: string;
+		copied: string;
+		staging_ticket_queue: string;
+		staging_in_progress: string;
+		prompt_hint: string;
+		openclaw_config_title: string;
+		openclaw_config_desc: string;
+		openclaw_test_endpoint: string;
+		browser_mode_label: string;
+		openclaw_disconnected_title: string;
+		openclaw_disconnected_desc: string;
+		check_connection: string;
+		checking: string;
+	};
+	overview: {
+		guardrail_title: string;
+		active_guard: string;
+		guardrail_desc: string;
+		sse_live: string;
+		sse_offline: string;
+		refresh: string;
+		stage_simulator: string;
+		kpi_pending: string;
+		kpi_pending_sub: string;
+		kpi_executed: string;
+		kpi_executed_sub: string;
+		kpi_rejected: string;
+		kpi_rejected_sub: string;
+		kpi_safety: string;
+		kpi_safety_sub: string;
+		queue_preview_title: string;
+		queue_preview_desc: string;
+		history_preview_title: string;
+		history_preview_desc: string;
+		view_all: string;
+		empty_queue: string;
+		empty_history: string;
+		pipeline_title: string;
+		pipeline_standby: string;
+		expand_pipeline: string;
+		fold_pipeline: string;
+		needs_review_title: string;
+		needs_review_desc: string;
+		review_stage_btn: string;
+		traffic_title: string;
+		traffic_badge: string;
+		traffic_subtitle: string;
+		cockpit_btn: string;
+		chart_volume_title: string;
+		chart_total_intake: string;
+		chart_approved: string;
+		channel_share_title: string;
+		channel_total_ingress: string;
+	};
+	cockpit: {
+		title: string;
+		subtitle: string;
+		preview_notice_title: string;
+		preview_notice_desc: string;
+		intent_accuracy: string;
+		intent_accuracy_sub: string;
+		ocr_precision: string;
+		ocr_precision_sub: string;
+		avg_latency: string;
+		avg_latency_sub: string;
+		gatekeeper_block_rate: string;
+		gatekeeper_block_rate_sub: string;
+		circuit_title: string;
+		circuit_desc: string;
+		benchmark_title: string;
+		benchmark_desc: string;
+	};
+	queue: {
+		title: string;
+		subtitle: string;
+		search_placeholder: string;
+		all_branches: string;
+		all_confidence: string;
+		high_confidence: string;
+		needs_review: string;
+		sort_newest: string;
+		sort_oldest: string;
+		sort_confidence: string;
+		no_pending: string;
+		no_pending_desc: string;
+		no_match_desc: string;
+		clear_filters: string;
+		send_simulated: string;
+		received: string;
+		current_db_state: string;
+		proposed_mutation: string;
+		proof_attachments: string;
+		inspect_plan: string;
+		reject: string;
+		approve_mutate: string;
+		ai_confidence: string;
+	};
+	history: {
+		title: string;
+		records_count: string;
+		subtitle: string;
+		export_json: string;
+		refresh: string;
+		total_executed: string;
+		total_executed_sub: string;
+		policy_rejections: string;
+		policy_rejections_sub: string;
+		rollback_safety: string;
+		rollback_safety_sub: string;
+		table_title: string;
+		table_subtitle: string;
+		search_placeholder: string;
+		empty_message: string;
+		col_ticket: string;
+		col_doc: string;
+		col_branch: string;
+		col_mutation: string;
+		col_status: string;
+		col_approved_by: string;
+		col_executed_at: string;
+		col_actions: string;
+		filter_all: string;
+		filter_executed: string;
+		filter_rejected: string;
+		filter_approved: string;
+		modal_rollback_title: string;
+		modal_copy_script: string;
+		modal_copied: string;
+		modal_raw_msg: string;
+		modal_close: string;
+		originally: string;
+		rollback_btn: string;
+	};
+	modals: {
+		inspect_title: string;
+		target_engine: string;
+		relational_sql: string;
+		non_relational_bson: string;
+		zero_sql_guard: string;
+		diff_title: string;
+		current_val: string;
+		proposed_val: string;
+		prepared_query: string;
+		rollback_script: string;
+		audit_metadata: string;
+		close: string;
+		reject_title: string;
+		reject_desc: string;
+		reason_label: string;
+		reason_placeholder: string;
+		cancel: string;
+		confirm_reject: string;
+		rejecting: string;
+	};
+	messages: {
+		title: string;
+		subtitle: string;
+		search_placeholder: string;
+		all_platforms: string;
+		all_classes: string;
+		actionable: string;
+		needs_review: string;
+		casual_banter: string;
+		stage_ticket: string;
+		learn_pattern: string;
+		open_terminal: string;
+		no_messages: string;
+		no_messages_desc: string;
+		total_messages_kpi: string;
+		total_messages_sub: string;
+		actionable_kpi: string;
+		actionable_sub: string;
+		needs_review_kpi: string;
+		needs_review_sub: string;
+		casual_banter_kpi: string;
+		casual_banter_sub: string;
+		terminal_btn: string;
+		pattern_memory_btn: string;
+		hermes_engine_btn: string;
+		platform_flows_btn: string;
+	};
+	contacts: {
+		title: string;
+		subtitle: string;
+		monitoring_active: string;
+		add_contact: string;
+		e2e_flow: string;
+		search_placeholder: string;
+		filter_platform: string;
+		filter_status: string;
+		active: string;
+		whitelisted: string;
+		total_messages: string;
+		latency: string;
+		last_active: string;
+		topology_title: string;
+		topology_subtitle: string;
+		inbound_stream: string;
+		verified_channels: string;
+		stat_channels: string;
+		stat_groups: string;
+		stat_hotlines: string;
+		stat_health: string;
+		stat_uptime: string;
+		stat_yield: string;
+		stat_staged_tickets: string;
+		stat_gatekeeper: string;
+		stat_muted: string;
+		table_title: string;
+		table_subtitle: string;
+		table_search_placeholder: string;
+		col_channel: string;
+		col_platform: string;
+		col_jid: string;
+		col_probe: string;
+		col_telemetry: string;
+		col_whitelist: string;
+		col_actions: string;
+		filter_group: string;
+		filter_individual: string;
+		empty_table: string;
+		action_sim: string;
+		action_sent: string;
+		action_delete: string;
+		modal_add_title: string;
+		modal_add_subtitle: string;
+		channel_type: string;
+		type_group: string;
+		type_group_sub: string;
+		type_individual: string;
+		type_individual_sub: string;
+		platform_label: string;
+		channel_name: string;
+		name_placeholder_group: string;
+		name_placeholder_individual: string;
+		jid_label: string;
+		jid_guide_open: string;
+		jid_guide_close: string;
+		auto_convert_phone: string;
+		branch_label: string;
+		branch_impact_title: string;
+		branch_impact_desc: string;
+		pic_name: string;
+		pic_phone: string;
+		auto_whitelist_label: string;
+		auto_whitelist_desc: string;
+		cancel: string;
+		save_channel: string;
+		modal_delete_title: string;
+		modal_delete_desc: string;
+		delete_warning: string;
+		confirm_delete: string;
+		roster_badge: string;
+		roster_notice_title: string;
+		roster_notice_desc: string;
+		search_member: string;
+		total_members: string;
+		admin_count: string;
+		oncall_count: string;
+		no_members_found: string;
+		close_roster: string;
+	};
+	connectors: {
+		title: string;
+		subtitle: string;
+		tab_system: string;
+		tab_mcp: string;
+		tab_tools: string;
+		tab_env: string;
+		test_connection: string;
+		apply_changes: string;
+		pool_stats: string;
+		open_connections: string;
+		in_use: string;
+		idle: string;
+		max_open: string;
+	};
+	mcp: {
+		title: string;
+		subtitle: string;
+		tab_dual_db: string;
+		tab_resources: string;
+		tab_tools: string;
+		tab_playground: string;
+		sop_policy: string;
+		branches_directory: string;
+		execute_tool: string;
+	};
+	telemetry: {
+		title: string;
+		subtitle: string;
+		service_status: string;
+		uptime: string;
+		memory_rss: string;
+		goroutines: string;
+		test_ping: string;
+		ping_success: string;
+	};
+	logs: {
+		title: string;
+		subtitle: string;
+		search_placeholder: string;
+		all_levels: string;
+		all_services: string;
+		auto_scroll: string;
+		pause_stream: string;
+		resume_stream: string;
+		clear_logs: string;
+		export_logs: string;
+		total_entries: string;
+		no_logs_match: string;
+	};
+	settings: {
+		title: string;
+		subtitle: string;
+		enterprise_badge: string;
+		export_json: string;
+		reset_default: string;
+		save_changes: string;
+		saving: string;
+		saved: string;
+		saved_toast: string;
+		synced: string;
+		reset_confirm_title: string;
+		cancel: string;
+		confirm_reset: string;
+		tab_gatekeeper: string;
+		tab_ai: string;
+		tab_chatops: string;
+		tab_database: string;
+		tab_alerts: string;
+		tab_interface: string;
+		threshold_title: string;
+		threshold_desc: string;
+		supervisor_override: string;
+		supervisor_override_desc: string;
+		block_closed: string;
+		block_closed_desc: string;
+		auto_approve_low_risk: string;
+		auto_approve_low_risk_desc: string;
+		mandatory_audit_reason: string;
+		mandatory_audit_reason_desc: string;
+		rate_limit: string;
+		rate_limit_desc: string;
+		ai_engine_title: string;
+		ai_engine_desc: string;
+		model_provider: string;
+		api_key: string;
+		api_endpoint: string;
+		temperature: string;
+		confidence_threshold: string;
+		injection_defense: string;
+		injection_defense_desc: string;
+		strict_json: string;
+		strict_json_desc: string;
+		rag_grounding: string;
+		rag_grounding_desc: string;
+		chatops_title: string;
+		chatops_desc: string;
+		wa_gateway_url: string;
+		auto_reply: string;
+		auto_reply_desc: string;
+		auto_reply_template: string;
+		auto_ocr: string;
+		auto_ocr_desc: string;
+		whitelisted_groups: string;
+		blacklisted_jids: string;
+		telegram_token: string;
+		telegram_chat_id: string;
+		discord_webhook: string;
+		slack_webhook: string;
+		test_webhook: string;
+		db_title: string;
+		db_desc: string;
+		pg_host: string;
+		pg_port: string;
+		pg_db: string;
+		pg_user: string;
+		pg_password: string;
+		pg_max_conns: string;
+		pg_idle_conns: string;
+		target_erp: string;
+		mcp_endpoint: string;
+		safe_dry_run: string;
+		safe_dry_run_desc: string;
+		test_db_conn: string;
+		alerts_title: string;
+		alerts_desc: string;
+		sound_alerts: string;
+		sound_alerts_desc: string;
+		test_sound: string;
+		sound_volume: string;
+		nav_sound: string;
+		nav_sound_desc: string;
+		test_nav_click: string;
+		push_alerts: string;
+		push_alerts_desc: string;
+		escalation: string;
+		escalation_desc: string;
+		idle_minutes: string;
+		ui_title: string;
+		ui_desc: string;
+		compact_table: string;
+		compact_table_desc: string;
+		telemetry_rate: string;
+		session_lock: string;
+		export_format: string;
+	};
+	simulator: {
+		title: string;
+		subtitle: string;
+		banner_title: string;
+		banner_desc: string;
+		run_simulation: string;
+		step_1: string;
+		step_2: string;
+		step_3: string;
+		step_4: string;
+		chat_msg_label: string;
+		branch_source_label: string;
+		invoice_target_label: string;
+		value_target_label: string;
+		exec_pipeline_btn: string;
+		executing_pipeline: string;
+	};
+	about: {
+		badge: string;
+		title: string;
+		subtitle: string;
+		open_github: string;
+		copy_clone: string;
+		copied: string;
+		architecture_title: string;
+		creator_title: string;
 	};
 	common: {
 		loading: string;
@@ -108,7 +579,10 @@ const dictionaries: Record<Locale, Translations> = {
 			telemetry: "Telemetri Sistem",
 			logs: "Log Sistem",
 			settings: "Pengaturan",
-			flows: "Platform Flows"
+			flows: "Platform Flows",
+			about: "Tentang Kami",
+			simulator: "Simulator",
+			chatops_gateways: "ChatOps Gateways"
 		},
 		actions: {
 			approve: "Setujui",
@@ -126,7 +600,12 @@ const dictionaries: Record<Locale, Translations> = {
 			copy: "Salin",
 			copied: "Tersalin",
 			view_details: "Lihat Rincian",
-			close: "Tutup"
+			close: "Tutup",
+			inspect: "Inspeksi",
+			clear: "Bersihkan",
+			confirm: "Konfirmasi",
+			back: "Kembali",
+			next: "Lanjut"
 		},
 		status: {
 			pending: "Menunggu Persetujuan",
@@ -138,7 +617,10 @@ const dictionaries: Record<Locale, Translations> = {
 			offline: "OFFLINE",
 			connected: "Terhubung",
 			disconnected: "Terputus",
-			healthy: "Optimal"
+			healthy: "Optimal",
+			active: "Aktif",
+			standby: "Standby",
+			whitelisted: "Terverifikasi"
 		},
 		agents: {
 			hub_title: "AI Agents Hub",
@@ -156,13 +638,473 @@ const dictionaries: Record<Locale, Translations> = {
 			branch_context: "Konteks Cabang Regional:",
 			presets_label: "Preset Skenario Percakapan:",
 			gateway_service: "Gateway Service",
-			browser_driver: "Browser Driver",
+			browser_driver: "Driver Browser",
 			safety_gate: "Supervisor Gate",
 			task_capacity: "Kapasitas Worker",
 			task_registry: "Daftar Tugas Otonom (Task Registry)",
 			task_instruction: "Instruksi Tugas (Prompt Eksekusi):",
 			dispatch_to_openclaw: "Kirim ke OpenClaw",
-			stage_to_approval: "Stage ke Approval"
+			stage_to_approval: "Stage ke Approval",
+			model_architecture: "Arsitektur Model",
+			execution_mode: "Mode Eksekusi",
+			offline_resilience: "Ketahanan Offline",
+			offline_resilience_sub: "Fallback offline tanpa downtime",
+			cli_detected: "TERDETEKSI",
+			cli_active: "ENGINE AKTIF",
+			cli_using: "Menggunakan CLI",
+			cli_activate: "Gunakan Engine CLI",
+			config_title: "Konfigurasi Endpoint & Model Hermes",
+			config_subtitle: "Koneksi lokal ke instance Ollama, vLLM, atau wrapper CLI Hermes.",
+			save_config: "Simpan Konfigurasi",
+			saving: "Menyimpan...",
+			saved: "Konfigurasi LLM berhasil disimpan ke runtime NovaPilot!",
+			mode_label: "Mode Eksekusi",
+			mode_auto: "Auto (Prioritas Ollama HTTP, Fallback Heuristic)",
+			mode_cli: "CLI Native (hermes.cmd)",
+			mode_http: "HTTP Dedicated (Ollama / vLLM)",
+			base_url_label: "Base URL API",
+			model_name_label: "Nama Model LLM",
+			cli_path_label: "Path CLI Executable",
+			interactive_console: "Konsol Prompt Interaktif",
+			prompt_label_chat: "Pesan / Perintah Chat:",
+			branch_context_label: "Konteks Cabang Regional:",
+			run_inference: "Jalankan Inferensi",
+			running_inference: "Menganalisis Penalaran...",
+			inference_result: "Hasil Inferensi & Ekstraksi",
+			copy_code: "Salin",
+			copied: "Tersalin!",
+			staging_ticket_queue: "Stage ke Antrean Approval (PostgreSQL)",
+			staging_in_progress: "Menyimpan Tiket...",
+			prompt_hint: 'Ketik prompt dan klik "Jalankan Inferensi" untuk melihat penalaran Hermes 3.',
+			openclaw_config_title: "Konfigurasi Gateway & Driver Browser",
+			openclaw_config_desc: "Parameter koneksi ke service OpenClaw dan instance headless browser.",
+			openclaw_test_endpoint: "Test Endpoint",
+			browser_mode_label: "Mode Browser Chromium",
+			openclaw_disconnected_title: "OpenClaw Gateway belum terdeteksi aktif di {url}",
+			openclaw_disconnected_desc: "NovaPilot siap mengintegrasikan alur tugas otonom. Untuk mengaktifkan eksekusi browser Playwright lokal, jalankan perintah berikut di terminal:",
+			check_connection: "Cek Ulang Koneksi",
+			checking: "Mengecek..."
+		},
+		overview: {
+			guardrail_title: "Guardrail Assurance & Intake Engine",
+			active_guard: "Active Guard",
+			guardrail_desc: "Validasi otomatis mutasi faktur terhadap batasan skema dan proteksi injeksi raw SQL/NoSQL.",
+			sse_live: "SSE Live EventBus",
+			sse_offline: "SSE Terputus",
+			refresh: "Muat Ulang",
+			stage_simulator: "Stage via Simulator",
+			kpi_pending: "Mutasi Tertunda",
+			kpi_pending_sub: "Menunggu persetujuan on-call",
+			kpi_executed: "Tereksekusi Hari Ini",
+			kpi_executed_sub: "Tersimpan ke database",
+			kpi_rejected: "Permintaan Ditolak",
+			kpi_rejected_sub: "Pelanggaran SOP diblokir",
+			kpi_safety: "Tingkat Keamanan",
+			kpi_safety_sub: "Bebas raw SQL langsung",
+			queue_preview_title: "Antrean Persetujuan Terbaru",
+			queue_preview_desc: "Tiket mutasi faktur yang memerlukan verifikasi manual.",
+			history_preview_title: "Riwayat Eksekusi Terbaru",
+			history_preview_desc: "Transaksi mutasi yang baru saja disetujui dan diaudit.",
+			view_all: "Lihat Semua",
+			empty_queue: "Beres! Tidak ada tiket tertunda dalam antrean.",
+			empty_history: "Belum ada riwayat eksekusi.",
+			pipeline_title: "Alur Ingesti Real-Time:",
+			pipeline_standby: "Mode Siaga",
+			expand_pipeline: "Buka Detail Alur",
+			fold_pipeline: "Tutup ke Ringkasan Alur",
+			needs_review_title: "{count} Pesan Masuk Memerlukan Review Operator",
+			needs_review_desc: "Pesan masuk terdeteksi memuat instruksi mutasi tanpa nomor faktur eksplisit.",
+			review_stage_btn: "Review & Buat Tiket",
+			traffic_title: "Tren Operasional & Trafik Masuk Lintas Kanal",
+			traffic_badge: "METRIK 7 HARI",
+			traffic_subtitle: "Volume pesan harian, perbandingan intake otomatis vs persetujuan operator, dan distribusi kanal.",
+			cockpit_btn: "Cockpit Overview [Metrik AI] →",
+			chart_volume_title: "Volume Pesan Masuk vs Tiket Tereksekusi",
+			chart_total_intake: "Total Intake",
+			chart_approved: "Mutasi Disetujui (MCP)",
+			channel_share_title: "Pangsa Kanal ChatOps",
+			channel_total_ingress: "500 Total Ingress"
+		},
+		cockpit: {
+			title: "Cockpit Overview & Analitik AI",
+			subtitle: "Analisa komprehensif performa inferensi AI, akurasi OCR Tesseract, visualisasi sirkuit ChatOps, dan invariant transaksi SQL.",
+			preview_notice_title: "Mode Pratinjau Model & Evaluasi (Synthetic Preview):",
+			preview_notice_desc: "Metrik di halaman ini merefleksikan benchmark operasional NovaPilot AI (Tesseract Vision + Local Small LLM Gatekeeper + PostgreSQL 18 Local). Data telah dikurasi untuk simulasi beban kerja pabrik dan audit compliance.",
+			intent_accuracy: "AKURASI INTENT",
+			intent_accuracy_sub: "Ekstraksi entitas model Hermes 3",
+			ocr_precision: "PRESISI OCR TESSERACT",
+			ocr_precision_sub: "Ekstraksi digit gambar faktur",
+			avg_latency: "RATA-RATA LATENSI PIPELINE",
+			avg_latency_sub: "Dari pesan masuk hingga tiket staged",
+			gatekeeper_block_rate: "TINGKAT BLOKIR GATEKEEPER",
+			gatekeeper_block_rate_sub: "Akses raw SQL ilegal dicegah",
+			circuit_title: "Topologi Ingress ChatOps & Pool Database",
+			circuit_desc: "Sirkuit arsitektur interaktif real-time yang menampilkan aliran telemetri antara daemon pesan, inferensi AI, dan koneksi database.",
+			benchmark_title: "Matrix Benchmark & Evaluasi Model",
+			benchmark_desc: "Komparasi akurasi inferensi antara model penalaran lokal dan cloud."
+		},
+		queue: {
+			title: "Antrean Persetujuan",
+			subtitle: "Perbandingan diff verifikasi berdampingan untuk permintaan mutasi pesan masuk. Bersertifikasi zero raw SQL.",
+			search_placeholder: "Cari nomor tiket, faktur, nama pelanggan, teks pesan...",
+			all_branches: "Semua Cabang Regional",
+			all_confidence: "Semua Tingkat Keyakinan",
+			high_confidence: "Keyakinan Tinggi (≥ 90%)",
+			needs_review: "Perlu Review Manual (< 90%)",
+			sort_newest: "Terbaru Dulu",
+			sort_oldest: "Terlama Dulu",
+			sort_confidence: "Keyakinan Tertinggi",
+			no_pending: "Tidak Ada Tiket Tertunda",
+			no_pending_desc: "Antrean bersih! Semua permintaan pesan masuk telah selesai ditinjau.",
+			no_match_desc: "Tidak ada tiket yang cocok dengan filter pencarian aktif. Coba bersihkan filter.",
+			clear_filters: "Bersihkan Semua Filter",
+			send_simulated: "Kirim Percakapan Simulasi",
+			received: "Diterima",
+			current_db_state: "KONDISI DATABASE SAAT INI",
+			proposed_mutation: "MUTASI YANG DIAJUKAN",
+			proof_attachments: "Lampiran Bukti:",
+			inspect_plan: "Inspeksi Rencana",
+			reject: "Tolak",
+			approve_mutate: "Setujui & Mutasikan",
+			ai_confidence: "Keyakinan AI"
+		},
+		history: {
+			title: "Riwayat Eksekusi & Jejak Audit",
+			records_count: "catatan audit",
+			subtitle: "Catatan anti-manipulasi dari mutasi yang ditandatangani, penolakan kebijakan, dan skrip kompensasi rollback.",
+			export_json: "Ekspor JSON",
+			refresh: "Muat Ulang",
+			total_executed: "Total Tereksekusi",
+			total_executed_sub: "Tersimpan dengan zero raw SQL",
+			policy_rejections: "Penolakan Kebijakan",
+			policy_rejections_sub: "Memblokir periode pembukuan tertutup",
+			rollback_safety: "Keamanan Rollback",
+			rollback_safety_sub: "Skrip inversi telah dihitung otomatis",
+			table_title: "Tabel Rekam Jejak Eksekusi (Execution Audit Log)",
+			table_subtitle: "Log mutasi ERP yang telah diaudit, ditandatangani oleh operator, dilengkapi skrip rollback dan verifikasi status.",
+			search_placeholder: "Cari nomor tiket, no faktur, nama cabang, atau penandatangan...",
+			empty_message: "Tidak ditemukan rekam jejak audit yang sesuai",
+			col_ticket: "Tiket #",
+			col_doc: "No Faktur / Dokumen",
+			col_branch: "Cabang / Hub",
+			col_mutation: "Target Mutasi ERP",
+			col_status: "Status Audit",
+			col_approved_by: "Penandatangan",
+			col_executed_at: "Waktu Eksekusi",
+			col_actions: "Aksi / Rollback",
+			filter_all: "Semua Status",
+			filter_executed: "EXECUTED (Tereksekusi)",
+			filter_rejected: "REJECTED (Ditolak)",
+			filter_approved: "APPROVED (Disetujui)",
+			modal_rollback_title: "Skrip Kompensasi Rollback SQL (Atomic Safe)",
+			modal_copy_script: "Salin Skrip",
+			modal_copied: "Tersalin!",
+			modal_raw_msg: "Pesan Awal ChatOps:",
+			modal_close: "Tutup",
+			originally: "Semula:",
+			rollback_btn: "Rollback"
+		},
+		modals: {
+			inspect_title: "Rencana Mutasi:",
+			target_engine: "Rencana Engine Target:",
+			relational_sql: "SQL Relasional",
+			non_relational_bson: "BSON Non-Relasional",
+			zero_sql_guard: "Bersertifikasi Zero Raw SQL Guard",
+			diff_title: "Diff Verifikasi Berdampingan",
+			current_val: "NILAI DB SAAT INI:",
+			proposed_val: "NILAI BARU YANG DIAJUKAN:",
+			prepared_query: "QUERY PARAMETER TERSIAPKAN (PostgreSQL 18):",
+			rollback_script: "SKRIP ROLLBACK KOMPENSASI (Inversi Terhitung):",
+			audit_metadata: "METADATA AUDIT & KEAMANAN:",
+			close: "Tutup Inspektor",
+			reject_title: "Tolak Permintaan Mutasi",
+			reject_desc: "Menolak tiket {ticket_no} ({doc_no}). Tindakan ini dicatat permanen dalam audit trail dan dikirimkan kembali ke saluran chat cabang.",
+			reason_label: "Alasan Penolakan:",
+			reason_placeholder: "cth. Faktur berstatus CLOSED dalam pembukuan akhir bulan; tidak memenuhi SOP koreksi.",
+			cancel: "Batal",
+			confirm_reject: "Konfirmasi Penolakan",
+			rejecting: "Menolak..."
+		},
+		messages: {
+			title: "Pesan Masuk Saluran (Inbound)",
+			subtitle: "Aliran pesan real-time dari gateway WhatsApp, Telegram, Discord, dan Slack dengan klasifikasi intent AI.",
+			search_placeholder: "Cari pengirim, teks pesan, faktur terekstraksi...",
+			all_platforms: "Semua Platform",
+			all_classes: "Semua Klasifikasi",
+			actionable: "ACTIONABLE (Permintaan Mutasi)",
+			needs_review: "NEEDS REVIEW (Ambigu / Keyakinan Rendah)",
+			casual_banter: "CASUAL BANTER (Non-operasional)",
+			stage_ticket: "Stage ke Tiket",
+			learn_pattern: "Pelajari Pola",
+			open_terminal: "Terminal Daemon",
+			no_messages: "Tidak Ada Pesan Masuk",
+			no_messages_desc: "Menunggu pesan baru dari platform chat yang terhubung.",
+			total_messages_kpi: "Total Pesan",
+			total_messages_sub: "Paket pesan terproses di semua platform",
+			actionable_kpi: "Tiket Siap Eksekusi",
+			actionable_sub: "Faktur cocok & otomatis masuk antrean",
+			needs_review_kpi: "Perlu Review",
+			needs_review_sub: "Niat mutasi terdeteksi tanpa nomor dokumen",
+			casual_banter_kpi: "Percakapan Kasual",
+			casual_banter_sub: "Percakapan tersaring tanpa mutasi database",
+			terminal_btn: "Exec Terminal WA Gateway",
+			pattern_memory_btn: "🧠 Memory Pola AI",
+			hermes_engine_btn: "Hermes 3 AI Engine",
+			platform_flows_btn: "Platform Flows"
+		},
+		contacts: {
+			title: "Direktori Saluran Ingress & Kontak ChatOps",
+			subtitle: "Manajemen grup WhatsApp cabang, hotline darurat perorangan, dan saluran bot yang terintegrasi dengan filter AI Guardrail.",
+			monitoring_active: "MONITORING AKTIF",
+			add_contact: "Tambah Kontak / Grup",
+			e2e_flow: "Lihat Alur E2E Flow",
+			search_placeholder: "Cari grup, cabang, penanggung jawab, JID...",
+			filter_platform: "Platform",
+			filter_status: "Status",
+			active: "Aktif",
+			whitelisted: "Terverifikasi",
+			total_messages: "Total Pesan",
+			latency: "Latensi",
+			last_active: "Aktivitas Terakhir",
+			topology_title: "Topologi Aliran Ingress Saluran & Whitelist Gatekeeper",
+			topology_subtitle: "Visualisasi rute pesan masuk dari saluran grup & hotline menuju filter AI Guardrail.",
+			inbound_stream: "Aliran Masuk:",
+			verified_channels: "Saluran Terverifikasi",
+			stat_channels: "Saluran Terdaftar",
+			stat_groups: "Grup WA",
+			stat_hotlines: "Hotline Kontak",
+			stat_health: "Monitoring Health",
+			stat_uptime: "Uptime Ingress Socket",
+			stat_yield: "Traffic & Tiket Yield",
+			stat_staged_tickets: "Tiket staging terverifikasi AI",
+			stat_gatekeeper: "Whitelist Gatekeeper",
+			stat_muted: "saluran dalam status muted/standby",
+			table_title: "Tabel Manajemen Saluran & Kontak",
+			table_subtitle: "Daftar lengkap grup dan kontak dengan pencarian multi-kolom, filter jenis, pengurutan, dan ekspor instan.",
+			table_search_placeholder: "Cari nama grup/kontak, cabang, nomor HP, atau JID...",
+			col_channel: "Saluran & Identitas",
+			col_platform: "Platform",
+			col_jid: "JID / Identifier",
+			col_probe: "Monitoring Probe",
+			col_telemetry: "Volume Telemetry",
+			col_whitelist: "Whitelist Intake",
+			col_actions: "Aksi",
+			filter_group: "Grup WhatsApp (@g.us)",
+			filter_individual: "Kontak Perorangan (@s.whatsapp.net)",
+			empty_table: "Tidak ditemukan saluran atau kontak yang cocok",
+			action_sim: "Simulasi",
+			action_sent: "Terkirim",
+			action_delete: "Hapus saluran ini dari direktori",
+			modal_add_title: "Tambah Saluran Ingress Baru",
+			modal_add_subtitle: "Daftarkan grup atau kontak perorangan ke whitelist direktori.",
+			channel_type: "Tipe Saluran Ingress",
+			type_group: "Grup Cabang / Divisi",
+			type_group_sub: "Target: @g.us",
+			type_individual: "Kontak Hotline PIC",
+			type_individual_sub: "Target: @s.whatsapp.net",
+			platform_label: "Platform Pesan",
+			channel_name: "Nama Saluran / Identitas Resmi",
+			name_placeholder_group: "mis. Ops Cabang Semarang & Gudang",
+			name_placeholder_individual: "mis. Budi Wicaksono (Lead AR Finance)",
+			jid_label: "JID / Identifier Saluran",
+			jid_guide_open: "Dari mana dapat ID ini?",
+			jid_guide_close: "Tutup Panduan",
+			auto_convert_phone: "Konversi otomatis No. HP PIC ({phone}) ke JID",
+			branch_label: "Cabang / Regional Hub",
+			branch_impact_title: "Pengaruh Cabang terhadap Database:",
+			branch_impact_desc: "Saluran ini akan dipetakan ke branch_id di tabel branches & invoices. Sistem AI Guardrail memvalidasi apakah pengirim pesan memiliki wewenang atas faktur cabang tersebut, mencegah mutasi tidak sah lintas wilayah (Cross-Branch Protection).",
+			pic_name: "Nama PIC / Penanggung Jawab",
+			pic_phone: "Nomor Telepon / Handle",
+			auto_whitelist_label: "Otomatiskan Whitelist Intake",
+			auto_whitelist_desc: "Pesan yang masuk dari saluran ini langsung diproses Guardrail.",
+			cancel: "Batal",
+			save_channel: "Simpan Saluran",
+			modal_delete_title: "Hapus Saluran dari Direktori?",
+			modal_delete_desc: "Tindakan ini akan mencabut izin saluran dari ingress filter.",
+			delete_warning: "Pesan masuk atau gambar faktur dari saluran ini selanjutnya akan diabaikan dan tidak dibuatkan tiket staging.",
+			confirm_delete: "Ya, Hapus Saluran",
+			roster_badge: "ROSTER ANGGOTA",
+			roster_notice_title: "Resolusi Pengirim Multi-Device (`msg.key.participant`)",
+			roster_notice_desc: "Ketika pesan masuk ke grup WhatsApp ini, gateway secara granular membaca nomor HP pengirim individual. Anggota bertanda Whitelisted dapat langsung memicu staging tiket AI tanpa disaring keluar.",
+			search_member: "Cari nama anggota, nomor telepon/JID, atau role...",
+			total_members: "Total: {count} Anggota",
+			admin_count: "Admin",
+			oncall_count: "On-Call PIC",
+			no_members_found: "Tidak ditemukan anggota",
+			close_roster: "Selesai & Tutup"
+		},
+		connectors: {
+			title: "Konektor Database & Pool Koneksi",
+			subtitle: "Kelola koneksi ke database transaksional utama PostgreSQL 18 dan database referensi sekunder (SAP, Oracle, MySQL, SQL Server).",
+			tab_system: "DB Sistem Utama",
+			tab_mcp: "DB Referensi MCP",
+			tab_tools: "Skema & Alat",
+			tab_env: "String Koneksi",
+			test_connection: "Uji Koneksi",
+			apply_changes: "Terapkan Perubahan",
+			pool_stats: "Metrik Pool Koneksi",
+			open_connections: "Koneksi Terbuka",
+			in_use: "Sedang Dipakai",
+			idle: "Tersedia",
+			max_open: "Batas Maksimal"
+		},
+		mcp: {
+			title: "Pengetahuan & Alat MCP (Model Context Protocol)",
+			subtitle: "Kontekstualisasi standar dan direktori alat enterprise agar agen penalaran AI dapat berinteraksi secara aman dengan data bisnis.",
+			tab_dual_db: "Arsitektur Dual DB",
+			tab_resources: "Sumber Konteks",
+			tab_tools: "Alat Skema",
+			tab_playground: "Playground Agen",
+			sop_policy: "Kebijakan SOP Support Pabrik",
+			branches_directory: "Direktori Cabang",
+			execute_tool: "Jalankan Alat"
+		},
+		telemetry: {
+			title: "Telemetri Sistem & Probe Platform",
+			subtitle: "Diagnostik daemon tingkat rendah, konsumsi memori, konkurensi goroutine, dan kesehatan soket chat aktif.",
+			service_status: "Status Layanan",
+			uptime: "Masa Aktif",
+			memory_rss: "Alokasi Memori",
+			goroutines: "Goroutine Aktif",
+			test_ping: "Kirim Probe Ping Telemetri",
+			ping_success: "Probe ping berhasil dikirim!"
+		},
+		logs: {
+			title: "Log Sistem Enterprise & Telemetri Daemon",
+			subtitle: "Aliran peristiwa audit langsung, peringatan keamanan, dan diagnostik daemon sistem.",
+			search_placeholder: "Cari pesan log, nama layanan, error...",
+			all_levels: "Semua Level",
+			all_services: "Semua Layanan",
+			auto_scroll: "Scroll Otomatis",
+			pause_stream: "Jeda Aliran",
+			resume_stream: "Lanjutkan Aliran",
+			clear_logs: "Bersihkan Aliran",
+			export_logs: "Ekspor Log",
+			total_entries: "Total Entri:",
+			no_logs_match: "Tidak ada log yang cocok dengan filter aktif."
+		},
+		settings: {
+			title: "Pengaturan Sistem & Kebijakan Gatekeeper",
+			subtitle: "Konfigurasi komprehensif pipeline AI, ambang batas SOP finansial, multiplatform ChatOps, dan arsitektur Dual-DB.",
+			enterprise_badge: "ENTERPRISE v2.4",
+			export_json: "Ekspor JSON",
+			reset_default: "Reset Default",
+			save_changes: "Simpan Perubahan",
+			saving: "Menyimpan...",
+			saved: "Tersimpan!",
+			saved_toast: "Seluruh konfigurasi sistem, kebijakan SOP, dan preferensi konektor berhasil disimpan ke penyimpanan lokal.",
+			synced: "Tersinkronisasi",
+			reset_confirm_title: "Apakah Anda yakin ingin mereset seluruh preferensi dan kebijakan ke nilai default pabrik? Tindakan ini tidak dapat dibatalkan.",
+			cancel: "Batal",
+			confirm_reset: "Ya, Reset Sekarang",
+			tab_gatekeeper: "Gatekeeper SOP",
+			tab_ai: "Model AI & Guardrails",
+			tab_chatops: "ChatOps & Gateway",
+			tab_database: "Dual-DB & MCP",
+			tab_alerts: "Alert & Notifikasi",
+			tab_interface: "Cockpit UI",
+			threshold_title: "Batas Threshold Nilai Faktur Tinggi (High-Value Policy)",
+			threshold_desc: "Faktur di atas nilai ini mewajibkan persetujuan ganda (Two-Man Rule / Supervisor Override).",
+			supervisor_override: "Wajibkan Persetujuan Supervisor",
+			supervisor_override_desc: "Mutasi faktur di atas ambang batas hanya dapat disetujui akun bertingkat Supervisor.",
+			block_closed: "Blokir Revisi Faktur Periode CLOSED",
+			block_closed_desc: "Otomatis tolak jika status audit faktur sudah tutup buku akuntansi.",
+			auto_approve_low_risk: "Otomatisasi Persetujuan Koreksi Risiko Rendah",
+			auto_approve_low_risk_desc: "Khusus koreksi ejaan nama tanpa mengubah nominal atau item faktur.",
+			mandatory_audit_reason: "Wajibkan Catatan Audit Alasan Penolakan",
+			mandatory_audit_reason_desc: "Operator wajib mengisi alasan minimum 10 karakter saat menolak tiket mutasi.",
+			rate_limit: "Batas Frekuensi Permintaan Saluran",
+			rate_limit_desc: "Jumlah permintaan mutasi maksimal per saluran per menit untuk mencegah spam bot.",
+			ai_engine_title: "Mesin Penalaran AI & Konfigurasi LLM",
+			ai_engine_desc: "Pilih penyedia model bahasa besar untuk ekstraksi intent dan pembuatan rencana query SQL.",
+			model_provider: "Penyedia Model AI",
+			api_key: "Kunci API (API Key)",
+			api_endpoint: "Endpoint Kustom / URL Gateway",
+			temperature: "Suhu Inferensi (Temperature / Determinisme)",
+			confidence_threshold: "Ambang Batas Minimum Keyakinan AI",
+			injection_defense: "Pertahanan Prompt Injection & Jailbreak Guard",
+			injection_defense_desc: "Saring upaya override instruksi sistem dalam pesan obrolan pengguna.",
+			strict_json: "Validasi Skema Output JSON Ketat",
+			strict_json_desc: "Tolak respons AI yang tidak mematuhi skema JSON parameter mutasi.",
+			rag_grounding: "Grounding Pengetahuan SOP Pabrik (MCP)",
+			rag_grounding_desc: "Berikan konteks aturan bisnis pabrik ke model AI saat penalaran intent.",
+			chatops_title: "Gerbang Obrolan Multiplatform (Ingress Gateways)",
+			chatops_desc: "Konfigurasi konektor perpesanan WhatsApp, Telegram, Discord, dan Slack.",
+			wa_gateway_url: "URL Gateway WhatsApp (Baileys Hook)",
+			auto_reply: "Aktifkan Balasan Otomatis Konfirmasi Tiket",
+			auto_reply_desc: "Kirim pesan balasan ke pengirim saat tiket baru berhasil dibuat.",
+			auto_reply_template: "Templat Teks Balasan Otomatis",
+			auto_ocr: "Aktifkan Ekstraksi Gambar Faktur Otomatis (OCR)",
+			auto_ocr_desc: "Gunakan Tesseract OCR untuk membaca foto faktur yang dikirim operator.",
+			whitelisted_groups: "Daftar Putih ID Grup (Whitelist JIDs)",
+			blacklisted_jids: "Daftar Hitam Nomor Spam (Blacklist JIDs)",
+			telegram_token: "Token Bot Telegram",
+			telegram_chat_id: "ID Saluran / Obrolan Telegram",
+			discord_webhook: "URL Webhook Discord",
+			slack_webhook: "URL Webhook Slack Incoming",
+			test_webhook: "Kirim Uji Ping Webhook",
+			db_title: "Profil Koneksi Dual-DB & Parameter MCP",
+			db_desc: "Konfigurasi koneksi langsung ke PostgreSQL 18 dan database ERP referensi sekunder.",
+			pg_host: "Host PostgreSQL",
+			pg_port: "Port PostgreSQL",
+			pg_db: "Nama Database",
+			pg_user: "Nama Pengguna (Username)",
+			pg_password: "Kata Sandi (Password)",
+			pg_max_conns: "Koneksi Maksimum (Max Connections)",
+			pg_idle_conns: "Koneksi Menganggur (Idle Connections)",
+			target_erp: "Sistem ERP Target Sekunder",
+			mcp_endpoint: "Endpoint Layanan MCP",
+			safe_dry_run: "Mode Dry-Run Keamanan (Uji Transaksi Tanpa Komit)",
+			safe_dry_run_desc: "Jalankan mutasi dalam blok transaksi simulasi yang selalu di-rollback.",
+			test_db_conn: "Uji Koneksi Database",
+			alerts_title: "Peringatan Sistem, Notifikasi & Umpan Balik Audio",
+			alerts_desc: "Atur sinyal suara saat pesan baru masuk, eskalasi tiket tertunda, dan notifikasi browser.",
+			sound_alerts: "Efek Suara Tiket Masuk & Aksi",
+			sound_alerts_desc: "Mainkan sinyal audio Web Audio synthesizer saat ada mutasi baru.",
+			test_sound: "Uji Suara",
+			sound_volume: "Volume Suara Efek",
+			nav_sound: "Efek Suara Klik Navigasi Menu",
+			nav_sound_desc: "Mainkan klik tactile saat berpindah halaman dan menekan tombol kontrol.",
+			test_nav_click: "Uji Klik",
+			push_alerts: "Notifikasi Push Browser",
+			push_alerts_desc: "Tampilkan notifikasi desktop saat ada tiket berisiko tinggi masuk antrean.",
+			escalation: "Eskalasi Otomatis Tiket Nilai Tinggi",
+			escalation_desc: "Kirim notifikasi darurat jika tiket di atas batas threshold belum ditinjau.",
+			idle_minutes: "Batas Waktu Menunggu Peninjauan (Menit)",
+			ui_title: "Pengaturan Antarmuka Cockpit & Tampilan Data",
+			ui_desc: "Sesuaikan kerapatan tabel data, frekuensi penyegaran telemetri, dan format ekspor.",
+			compact_table: "Tampilan Baris Tabel Rapat (Compact Mode)",
+			compact_table_desc: "Kurangi padding baris tabel untuk menampilkan lebih banyak entri per layar.",
+			telemetry_rate: "Frekuensi Penyegaran Telemetri Otomatis",
+			session_lock: "Kunci Otomatis Sesi Peninjau",
+			export_format: "Format Ekspor Default Berkas Laporan"
+		},
+		simulator: {
+			title: "Simulator Ingesti ChatOps",
+			subtitle: "Sandbox pengujian interaktif untuk menginjeksi pesan sintetis WhatsApp/Telegram ke pipeline ingesti dan penalaran.",
+			banner_title: "MODUL SIMULATOR DALAM STATUS [EXPERIMENTAL]",
+			banner_desc: "Simulator ini memicu injeksi payload pengujian sintetis ke pipeline backend tanpa memerlukan pesan chat fisik dari smartphone. Gunakan modul ini untuk pengujian fungsionalitas OCR dan ekstraksi intent pada lingkungan staging.",
+			run_simulation: "Jalankan Seluruh Pipeline Ingesti",
+			step_1: "1. Ingesti Pesan Masuk",
+			step_2: "2. Penalaran AI Hermes 3",
+			step_3: "3. Parameterisasi SQL",
+			step_4: "4. Stage ke Antrean Persetujuan",
+			chat_msg_label: "Pesan Chat WhatsApp Simulasi:",
+			branch_source_label: "Cabang Sumber:",
+			invoice_target_label: "No Faktur Target:",
+			value_target_label: "Nilai Mutasi Target:",
+			exec_pipeline_btn: "Jalankan Pipeline Ingesti Real-Time",
+			executing_pipeline: "Mengeksekusi Pipeline Ingesti..."
+		},
+		about: {
+			badge: "NOVAPILOT AI • CHATOPS GATEKEEPER v1.0.0",
+			title: "Tentang NovaPilot AI & Tim Pengembang",
+			subtitle: "Sistem ChatOps AI otonom kelas enterprise yang bertindak sebagai Human-in-the-Loop Gatekeeper untuk melindungi database bisnis (ERP) dari halusinasi bot chat dan akses SQL langsung.",
+			open_github: "Buka GitHub Repo",
+			copy_clone: "Salin Perintah Git Clone",
+			copied: "Tersalin ke Clipboard!",
+			architecture_title: "Arsitektur Enterprise & Teknologi",
+			creator_title: "Kreator & Pengembang"
 		},
 		common: {
 			loading: "Memuat...",
@@ -194,7 +1136,10 @@ const dictionaries: Record<Locale, Translations> = {
 			telemetry: "System Telemetry",
 			logs: "System Logs",
 			settings: "Settings",
-			flows: "Platform Flows"
+			flows: "Platform Flows",
+			about: "About Us",
+			simulator: "Simulator",
+			chatops_gateways: "ChatOps Gateways"
 		},
 		actions: {
 			approve: "Approve",
@@ -212,7 +1157,12 @@ const dictionaries: Record<Locale, Translations> = {
 			copy: "Copy",
 			copied: "Copied",
 			view_details: "View Details",
-			close: "Close"
+			close: "Close",
+			inspect: "Inspect",
+			clear: "Clear",
+			confirm: "Confirm",
+			back: "Back",
+			next: "Next"
 		},
 		status: {
 			pending: "Pending Approval",
@@ -224,7 +1174,10 @@ const dictionaries: Record<Locale, Translations> = {
 			offline: "OFFLINE",
 			connected: "Connected",
 			disconnected: "Disconnected",
-			healthy: "Healthy"
+			healthy: "Healthy",
+			active: "Active",
+			standby: "Standby",
+			whitelisted: "Whitelisted"
 		},
 		agents: {
 			hub_title: "AI Agents Hub",
@@ -248,7 +1201,467 @@ const dictionaries: Record<Locale, Translations> = {
 			task_registry: "Autonomous Task Registry",
 			task_instruction: "Task Instruction (Execution Prompt):",
 			dispatch_to_openclaw: "Dispatch to OpenClaw",
-			stage_to_approval: "Stage to Approval"
+			stage_to_approval: "Stage to Approval",
+			model_architecture: "Model Architecture",
+			execution_mode: "Execution Mode",
+			offline_resilience: "Offline Resilience",
+			offline_resilience_sub: "Zero-downtime offline fallback",
+			cli_detected: "DETECTED",
+			cli_active: "ENGINE ACTIVE",
+			cli_using: "Using Native CLI",
+			cli_activate: "Use Native CLI Engine",
+			config_title: "Hermes Endpoint & Model Configuration",
+			config_subtitle: "Local connection to Ollama, vLLM, or Hermes CLI wrapper.",
+			save_config: "Save Configuration",
+			saving: "Saving...",
+			saved: "LLM configuration saved to NovaPilot runtime successfully!",
+			mode_label: "Execution Mode",
+			mode_auto: "Auto (Ollama HTTP Priority, Fallback Heuristic)",
+			mode_cli: "Native CLI (hermes.cmd)",
+			mode_http: "Dedicated HTTP (Ollama / vLLM)",
+			base_url_label: "API Base URL",
+			model_name_label: "LLM Model Name",
+			cli_path_label: "CLI Executable Path",
+			interactive_console: "Interactive Prompt Console",
+			prompt_label_chat: "Chat / Command Message:",
+			branch_context_label: "Regional Branch Context:",
+			run_inference: "Run Inference",
+			running_inference: "Inferring Reasoning...",
+			inference_result: "Inference & Extraction Result",
+			copy_code: "Copy",
+			copied: "Copied!",
+			staging_ticket_queue: "Stage to Approval Queue (PostgreSQL)",
+			staging_in_progress: "Staging Ticket...",
+			prompt_hint: 'Type a prompt and click "Run Inference" to observe Hermes 3 reasoning.',
+			openclaw_config_title: "Gateway & Browser Driver Configuration",
+			openclaw_config_desc: "Connection parameters for OpenClaw service and headless browser instance.",
+			openclaw_test_endpoint: "Test Endpoint",
+			browser_mode_label: "Chromium Browser Mode",
+			openclaw_disconnected_title: "OpenClaw Gateway not detected on {url}",
+			openclaw_disconnected_desc: "NovaPilot is ready to orchestrate autonomous browser flows. To enable local browser automation, start the gateway via terminal:",
+			check_connection: "Recheck Connection",
+			checking: "Checking..."
+		},
+		overview: {
+			guardrail_title: "Guardrail Assurance & Intake Engine",
+			active_guard: "Active Guard",
+			guardrail_desc: "Automated validation of incoming mutations against schema constraints and zero raw SQL/NoSQL injection.",
+			sse_live: "SSE Live EventBus",
+			sse_offline: "SSE Offline",
+			refresh: "Refresh",
+			stage_simulator: "Stage via Simulator",
+			kpi_pending: "Pending Mutations",
+			kpi_pending_sub: "Awaiting on-call sign-off",
+			kpi_executed: "Executed Today",
+			kpi_executed_sub: "Committed to database",
+			kpi_rejected: "Rejected Requests",
+			kpi_rejected_sub: "Policy violations blocked",
+			kpi_safety: "Safety Confidence",
+			kpi_safety_sub: "Zero raw SQL certified",
+			queue_preview_title: "Recent Approval Queue",
+			queue_preview_desc: "Pending mutation tickets requiring human-in-the-loop review.",
+			history_preview_title: "Recent Executions",
+			history_preview_desc: "Recently approved and audited mutation transactions.",
+			view_all: "View All",
+			empty_queue: "All caught up! No pending tickets in queue.",
+			empty_history: "No execution records found.",
+			pipeline_title: "Real-Time Ingestion Pipeline:",
+			pipeline_standby: "Standby Mode",
+			expand_pipeline: "Expand Pipeline Details",
+			fold_pipeline: "Fold to Step View",
+			needs_review_title: "{count} Inbound Message{plural} Require On-Call Review",
+			needs_review_desc: "Incoming chats detected with company mutation requests lacking explicit invoice numbers.",
+			review_stage_btn: "Review & Stage Tickets",
+			traffic_title: "Operations Traffic & Omnichannel Ingress Trends",
+			traffic_badge: "7-DAY METRICS",
+			traffic_subtitle: "Daily inbound message volume, automated intake vs operator approvals, and channel distribution.",
+			cockpit_btn: "Cockpit Overview [AI Metrics] →",
+			chart_volume_title: "Inbound Messages vs Executed Tickets",
+			chart_total_intake: "Total Intake",
+			chart_approved: "Approved Mutations (MCP)",
+			channel_share_title: "ChatOps Channel Share",
+			channel_total_ingress: "500 Total Ingress"
+		},
+		cockpit: {
+			title: "Cockpit Overview & AI Analytics",
+			subtitle: "Comprehensive analysis of AI inference performance, Tesseract OCR accuracy, ChatOps circuit visualization, and SQL transaction invariants.",
+			preview_notice_title: "Model Preview & Evaluation Mode (Synthetic Preview):",
+			preview_notice_desc: "Metrics on this page reflect NovaPilot AI's operational benchmarks (Tesseract Vision + Local Small LLM Gatekeeper + PostgreSQL 18 Local). Curated for factory workloads and audit compliance.",
+			intent_accuracy: "INTENT ACCURACY",
+			intent_accuracy_sub: "Hermes 3 entity extraction model",
+			ocr_precision: "TESSERACT OCR PRECISION",
+			ocr_precision_sub: "Document image digit extraction",
+			avg_latency: "AVG PIPELINE LATENCY",
+			avg_latency_sub: "From inbound message to staged ticket",
+			gatekeeper_block_rate: "GATEKEEPER BLOCK RATE",
+			gatekeeper_block_rate_sub: "Unauthorized raw SQL prevented",
+			circuit_title: "ChatOps Ingress & Database Pool Topology",
+			circuit_desc: "Interactive real-time architecture circuit showing telemetry flow between messaging daemons, AI inference, and database connections.",
+			benchmark_title: "Model Benchmark & Evaluation Matrix",
+			benchmark_desc: "Inference accuracy comparison between local and cloud reasoning models."
+		},
+		queue: {
+			title: "Approval Queue",
+			subtitle: "Side-by-side verification diffs for incoming WhatsApp mutation requests. Zero raw SQL certified.",
+			search_placeholder: "Search ticket, invoice, customer, raw text...",
+			all_branches: "All Regional Branches",
+			all_confidence: "All Confidence Levels",
+			high_confidence: "High Confidence (≥ 90%)",
+			needs_review: "Needs Manual Review (< 90%)",
+			sort_newest: "Newest First",
+			sort_oldest: "Oldest First",
+			sort_confidence: "Highest Confidence",
+			no_pending: "No Pending Tickets",
+			no_pending_desc: "The queue is clean! All inbound WhatsApp requests have been reviewed.",
+			no_match_desc: "No tickets match your active search filters. Try clearing filters.",
+			clear_filters: "Clear All Filters",
+			send_simulated: "Send Simulated Inbound Chat",
+			received: "Received",
+			current_db_state: "CURRENT DATABASE STATE",
+			proposed_mutation: "PROPOSED MUTATION",
+			proof_attachments: "Proof Attachments:",
+			inspect_plan: "Inspect Plan",
+			reject: "Reject",
+			approve_mutate: "Approve & Mutate",
+			ai_confidence: "AI Confidence"
+		},
+		history: {
+			title: "Execution History & Audit Trail",
+			records_count: "audit records",
+			subtitle: "Tamper-evident logs of signed mutations, policy rejections, and compensating rollback scripts.",
+			export_json: "Export JSON",
+			refresh: "Refresh",
+			total_executed: "Total Executed",
+			total_executed_sub: "Committed with zero raw SQL",
+			policy_rejections: "Policy Rejections",
+			policy_rejections_sub: "Blocked closed accounting periods",
+			rollback_safety: "Rollback Safety",
+			rollback_safety_sub: "Inverse scripts pre-calculated",
+			table_title: "Execution Audit Log Table",
+			table_subtitle: "Audited ERP mutation logs signed off by operators, with compensating rollback scripts and status verification.",
+			search_placeholder: "Search ticket #, invoice no, branch, or signatory...",
+			empty_message: "No matching audit records found",
+			col_ticket: "Ticket #",
+			col_doc: "Invoice / Doc No",
+			col_branch: "Branch / Hub",
+			col_mutation: "Target ERP Mutation",
+			col_status: "Audit Status",
+			col_approved_by: "Signatory",
+			col_executed_at: "Execution Time",
+			col_actions: "Action / Rollback",
+			filter_all: "All Statuses",
+			filter_executed: "EXECUTED (Committed)",
+			filter_rejected: "REJECTED (Policy Denied)",
+			filter_approved: "APPROVED (Signed)",
+			modal_rollback_title: "Atomic Safe Compensating Rollback SQL Script",
+			modal_copy_script: "Copy Script",
+			modal_copied: "Copied!",
+			modal_raw_msg: "Initial ChatOps Message:",
+			modal_close: "Close",
+			originally: "Originally:",
+			rollback_btn: "Rollback"
+		},
+		modals: {
+			inspect_title: "Mutation Plan:",
+			target_engine: "Target Engine Plan:",
+			relational_sql: "Relational SQL",
+			non_relational_bson: "Non-Relational BSON",
+			zero_sql_guard: "Zero Raw SQL Guard Certified",
+			diff_title: "Side-by-Side Verification Diff",
+			current_val: "CURRENT DB VALUE:",
+			proposed_val: "PROPOSED NEW VALUE:",
+			prepared_query: "PREPARED PARAMETERIZED QUERY (PostgreSQL 18):",
+			rollback_script: "COMPENSATING ROLLBACK SCRIPT (Pre-calculated Inverse):",
+			audit_metadata: "AUDIT & SECURITY METADATA:",
+			close: "Close Inspector",
+			reject_title: "Reject Mutation Request",
+			reject_desc: "Rejecting ticket {ticket_no} ({doc_no}). This action is logged permanently in the audit trail and sent back to the WhatsApp branch thread.",
+			reason_label: "Reason for Rejection:",
+			reason_placeholder: "e.g. Invoice has status CLOSED in month-end accounting; does not satisfy revision SOP.",
+			cancel: "Cancel",
+			confirm_reject: "Confirm Rejection",
+			rejecting: "Rejecting..."
+		},
+		messages: {
+			title: "Inbound Messages Feed",
+			subtitle: "Real-time message feed from WhatsApp, Telegram, Discord, and Slack gateways with AI intent classification.",
+			search_placeholder: "Search sender, message text, extracted invoice...",
+			all_platforms: "All Platforms",
+			all_classes: "All Classifications",
+			actionable: "ACTIONABLE (Mutation Request)",
+			needs_review: "NEEDS REVIEW (Ambiguous/Low Confidence)",
+			casual_banter: "CASUAL BANTER (Non-operational)",
+			stage_ticket: "Stage Ticket",
+			learn_pattern: "Learn Pattern",
+			open_terminal: "Daemon Terminal",
+			no_messages: "No Inbound Messages",
+			no_messages_desc: "Waiting for new messages from connected chat platforms.",
+			total_messages_kpi: "Total Messages",
+			total_messages_sub: "Packets ingested across all platforms",
+			actionable_kpi: "Actionable Tickets",
+			actionable_sub: "Invoice matched & staged automatically",
+			needs_review_kpi: "Needs Review",
+			needs_review_sub: "Mutation intent detected without doc ID",
+			casual_banter_kpi: "Casual Banter",
+			casual_banter_sub: "Filtered conversations (zero DB mutation)",
+			terminal_btn: "Exec Terminal WA Gateway",
+			pattern_memory_btn: "🧠 AI Pattern Memory",
+			hermes_engine_btn: "Hermes 3 AI Engine",
+			platform_flows_btn: "Platform Flows"
+		},
+		contacts: {
+			title: "Ingress Channel Directory & ChatOps Contacts",
+			subtitle: "Branch WhatsApp groups, emergency PIC hotlines, and bot channels integrated with AI Guardrail routing filters.",
+			monitoring_active: "MONITORING ACTIVE",
+			add_contact: "Add Contact / Group",
+			e2e_flow: "View E2E Flow",
+			search_placeholder: "Search group, branch, contact person, JID...",
+			filter_platform: "Platform",
+			filter_status: "Status",
+			active: "Active",
+			whitelisted: "Whitelisted",
+			total_messages: "Total Messages",
+			latency: "Latency",
+			last_active: "Last Active",
+			topology_title: "Ingress Channel Topology & Gatekeeper Whitelist",
+			topology_subtitle: "Real-time visualization of inbound message routing from group and hotline channels to AI Guardrail.",
+			inbound_stream: "Inbound Stream:",
+			verified_channels: "Verified Channels",
+			stat_channels: "Registered Channels",
+			stat_groups: "WA Groups",
+			stat_hotlines: "Contact Hotlines",
+			stat_health: "Monitoring Health",
+			stat_uptime: "Ingress Socket Uptime",
+			stat_yield: "Traffic & Ticket Yield",
+			stat_staged_tickets: "AI verified staging tickets",
+			stat_gatekeeper: "Whitelist Gatekeeper",
+			stat_muted: "channels in muted/standby state",
+			table_title: "Channel & Contact Management Table",
+			table_subtitle: "Complete roster of groups and contacts with multi-column search, channel type filter, sorting, and instant export.",
+			table_search_placeholder: "Search group/contact name, branch, phone number, or JID...",
+			col_channel: "Channel & Identity",
+			col_platform: "Platform",
+			col_jid: "JID / Identifier",
+			col_probe: "Monitoring Probe",
+			col_telemetry: "Telemetry Volume",
+			col_whitelist: "Whitelist Intake",
+			col_actions: "Actions",
+			filter_group: "WhatsApp Group (@g.us)",
+			filter_individual: "Individual Contact (@s.whatsapp.net)",
+			empty_table: "No matching channels or contacts found",
+			action_sim: "Simulate",
+			action_sent: "Sent",
+			action_delete: "Delete this channel from directory",
+			modal_add_title: "Add New Ingress Channel",
+			modal_add_subtitle: "Register a group or individual contact to the directory whitelist.",
+			channel_type: "Ingress Channel Type",
+			type_group: "Branch / Division Group",
+			type_group_sub: "Target: @g.us",
+			type_individual: "PIC Hotline Contact",
+			type_individual_sub: "Target: @s.whatsapp.net",
+			platform_label: "Messaging Platform",
+			channel_name: "Channel Name / Official Identity",
+			name_placeholder_group: "e.g. Semarang Branch Ops & Warehouse",
+			name_placeholder_individual: "e.g. Budi Wicaksono (Lead AR Finance)",
+			jid_label: "JID / Channel Identifier",
+			jid_guide_open: "Where do I get this ID?",
+			jid_guide_close: "Close Guide",
+			auto_convert_phone: "Auto-convert PIC Phone ({phone}) to JID",
+			branch_label: "Branch / Regional Hub",
+			branch_impact_title: "Database Impact of Branch ID:",
+			branch_impact_desc: "This channel maps to branch_id in branches & invoices tables. AI Guardrail verifies whether message sender has regional authority over the invoice, preventing cross-branch unauthorized mutations.",
+			pic_name: "PIC / Contact Person Name",
+			pic_phone: "Phone Number / Handle",
+			auto_whitelist_label: "Enable Automatic Whitelist Intake",
+			auto_whitelist_desc: "Incoming messages from this channel are processed directly by Guardrail.",
+			cancel: "Cancel",
+			save_channel: "Save Channel",
+			modal_delete_title: "Delete Channel from Directory?",
+			modal_delete_desc: "This action will revoke channel intake permissions from ingress filters.",
+			delete_warning: "Incoming messages and invoice images from this channel will subsequently be dropped without staging tickets.",
+			confirm_delete: "Yes, Delete Channel",
+			roster_badge: "MEMBER ROSTER",
+			roster_notice_title: "Multi-Device Participant Resolution (`msg.key.participant`)",
+			roster_notice_desc: "When a message arrives in this WhatsApp group, the gateway reads individual sender phone numbers granularly. Whitelisted members trigger AI ticket staging directly without being filtered out.",
+			search_member: "Search member name, phone/JID, or role...",
+			total_members: "Total: {count} Members",
+			admin_count: "Admins",
+			oncall_count: "On-Call PICs",
+			no_members_found: "No members found",
+			close_roster: "Done & Close"
+		},
+		connectors: {
+			title: "Database Connectors & Connection Pooling",
+			subtitle: "Manage connections to primary PostgreSQL 18 transactional database and secondary reference databases (SAP, Oracle, MySQL, SQL Server).",
+			tab_system: "Primary System DB",
+			tab_mcp: "MCP Reference DB",
+			tab_tools: "Schema & Tools",
+			tab_env: "Connection Strings",
+			test_connection: "Test Connection",
+			apply_changes: "Apply Changes",
+			pool_stats: "Connection Pool Metrics",
+			open_connections: "Open Connections",
+			in_use: "In Use",
+			idle: "Idle",
+			max_open: "Max Open"
+		},
+		mcp: {
+			title: "Model Context Protocol (MCP) Knowledge Base",
+			subtitle: "Standardized context grounding and enterprise tool registry enabling AI reasoning agents to interact safely with enterprise data.",
+			tab_dual_db: "Dual DB Architecture",
+			tab_resources: "Context Resources",
+			tab_tools: "Schema Tools",
+			tab_playground: "Agent Playground",
+			sop_policy: "Factory Support SOP Policy",
+			branches_directory: "Branch Directory",
+			execute_tool: "Execute Tool"
+		},
+		telemetry: {
+			title: "System Telemetry & Platform Probes",
+			subtitle: "Low-level daemon diagnostics, memory consumption, goroutine concurrency, and active chat socket health.",
+			service_status: "Service Status",
+			uptime: "Uptime",
+			memory_rss: "Allocated Memory",
+			goroutines: "Active Goroutines",
+			test_ping: "Send Telemetry Probe Ping",
+			ping_success: "Probe ping dispatched successfully!"
+		},
+		logs: {
+			title: "Enterprise System Logs & Daemon Telemetry",
+			subtitle: "Live streamed audit events, security alerts, and system daemon diagnostics.",
+			search_placeholder: "Search log messages, services, errors...",
+			all_levels: "All Levels",
+			all_services: "All Services",
+			auto_scroll: "Auto Scroll",
+			pause_stream: "Pause Stream",
+			resume_stream: "Resume Stream",
+			clear_logs: "Clear Stream",
+			export_logs: "Export Logs",
+			total_entries: "Total Entries:",
+			no_logs_match: "No logs match the active filter criteria."
+		},
+		settings: {
+			title: "System Settings & Gatekeeper Policies",
+			subtitle: "Comprehensive configuration of AI pipeline, financial SOP thresholds, multiplatform ChatOps, and Dual-DB architecture.",
+			enterprise_badge: "ENTERPRISE v2.4",
+			export_json: "Export JSON",
+			reset_default: "Reset Default",
+			save_changes: "Save Changes",
+			saving: "Saving...",
+			saved: "Saved!",
+			saved_toast: "All system configurations, SOP policies, and connector preferences were saved to local storage.",
+			synced: "Synchronized",
+			reset_confirm_title: "Are you sure you want to reset all preferences and policies to factory defaults? This action cannot be undone.",
+			cancel: "Cancel",
+			confirm_reset: "Yes, Reset Now",
+			tab_gatekeeper: "Gatekeeper SOP",
+			tab_ai: "AI Model & Guardrails",
+			tab_chatops: "ChatOps & Gateway",
+			tab_database: "Dual-DB & MCP",
+			tab_alerts: "Alerts & Notifications",
+			tab_interface: "Cockpit UI",
+			threshold_title: "High-Value Invoice Threshold Policy",
+			threshold_desc: "Invoices above this threshold mandate supervisor review (Two-Man Rule / Supervisor Override).",
+			supervisor_override: "Require Supervisor Approval",
+			supervisor_override_desc: "Invoice mutations exceeding threshold value can only be signed off by Supervisor accounts.",
+			block_closed: "Block Closed Accounting Period Mutations",
+			block_closed_desc: "Automatically reject changes if invoice status is flagged CLOSED in month-end books.",
+			auto_approve_low_risk: "Auto-Approve Low-Risk Discrepancy Corrections",
+			auto_approve_low_risk_desc: "Only applies to typo fixes on customer names without changing nominal amounts or items.",
+			mandatory_audit_reason: "Mandatory Audit Trail Rejection Reason",
+			mandatory_audit_reason_desc: "Operators must provide at least 10 characters justifying why a mutation ticket was rejected.",
+			rate_limit: "Channel Request Rate Limit",
+			rate_limit_desc: "Maximum number of mutation requests allowed per channel per minute to mitigate spam bots.",
+			ai_engine_title: "AI Reasoning Engine & LLM Configuration",
+			ai_engine_desc: "Select the large language model provider for intent extraction and SQL query plan generation.",
+			model_provider: "AI Model Provider",
+			api_key: "API Key",
+			api_endpoint: "Custom Endpoint / Gateway URL",
+			temperature: "Inference Temperature (Determinism)",
+			confidence_threshold: "Minimum AI Confidence Threshold",
+			injection_defense: "Prompt Injection & Jailbreak Guard",
+			injection_defense_desc: "Filter system instruction override attempts hidden in user chat payloads.",
+			strict_json: "Strict JSON Schema Validation",
+			strict_json_desc: "Reject AI completions that deviate from strict parameter JSON schema contracts.",
+			rag_grounding: "Factory SOP Grounding (MCP)",
+			rag_grounding_desc: "Ground reasoning agent with real-time factory SOP rules when parsing intents.",
+			chatops_title: "Multiplatform Chat Ingress Gateways",
+			chatops_desc: "Configure messaging connectors for WhatsApp, Telegram, Discord, and Slack.",
+			wa_gateway_url: "WhatsApp Gateway URL (Baileys Hook)",
+			auto_reply: "Enable Auto-Reply Ticket Confirmation",
+			auto_reply_desc: "Send confirmation receipt to channel sender when new ticket is staged.",
+			auto_reply_template: "Auto-Reply Text Template",
+			auto_ocr: "Enable Automatic Invoice OCR Extraction",
+			auto_ocr_desc: "Trigger Tesseract OCR automatically when image attachments are detected in chat.",
+			whitelisted_groups: "Whitelisted Group JIDs",
+			blacklisted_jids: "Blacklisted Spam JIDs",
+			telegram_token: "Telegram Bot Token",
+			telegram_chat_id: "Telegram Chat / Channel ID",
+			discord_webhook: "Discord Webhook URL",
+			slack_webhook: "Slack Incoming Webhook URL",
+			test_webhook: "Send Test Webhook Ping",
+			db_title: "Dual-DB Connection Profiles & MCP Parameters",
+			db_desc: "Configure direct connection to PostgreSQL 18 and secondary ERP reference databases.",
+			pg_host: "PostgreSQL Host",
+			pg_port: "PostgreSQL Port",
+			pg_db: "Database Name",
+			pg_user: "Database User",
+			pg_password: "User Password",
+			pg_max_conns: "Max Connection Pool",
+			pg_idle_conns: "Idle Connections",
+			target_erp: "Secondary Target ERP System",
+			mcp_endpoint: "MCP Service Endpoint",
+			safe_dry_run: "Safe Dry-Run Mode (Simulation Without Commit)",
+			safe_dry_run_desc: "Execute mutations in an uncommitted rollback transaction block to verify invariants.",
+			test_db_conn: "Test Database Connection",
+			alerts_title: "System Alerts, Notifications & Audio Feedback",
+			alerts_desc: "Configure audio signals on incoming messages, ticket escalation, and browser notifications.",
+			sound_alerts: "Inbound Message & Action Sound Effects",
+			sound_alerts_desc: "Play Web Audio synthesized sound pulses on incoming mutations and status updates.",
+			test_sound: "Test Sound",
+			sound_volume: "Sound Effects Volume",
+			nav_sound: "Menu Navigation Click Sounds",
+			nav_sound_desc: "Play tactile clicks when switching routes and pressing control buttons.",
+			test_nav_click: "Test Click",
+			push_alerts: "Browser Push Notifications",
+			push_alerts_desc: "Show native desktop notifications when high-risk tickets enter approval queue.",
+			escalation: "Automatic High-Value Escalation",
+			escalation_desc: "Dispatch emergency alerts if high-value tickets remain unreviewed.",
+			idle_minutes: "Review Idle Timeout (Minutes)",
+			ui_title: "Cockpit Interface & Data Display Preferences",
+			ui_desc: "Adjust table density, telemetry refresh intervals, and report export formats.",
+			compact_table: "Compact Table Row Spacing",
+			compact_table_desc: "Reduce row padding to fit more operational records per viewport.",
+			telemetry_rate: "Auto-Refresh Telemetry Rate",
+			session_lock: "Reviewer Session Auto-Lock",
+			export_format: "Default Report Export Format"
+		},
+		simulator: {
+			title: "ChatOps Ingestion Simulator",
+			subtitle: "Interactive test sandbox for injecting synthetic WhatsApp/Telegram messages into the ingestion and reasoning pipeline.",
+			banner_title: "SIMULATOR MODULE IN [EXPERIMENTAL] STATUS",
+			banner_desc: "This sandbox injects synthetic test payloads into the backend pipeline without requiring physical mobile devices. Ideal for testing OCR and intent extraction in staging environments.",
+			run_simulation: "Run Full Ingestion Pipeline",
+			step_1: "1. Inbound Ingestion",
+			step_2: "2. Hermes 3 AI Reasoning",
+			step_3: "3. SQL Parameterization",
+			step_4: "4. Stage to Approval Queue",
+			chat_msg_label: "Simulated WhatsApp Chat Message:",
+			branch_source_label: "Simulated Branch Source:",
+			invoice_target_label: "Simulated Invoice Target #:",
+			value_target_label: "Simulated Value to Mutate:",
+			exec_pipeline_btn: "Execute Real-Time Ingestion Pipeline",
+			executing_pipeline: "Executing Ingestion Pipeline..."
+		},
+		about: {
+			badge: "NOVAPILOT AI • CHATOPS GATEKEEPER v1.0.0",
+			title: "About NovaPilot AI & Creators",
+			subtitle: "Autonomous enterprise ChatOps AI system acting as a Human-in-the-Loop Gatekeeper to safeguard core business ERP databases against hallucinated chat bot outputs and direct SQL mutations.",
+			open_github: "Open GitHub Repo",
+			copy_clone: "Copy Git Clone Command",
+			copied: "Copied to Clipboard!",
+			architecture_title: "Enterprise Architecture Stack",
+			creator_title: "Creators & Engineers"
 		},
 		common: {
 			loading: "Loading...",
@@ -291,6 +1704,10 @@ class I18nState {
 
 	toggleLocale() {
 		this.setLocale(this.current === "id" ? "en" : "id");
+	}
+
+	get locale(): Locale {
+		return this.current;
 	}
 
 	// Reactive dictionary getter

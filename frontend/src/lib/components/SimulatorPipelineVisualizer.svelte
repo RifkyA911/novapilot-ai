@@ -15,6 +15,7 @@
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
 	import { sound } from "$lib/audio";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let {
 		simStep = 0,
@@ -128,7 +129,7 @@
 						</span>
 					</h2>
 					<p class="text-[11px] text-muted-foreground mt-0.5">
-						Topologi visual alur pesan dari Ingress Gateway &rarr; Ekstraksi Intent Hermes 3 &rarr; Validasi Database &rarr; Pementasan Tiket HITL.
+						{i18n.locale === 'id' ? 'Topologi visual alur pesan dari Ingress Gateway → Ekstraksi Intent Hermes 3 → Validasi Database → Pementasan Tiket HITL.' : 'Visual topology of message flow from Ingress Gateway → Hermes 3 Intent Extraction → Database Validation → HITL Ticket Staging.'}
 					</p>
 				</div>
 			</div>
@@ -142,10 +143,10 @@
 					onclick={triggerBurstFlow}
 					disabled={isBurstSimulating || simLoading}
 					class="px-2.5 py-1 rounded-lg bg-background hover:bg-card text-foreground font-semibold text-[11px] shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-					title="Simulasikan Denyut Aliran Paket Antar Node"
+					title={i18n.locale === 'id' ? 'Simulasikan Denyut Aliran Paket Antar Node' : 'Simulate Packet Flow Pulse Between Nodes'}
 				>
 					<Sparkles class="h-3 w-3 text-amber-500 {isBurstSimulating ? 'animate-spin' : ''}" />
-					<span>Simulasi Paket Flow</span>
+					<span>{i18n.locale === 'id' ? 'Simulasi Aliran Paket' : 'Simulate Packet Flow'}</span>
 				</button>
 			</div>
 
@@ -207,7 +208,7 @@
 			</div>
 			{#if activeStep > 0}
 				<div class="px-2.5 py-1 rounded-lg bg-primary/20 backdrop-blur-md border border-primary/40 shadow-xs text-[10px] font-mono flex items-center gap-1.5 text-foreground animate-pulse font-bold">
-					<span>Stage 0{activeStep} Aktif</span>
+					<span>{i18n.locale === 'id' ? `Tahap 0${activeStep} Aktif` : `Stage 0${activeStep} Active`}</span>
 				</div>
 			{/if}
 		</div>
@@ -656,7 +657,7 @@
 		<div class="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
 			<div class="px-3 py-1 rounded-full bg-background/80 backdrop-blur-md border border-border/70 shadow-xs text-[10px] font-mono text-muted-foreground flex items-center gap-2">
 				<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
-				<span>Gunakan klik-geser mouse untuk menggeser kanvas • Gunakan tombol + / - untuk zoom visual</span>
+				<span>{i18n.locale === 'id' ? 'Gunakan klik-geser mouse untuk menggeser kanvas • Gunakan tombol + / - untuk zoom visual' : 'Click & drag mouse to pan canvas • Use + / - buttons to zoom visually'}</span>
 			</div>
 		</div>
 	</div>

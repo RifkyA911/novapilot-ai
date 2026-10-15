@@ -290,7 +290,7 @@
 				HITL Enforcement
 			</div>
 			<div class="text-[11px] text-muted-foreground">
-				{i18n.current === 'id' ? 'Persetujuan ganda operator sebelum mutasi' : 'Dual-operator sign-off before mutation'}
+				{i18n.locale === 'id' ? 'Persetujuan ganda operator sebelum mutasi' : 'Dual-operator sign-off before mutation'}
 			</div>
 		</div>
 
@@ -304,7 +304,7 @@
 				{maxConcurrentTasks} Worker Slots
 			</div>
 			<div class="text-[11px] text-muted-foreground">
-				{i18n.current === 'id' ? 'Pool konteks browser terisolasi' : 'Isolated browser context pool'}
+				{i18n.locale === 'id' ? 'Pool konteks browser terisolasi' : 'Isolated browser context pool'}
 			</div>
 		</div>
 	</div>
@@ -316,10 +316,10 @@
 				<InformationCircle class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
 				<div class="space-y-0.5">
 					<div class="font-semibold text-foreground">
-						OpenClaw Gateway belum terdeteksi aktif di {gatewayUrl}
+						{i18n.t.agents.openclaw_disconnected_title.replace('{url}', gatewayUrl)}
 					</div>
 					<p class="text-muted-foreground leading-relaxed">
-						NovaPilot siap mengintegrasikan alur tugas otonom. Untuk mengaktifkan eksekusi browser Playwright lokal, jalankan perintah berikut di terminal:
+						{i18n.t.agents.openclaw_disconnected_desc}
 					</p>
 					<div class="mt-1 font-mono text-[11px] bg-background/80 px-2.5 py-1 rounded border border-border inline-block text-foreground">
 						npm install -g openclaw && openclaw gateway --port 18789
@@ -333,7 +333,7 @@
 				class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted font-medium text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer self-start sm:self-auto"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isProbing ? 'animate-spin' : ''}" />
-				<span>{isProbing ? 'Mengecek...' : 'Cek Ulang Koneksi'}</span>
+				<span>{isProbing ? i18n.t.agents.checking : i18n.t.agents.check_connection}</span>
 			</button>
 		</div>
 	{/if}
@@ -344,8 +344,8 @@
 	<div class="p-5 rounded-xl bg-card border border-border shadow-xs space-y-4">
 		<div class="flex items-center justify-between border-b border-border/60 pb-3">
 			<div>
-				<h3 class="text-sm font-semibold text-foreground">Konfigurasi Gateway &amp; Driver Browser</h3>
-				<p class="text-xs text-muted-foreground">Parameter koneksi ke service OpenClaw dan instance headless browser.</p>
+				<h3 class="text-sm font-semibold text-foreground">{i18n.t.agents.openclaw_config_title}</h3>
+				<p class="text-xs text-muted-foreground">{i18n.t.agents.openclaw_config_desc}</p>
 			</div>
 			<button
 				type="button"
@@ -354,7 +354,7 @@
 				class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isProbing ? 'animate-spin' : ''}" />
-				<span>Test Endpoint</span>
+				<span>{i18n.t.agents.openclaw_test_endpoint}</span>
 			</button>
 		</div>
 
@@ -382,14 +382,14 @@
 			</div>
 
 			<div class="space-y-1">
-				<label for="browserModeSelect" class="font-medium text-muted-foreground">Mode Browser Chromium</label>
+				<label for="browserModeSelect" class="font-medium text-muted-foreground">{i18n.t.agents.browser_mode_label}</label>
 				<select
 					id="browserModeSelect"
 					bind:value={browserMode}
 					class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
 				>
-					<option value="headless">Headless (Background Service)</option>
-					<option value="headed">Headed (Jendela Browser Terlihat)</option>
+					<option value="headless">{i18n.locale === 'id' ? 'Headless (Layanan Background)' : 'Headless (Background Service)'}</option>
+					<option value="headed">{i18n.locale === 'id' ? 'Headed (Jendela Browser Terlihat)' : 'Headed (Visible Browser Window)'}</option>
 				</select>
 			</div>
 		</div>
@@ -405,7 +405,7 @@
 				<div class="flex items-center justify-between">
 					<div>
 						<h3 class="text-sm font-semibold text-foreground">{i18n.t.agents.task_registry}</h3>
-						<p class="text-xs text-muted-foreground">{i18n.current === 'id' ? 'Pilih skenario tugas untuk pengujian automasi atau staging ke approval queue.' : 'Select task scenario for automation testing or approval queue staging.'}</p>
+						<p class="text-xs text-muted-foreground">{i18n.locale === 'id' ? 'Pilih skenario tugas untuk pengujian automasi atau staging ke approval queue.' : 'Select task scenario for automation testing or approval queue staging.'}</p>
 					</div>
 					<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
 						{taskRegistry.length} HANDLERS
@@ -455,7 +455,7 @@
 				<div class="flex items-center justify-between border-b border-border/60 pb-3">
 					<div class="flex items-center gap-2">
 						<CommandLine class="h-4 w-4 text-muted-foreground" />
-						<h3 class="text-sm font-semibold text-foreground">Task Dispatch &amp; Staging</h3>
+						<h3 class="text-sm font-semibold text-foreground">{i18n.locale === 'id' ? 'Kirim Tugas & Staging' : 'Task Dispatch & Staging'}</h3>
 					</div>
 					<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
 						{taskRegistry[selectedTaskIndex].id}
@@ -477,16 +477,16 @@
 				<!-- Target Params Metadata Box -->
 				<div class="p-3 rounded-lg bg-muted/40 border border-border/80 space-y-1.5 text-xs font-mono">
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span>Document Ref:</span>
+						<span>{i18n.locale === 'id' ? 'Referensi Dokumen:' : 'Document Ref:'}</span>
 						<span class="font-semibold text-foreground">{taskRegistry[selectedTaskIndex].docNo}</span>
 					</div>
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span>Proposed Value:</span>
+						<span>{i18n.locale === 'id' ? 'Nilai Diajukan:' : 'Proposed Value:'}</span>
 						<span class="font-semibold text-foreground">{taskRegistry[selectedTaskIndex].proposedValue}</span>
 					</div>
 					<div class="flex items-center justify-between text-muted-foreground">
-						<span>Safety Mode:</span>
-						<span class="text-emerald-600 dark:text-emerald-400 font-medium">HITL Required (No Direct DB Write)</span>
+						<span>{i18n.locale === 'id' ? 'Mode Keamanan:' : 'Safety Mode:'}</span>
+						<span class="text-emerald-600 dark:text-emerald-400 font-medium">{i18n.locale === 'id' ? 'Wajib HITL (Tanpa Penulisan DB Langsung)' : 'HITL Required (No Direct DB Write)'}</span>
 					</div>
 				</div>
 
@@ -500,7 +500,7 @@
 							class="h-9 px-3 rounded-lg border border-border bg-card hover:bg-muted font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
 						>
 							<Play class="h-3.5 w-3.5 text-primary" />
-							<span>{isDispatching ? (i18n.current === 'id' ? 'Mengirim...' : 'Dispatching...') : i18n.t.agents.dispatch_to_openclaw}</span>
+							<span>{isDispatching ? (i18n.locale === 'id' ? 'Mengirim...' : 'Dispatching...') : i18n.t.agents.dispatch_to_openclaw}</span>
 						</button>
 
 						<button
@@ -510,7 +510,7 @@
 							class="h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
 						>
 							<Bolt class="h-3.5 w-3.5" />
-							<span>{stagingLoading ? (i18n.current === 'id' ? 'Menyimpan...' : 'Staging...') : i18n.t.agents.stage_to_approval}</span>
+							<span>{stagingLoading ? (i18n.locale === 'id' ? 'Menyimpan...' : 'Staging...') : i18n.t.agents.stage_to_approval}</span>
 						</button>
 					</div>
 

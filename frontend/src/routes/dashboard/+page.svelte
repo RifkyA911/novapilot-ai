@@ -9,6 +9,7 @@
 		UserGroup, DocumentText
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import InspectModal from "$lib/components/InspectModal.svelte";
 	import RejectModal from "$lib/components/RejectModal.svelte";
 	import { timeAgo } from "$lib/utils";
@@ -80,12 +81,12 @@
 				</div>
 				<div>
 					<div class="font-semibold text-sm sm:text-base text-foreground flex items-center gap-2">
-						<span>Guardrail Assurance & Intake Engine</span>
+						<span>{i18n.t.overview.guardrail_title}</span>
 						<span class="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400">
-							Active Guard
+							{i18n.t.overview.active_guard}
 						</span>
 					</div>
-					<p class="text-xs text-muted-foreground mt-0.5">Automated validation of incoming mutations against schema constraints and zero raw SQL/NoSQL injection.</p>
+					<p class="text-xs text-muted-foreground mt-0.5">{i18n.t.overview.guardrail_desc}</p>
 				</div>
 			</div>
 
@@ -98,7 +99,7 @@
 						<span class="relative inline-flex rounded-full h-2 w-2 {cockpit.sseConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
 					</span>
 					<span class="font-medium {cockpit.sseConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
-						{cockpit.sseConnected ? "SSE Live" : "Reconnecting"}
+						{cockpit.sseConnected ? i18n.t.overview.sse_live : i18n.t.overview.sse_offline}
 					</span>
 				</div>
 
@@ -107,7 +108,7 @@
 					type="button"
 					onclick={() => cockpit.fetchTickets()}
 					class="h-9 w-9 rounded-lg border border-input bg-background hover:bg-accent text-foreground transition-colors flex items-center justify-center shadow-xs cursor-pointer"
-					title="Refresh On-Call Queue"
+					title={i18n.t.actions.refresh}
 				>
 					<ArrowPath class="h-4 w-4 {cockpit.loading ? 'animate-spin' : ''}" />
 				</button>
@@ -119,9 +120,9 @@
 			<!-- Left: Step Indicator -->
 			<div class="flex items-center gap-2 text-xs font-mono text-muted-foreground">
 				<CpuChip class="h-4 w-4 text-primary" />
-				<span class="font-semibold text-foreground">Real-Time Ingestion Pipeline:</span>
+				<span class="font-semibold text-foreground">{i18n.t.overview.pipeline_title}</span>
 				<span class="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs">
-					Standby Mode
+					{i18n.t.overview.pipeline_standby}
 				</span>
 			</div>
 
@@ -161,7 +162,7 @@
 					onclick={() => isPipelineFolded = !isPipelineFolded}
 					class="h-8 px-3 rounded-lg text-xs font-medium border border-input bg-background hover:bg-accent text-foreground transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
 				>
-					<span>{isPipelineFolded ? "Expand Pipeline Details" : "Fold to Step View"}</span>
+					<span>{isPipelineFolded ? i18n.t.overview.expand_pipeline : i18n.t.overview.fold_pipeline}</span>
 					{#if isPipelineFolded}
 						<ChevronDown class="h-3.5 w-3.5 text-muted-foreground" />
 					{:else}
@@ -272,10 +273,10 @@
 				</div>
 				<div>
 					<h4 class="text-xs font-bold text-foreground">
-						{cockpit.needsReviewCount} Inbound Message{cockpit.needsReviewCount > 1 ? 's' : ''} Require On-Call Review
+						{i18n.t.overview.needs_review_title.replace('{count}', String(cockpit.needsReviewCount)).replace('{plural}', cockpit.needsReviewCount > 1 ? 's' : '')}
 					</h4>
 					<p class="text-[11px] text-muted-foreground">
-						Incoming chats detected with company mutation requests (e.g. from photo attachment/nota) lacking explicit invoice numbers.
+						{i18n.t.overview.needs_review_desc}
 					</p>
 				</div>
 			</div>
@@ -283,7 +284,7 @@
 				href="/dashboard/messages"
 				class="h-8 px-3.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-xs transition-colors"
 			>
-				<span>Review & Stage Tickets</span>
+				<span>{i18n.t.overview.review_stage_btn}</span>
 				<ArrowTopRightOnSquare class="h-3.5 w-3.5" />
 			</a>
 		</div>
@@ -298,13 +299,13 @@
 			href="/dashboard/queue" 
 			class="p-4 rounded-xl border border-border bg-card shadow-xs space-y-1 hover:border-primary/50 transition-colors group"
 		>
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Pending Review</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.overview.kpi_pending}</div>
 			<div class="text-2xl sm:text-3xl font-bold font-mono text-amber-500 flex items-center justify-between">
 				<span>{cockpit.pendingCount}</span>
 				<Clock class="h-5 w-5 text-amber-500/40 group-hover:text-amber-500 transition-colors" />
 			</div>
 			<div class="text-xs text-muted-foreground flex items-center justify-between">
-				<span>Awaiting on-call signoff</span>
+				<span>{i18n.t.overview.kpi_pending_sub}</span>
 				<span class="text-primary group-hover:underline text-[11px]">&rarr;</span>
 			</div>
 		</a>
@@ -314,13 +315,13 @@
 			href="/dashboard/history" 
 			class="p-4 rounded-xl border border-border bg-card shadow-xs space-y-1 hover:border-emerald-500/50 transition-colors group"
 		>
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Mutated Today</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.overview.kpi_executed}</div>
 			<div class="text-2xl sm:text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
 				<span>{cockpit.executedCount}</span>
 				<CheckCircle class="h-5 w-5 text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />
 			</div>
 			<div class="text-xs text-muted-foreground flex items-center justify-between">
-				<span>Committed with audit log</span>
+				<span>{i18n.t.overview.kpi_executed_sub}</span>
 				<span class="text-primary group-hover:underline text-[11px]">&rarr;</span>
 			</div>
 		</a>
@@ -330,13 +331,13 @@
 			href="/dashboard/history" 
 			class="p-4 rounded-xl border border-border bg-card shadow-xs space-y-1 hover:border-muted-foreground/50 transition-colors group"
 		>
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Policy Rejected</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.overview.kpi_rejected}</div>
 			<div class="text-2xl sm:text-3xl font-bold font-mono text-foreground flex items-center justify-between">
 				<span>{cockpit.rejectedCount}</span>
 				<XCircle class="h-5 w-5 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
 			</div>
 			<div class="text-xs text-muted-foreground flex items-center justify-between">
-				<span>Closed invoices or errors</span>
+				<span>{i18n.t.overview.kpi_rejected_sub}</span>
 				<span class="text-primary group-hover:underline text-[11px]">&rarr;</span>
 			</div>
 		</a>
@@ -369,13 +370,13 @@
 				</div>
 				<div>
 					<h3 class="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-						Operations Traffic &amp; Omnichannel Ingress Trends
+						{i18n.t.overview.traffic_title}
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-primary/10 text-primary border border-primary/20">
-							7-DAY METRICS
+							{i18n.t.overview.traffic_badge}
 						</span>
 					</h3>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Volume pesan masuk per hari, perbandingan intake otomatis vs persetujuan petugas, dan pembagian kanal ChatOps.
+						{i18n.t.overview.traffic_subtitle}
 					</p>
 				</div>
 			</div>
@@ -385,7 +386,7 @@
 				class="h-8 px-3 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto cursor-pointer"
 			>
 				<Sparkles class="h-3.5 w-3.5 text-purple-500" />
-				<span>Cockpit Overview [AI Metrics] &rarr;</span>
+				<span>{i18n.t.overview.cockpit_btn}</span>
 			</a>
 		</div>
 
@@ -393,15 +394,15 @@
 			<!-- Left 2 Cols: Inbound Traffic Chart -->
 			<div class="lg:col-span-2 p-4 rounded-xl bg-secondary/30 border border-border/60 space-y-3 flex flex-col justify-between">
 				<div class="flex items-center justify-between text-xs font-mono">
-					<span class="text-foreground font-semibold">Volume Pesan Masuk vs Tiket Tereksekusi</span>
+					<span class="text-foreground font-semibold">{i18n.t.overview.chart_volume_title}</span>
 					<div class="flex items-center gap-3 text-[11px]">
 						<span class="flex items-center gap-1.5 text-blue-500">
 							<span class="h-2 w-2 rounded-full bg-blue-500"></span>
-							<span>Total Intake</span>
+							<span>{i18n.t.overview.chart_total_intake}</span>
 						</span>
 						<span class="flex items-center gap-1.5 text-emerald-500">
 							<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-							<span>Mutasi Disetujui (MCP)</span>
+							<span>{i18n.t.overview.chart_approved}</span>
 						</span>
 					</div>
 				</div>
@@ -463,21 +464,21 @@
 				</div>
 
 				<div class="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/50">
-					<span>Sen (42 chat)</span>
-					<span>Sel (68 chat)</span>
-					<span>Rab (55 chat)</span>
-					<span>Kam (90 chat)</span>
-					<span>Jum (112 chat)</span>
-					<span>Sab (48 chat)</span>
-					<span>Min (35 chat)</span>
+					<span>{i18n.current === 'id' ? 'Sen (42 chat)' : 'Mon (42 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Sel (68 chat)' : 'Tue (68 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Rab (55 chat)' : 'Wed (55 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Kam (90 chat)' : 'Thu (90 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Jum (112 chat)' : 'Fri (112 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Sab (48 chat)' : 'Sat (48 chats)'}</span>
+					<span>{i18n.current === 'id' ? 'Min (35 chat)' : 'Sun (35 chats)'}</span>
 				</div>
 			</div>
 
 			<!-- Right 1 Col: Platform Share Breakdown -->
 			<div class="p-4 rounded-xl bg-secondary/30 border border-border/60 space-y-3">
 				<div class="flex items-center justify-between text-xs font-mono">
-					<span class="text-foreground font-semibold">Pangsa Kanal ChatOps</span>
-					<span class="text-primary font-bold">500 Total Ingress</span>
+					<span class="text-foreground font-semibold">{i18n.t.overview.channel_share_title}</span>
+					<span class="text-primary font-bold">{i18n.t.overview.channel_total_ingress}</span>
 				</div>
 
 				<div class="space-y-2.5 text-xs font-mono">
@@ -785,10 +786,10 @@
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<Clock class="h-4 w-4 text-amber-500" />
-				<h2 class="text-sm font-semibold text-foreground">Recent Pending Mutation Requests</h2>
+				<h2 class="text-sm font-semibold text-foreground">{i18n.t.overview.queue_preview_title}</h2>
 				{#if cockpit.pendingCount > 0}
 					<span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">
-						{cockpit.pendingCount} pending
+						{cockpit.pendingCount} {i18n.t.status.pending}
 					</span>
 				{/if}
 			</div>
@@ -797,7 +798,7 @@
 				href="/dashboard/queue" 
 				class="text-xs font-medium text-primary hover:underline flex items-center gap-1"
 			>
-				<span>Open Full Approval Queue</span>
+				<span>{i18n.t.overview.view_all}</span>
 				<ArrowRight class="h-3.5 w-3.5" />
 			</a>
 		</div>
@@ -807,9 +808,9 @@
 				<div class="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
 					<CheckCircle class="h-6 w-6" />
 				</div>
-				<div class="text-sm font-semibold text-foreground">Approval Queue is All Clear</div>
+				<div class="text-sm font-semibold text-foreground">{i18n.t.overview.empty_queue}</div>
 				<p class="text-xs text-muted-foreground max-w-sm mx-auto">
-					No pending mutations awaiting review. You can simulate inbound branch messages from the simulator.
+					{i18n.t.queue.no_pending_desc}
 				</p>
 				<div class="pt-2">
 					<a
@@ -817,7 +818,7 @@
 						class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
 					>
 						<PaperAirplane class="h-3.5 w-3.5" />
-						<span>Open WhatsApp Simulator</span>
+						<span>{i18n.t.queue.send_simulated}</span>
 					</a>
 				</div>
 			</div>
@@ -853,10 +854,10 @@
 								type="button"
 								onclick={() => (inspectedTicket = ticket)}
 								class="h-8 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1 cursor-pointer"
-								title="Inspect Mutation Plan"
+								title={i18n.t.actions.inspect}
 							>
 								<Eye class="h-3.5 w-3.5" />
-								<span>Inspect</span>
+								<span>{i18n.t.actions.inspect}</span>
 							</button>
 
 							<button
@@ -864,7 +865,7 @@
 								onclick={() => (selectedTicketForReject = ticket)}
 								class="h-8 px-2.5 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs font-medium cursor-pointer"
 							>
-								Reject
+								{i18n.t.actions.reject}
 							</button>
 
 							<button
@@ -874,7 +875,7 @@
 								class="h-8 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
 							>
 								<Check class="h-3.5 w-3.5" />
-								<span>Approve</span>
+								<span>{i18n.t.actions.approve}</span>
 							</button>
 						</div>
 					</div>

@@ -16,6 +16,7 @@
 		ShieldCheck
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import TutorialModal from "$lib/components/TutorialModal.svelte";
 	import TelemetryCircuitVisualizer from "$lib/components/TelemetryCircuitVisualizer.svelte";
 
@@ -71,13 +72,13 @@
 				</div>
 				<div>
 					<h1 class="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						<span>System Telemetry & Platform Probes</span>
+						<span>{i18n.t.telemetry.title}</span>
 						<span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-medium border border-emerald-500/20">
 							Live Probes
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Hardware telemetry, Go runtime allocations, and multi-platform ChatOps ingress status.
+						{i18n.t.telemetry.subtitle}
 					</p>
 				</div>
 			</div>
@@ -90,7 +91,7 @@
 				class="h-9 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
 			>
 				<BookOpen class="h-4 w-4" />
-				<span>How to Integrate</span>
+				<span>{i18n.locale === 'id' ? 'Panduan Integrasi' : 'How to Integrate'}</span>
 			</button>
 
 			<button
@@ -99,7 +100,7 @@
 				class="h-9 px-3 rounded-xl border border-input bg-background hover:bg-accent text-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer"
 			>
 				<ArrowPath class="h-4 w-4 {cockpit.loading ? 'animate-spin' : ''}" />
-				<span>Probe Now</span>
+				<span>{i18n.t.actions.refresh}</span>
 			</button>
 		</div>
 	</div>
