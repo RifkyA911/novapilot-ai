@@ -312,12 +312,23 @@
 
 	const ferdiumHookScript = `/**
  * NovaPilot AI — Ferdium WhatsApp Web Integration Hook
- * Paste into: Ferdium > Right Click WhatsApp Service > Edit > Advanced > Inject JavaScript code
+ * Mendukung Multi-Service WhatsApp (Service 1, Service 2, Service 3, dst.)
+ * 
+ * CARA PASANG:
+ * 1. Di Ferdium, klik kanan icon Service WhatsApp Anda > Edit Service
+ * 2. Masuk ke menu "Advanced"
+ * 3. Tempel skrip ini pada kolom "Custom Code (Inject JavaScript code)"
+ * 4. (Opsional) Sesuaikan BRANCH_ID dan SERVICE_LABEL untuk membedakan tiap akun
+ * 5. Klik "Save service" lalu tekan Ctrl + R (Reload)
  */
 (function () {
     const NOVAPILOT_BACKEND = "http://127.0.0.1:8088";
+    // Konfigurasi khusus service ini (sesuaikan per tab service jika punya multiple WA)
+    const BRANCH_ID = 1; // ID Cabang NovaPilot (1: Surabaya, 2: Medan, 3: Semarang, dst.)
+    const SERVICE_LABEL = "Ferdium WA"; // Label penanda akun WA ini
+
     const processedMessages = new Set();
-    console.log("[NovaPilot AI] Ferdium ChatOps Hook initialized.");
+    console.log(\`%c[NovaPilot AI]%c Ferdium ChatOps Hook aktif untuk \${SERVICE_LABEL} (Backend: \${NOVAPILOT_BACKEND})\`, "background:#059669; color:#fff; font-weight:bold; padding:2px 5px; border-radius:3px;", "color:#059669; font-weight:bold;");
 
     function parseMessage(text) {
         const docMatch = text.match(/\\b(INV[\\/\\-]\\d{4}[\\/\\-]\\d{3}|NOTA[\\/\\-]\\d{4}[\\/\\-]\\d{3})\\b/i);
@@ -343,22 +354,22 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    raw_message: rawText,
+                    raw_message: \`[\${SERVICE_LABEL}] \${rawText}\`,
                     extracted_intent: parsed.intent,
                     document_no: parsed.documentNo,
                     field_target: parsed.fieldTarget,
                     proposed_value: parsed.proposedValue,
-                    branch_id: 1,
+                    branch_id: BRANCH_ID,
                     confidence_score: parsed.confidence
                 })
             });
             if (res.ok) {
                 const ticket = await res.json();
-                console.log(\`[NovaPilot] Ticket \${ticket.ticket_no} created successfully via Ferdium!\`);
+                console.log(\`%c[NovaPilot AI]%c Tiket \${ticket.ticket_no} (\${ticket.document_no}) berhasil dibuat via \${SERVICE_LABEL}!\`, "background:#059669; color:#fff; padding:2px 4px; border-radius:3px;", "color:#059669; font-weight:bold;");
                 return ticket;
             }
         } catch (err) {
-            console.error("[NovaPilot] Error:", err);
+            console.error(\`[NovaPilot \${SERVICE_LABEL}] Error:\`, err);
         }
         return null;
     }
@@ -368,7 +379,7 @@
             for (const mutation of mutations) {
                 for (const node of mutation.addedNodes) {
                     if (node.nodeType === 1) {
-                        const textNodes = node.querySelectorAll ? node.querySelectorAll(".selectable-text, [data-pre-plain-text]") : [];
+                        const textNodes = node.querySelectorAll ? node.querySelectorAll(".selectable-text, [data-pre-plain-text], .copyable-text") : [];
                         for (const el of textNodes) {
                             const text = el.textContent || "";
                             if (!text || processedMessages.has(text)) continue;
@@ -383,10 +394,11 @@
             }
         });
         observer.observe(document.body, { childList: true, subtree: true });
+        console.log(\`[NovaPilot AI] Observer WhatsApp aktif pada \${SERVICE_LABEL}.\`);
     }
 
     const checkInterval = setInterval(() => {
-        if (document.querySelector("#app") || document.querySelector("#pane-side")) {
+        if (document.querySelector("#app") || document.querySelector("#pane-side") || document.querySelector("div[role='textbox']")) {
             clearInterval(checkInterval);
             observeWhatsAppMessages();
         }
@@ -783,7 +795,7 @@
 
 								<div class="space-y-2">
 									<div class="text-[11px] text-muted-foreground leading-relaxed">
-										<strong>Cara Pasang:</strong> Buka Ferdium &gt; Klik kanan service WhatsApp &gt; <strong>Edit Service</strong> &gt; Menu <strong>Advanced</strong> &gt; Tempel kode pada input <strong>Custom Code (Inject JavaScript code)</strong> &gt; Simpan &amp; Reload.
+										<strong>{i18n.locale === 'id' ? 'Mendukung Multi-Service (1, 2, atau 3 Akun WA Sekaligus):' : 'Supports Multi-Service (1, 2, or 3+ WA Accounts Concurrently):'}</strong> {i18n.locale === 'id' ? 'Buka Ferdium > Klik kanan setiap service WhatsApp > Edit Service > Menu Advanced > Tempel kode pada input "Custom Code (Inject JavaScript code)" > Simpan & Reload. Anda bisa membedakan label service (misal "WA 1", "WA 2", "WA 3") di baris atas skrip.' : 'Open Ferdium > Right-click each WhatsApp service > Edit Service > Advanced > Paste code into "Custom Code (Inject JavaScript code)" > Save & Reload. You can customize the service label (e.g. "WA 1", "WA 2", "WA 3") at the top of the script.'}
 									</div>
 									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ferdiumHookScript}</code></pre>
 								</div>
