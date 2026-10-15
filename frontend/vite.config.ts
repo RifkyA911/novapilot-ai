@@ -15,6 +15,7 @@ export default defineConfig({
 			'/api/health': 'http://127.0.0.1:8088',
 			'/api/telemetry': 'http://127.0.0.1:8088',
 			'/api/upload': 'http://127.0.0.1:8088',
+			'/api/storage': 'http://127.0.0.1:8088',
 			'/api/inbound-messages': 'http://127.0.0.1:8088',
 			'/api/learned-patterns': 'http://127.0.0.1:8088',
 			'/api/database': 'http://127.0.0.1:8088',

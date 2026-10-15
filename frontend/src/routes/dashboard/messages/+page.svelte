@@ -21,11 +21,12 @@
 		CommandLine,
 		Play,
 		Trash,
-		CpuChip
+		CpuChip,
+		PaperAirplane
 	} from "svelte-heros-v2";
 	import { cockpit, type InboundMessage, type Ticket } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
-	import { timeAgo } from "$lib/utils";
+	import { timeAgo, formatCurrency } from "$lib/utils";
 
 	// Filter & Search State
 	let searchQuery = $state("");
@@ -33,6 +34,99 @@
 	let selectedClassification = $state<"all" | "ACTIONABLE" | "NEEDS_REVIEW" | "CASUAL_BANTER">("all");
 	let isRefreshing = $state(false);
 	let copiedId = $state<number | null>(null);
+
+	// Inbound Reply Modal State
+	let replyModalMessage = $state<InboundMessage | null>(null);
+	let replyRecipientPhone = $state("");
+	let replyRecipientName = $state("");
+	let replyText = $state("");
+	let replySending = $state(false);
+	let replySuccess = $state(false);
+	let replyError = $state<string | null>(null);
+	let replySuccessTimestamp = $state("");
+
+	const quickReplyTemplates = [
+		{
+			title: "Permintaan Diterima & Masuk Antrean Verifikasi",
+			badge: "Staging",
+			generate: (msg: InboundMessage) =>
+				`Halo ${msg.sender_name || 'Rekan'}, permintaan koreksi dokumen ${msg.extracted_doc || 'terkait'} telah kami terima dan masuk ke dalam antrean verifikasi tim IT On-Call NovaPilot. Kami akan segera memperbarui status ke sistem.`
+		},
+		{
+			title: "Mohon Kirimkan Foto / Scan Nota Fisik",
+			badge: "Clarification",
+			generate: (msg: InboundMessage) =>
+				`Halo ${msg.sender_name || 'Rekan'}, mohon bantuannya untuk mengirimkan foto fisik nota/surat jalan atau dokumen pendukung yang jelas agar kami dapat memvalidasi data ini ke database ERP resmi.`
+		},
+		{
+			title: "Tiket Mutasi Disetujui & ERP Diperbarui",
+			badge: "Resolved",
+			generate: (msg: InboundMessage) =>
+				`Halo ${msg.sender_name || 'Rekan'}, pembaruan data untuk dokumen ${msg.extracted_doc || 'terkait'} telah BERHASIL disetujui dan diterapkan ke database ERP resmi (${msg.extracted_target ? 'Target: ' + msg.extracted_target : 'Selesai'}). Silakan periksa kembali di portal cabang.`
+		},
+		{
+			title: "Nomor Dokumen Tidak Ditemukan",
+			badge: "Warning",
+			generate: (msg: InboundMessage) =>
+				`Halo ${msg.sender_name || 'Rekan'}, nomor dokumen ${msg.extracted_doc || ''} tidak ditemukan di database operasional. Mohon periksa kembali nomor faktur yang benar (contoh: INV/2026/001).`
+		},
+		{
+			title: "Permintaan Ditolak (Dokumen Closed)",
+			badge: "Policy",
+			generate: (msg: InboundMessage) =>
+				`Halo ${msg.sender_name || 'Rekan'}, mohon maaf dokumen ${msg.extracted_doc || 'terkait'} sudah berstatus CLOSED/POSTED di ERP sehingga mutasi langsung via chat diblokir oleh sistem SOP IT.`
+		}
+	];
+
+	function openReplyModal(msg: InboundMessage) {
+		replyModalMessage = msg;
+		replyRecipientName = msg.sender_name || "Branch Staff";
+		replyRecipientPhone = msg.sender_id || "";
+		replyText = quickReplyTemplates[0].generate(msg);
+		replySending = false;
+		replySuccess = false;
+		replyError = null;
+		replySuccessTimestamp = "";
+	}
+
+	function applyReplyTemplate(template: typeof quickReplyTemplates[0]) {
+		if (!replyModalMessage) return;
+		replyText = template.generate(replyModalMessage);
+	}
+
+	async function handleSendReply() {
+		if (!replyModalMessage || !replyRecipientPhone.trim() || !replyText.trim()) {
+			replyError = "Recipient phone/JID and message body are required.";
+			return;
+		}
+
+		replySending = true;
+		replyError = null;
+		replySuccess = false;
+
+		try {
+			const res = await fetch("/api/gateway/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: replyRecipientPhone.trim(),
+					message: replyText.trim()
+				})
+			});
+
+			const data = await res.json();
+			if (!res.ok || data.ok === false) {
+				throw new Error(data.error || "Gagal mengirim balasan via WhatsApp Gateway.");
+			}
+
+			replySuccess = true;
+			replySuccessTimestamp = new Date().toLocaleTimeString();
+		} catch (err: any) {
+			replyError = err.message || "Gagal menghubungi WhatsApp Gateway.";
+		} finally {
+			replySending = false;
+		}
+	}
 
 	// Modals & Actions
 	let inspectModalMessage = $state<InboundMessage | null>(null);
@@ -835,6 +929,16 @@
 						<div class="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
 							<button
 								type="button"
+								onclick={() => openReplyModal(msg)}
+								class="h-7 px-2.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+								title="Balas chat ini via WhatsApp Gateway"
+							>
+								<PaperAirplane class="h-3 w-3" />
+								<span>Balas Chat</span>
+							</button>
+
+							<button
+								type="button"
 								onclick={() => openLearningModal(msg)}
 								class="h-7 px-2.5 rounded-md border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 								title="Ajarkan AI mengenali gaya chat ini sebagai pola mutasi dokumen"
@@ -1049,7 +1153,7 @@
 						>
 							{#each openInvoices as inv}
 								<option value={inv.invoice_no}>
-									{inv.invoice_no} — {inv.customer_name} (Rp {inv.amount.toLocaleString()})
+									{inv.invoice_no} — {inv.customer_name} ({formatCurrency(inv.amount)})
 								</option>
 							{/each}
 						</select>
@@ -1148,6 +1252,213 @@
 				alt="Zoomed Attachment"
 				class="max-w-full max-h-[80vh] object-contain rounded-xl border border-white/20 shadow-2xl"
 			/>
+		</div>
+	</div>
+{/if}
+
+<!-- ========================================================================= -->
+<!-- 7.5 INBOUND MESSAGE REPLY MODAL (WHATSAPP GATEWAY DISPATCH)               -->
+<!-- ========================================================================= -->
+{#if replyModalMessage}
+	<div 
+		role="dialog" 
+		aria-modal="true" 
+		tabindex="-1"
+		class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+		onkeydown={(e) => { if (e.key === 'Escape') replyModalMessage = null; }}
+	>
+		<div class="w-full max-w-2xl rounded-2xl border border-emerald-500/30 bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+			<!-- Header -->
+			<div class="flex items-start justify-between pb-3 border-b border-border/60">
+				<div class="flex items-center gap-3 min-w-0">
+					<div class="h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs border border-emerald-500/30">
+						<PaperAirplane class="h-5 w-5" />
+					</div>
+					<div class="min-w-0">
+						<div class="flex items-center gap-2">
+							<h3 class="text-sm font-bold text-foreground truncate">Balas Chat WhatsApp Masuk</h3>
+							<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
+								Live Gateway :3002
+							</span>
+						</div>
+						<p class="text-xs text-muted-foreground truncate">
+							Kirim pesan langsung ke pengirim <span class="font-semibold text-foreground">{replyRecipientName}</span> ({replyRecipientPhone})
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onclick={() => replyModalMessage = null}
+					class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+				>
+					<XMark class="h-4 w-4" />
+				</button>
+			</div>
+
+			{#if replySuccess}
+				<!-- Success Confirmation View -->
+				<div class="p-6 text-center space-y-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+					<div class="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
+						<Check class="h-6 w-6 stroke-2" />
+					</div>
+					<div class="space-y-1">
+						<h4 class="text-base font-bold text-foreground">Balasan Berhasil Terkirim ke WhatsApp!</h4>
+						<p class="text-xs text-muted-foreground max-w-md mx-auto">
+							Pesan balasan telah diteruskan ke Baileys Gateway daemon dan sukses terkirim ke <span class="font-mono font-bold text-foreground">{replyRecipientPhone}</span> pada pukul <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">{replySuccessTimestamp}</span>.
+						</p>
+					</div>
+					<div class="pt-3 flex items-center justify-center gap-2.5">
+						<button
+							type="button"
+							onclick={() => { replySuccess = false; replyText = ""; }}
+							class="h-8.5 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
+						>
+							Tulis Pesan Lain
+						</button>
+						<button
+							type="button"
+							onclick={() => replyModalMessage = null}
+							class="h-8.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
+						>
+							Selesai &amp; Tutup
+						</button>
+					</div>
+				</div>
+			{:else}
+				<div class="space-y-4 text-xs">
+					<!-- Original Message Context Box -->
+					<div class="p-3.5 rounded-xl bg-secondary/40 border border-border/60 space-y-1.5">
+						<div class="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
+							<span class="font-bold uppercase flex items-center gap-1.5 text-foreground">
+								<ChatBubbleLeftRight class="h-3.5 w-3.5 text-primary" />
+								Pesan Masuk Asli
+							</span>
+							<span class="text-[10px]">{timeAgo(replyModalMessage.created_at)}</span>
+						</div>
+						<p class="font-mono text-xs text-foreground bg-background/80 p-2.5 rounded-lg border border-border/40 italic whitespace-pre-wrap select-text">
+							"{replyModalMessage.raw_message}"
+						</p>
+						{#if replyModalMessage.extracted_doc || replyModalMessage.extracted_target}
+							<div class="flex items-center gap-2 pt-1 font-mono text-[10px]">
+								{#if replyModalMessage.extracted_doc}
+									<span class="px-2 py-0.5 rounded bg-secondary text-primary font-bold border border-border/40">
+										Doc: {replyModalMessage.extracted_doc}
+									</span>
+								{/if}
+								{#if replyModalMessage.extracted_target}
+									<span class="px-2 py-0.5 rounded bg-secondary text-foreground font-medium border border-border/40">
+										Target: {replyModalMessage.extracted_target}
+									</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Quick Reply Templates Pills -->
+					<div class="space-y-1.5">
+						<div class="font-semibold text-foreground flex items-center justify-between">
+							<span>Pilih Template Respon Cepat (Quick Responses):</span>
+							<span class="text-[10px] text-muted-foreground font-mono">Klik untuk memasukkan template</span>
+						</div>
+						<div class="flex flex-wrap gap-1.5">
+							{#each quickReplyTemplates as tmpl}
+								<button
+									type="button"
+									onclick={() => applyReplyTemplate(tmpl)}
+									class="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-secondary/70 text-[11px] font-medium text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+								>
+									<span class="text-[9px] px-1 py-0.2 rounded font-mono font-bold {tmpl.badge === 'Resolved' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : tmpl.badge === 'Warning' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-primary/15 text-primary'}">
+										{tmpl.badge}
+									</span>
+									<span class="truncate max-w-[200px]">{tmpl.title}</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+
+					<!-- Recipient Phone / JID Field -->
+					<div class="space-y-1">
+						<label for="replyPhoneInput" class="font-semibold text-foreground flex items-center justify-between">
+							<span>Nomor Telepon / WhatsApp Target JID:</span>
+							<span class="text-[10px] text-muted-foreground font-mono">Otomatis dari pesan masuk</span>
+						</label>
+						<input
+							id="replyPhoneInput"
+							type="text"
+							bind:value={replyRecipientPhone}
+							placeholder="Contoh: 6281228632195 atau 120363xxx@g.us"
+							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Message Textarea -->
+					<div class="space-y-1">
+						<div class="flex items-center justify-between">
+							<label for="replyTextInput" class="font-semibold text-foreground">
+								Isi Pesan Balasan (WhatsApp Outbound Body): <span class="text-destructive">*</span>
+							</label>
+							<span class="text-[10px] font-mono text-muted-foreground">
+								{replyText.length} karakter
+							</span>
+						</div>
+						<textarea
+							id="replyTextInput"
+							bind:value={replyText}
+							rows="5"
+							placeholder="Ketik balasan resmi Anda di sini..."
+							class="w-full p-3 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground font-sans focus:outline-none focus:ring-1 focus:ring-primary shadow-xs resize-y"
+						></textarea>
+						<div class="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+							<span class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+								<ShieldCheck class="h-3.5 w-3.5" />
+								<span>DLP Guardrail Aktif: Token kredensial &amp; nomor rahasia dilindungi otomatis.</span>
+							</span>
+						</div>
+					</div>
+
+					{#if replyError}
+						<div class="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs space-y-1">
+							<p class="font-bold flex items-center gap-1.5">
+								<ExclamationTriangle class="h-4 w-4 shrink-0" />
+								<span>Gagal Mengirimkan Pesan Balasan:</span>
+							</p>
+							<p class="font-mono text-[11px]">{replyError}</p>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Footer Actions -->
+				<div class="pt-3 flex items-center justify-between gap-3 border-t border-border/60">
+					<span class="text-[11px] text-muted-foreground hidden sm:inline">
+						Pesan akan dipancarkan seketika melalui sesi WhatsApp Baileys.
+					</span>
+
+					<div class="flex items-center gap-2 ml-auto">
+						<button
+							type="button"
+							onclick={() => replyModalMessage = null}
+							class="h-8.5 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
+						>
+							Batal
+						</button>
+						<button
+							type="button"
+							onclick={handleSendReply}
+							disabled={replySending || !replyText.trim() || !replyRecipientPhone.trim()}
+							class="h-8.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
+						>
+							{#if replySending}
+								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+								<span>Mengirim...</span>
+							{:else}
+								<PaperAirplane class="h-3.5 w-3.5" />
+								<span>Kirim Balasan via WA</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

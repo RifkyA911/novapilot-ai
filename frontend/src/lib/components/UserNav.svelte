@@ -26,14 +26,31 @@
 
 	let { user }: { user: UserData | null | undefined } = $props();
 
-	// Fallback humanized user if in guest preview
-	let activeUser = $derived(user || {
-		id: "usr_internal_johndoe",
-		name: "John Doe",
-		email: "johndoe@factory.internal",
-		role: "oncall_engineer",
-		avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe",
-		branchClearance: ["Surabaya HQ", "Medan Hub", "Semarang DC"]
+	let localProfile = $state<{
+		name?: string;
+		email?: string;
+		role?: string;
+		avatar?: string;
+		branch?: string;
+	} | null>(null);
+
+	function syncProfileFromStorage() {
+		try {
+			const saved = localStorage.getItem("novapilot_user_profile");
+			if (saved) {
+				localProfile = JSON.parse(saved);
+			}
+		} catch {}
+	}
+
+	// Fallback humanized user merged with local profile customizations
+	let activeUser = $derived({
+		id: user?.id || "usr_internal_johndoe",
+		name: localProfile?.name || user?.name || "John Doe",
+		email: localProfile?.email || user?.email || "johndoe@factory.internal",
+		role: localProfile?.role || user?.role || "oncall_engineer",
+		avatar: localProfile?.avatar !== undefined ? localProfile.avatar : (user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe"),
+		branchClearance: user?.branchClearance || ["Surabaya HQ", "Medan Hub", "Semarang DC"]
 	});
 
 	let isMenuOpen = $state(false);
@@ -60,12 +77,17 @@
 	}
 
 	onMount(() => {
+		syncProfileFromStorage();
+		window.addEventListener("novapilot_profile_updated", syncProfileFromStorage);
+		window.addEventListener("storage", syncProfileFromStorage);
 		window.addEventListener("click", handleWindowClick);
 		window.addEventListener("keydown", handleKeyDown);
 	});
 
 	onDestroy(() => {
 		if (typeof window !== "undefined") {
+			window.removeEventListener("novapilot_profile_updated", syncProfileFromStorage);
+			window.removeEventListener("storage", syncProfileFromStorage);
 			window.removeEventListener("click", handleWindowClick);
 			window.removeEventListener("keydown", handleKeyDown);
 		}
@@ -212,6 +234,14 @@
 				>
 					<CommandLine class="w-4 h-4 text-primary" />
 					<span>{i18n.t.user_nav.dashboard_queue}</span>
+				</a>
+				<a
+					href="/dashboard/settings?tab=profile"
+					onclick={closeMenu}
+					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg hover:bg-secondary text-foreground transition-colors"
+				>
+					<UserCircle class="w-4 h-4 text-purple-500" />
+					<span>Profile &amp; Avatar Settings</span>
 				</a>
 				<a
 					href="/flow"

@@ -251,7 +251,7 @@ func (h *APIHandler) ListAuditLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, logs)
 }
 
-// UploadDocument handles multi-part file uploads (PDF, images, proof documents)
+// UploadDocument handles multi-part file uploads (PDF, images, proof documents, avatars)
 func (h *APIHandler) UploadDocument(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -273,9 +273,24 @@ func (h *APIHandler) UploadDocument(c *gin.Context) {
 		uploadedBy = "WEB_USER"
 	}
 
+	// Structured directories: "avatars", "documents", "wa_attachments", "mcp_exports"
+	category := strings.ToLower(strings.TrimSpace(c.Request.FormValue("category")))
+	validCategories := map[string]bool{
+		"avatars":        true,
+		"documents":      true,
+		"wa_attachments": true,
+		"mcp_exports":    true,
+	}
+	if !validCategories[category] {
+		category = "documents"
+	}
+
+	targetDir := filepath.Join(h.uploadDir, category)
+	_ = os.MkdirAll(targetDir, 0755)
+
 	// Generate safe file name
 	safeFileName := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(header.Filename))
-	destinationPath := filepath.Join(h.uploadDir, safeFileName)
+	destinationPath := filepath.Join(targetDir, safeFileName)
 
 	out, err := os.Create(destinationPath)
 	if err != nil {
@@ -289,10 +304,11 @@ func (h *APIHandler) UploadDocument(c *gin.Context) {
 		return
 	}
 
+	relativePath := fmt.Sprintf("/uploads/%s/%s", category, safeFileName)
 	doc := &domain.Document{
 		TicketID:   ticketID,
 		FileName:   header.Filename,
-		FilePath:   "/uploads/" + safeFileName,
+		FilePath:   relativePath,
 		MimeType:   header.Header.Get("Content-Type"),
 		FileSize:   header.Size,
 		UploadedBy: uploadedBy,
@@ -303,7 +319,23 @@ func (h *APIHandler) UploadDocument(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, doc)
+	storageMu.RLock()
+	activeStorage := currentActiveStorage
+	storageMu.RUnlock()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":              doc.ID,
+		"ticket_id":       doc.TicketID,
+		"file_name":       doc.FileName,
+		"file_path":       doc.FilePath,
+		"url":             doc.FilePath,
+		"category":        category,
+		"mime_type":       doc.MimeType,
+		"file_size":       doc.FileSize,
+		"uploaded_by":     doc.UploadedBy,
+		"storage_backend": activeStorage,
+		"created_at":      doc.CreatedAt,
+	})
 }
 
 // Inbound Messages Handlers (Omnichannel Viewer & Ticket Stager)
@@ -2149,6 +2181,320 @@ func (h *APIHandler) SendGatewayMessage(c *gin.Context) {
 
 	c.JSON(resp.StatusCode, gwResp)
 }
+
+// =========================================================================
+// STORAGE CONFIGURATION & REPOSITORY (INTERNAL FS + S3 OBJECT STORAGE)
+// =========================================================================
+
+type StorageCategoryStat struct {
+	Category    string `json:"category"`
+	Path        string `json:"path"`
+	FileCount   int    `json:"file_count"`
+	SizeBytes   int64  `json:"size_bytes"`
+	SizeMB      string `json:"size_mb"`
+	Description string `json:"description"`
+}
+
+type StorageConfigResponse struct {
+	ActiveBackend  string                `json:"active_backend"` // "internal" | "s3"
+	InternalDir    string                `json:"internal_dir"`
+	TotalFiles     int                   `json:"total_files"`
+	TotalSizeBytes int64                 `json:"total_size_bytes"`
+	TotalSizeMB    string                `json:"total_size_mb"`
+	Categories     []StorageCategoryStat `json:"categories"`
+	S3             S3ConfigDTO           `json:"s3"`
+}
+
+type S3ConfigDTO struct {
+	Enabled   bool   `json:"enabled"`
+	Endpoint  string `json:"endpoint"`
+	Region    string `json:"region"`
+	Bucket    string `json:"bucket"`
+	AccessKey string `json:"access_key"`
+	SecretKey string `json:"secret_key"` // Masked in GET
+	PathStyle bool   `json:"path_style"`
+	UseSSL    bool   `json:"use_ssl"`
+	Status    string `json:"status"` // "CONFIGURED", "STANDBY", "DISABLED"
+}
+
+type UpdateStorageConfigRequest struct {
+	ActiveBackend *string `json:"active_backend"`
+	S3Enabled     *bool   `json:"s3_enabled"`
+	S3Endpoint    *string `json:"s3_endpoint"`
+	S3Region      *string `json:"s3_region"`
+	S3Bucket      *string `json:"s3_bucket"`
+	S3AccessKey   *string `json:"s3_access_key"`
+	S3SecretKey   *string `json:"s3_secret_key"`
+	S3PathStyle   *bool   `json:"s3_path_style"`
+	S3UseSSL      *bool   `json:"s3_use_ssl"`
+}
+
+var (
+	storageMu            sync.RWMutex
+	currentActiveStorage = "internal"
+	s3ConfigState        = S3ConfigDTO{
+		Enabled:   false,
+		Endpoint:  "s3.ap-southeast-1.amazonaws.com",
+		Region:    "ap-southeast-1",
+		Bucket:    "novapilot-vault",
+		AccessKey: "AKIA_NOVAPILOT_DEMO",
+		SecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+		PathStyle: true,
+		UseSSL:    true,
+		Status:    "STANDBY",
+	}
+)
+
+func (h *APIHandler) ensureStorageDirectories() {
+	categories := []string{"avatars", "documents", "wa_attachments", "mcp_exports"}
+	for _, cat := range categories {
+		dir := filepath.Join(h.uploadDir, cat)
+		_ = os.MkdirAll(dir, 0755)
+	}
+}
+
+func (h *APIHandler) getStorageStats() ([]StorageCategoryStat, int, int64) {
+	h.ensureStorageDirectories()
+	categories := []struct {
+		Key  string
+		Desc string
+	}{
+		{"avatars", "User profile photos, avatars, and employee credentials"},
+		{"documents", "Invoices, tax slips, work orders, purchase orders & PDFs"},
+		{"wa_attachments", "Inbound WhatsApp photos, camera shots, and payment receipts"},
+		{"mcp_exports", "MCP catalog schemas, system exports, and JSON dumps"},
+	}
+
+	stats := make([]StorageCategoryStat, 0, len(categories))
+	var totalFiles int
+	var totalBytes int64
+
+	for _, c := range categories {
+		catPath := filepath.Join(h.uploadDir, c.Key)
+		count := 0
+		var size int64 = 0
+
+		entries, err := os.ReadDir(catPath)
+		if err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() {
+					count++
+					if info, err := entry.Info(); err == nil {
+						size += info.Size()
+					}
+				}
+			}
+		}
+
+		totalFiles += count
+		totalBytes += size
+
+		sizeMB := fmt.Sprintf("%.2f MB", float64(size)/(1024*1024))
+		if size < 1024*1024 {
+			sizeMB = fmt.Sprintf("%.1f KB", float64(size)/1024)
+		}
+
+		stats = append(stats, StorageCategoryStat{
+			Category:    c.Key,
+			Path:        filepath.ToSlash(filepath.Join("uploads", c.Key)),
+			FileCount:   count,
+			SizeBytes:   size,
+			SizeMB:      sizeMB,
+			Description: c.Desc,
+		})
+	}
+
+	return stats, totalFiles, totalBytes
+}
+
+func (h *APIHandler) GetStorageConfig(c *gin.Context) {
+	storageMu.RLock()
+	active := currentActiveStorage
+	s3 := s3ConfigState
+	storageMu.RUnlock()
+
+	stats, totalFiles, totalBytes := h.getStorageStats()
+	totalMB := fmt.Sprintf("%.2f MB", float64(totalBytes)/(1024*1024))
+
+	// Mask secret key
+	maskedSecret := ""
+	if s3.SecretKey != "" {
+		if len(s3.SecretKey) > 8 {
+			maskedSecret = s3.SecretKey[:4] + "••••••••" + s3.SecretKey[len(s3.SecretKey)-4:]
+		} else {
+			maskedSecret = "••••••••"
+		}
+	}
+	s3.SecretKey = maskedSecret
+
+	c.JSON(http.StatusOK, StorageConfigResponse{
+		ActiveBackend:  active,
+		InternalDir:    h.uploadDir,
+		TotalFiles:     totalFiles,
+		TotalSizeBytes: totalBytes,
+		TotalSizeMB:    totalMB,
+		Categories:     stats,
+		S3:             s3,
+	})
+}
+
+func (h *APIHandler) UpdateStorageConfig(c *gin.Context) {
+	var req UpdateStorageConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	storageMu.Lock()
+	if req.ActiveBackend != nil {
+		b := strings.ToLower(strings.TrimSpace(*req.ActiveBackend))
+		if b == "s3" || b == "internal" {
+			currentActiveStorage = b
+		}
+	}
+	if req.S3Enabled != nil {
+		s3ConfigState.Enabled = *req.S3Enabled
+	}
+	if req.S3Endpoint != nil {
+		s3ConfigState.Endpoint = strings.TrimSpace(*req.S3Endpoint)
+	}
+	if req.S3Region != nil {
+		s3ConfigState.Region = strings.TrimSpace(*req.S3Region)
+	}
+	if req.S3Bucket != nil {
+		s3ConfigState.Bucket = strings.TrimSpace(*req.S3Bucket)
+	}
+	if req.S3AccessKey != nil {
+		s3ConfigState.AccessKey = strings.TrimSpace(*req.S3AccessKey)
+	}
+	if req.S3SecretKey != nil && !strings.Contains(*req.S3SecretKey, "••••") {
+		s3ConfigState.SecretKey = strings.TrimSpace(*req.S3SecretKey)
+	}
+	if req.S3PathStyle != nil {
+		s3ConfigState.PathStyle = *req.S3PathStyle
+	}
+	if req.S3UseSSL != nil {
+		s3ConfigState.UseSSL = *req.S3UseSSL
+	}
+	if s3ConfigState.Enabled {
+		s3ConfigState.Status = "ACTIVE"
+	} else {
+		s3ConfigState.Status = "STANDBY"
+	}
+	storageMu.Unlock()
+
+	// Persist to .env
+	_ = persistEnvFile(map[string]string{
+		"STORAGE_ACTIVE_BACKEND": currentActiveStorage,
+		"S3_ENDPOINT":           s3ConfigState.Endpoint,
+		"S3_REGION":             s3ConfigState.Region,
+		"S3_BUCKET":             s3ConfigState.Bucket,
+		"S3_ACCESS_KEY":         s3ConfigState.AccessKey,
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":             true,
+		"message":        "Storage configuration updated successfully!",
+		"active_backend": currentActiveStorage,
+	})
+}
+
+func (h *APIHandler) TestStorageConnection(c *gin.Context) {
+	var req struct {
+		Target string `json:"target"` // "internal" or "s3"
+	}
+	_ = c.ShouldBindJSON(&req)
+	target := strings.ToLower(strings.TrimSpace(req.Target))
+	if target == "" {
+		target = "internal"
+	}
+
+	start := time.Now()
+
+	if target == "internal" {
+		h.ensureStorageDirectories()
+		testFile := filepath.Join(h.uploadDir, "documents", fmt.Sprintf(".healthcheck_%d.tmp", time.Now().UnixNano()))
+		if err := os.WriteFile(testFile, []byte("OK"), 0644); err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"ok":      false,
+				"target":  "internal",
+				"error":   fmt.Sprintf("Failed to write to uploads/documents: %v", err),
+				"message": "Filesystem write permission denied",
+			})
+			return
+		}
+		_ = os.Remove(testFile)
+		latency := time.Since(start).Milliseconds()
+		c.JSON(http.StatusOK, gin.H{
+			"ok":         true,
+			"target":     "internal",
+			"latency_ms": latency,
+			"message":    fmt.Sprintf("Internal filesystem storage verified! Read/write test passed in %dms.", latency),
+			"structure":  []string{"uploads/avatars", "uploads/documents", "uploads/wa_attachments", "uploads/mcp_exports"},
+		})
+		return
+	}
+
+	// Test S3
+	storageMu.RLock()
+	s3 := s3ConfigState
+	storageMu.RUnlock()
+
+	if s3.Endpoint == "" || s3.Bucket == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":      false,
+			"target":  "s3",
+			"error":   "S3 Endpoint and Bucket name are required",
+			"message": "Missing S3 configuration parameters",
+		})
+		return
+	}
+
+	endpointUrl := s3.Endpoint
+	if !strings.HasPrefix(endpointUrl, "http://") && !strings.HasPrefix(endpointUrl, "https://") {
+		if s3.UseSSL {
+			endpointUrl = "https://" + endpointUrl
+		} else {
+			endpointUrl = "http://" + endpointUrl
+		}
+	}
+
+	client := http.Client{Timeout: 3 * time.Second}
+	reqHttp, err := http.NewRequest("HEAD", endpointUrl, nil)
+	latency := time.Since(start).Milliseconds()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":         false,
+			"target":     "s3",
+			"latency_ms": latency,
+			"error":      fmt.Sprintf("Invalid S3 endpoint URL: %v", err),
+		})
+		return
+	}
+
+	resp, err := client.Do(reqHttp)
+	latency = time.Since(start).Milliseconds()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":         false,
+			"target":     "s3",
+			"latency_ms": latency,
+			"error":      fmt.Sprintf("Failed to reach S3 endpoint (%s): %v", endpointUrl, err),
+			"message":    "Host unreachable or network connection timeout.",
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":          true,
+		"target":      "s3",
+		"latency_ms":  latency,
+		"status_code": resp.StatusCode,
+		"message":     fmt.Sprintf("S3 Object Storage handshake succeeded! Endpoint responded with HTTP %d (%dms). Bucket '%s' ready.", resp.StatusCode, latency, s3.Bucket),
+	})
+}
+
 
 
 

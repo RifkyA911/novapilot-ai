@@ -152,8 +152,11 @@ func main() {
 		api.GET("/invoices", apiHandler.ListInvoices)
 		api.GET("/audit-logs", apiHandler.ListAuditLogs)
 
-		// Document / Attachment File Upload
+		// Document / Attachment File Upload & Storage Management
 		api.POST("/upload", apiHandler.UploadDocument)
+		api.GET("/storage/config", apiHandler.GetStorageConfig)
+		api.POST("/storage/config", apiHandler.UpdateStorageConfig)
+		api.POST("/storage/test", apiHandler.TestStorageConnection)
 
 		// Database Configuration & Connectivity
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)

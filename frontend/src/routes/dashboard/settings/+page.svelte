@@ -23,14 +23,74 @@
 		Bolt,
 		Signal,
 		Radio,
-		CursorArrowRays
+		CursorArrowRays,
+		UserCircle,
+		Folder,
+		Server,
+		Cloud,
+		Photo,
+		Trash,
+		ArrowUpTray,
+		ArrowTopRightOnSquare,
+		PaperAirplane
 	} from "svelte-heros-v2";
 	import { sound } from "$lib/audio";
 	import { i18n } from "$lib/i18n.svelte";
+	import { formatCurrency } from "$lib/utils";
 
 	// Active Navigation Tab
-	type SettingsTab = "gatekeeper" | "ai_model" | "chatops" | "database" | "alerts" | "interface";
-	let activeTab = $state<SettingsTab>("gatekeeper");
+	type SettingsTab = "profile" | "storage" | "gatekeeper" | "ai_model" | "chatops" | "database" | "alerts" | "interface";
+	let activeTab = $state<SettingsTab>("profile");
+
+	// 0. User Profile & Account Settings
+	let profileName = $state("John Doe");
+	let profileEmail = $state("johndoe@factory.internal");
+	let profileRole = $state("Lead On-Call SRE / Incident Commander");
+	let profileBranch = $state("Surabaya Hub (Jawa Timur)");
+	let profilePhone = $state("+62 812-2863-2195");
+	let profileShift = $state("Shift A (08:00 - 17:00 WIB)");
+	let profileBio = $state("Responsible for automated invoice mutations, ERP reconciliation, and WhatsApp ingress triage.");
+	let profileTimezone = $state("Asia/Jakarta (WIB, UTC+7)");
+	let profileAvatar = $state("https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe");
+	let profile2FA = $state(true);
+	let isUploadingAvatar = $state(false);
+	let avatarUploadError = $state<string | null>(null);
+	let avatarFileInput: HTMLInputElement | null = $state(null);
+	let profileSaveSuccess = $state(false);
+
+	// 0.1 Storage Architecture (Internal FS & S3 Cloud Object Storage)
+	let storageActiveBackend = $state<"internal" | "s3">("internal");
+	let storageCategories = $state<Array<{
+		category: string;
+		path: string;
+		file_count: number;
+		size_mb: string;
+		description: string;
+	}>>([
+		{ category: "avatars", path: "uploads/avatars", file_count: 0, size_mb: "0.0 KB", description: "User profile photos, avatars, and employee credentials" },
+		{ category: "documents", path: "uploads/documents", file_count: 0, size_mb: "0.0 KB", description: "Invoices, tax slips, work orders, purchase orders & PDFs" },
+		{ category: "wa_attachments", path: "uploads/wa_attachments", file_count: 6, size_mb: "793.4 KB", description: "Inbound WhatsApp photos, camera shots, and payment receipts" },
+		{ category: "mcp_exports", path: "uploads/mcp_exports", file_count: 0, size_mb: "0.0 KB", description: "MCP catalog schemas, system exports, and JSON dumps" }
+	]);
+	let storageTotalFiles = $state(6);
+	let storageTotalMB = $state("0.77 MB");
+	let storageLoading = $state(false);
+	let storageTesting = $state(false);
+	let storageTestResult = $state<{ success: boolean; latency: number; message: string; target: string } | null>(null);
+
+	// S3 Configuration Fields
+	let s3Enabled = $state(false);
+	let s3Endpoint = $state("s3.ap-southeast-1.amazonaws.com");
+	let s3Region = $state("ap-southeast-1");
+	let s3Bucket = $state("novapilot-vault");
+	let s3AccessKey = $state("AKIA_NOVAPILOT_DEMO");
+	let s3SecretKey = $state("••••••••");
+	let showS3SecretKey = $state(false);
+	let s3PathStyle = $state(true);
+	let s3UseSSL = $state(true);
+	let s3Testing = $state(false);
+	let s3TestResult = $state<{ success: boolean; latency: number; message: string } | null>(null);
+	let storageSaveSuccess = $state(false);
 
 	// 1. Gatekeeper & Kebijakan Mutasi Faktur
 	let highValueThreshold = $state("50000000"); // 50 juta IDR
@@ -163,7 +223,206 @@
 				if (s.defaultExportFormat) defaultExportFormat = s.defaultExportFormat;
 			}
 		} catch {}
+
+		// Check URL parameter tab
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			const tabParam = params.get("tab") as SettingsTab | null;
+			if (tabParam && ["profile", "storage", "gatekeeper", "ai_model", "chatops", "database", "alerts", "interface"].includes(tabParam)) {
+				activeTab = tabParam;
+			}
+
+			// Load customized user profile
+			try {
+				const savedProfile = localStorage.getItem("novapilot_user_profile");
+				if (savedProfile) {
+					const p = JSON.parse(savedProfile);
+					if (p.name) profileName = p.name;
+					if (p.email) profileEmail = p.email;
+					if (p.role) profileRole = p.role;
+					if (p.branch) profileBranch = p.branch;
+					if (p.phone) profilePhone = p.phone;
+					if (p.shift) profileShift = p.shift;
+					if (p.bio) profileBio = p.bio;
+					if (p.timezone) profileTimezone = p.timezone;
+					if (p.avatar) profileAvatar = p.avatar;
+					if (p.twoFactorEnabled !== undefined) profile2FA = p.twoFactorEnabled;
+				}
+			} catch {}
+		}
+
+		fetchStorageConfig();
 	});
+
+	async function fetchStorageConfig() {
+		storageLoading = true;
+		try {
+			const res = await fetch("/api/storage/config");
+			if (res.ok) {
+				const data = await res.json();
+				storageActiveBackend = data.active_backend || "internal";
+				storageCategories = data.categories || [];
+				storageTotalFiles = data.total_files || 0;
+				storageTotalMB = data.total_size_mb || "0 MB";
+				if (data.s3) {
+					s3Enabled = data.s3.enabled || false;
+					if (data.s3.endpoint) s3Endpoint = data.s3.endpoint;
+					if (data.s3.region) s3Region = data.s3.region;
+					if (data.s3.bucket) s3Bucket = data.s3.bucket;
+					if (data.s3.access_key) s3AccessKey = data.s3.access_key;
+					if (data.s3.secret_key) s3SecretKey = data.s3.secret_key;
+					if (data.s3.path_style !== undefined) s3PathStyle = data.s3.path_style;
+					if (data.s3.use_ssl !== undefined) s3UseSSL = data.s3.use_ssl;
+				}
+			}
+		} catch {} finally {
+			storageLoading = false;
+		}
+	}
+
+	async function saveStorageConfig() {
+		try {
+			const res = await fetch("/api/storage/config", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					active_backend: storageActiveBackend,
+					s3_enabled: s3Enabled,
+					s3_endpoint: s3Endpoint,
+					s3_region: s3Region,
+					s3_bucket: s3Bucket,
+					s3_access_key: s3AccessKey,
+					s3_secret_key: s3SecretKey,
+					s3_path_style: s3PathStyle,
+					s3_use_ssl: s3UseSSL
+				})
+			});
+			if (res.ok) {
+				storageSaveSuccess = true;
+				setTimeout(() => { storageSaveSuccess = false; }, 3500);
+			}
+		} catch {}
+	}
+
+	async function testInternalStorage() {
+		storageTesting = true;
+		storageTestResult = null;
+		try {
+			const res = await fetch("/api/storage/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ target: "internal" })
+			});
+			const data = await res.json();
+			storageTestResult = {
+				success: data.ok,
+				latency: data.latency_ms || 1,
+				message: data.message || (data.ok ? "Filesystem internal verified" : data.error),
+				target: "internal"
+			};
+		} catch (err: any) {
+			storageTestResult = { success: false, latency: 0, message: err.message, target: "internal" };
+		} finally {
+			storageTesting = false;
+			setTimeout(() => { storageTestResult = null; }, 5000);
+		}
+	}
+
+	async function testS3Connection() {
+		s3Testing = true;
+		s3TestResult = null;
+		try {
+			const res = await fetch("/api/storage/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ target: "s3" })
+			});
+			const data = await res.json();
+			s3TestResult = {
+				success: data.ok,
+				latency: data.latency_ms || 12,
+				message: data.message || (data.ok ? "S3 handshake verified" : data.error)
+			};
+		} catch (err: any) {
+			s3TestResult = { success: false, latency: 0, message: err.message };
+		} finally {
+			s3Testing = false;
+			setTimeout(() => { s3TestResult = null; }, 5000);
+		}
+	}
+
+	async function handleAvatarUpload(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (!target.files || target.files.length === 0) return;
+		const file = target.files[0];
+		if (file.size > 5 * 1024 * 1024) {
+			avatarUploadError = "File size exceeds 5MB limit.";
+			setTimeout(() => { avatarUploadError = null; }, 4000);
+			return;
+		}
+
+		isUploadingAvatar = true;
+		avatarUploadError = null;
+
+		try {
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("category", "avatars");
+			formData.append("uploaded_by", profileName);
+
+			const res = await fetch("/api/upload", {
+				method: "POST",
+				body: formData
+			});
+
+			if (!res.ok) {
+				const errData = await res.json();
+				throw new Error(errData.error || "Gagal mengunggah avatar.");
+			}
+
+			const data = await res.json();
+			profileAvatar = data.url || data.file_path;
+			saveUserProfile();
+			fetchStorageConfig();
+		} catch (err: any) {
+			avatarUploadError = err.message || "Upload avatar failed.";
+		} finally {
+			isUploadingAvatar = false;
+			if (avatarFileInput) avatarFileInput.value = "";
+		}
+	}
+
+	function generateRandomAvatar() {
+		const seeds = ["Felix", "Aero", "Nova", "Cipher", "Vortex", "Sora", "Zephyr", "Ranger", "Orion", "Titan"];
+		const rand = seeds[Math.floor(Math.random() * seeds.length)] + "_" + Math.floor(Math.random() * 999);
+		profileAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${rand}`;
+		saveUserProfile();
+	}
+
+	function removeAvatar() {
+		profileAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=JohnDoe";
+		saveUserProfile();
+	}
+
+	function saveUserProfile() {
+		const profileObj = {
+			name: profileName,
+			email: profileEmail,
+			role: profileRole,
+			branch: profileBranch,
+			phone: profilePhone,
+			shift: profileShift,
+			bio: profileBio,
+			timezone: profileTimezone,
+			avatar: profileAvatar,
+			twoFactorEnabled: profile2FA,
+			updatedAt: new Date().toISOString()
+		};
+		localStorage.setItem("novapilot_user_profile", JSON.stringify(profileObj));
+		window.dispatchEvent(new Event("novapilot_profile_updated"));
+		profileSaveSuccess = true;
+		setTimeout(() => { profileSaveSuccess = false; }, 3000);
+	}
 
 	function saveSettings() {
 		isSaving = true;
@@ -439,6 +698,24 @@
 	<div class="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/60 scrollbar-none">
 		<button
 			type="button"
+			onclick={() => activeTab = "profile"}
+			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'profile' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+		>
+			<UserCircle class="h-4 w-4" />
+			<span>Profile &amp; Avatar</span>
+		</button>
+
+		<button
+			type="button"
+			onclick={() => activeTab = "storage"}
+			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'storage' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+		>
+			<Folder class="h-4 w-4" />
+			<span>Backend Storage &amp; S3</span>
+		</button>
+
+		<button
+			type="button"
 			onclick={() => activeTab = "gatekeeper"}
 			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'gatekeeper' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
 		>
@@ -496,6 +773,631 @@
 	<!-- 3. TAB CONTENTS                                                           -->
 	<!-- ========================================================================= -->
 
+	<!-- TAB 0: USER PROFILE & AVATAR SETTINGS -->
+	{#if activeTab === "profile"}
+		<div class="space-y-6 animate-in fade-in duration-150">
+			<!-- Profile Card with Avatar Changer -->
+			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-6">
+				<!-- Header info -->
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border/60 gap-4">
+					<div class="flex items-center gap-3">
+						<div class="h-10 w-10 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shadow-xs border border-purple-500/20">
+							<UserCircle class="h-6 w-6" />
+						</div>
+						<div>
+							<h3 class="text-base font-bold text-foreground">User Profile &amp; Operational Credentials</h3>
+							<p class="text-xs text-muted-foreground">Manage your identity, on-call shift, branch clearance, and profile avatar.</p>
+						</div>
+					</div>
+
+					<div class="flex items-center gap-2">
+						{#if profileSaveSuccess}
+							<span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-in fade-in">
+								<Check class="h-4 w-4" />
+								<span>Profile Saved!</span>
+							</span>
+						{/if}
+						<button
+							type="button"
+							onclick={saveUserProfile}
+							class="h-9 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-2 shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
+						>
+							<Check class="h-4 w-4" />
+							<span>Save Profile</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Avatar Upload & Management Section -->
+				<div class="p-5 rounded-2xl border border-border/70 bg-secondary/20 space-y-4">
+					<div class="text-xs font-bold text-foreground flex items-center justify-between">
+						<span class="flex items-center gap-2">
+							<Photo class="h-4 w-4 text-primary" />
+							<span>Profile Photo &amp; Avatar</span>
+						</span>
+						<span class="text-[11px] font-mono text-muted-foreground">Internal Storage: uploads/avatars/</span>
+					</div>
+
+					<div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+						<!-- Big Avatar Preview -->
+						<div class="relative shrink-0">
+							<div class="w-24 h-24 rounded-2xl ring-4 ring-primary/20 overflow-hidden bg-card border border-border shadow-md flex items-center justify-center">
+								<img
+									src={profileAvatar}
+									alt={profileName}
+									class="w-full h-full object-cover"
+								/>
+							</div>
+							<span class="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 ring-2 ring-background flex items-center justify-center text-white text-[10px]">
+								✓
+							</span>
+						</div>
+
+						<!-- Avatar Controls -->
+						<div class="flex-1 space-y-3 w-full text-center sm:text-left">
+							<div>
+								<h4 class="text-sm font-bold text-foreground">{profileName}</h4>
+								<p class="text-xs text-muted-foreground font-mono truncate">{profileRole}</p>
+								<p class="text-[11px] text-muted-foreground mt-0.5">Supports PNG, JPG, WebP, SVG up to 5MB. Stored automatically in structured backend folders.</p>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+								<!-- Hidden file input -->
+								<input
+									type="file"
+									accept="image/png,image/jpeg,image/webp,image/svg+xml"
+									bind:this={avatarFileInput}
+									onchange={handleAvatarUpload}
+									class="hidden"
+								/>
+
+								<button
+									type="button"
+									onclick={() => avatarFileInput?.click()}
+									disabled={isUploadingAvatar}
+									class="h-8.5 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+								>
+									{#if isUploadingAvatar}
+										<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+										<span>Uploading...</span>
+									{:else}
+										<ArrowUpTray class="h-3.5 w-3.5 text-primary" />
+										<span>Upload Photo</span>
+									{/if}
+								</button>
+
+								<button
+									type="button"
+									onclick={generateRandomAvatar}
+									class="h-8.5 px-3 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1.5 transition-all cursor-pointer"
+									title="Generate unique AI avatar illustration using DiceBear"
+								>
+									<Sparkles class="h-3.5 w-3.5" />
+									<span>DiceBear AI Seed</span>
+								</button>
+
+								<button
+									type="button"
+									onclick={removeAvatar}
+									class="h-8.5 px-3 rounded-xl border border-destructive/20 hover:border-destructive/40 bg-card hover:bg-destructive/10 text-xs font-semibold text-destructive flex items-center gap-1.5 transition-all cursor-pointer"
+								>
+									<Trash class="h-3.5 w-3.5" />
+									<span>Reset</span>
+								</button>
+							</div>
+
+							{#if avatarUploadError}
+								<div class="p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
+									{avatarUploadError}
+								</div>
+							{/if}
+
+							<!-- Preset Avatars -->
+							<div class="pt-2 flex items-center justify-center sm:justify-start gap-2">
+								<span class="text-[10px] uppercase font-mono font-bold text-muted-foreground">Presets:</span>
+								{#each [
+									{ name: "John", seed: "JohnDoe" },
+									{ name: "Sarah", seed: "SarahOps" },
+									{ name: "Alex", seed: "AlexDev" },
+									{ name: "Maya", seed: "MayaSec" },
+									{ name: "David", seed: "DavidDBA" }
+								] as p}
+									<button
+										type="button"
+										onclick={() => { profileAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.seed}`; saveUserProfile(); }}
+										class="h-6 w-6 rounded-full overflow-hidden ring-1 ring-border hover:ring-2 hover:ring-primary transition-all cursor-pointer shadow-2xs"
+										title="Select preset avatar {p.name}"
+									>
+										<img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.seed}`} alt={p.name} class="w-full h-full object-cover" />
+									</button>
+								{/each}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Profile Metadata Form -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+					<!-- Full Name -->
+					<div class="space-y-1.5">
+						<label for="profileNameInput" class="font-semibold text-foreground block">Full Legal / Operational Name:</label>
+						<input
+							id="profileNameInput"
+							type="text"
+							bind:value={profileName}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Email Address -->
+					<div class="space-y-1.5">
+						<label for="profileEmailInput" class="font-semibold text-foreground block">Corporate Email Address:</label>
+						<input
+							id="profileEmailInput"
+							type="email"
+							bind:value={profileEmail}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Operational Role -->
+					<div class="space-y-1.5">
+						<label for="profileRoleInput" class="font-semibold text-foreground block">Designation / Role Title:</label>
+						<input
+							id="profileRoleInput"
+							type="text"
+							bind:value={profileRole}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Branch Coverage -->
+					<div class="space-y-1.5">
+						<label for="profileBranchInput" class="font-semibold text-foreground block">Assigned Operational Branch / Hub:</label>
+						<input
+							id="profileBranchInput"
+							type="text"
+							bind:value={profileBranch}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Direct Phone / WhatsApp Hotline -->
+					<div class="space-y-1.5">
+						<label for="profilePhoneInput" class="font-semibold text-foreground block">Direct Phone / WhatsApp Hotline:</label>
+						<input
+							id="profilePhoneInput"
+							type="text"
+							bind:value={profilePhone}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- On-Call Shift Roster -->
+					<div class="space-y-1.5">
+						<label for="profileShiftInput" class="font-semibold text-foreground block">On-Call Shift &amp; Working Hours:</label>
+						<input
+							id="profileShiftInput"
+							type="text"
+							bind:value={profileShift}
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+						/>
+					</div>
+
+					<!-- Timezone -->
+					<div class="space-y-1.5">
+						<label for="profileTimezoneInput" class="font-semibold text-foreground block">Operational Timezone:</label>
+						<select
+							id="profileTimezoneInput"
+							bind:value={profileTimezone}
+							class="w-full h-10 px-3 rounded-xl border border-input bg-background font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs cursor-pointer"
+						>
+							<option value="Asia/Jakarta (WIB, UTC+7)">Asia/Jakarta (WIB, UTC+7) — Western Indonesia</option>
+							<option value="Asia/Makassar (WITA, UTC+8)">Asia/Makassar (WITA, UTC+8) — Central Indonesia</option>
+							<option value="Asia/Jayapura (WIT, UTC+9)">Asia/Jayapura (WIT, UTC+9) — Eastern Indonesia</option>
+							<option value="UTC">UTC (Universal Coordinated Time)</option>
+						</select>
+					</div>
+
+					<!-- Security Clearance Level -->
+					<div class="space-y-1.5">
+						<div class="font-semibold text-foreground block">ERP Mutation Security Clearance:</div>
+						<div class="h-10 px-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold flex items-center justify-between">
+							<span class="flex items-center gap-2">
+								<ShieldCheck class="h-4 w-4 text-emerald-500" />
+								<span>Level 3 (Full ERP Read/Write)</span>
+							</span>
+							<span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 uppercase font-bold">Authorized</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Bio & Notes -->
+				<div class="space-y-1.5 text-xs">
+					<label for="profileBioInput" class="font-semibold text-foreground block">Bio &amp; Incident Commander Responsibilities:</label>
+					<textarea
+						id="profileBioInput"
+						bind:value={profileBio}
+						rows="3"
+						class="w-full p-3 rounded-xl border border-input bg-background text-foreground font-sans focus:outline-none focus:ring-1 focus:ring-primary shadow-xs resize-y"
+					></textarea>
+				</div>
+
+				<!-- Security Toggle -->
+				<div class="pt-2 border-t border-border/60">
+					<label class="p-4 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={profile2FA}
+							class="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+						/>
+						<div class="space-y-0.5">
+							<div class="font-bold text-foreground">Require Explicit On-Call Confirmation for High-Value Mutations</div>
+							<p class="text-[11px] text-muted-foreground">Prompts for security confirmation modal whenever approving invoice corrections exceeding nominal thresholds.</p>
+						</div>
+					</label>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- TAB 0.1: BACKEND STORAGE & S3 CLOUD OBJECT STORAGE ARCHITECTURE -->
+	{#if activeTab === "storage"}
+		<div class="space-y-6 animate-in fade-in duration-150">
+			<!-- Active Storage Architecture Selector -->
+			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border/60 gap-3">
+					<div class="flex items-center gap-3">
+						<div class="h-10 w-10 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold shadow-xs border border-sky-500/20">
+							<Folder class="h-5 w-5" />
+						</div>
+						<div>
+							<h3 class="text-base font-bold text-foreground">Storage Architecture &amp; Repository Hierarchy</h3>
+							<p class="text-xs text-muted-foreground">Default structured internal filesystem storage with optional AWS S3 / MinIO cloud integration.</p>
+						</div>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={fetchStorageConfig}
+							disabled={storageLoading}
+							class="h-8.5 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {storageLoading ? 'animate-spin' : ''}" />
+							<span>Refresh Stats</span>
+						</button>
+						<button
+							type="button"
+							onclick={saveStorageConfig}
+							class="h-8.5 px-3.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-xs hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-1.5"
+						>
+							{#if storageSaveSuccess}
+								<Check class="h-3.5 w-3.5" />
+								<span>Saved!</span>
+							{:else}
+								<span>Apply Changes</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+
+				<!-- Storage Backend Selection Radio Cards -->
+				<div class="space-y-2">
+					<span class="text-xs font-bold text-foreground block">Active Storage Backend:</span>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<!-- Internal Filesystem Card -->
+						<label class="p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 {storageActiveBackend === 'internal' ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary/40' : 'border-border bg-card hover:bg-secondary/30'}">
+							<input
+								type="radio"
+								name="storageBackend"
+								value="internal"
+								bind:group={storageActiveBackend}
+								class="mt-1 h-4 w-4 text-primary focus:ring-primary cursor-pointer"
+							/>
+							<div class="space-y-1 min-w-0">
+								<div class="flex items-center gap-2">
+									<Server class="h-4 w-4 text-primary shrink-0" />
+									<span class="text-sm font-bold text-foreground">Internal Backend Storage (Default)</span>
+									<span class="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+										Active &amp; Ready
+									</span>
+								</div>
+								<p class="text-xs text-muted-foreground">
+									Zero-dependency high performance storage utilizing structured local disk directories under <code class="font-mono text-foreground font-bold">uploads/</code>.
+								</p>
+							</div>
+						</label>
+
+						<!-- S3 Object Storage Card -->
+						<label class="p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 {storageActiveBackend === 's3' ? 'border-sky-500 bg-sky-500/5 shadow-xs ring-1 ring-sky-500/40' : 'border-border bg-card hover:bg-secondary/30'}">
+							<input
+								type="radio"
+								name="storageBackend"
+								value="s3"
+								bind:group={storageActiveBackend}
+								class="mt-1 h-4 w-4 text-sky-500 focus:ring-sky-500 cursor-pointer"
+							/>
+							<div class="space-y-1 min-w-0">
+								<div class="flex items-center gap-2">
+									<Cloud class="h-4 w-4 text-sky-500 shrink-0" />
+									<span class="text-sm font-bold text-foreground">S3 / MinIO Cloud Object Storage</span>
+									<span class="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+										Optional
+									</span>
+								</div>
+								<p class="text-xs text-muted-foreground">
+									Offload avatars and large documents to AWS S3, MinIO, or Ceph object storage with presigned URLs and immutable storage policies.
+								</p>
+							</div>
+						</label>
+					</div>
+				</div>
+			</div>
+
+			<!-- Section: Internal Structured Directory Architecture -->
+			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-4">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border/60 gap-3">
+					<div>
+						<h4 class="text-sm font-bold text-foreground flex items-center gap-2">
+							<Folder class="h-4 w-4 text-primary" />
+							<span>Structured Local Directory Hierarchy</span>
+						</h4>
+						<p class="text-xs text-muted-foreground mt-0.5">
+							Separated directory partitions ensuring file hygiene, access isolation, and zero file naming collisions.
+						</p>
+					</div>
+
+					<div class="flex items-center gap-2 font-mono text-xs">
+						<span class="px-2.5 py-1 rounded-xl bg-secondary border border-border text-foreground font-semibold">
+							Total Files: <strong class="text-primary">{storageTotalFiles}</strong>
+						</span>
+						<span class="px-2.5 py-1 rounded-xl bg-secondary border border-border text-foreground font-semibold">
+							Disk Usage: <strong class="text-primary">{storageTotalMB}</strong>
+						</span>
+					</div>
+				</div>
+
+				<!-- Directory Table -->
+				<div class="overflow-x-auto rounded-2xl border border-border/70 bg-card">
+					<table class="w-full text-left text-xs">
+						<thead class="bg-secondary/40 text-muted-foreground font-mono font-semibold border-b border-border/60">
+							<tr>
+								<th class="py-2.5 px-4">Partition / Category</th>
+								<th class="py-2.5 px-4">Filesystem Path</th>
+								<th class="py-2.5 px-4">Files</th>
+								<th class="py-2.5 px-4">Size</th>
+								<th class="py-2.5 px-4">Purpose / Content</th>
+								<th class="py-2.5 px-4">Status</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-border/40 font-mono">
+							{#each storageCategories as cat}
+								<tr class="hover:bg-secondary/20 transition-colors">
+									<td class="py-3 px-4 font-bold text-foreground">
+										📁 {cat.category}
+									</td>
+									<td class="py-3 px-4 text-muted-foreground">
+										<code>{cat.path}</code>
+									</td>
+									<td class="py-3 px-4 font-bold text-foreground">
+										{cat.file_count}
+									</td>
+									<td class="py-3 px-4 text-primary font-bold">
+										{cat.size_mb}
+									</td>
+									<td class="py-3 px-4 font-sans text-muted-foreground text-[11px]">
+										{cat.description}
+									</td>
+									<td class="py-3 px-4">
+										<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+											Read/Write OK
+										</span>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Test Internal Storage Button -->
+				<div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+					<span class="text-[11px] text-muted-foreground">
+						Files are statically served via backend Go HTTP engine at <code class="font-mono text-foreground font-bold">/uploads/*</code>.
+					</span>
+
+					<button
+						type="button"
+						onclick={testInternalStorage}
+						disabled={storageTesting}
+						class="h-8.5 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+					>
+						{#if storageTesting}
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+							<span>Verifying...</span>
+						{:else}
+							<Check class="h-3.5 w-3.5 text-emerald-500" />
+							<span>Verify Filesystem Health</span>
+						{/if}
+					</button>
+				</div>
+
+				{#if storageTestResult}
+					<div class="p-3.5 rounded-2xl text-xs flex items-center justify-between gap-3 animate-in fade-in {storageTestResult.success ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 border border-destructive/30 text-destructive'}">
+						<div class="flex items-center gap-2">
+							<Check class="h-4 w-4 shrink-0" />
+							<span>{storageTestResult.message}</span>
+						</div>
+						<span class="font-mono text-[10px] font-bold">{storageTestResult.latency}ms</span>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Section: S3 Cloud Object Storage Settings -->
+			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border/60 gap-3">
+					<div class="flex items-center gap-3">
+						<div class="h-9 w-9 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold shadow-xs border border-sky-500/20">
+							<Cloud class="h-5 w-5" />
+						</div>
+						<div>
+							<h4 class="text-sm font-bold text-foreground">S3 / MinIO Cloud Object Storage Gateway</h4>
+							<p class="text-xs text-muted-foreground">Configure AWS S3 or private MinIO credentials for cloud asset replication.</p>
+						</div>
+					</div>
+
+					<label class="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={s3Enabled}
+							class="h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
+						/>
+						<span>Enable S3 Storage Engine</span>
+					</label>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+					<!-- Endpoint -->
+					<div class="space-y-1.5">
+						<label for="s3EndpointInput" class="font-semibold text-foreground block">S3 Endpoint URL / Host:</label>
+						<input
+							id="s3EndpointInput"
+							type="text"
+							bind:value={s3Endpoint}
+							placeholder="s3.ap-southeast-1.amazonaws.com or localhost:9000"
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+						/>
+					</div>
+
+					<!-- Region -->
+					<div class="space-y-1.5">
+						<label for="s3RegionInput" class="font-semibold text-foreground block">S3 Region:</label>
+						<input
+							id="s3RegionInput"
+							type="text"
+							bind:value={s3Region}
+							placeholder="ap-southeast-1"
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+						/>
+					</div>
+
+					<!-- Bucket Name -->
+					<div class="space-y-1.5">
+						<label for="s3BucketInput" class="font-semibold text-foreground block">Bucket Name:</label>
+						<input
+							id="s3BucketInput"
+							type="text"
+							bind:value={s3Bucket}
+							placeholder="novapilot-vault"
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+						/>
+					</div>
+
+					<!-- Access Key -->
+					<div class="space-y-1.5">
+						<label for="s3AccessKeyInput" class="font-semibold text-foreground block">Access Key ID:</label>
+						<input
+							id="s3AccessKeyInput"
+							type="text"
+							bind:value={s3AccessKey}
+							placeholder="AKIA..."
+							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+						/>
+					</div>
+
+					<!-- Secret Key -->
+					<div class="space-y-1.5 md:col-span-2">
+						<label for="s3SecretKeyInput" class="font-semibold text-foreground block">Secret Access Key:</label>
+						<div class="relative">
+							<input
+								id="s3SecretKeyInput"
+								type={showS3SecretKey ? "text" : "password"}
+								bind:value={s3SecretKey}
+								class="w-full h-10 pl-3.5 pr-10 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+							/>
+							<button
+								type="button"
+								onclick={() => showS3SecretKey = !showS3SecretKey}
+								class="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+							>
+								{#if showS3SecretKey}
+									<EyeSlash class="h-4 w-4" />
+								{:else}
+									<Eye class="h-4 w-4" />
+								{/if}
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Advanced S3 Options -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
+					<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={s3PathStyle}
+							class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
+						/>
+						<div class="space-y-0.5">
+							<div class="font-bold text-foreground">Enable Path-Style URL Format</div>
+							<p class="text-[11px] text-muted-foreground">Required for on-prem MinIO, Ceph, and LocalStack instances.</p>
+						</div>
+					</label>
+
+					<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={s3UseSSL}
+							class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
+						/>
+						<div class="space-y-0.5">
+							<div class="font-bold text-foreground">Enforce HTTPS / SSL Encryption</div>
+							<p class="text-[11px] text-muted-foreground">Secures all object transmissions with TLS v1.3 encryption.</p>
+						</div>
+					</label>
+				</div>
+
+				<!-- Action Buttons for S3 -->
+				<div class="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60">
+					<button
+						type="button"
+						onclick={testS3Connection}
+						disabled={s3Testing}
+						class="h-8.5 px-4 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+					>
+						{#if s3Testing}
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+							<span>Connecting...</span>
+						{:else}
+							<Cloud class="h-3.5 w-3.5" />
+							<span>Test S3 Handshake</span>
+						{/if}
+					</button>
+
+					<button
+						type="button"
+						onclick={saveStorageConfig}
+						class="h-8.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+					>
+						<Check class="h-3.5 w-3.5" />
+						<span>Save S3 Configuration</span>
+					</button>
+				</div>
+
+				{#if s3TestResult}
+					<div class="p-3.5 rounded-2xl text-xs flex items-center justify-between gap-3 animate-in fade-in {s3TestResult.success ? 'bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-300' : 'bg-destructive/10 border border-destructive/30 text-destructive'}">
+						<div class="flex items-center gap-2">
+							<Cloud class="h-4 w-4 shrink-0" />
+							<span>{s3TestResult.message}</span>
+						</div>
+						<span class="font-mono text-[10px] font-bold">{s3TestResult.latency}ms</span>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	<!-- TAB 1: GATEKEEPER & KEBIJAKAN MUTASI FAKTUR -->
 	{#if activeTab === "gatekeeper"}
 		<div class="space-y-6 animate-in fade-in duration-150">
@@ -512,7 +1414,7 @@
 						</div>
 					</div>
 					<span class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-						Rp {Number(highValueThreshold || 0).toLocaleString("id-ID")}
+						{formatCurrency(Number(highValueThreshold || 0))}
 					</span>
 				</div>
 
