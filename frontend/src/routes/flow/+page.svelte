@@ -8,6 +8,7 @@
 	} from "svelte-heros-v2";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let activeStage = $state(1);
 	let isSimulating = $state(false);
@@ -45,9 +46,9 @@
 	async function triggerGatewayAction(action: "start" | "restart" | "stop") {
 		gwLoading = true;
 		gwActionMessage = 
-			action === "start" ? "Launching WhatsApp Gateway service (bun run start / npx tsx)..." :
-			action === "restart" ? "Restarting WhatsApp Gateway daemon on port 3002..." :
-			"Shutting down WhatsApp Gateway daemon (:3002)...";
+			action === "start" ? i18n.t.flow.gw_starting :
+			action === "restart" ? i18n.t.flow.gw_restarting :
+			i18n.t.flow.gw_stopping;
 		gwActionType = "info";
 
 		try {
@@ -431,15 +432,15 @@ if humanCorrectedValue != aiExtractedValue {
 	<div class="text-center space-y-4 max-w-3xl mx-auto relative z-10">
 		<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-secondary/80 border border-border/70 text-xs font-mono text-muted-foreground shadow-xs">
 			<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-			<span>{platformMeta[cockpit.chatPlatform].name} ChatOps Engine Pipeline</span>
+			<span>{platformMeta[cockpit.chatPlatform].name} {i18n.t.flow.engine_pipeline}</span>
 			<span class="text-border">|</span>
-			<span class="text-foreground font-semibold">100% Deterministic & Audited</span>
+			<span class="text-foreground font-semibold">{i18n.t.flow.deterministic_badge}</span>
 		</div>
 		<h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-			End-to-End System Flow
+			{i18n.t.flow.title}
 		</h1>
 		<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-			From raw {platformMeta[cockpit.chatPlatform].name} chat escalation to safe prepared statement execution: how NovaPilot AI eliminates on-call burnout while preserving zero-error database governance.
+			{i18n.t.flow.subtitle.replace("{platform}", platformMeta[cockpit.chatPlatform].name)}
 		</p>
 
 		<!-- Interactive ChatOps Platform Switcher -->
@@ -472,7 +473,7 @@ if humanCorrectedValue != aiExtractedValue {
 				class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold shadow-md hover:opacity-90 transition-all cursor-pointer disabled:opacity-60"
 			>
 				<ArrowPath class="h-3.5 w-3.5 {isSimulating ? 'animate-spin' : ''}" />
-				<span>{isSimulating ? `Traversing Stage 0${activeStage}/06...` : `Simulate Live ${platformMeta[cockpit.chatPlatform].name} Ingestion`}</span>
+				<span>{isSimulating ? i18n.t.flow.simulating_stage.replace('{stage}', String(activeStage)) : i18n.t.flow.simulate_ingestion.replace('{platform}', platformMeta[cockpit.chatPlatform].name)}</span>
 			</button>
 
 			<a
@@ -483,7 +484,7 @@ if humanCorrectedValue != aiExtractedValue {
 				title="Buka portal developer resmi untuk mendapatkan API key/bot token {platformMeta[cockpit.chatPlatform].name}"
 			>
 				<Key class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-				<span>Get {platformMeta[cockpit.chatPlatform].name} API Key</span>
+				<span>{i18n.t.flow.get_api_key.replace("{platform}", platformMeta[cockpit.chatPlatform].name)}</span>
 				<span class="text-[10px] font-mono opacity-60">({platformMeta[cockpit.chatPlatform].portalName})</span>
 				<ArrowTopRightOnSquare class="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
 			</a>
@@ -492,7 +493,7 @@ if humanCorrectedValue != aiExtractedValue {
 				href="/dashboard/platforms"
 				class="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium border border-border transition-all"
 			>
-				<span>Set Token di Dashboard</span>
+				<span>{i18n.t.flow.set_token_dashboard}</span>
 				<ChevronRight class="h-3 w-3" />
 			</a>
 		</div>
@@ -511,12 +512,12 @@ if humanCorrectedValue != aiExtractedValue {
 				<div>
 					<div class="flex items-center gap-2 flex-wrap">
 						<h2 class="text-base sm:text-lg font-bold text-foreground">
-							WhatsApp Gateway Service Daemon
+							{i18n.t.flow.gw_daemon_title}
 						</h2>
 						<!-- Live Status Chip -->
 						<span class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 {gwRunning ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'}">
 							<span class="h-2 w-2 rounded-full {gwRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}"></span>
-							{gwRunning ? (gwStatusData?.status || 'ONLINE (:3002)') : 'STOPPED / OFFLINE'}
+							{gwRunning ? (gwStatusData?.status || i18n.t.flow.gw_online) : i18n.t.flow.gw_offline}
 						</span>
 						{#if gwStatusData?.mode}
 							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
@@ -525,7 +526,7 @@ if humanCorrectedValue != aiExtractedValue {
 						{/if}
 					</div>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Baileys socket listener on port <code class="text-foreground font-mono font-semibold">3002</code>. Ingests authorized regional chats and dispatches to NovaPilot Golang core.
+						{i18n.t.flow.gw_daemon_sub}
 					</p>
 				</div>
 			</div>
@@ -541,7 +542,7 @@ if humanCorrectedValue != aiExtractedValue {
 					title="Start WhatsApp Gateway Service (bun run start / npx tsx src/index.ts)"
 				>
 					<Play class="h-3.5 w-3.5" />
-					<span>{gwLoading && gwActionType === 'info' ? 'Starting...' : 'Start Service'}</span>
+					<span>{gwLoading && gwActionType === 'info' ? i18n.t.flow.gw_starting : i18n.t.flow.gw_start_btn}</span>
 				</button>
 
 				<!-- 2. Restart Button -->
@@ -553,7 +554,7 @@ if humanCorrectedValue != aiExtractedValue {
 					title="Gracefully restart WhatsApp Gateway daemon"
 				>
 					<ArrowPath class="h-3.5 w-3.5 {gwLoading ? 'animate-spin text-primary' : 'text-muted-foreground'}" />
-					<span>Restart Gateway</span>
+					<span>{i18n.t.flow.gw_restart_btn}</span>
 				</button>
 
 				<!-- 3. Shut Down Button -->
@@ -565,7 +566,7 @@ if humanCorrectedValue != aiExtractedValue {
 					title="Shut down WhatsApp Gateway daemon process"
 				>
 					<XMark class="h-3.5 w-3.5" />
-					<span>Shut Down</span>
+					<span>{i18n.t.flow.gw_stop_btn}</span>
 				</button>
 
 				<!-- 4. Refresh Button -->
@@ -608,7 +609,7 @@ if humanCorrectedValue != aiExtractedValue {
 		<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 pt-1">
 			<!-- Metric 1: Daemon Port -->
 			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
-				<span class="text-[10px] font-mono text-muted-foreground uppercase">Daemon Port</span>
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">{i18n.t.flow.gw_port}</span>
 				<div class="text-sm font-bold font-mono text-foreground flex items-center gap-1.5">
 					<ServerStack class="h-3.5 w-3.5 text-primary" />
 					<span>:3002</span>
@@ -617,7 +618,7 @@ if humanCorrectedValue != aiExtractedValue {
 
 			<!-- Metric 2: Process Uptime -->
 			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
-				<span class="text-[10px] font-mono text-muted-foreground uppercase">Process Uptime</span>
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">{i18n.t.flow.gw_uptime}</span>
 				<div class="text-sm font-bold font-mono text-foreground">
 					{formatUptime(gwStatusData?.uptime_seconds)}
 				</div>
@@ -625,7 +626,7 @@ if humanCorrectedValue != aiExtractedValue {
 
 			<!-- Metric 3: Memory RSS -->
 			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
-				<span class="text-[10px] font-mono text-muted-foreground uppercase">Memory RSS</span>
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">{i18n.t.flow.gw_memory}</span>
 				<div class="text-sm font-bold font-mono text-foreground">
 					{gwStatusData?.memory_rss_mb ? `${gwStatusData.memory_rss_mb} MB` : (gwRunning ? 'Active' : '0 MB')}
 				</div>
@@ -633,7 +634,7 @@ if humanCorrectedValue != aiExtractedValue {
 
 			<!-- Metric 4: Whitelisted Groups -->
 			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
-				<span class="text-[10px] font-mono text-muted-foreground uppercase">Whitelisted JIDs</span>
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">{i18n.t.flow.gw_whitelisted}</span>
 				<div class="text-sm font-bold font-mono text-foreground">
 					{gwStatusData?.whitelisted_groups?.length || 0} Groups
 				</div>
@@ -647,7 +648,7 @@ if humanCorrectedValue != aiExtractedValue {
 					title="Lihat pesan WhatsApp live & buka Exec Terminal di Omnichannel Inbound Feed"
 				>
 					<CommandLine class="h-3.5 w-3.5" />
-					<span>Terminal & Ingress</span>
+					<span>{i18n.t.flow.gw_terminal_btn}</span>
 				</a>
 			</div>
 		</div>
@@ -658,7 +659,7 @@ if humanCorrectedValue != aiExtractedValue {
 		<div class="flex items-center justify-between pb-3 border-b border-border/50 text-xs font-mono text-muted-foreground">
 			<span class="flex items-center gap-1.5 text-foreground font-semibold">
 				<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-				Active Circuit: Stage 0{activeStage} Processing
+				{i18n.t.flow.active_circuit.replace("{stage}", String(activeStage))}
 			</span>
 			<span class="text-emerald-600 dark:text-emerald-400 font-medium">
 				{platformMeta[cockpit.chatPlatform].circuitDesc}
@@ -753,7 +754,7 @@ if humanCorrectedValue != aiExtractedValue {
 						</div>
 
 						<div class="space-y-3">
-							<h3 class="text-xs font-bold uppercase font-mono text-foreground tracking-wider">Root Execution Mechanics:</h3>
+							<h3 class="text-xs font-bold uppercase font-mono text-foreground tracking-wider">{i18n.t.flow.root_mechanics}</h3>
 							<ul class="space-y-2.5">
 								{#each s.details as detail}
 									<li class="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed">
@@ -772,7 +773,7 @@ if humanCorrectedValue != aiExtractedValue {
 								onclick={() => (activeStage = activeStage > 1 ? activeStage - 1 : 6)}
 								class="px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-medium transition-colors"
 							>
-								← Previous Stage
+								{i18n.t.flow.prev_stage}
 							</button>
 							<div class="flex items-center gap-1.5">
 								{#each Array.from({ length: 6 }) as _, i}
@@ -787,7 +788,7 @@ if humanCorrectedValue != aiExtractedValue {
 								onclick={() => (activeStage = activeStage < 6 ? activeStage + 1 : 1)}
 								class="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5"
 							>
-								<span>Next Stage</span>
+								<span>{i18n.t.flow.next_stage}</span>
 								<ArrowRight class="h-3.5 w-3.5" />
 							</button>
 						</div>

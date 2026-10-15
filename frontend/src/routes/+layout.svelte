@@ -11,7 +11,9 @@
 		ArrowRightOnRectangle
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+	import LocaleToggle from "$lib/components/LocaleToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import type { LayoutData } from "./$types";
 
 	let { data, children }: { data: LayoutData; children: any } = $props();
@@ -82,19 +84,20 @@
 						href="/"
 						class="px-4 py-1.5 font-medium rounded-lg transition-all duration-150 {currentPath === '/' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}"
 					>
-						Overview
+						{i18n.locale === 'id' ? 'Ringkasan' : 'Overview'}
 					</a>
 					<a
 						href="/flow"
 						class="px-4 py-1.5 font-medium rounded-lg transition-all duration-150 flex items-center gap-1.5 {currentPath.startsWith('/flow') ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}"
 					>
 						<Square3Stack3d class="h-3.5 w-3.5 text-emerald-500" />
-						<span>System Flow</span>
+						<span>{i18n.locale === 'id' ? 'Alur Sistem' : 'System Flow'}</span>
 					</a>
 				</nav>
 
-				<!-- Right: Theme Switcher & Launch Cockpit CTA -->
-				<div class="flex items-center gap-2.5 sm:gap-3">
+				<!-- Right: Locale Toggle, Theme Switcher & Launch Cockpit CTA -->
+				<div class="flex items-center gap-2 sm:gap-2.5">
+					<LocaleToggle />
 					<ThemeToggle />
 
 					<!-- Launch Protected Cockpit CTA Button -->
@@ -103,7 +106,7 @@
 						class="relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 active:scale-[0.98]"
 					>
 						<CommandLine class="h-3.5 w-3.5" />
-						<span class="hidden sm:inline">Launch On-Call Cockpit</span>
+						<span class="hidden sm:inline">{i18n.t.common.launch_cockpit}</span>
 						<span class="sm:hidden">Cockpit</span>
 						<ArrowRight class="h-3.5 w-3.5" />
 					</a>
@@ -138,7 +141,7 @@
 							onclick={closePublicMenu}
 							class="flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-xl transition-colors {currentPath === '/' ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary'}"
 						>
-							<span>Overview</span>
+							<span>{i18n.locale === 'id' ? 'Ringkasan' : 'Overview'}</span>
 							<span class="text-xs font-mono text-muted-foreground">/</span>
 						</a>
 						<a
@@ -148,7 +151,7 @@
 						>
 							<span class="flex items-center gap-2">
 								<Square3Stack3d class="h-4 w-4 text-emerald-500" />
-								<span>System Architecture & Flow</span>
+								<span>{i18n.locale === 'id' ? 'Arsitektur & Alur Sistem' : 'System Architecture & Flow'}</span>
 							</span>
 							<span class="text-xs font-mono text-muted-foreground">/flow</span>
 						</a>
@@ -159,7 +162,7 @@
 						>
 							<span class="flex items-center gap-2">
 								<CommandLine class="h-4 w-4" />
-								<span>Launch On-Call Cockpit</span>
+								<span>{i18n.t.common.launch_cockpit}</span>
 							</span>
 							<ArrowRight class="h-4 w-4" />
 						</a>
@@ -179,17 +182,17 @@
 				<div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
 					<span class="font-semibold text-foreground">NovaPilot AI</span>
 					<span>•</span>
-					<span>On-Call Operations Assistant</span>
+					<span>{i18n.t.common.oncall_assistant}</span>
 					<span>•</span>
-					<span>Zero Raw SQL Certified</span>
+					<span>{i18n.t.common.zero_sql_certified}</span>
 				</div>
 				<div class="flex items-center gap-3 text-[11px] font-mono">
 					<span class="text-emerald-500 font-medium flex items-center gap-1">
 						<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-						Universal Enterprise LTS
+						{i18n.t.common.universal_lts}
 					</span>
 					<span>•</span>
-					<span>Multi-Platform ChatOps</span>
+					<span>{i18n.t.common.multichannel_chatops}</span>
 				</div>
 			</div>
 		</footer>

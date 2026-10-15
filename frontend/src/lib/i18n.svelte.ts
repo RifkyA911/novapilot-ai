@@ -265,6 +265,12 @@ export interface Translations {
 		cancel: string;
 		confirm_reject: string;
 		rejecting: string;
+		confidence: string;
+		document_num: string;
+		target_field: string;
+		sql_prepared_label: string;
+		bson_command_label: string;
+		orig_inbound_msg: string;
 	};
 	messages: {
 		title: string;
@@ -409,6 +415,35 @@ export interface Translations {
 		goroutines: string;
 		test_ping: string;
 		ping_success: string;
+		how_to_integrate: string;
+		lan_ingress_ip: string;
+		lan_port_active: string;
+		go_memory_alloc: string;
+		low_footprint: string;
+		active_goroutines: string;
+		sse_duplex: string;
+		server_status: string;
+		online: string;
+		uptime_label: string;
+		db_pool_telemetry: string;
+		driver_label: string;
+		open_connections: string;
+		idle_connections: string;
+		in_use_concurrency: string;
+		chatops_ingress_telemetry: string;
+		realtime_diagnostics: string;
+		socket_latency: string;
+		tcp_roundtrip: string;
+		events_captured: string;
+		total_inbound: string;
+		queue_backpressure: string;
+		buffer_depth: string;
+		filter_efficiency: string;
+		zero_token_waste: string;
+		telemetry_state: string;
+		send_probe_ping: string;
+		sending_probe: string;
+		probe_ack: string;
 	};
 	logs: {
 		title: string;
@@ -558,8 +593,272 @@ export interface Translations {
 		language: string;
 		theme: string;
 		sound: string;
+		public_home: string;
+		system_flow: string;
+		launch_cockpit: string;
+		oncall_assistant: string;
+		zero_sql_certified: string;
+		universal_lts: string;
+		multichannel_chatops: string;
+		jump_to: string;
+		filtered_from: string;
+		go: string;
+		showing: string;
 	};
-}
+	landing: {
+		pill_announcement: string;
+		headline_main: string;
+		headline_gradient: string;
+		subtitle: string;
+		launch_cockpit: string;
+		flow_and_hooks: string;
+		circuit_arch: string;
+		all_channels: string;
+		simulate_flow: string;
+		simulating_stage: string;
+		stage_1: string;
+		stage_2: string;
+		stage_3: string;
+		stage_4: string;
+		status_simulating: string;
+		status_ready: string;
+		cockpit_mockup_title: string;
+		cockpit_mockup_sub: string;
+		tab_live_ticket: string;
+		tab_zero_sql: string;
+		tab_auto_rollback: string;
+		medan_hub: string;
+		medan_msg: string;
+		sender_info: string;
+		confidence_score: string;
+		high_confidence: string;
+		target_doc: string;
+		current_value: string;
+		proposed_value: string;
+		approve_execute: string;
+		reject: string;
+		sql_preview_title: string;
+		dry_run_passed: string;
+		zero_sql_note: string;
+		rollback_preview_title: string;
+		instant_reversible: string;
+		rollback_note: string;
+		stat_turnaround: string;
+		stat_turnaround_sub: string;
+		stat_safety: string;
+		stat_safety_sub: string;
+		stat_unchecked: string;
+		stat_unchecked_sub: string;
+		stat_hubs: string;
+		stat_hubs_sub: string;
+		bento_title: string;
+		bento_sub: string;
+		bento_1_title: string;
+		bento_1_desc: string;
+		bento_2_title: string;
+		bento_2_desc: string;
+		bento_3_title: string;
+		bento_3_desc: string;
+		how_it_works_title: string;
+		how_it_works_sub: string;
+		step_1_title: string;
+		step_1_desc: string;
+		step_2_title: string;
+		step_2_desc: string;
+		step_3_title: string;
+		step_3_desc: string;
+		faq_title: string;
+		faq_sub: string;
+		faq_1_q: string;
+		faq_1_a: string;
+		faq_2_q: string;
+		faq_2_a: string;
+		faq_3_q: string;
+		faq_3_a: string;
+		faq_4_q: string;
+		faq_4_a: string;
+	};
+	flow: {
+		title: string;
+		subtitle: string;
+		engine_pipeline: string;
+		deterministic_badge: string;
+		simulate_ingestion: string;
+		simulating_stage: string;
+		get_api_key: string;
+		set_token_dashboard: string;
+		gw_daemon_title: string;
+		gw_daemon_sub: string;
+		gw_online: string;
+		gw_offline: string;
+		gw_starting: string;
+		gw_restarting: string;
+		gw_stopping: string;
+		gw_start_btn: string;
+		gw_restart_btn: string;
+		gw_stop_btn: string;
+		gw_port: string;
+		gw_uptime: string;
+		gw_memory: string;
+		gw_whitelisted: string;
+		gw_terminal_btn: string;
+		active_circuit: string;
+		prev_stage: string;
+		next_stage: string;
+		root_mechanics: string;
+		contract_payload: string;
+		code_desc: string;
+		copy_code: string;
+		copied: string;
+	};
+	auth: {
+		signin_title: string;
+		signup_title: string;
+		portal_subtitle: string;
+		google_btn: string;
+		divider_text: string;
+		name_label: string;
+		email_label: string;
+		password_label: string;
+		signin_btn: string;
+		signup_btn: string;
+		autofill_demo: string;
+		need_credentials: string;
+		register_link: string;
+		already_registered: string;
+		signin_link: string;
+		unauthorized_error: string;
+		logged_out_msg: string;
+		session_guardrail: string;
+	};
+	platforms: {
+		page_title: string;
+		page_subtitle: string;
+		hub_badge: string;
+		select_method: string;
+		verified_routes: string;
+		wa_gateway_qr: string;
+		wa_web: string;
+		wa_ferdium: string;
+		wa_rambox: string;
+		qr_title: string;
+		qr_subtitle: string;
+		qr_status_connected: string;
+		qr_status_waiting: string;
+		qr_status_loading: string;
+		qr_status_offline: string;
+		qr_refresh_btn: string;
+		qr_connected_title: string;
+		qr_connected_desc: string;
+		qr_steps_title: string;
+		qr_step_1: string;
+		qr_step_2: string;
+		qr_step_3: string;
+		qr_step_4: string;
+		qr_step_5: string;
+		qr_waiting_init: string;
+		qr_waiting_desc: string;
+		browser_hook_title: string;
+		browser_hook_sub: string;
+		ferdium_hook_title: string;
+		ferdium_hook_sub: string;
+		rambox_hook_title: string;
+		rambox_hook_sub: string;
+		how_to_install: string;
+		browser_install_steps: string;
+		ferdium_install_steps: string;
+		rambox_install_steps: string;
+		network_security_title: string;
+		local_port: string;
+		antispam_debounce: string;
+		antispam_desc: string;
+		whitelisted_jids: string;
+		whitelisted_jids_desc: string;
+		security_token: string;
+		bot_token: string;
+		bot_token_desc: string;
+		delivery_mode: string;
+		supervisor_id: string;
+		authorized_chat_ids: string;
+		authorized_chat_ids_desc: string;
+		discord_token: string;
+		guild_id: string;
+		rbac_role: string;
+		whitelisted_channels: string;
+		slack_token: string;
+		signing_secret: string;
+		signing_secret_desc: string;
+		team_id: string;
+		slash_command: string;
+		logic_flow_title: string;
+		flow_step_1_title: string;
+		flow_step_1_desc: string;
+		flow_step_2_title: string;
+		flow_step_2_desc: string;
+		flow_step_3_title: string;
+		flow_step_3_desc: string;
+		copy_config: string;
+	};
+	tutorial: {
+		title: string;
+		subtitle: string;
+		tab_ferdium: string;
+		tab_rambox: string;
+		tab_web: string;
+		tab_pc: string;
+		ferdium_title: string;
+		ferdium_badge: string;
+		ferdium_desc: string;
+		steps_heading: string;
+		ferdium_s1: string;
+		ferdium_s2: string;
+		ferdium_s3: string;
+		ferdium_s4: string;
+		copy_snippet: string;
+		rambox_title: string;
+		rambox_badge: string;
+		rambox_desc: string;
+		rambox_s1: string;
+		rambox_s2: string;
+		rambox_s3: string;
+		rambox_s4: string;
+		web_title: string;
+		web_badge: string;
+		web_desc: string;
+		web_s1: string;
+		web_s2: string;
+		web_s3: string;
+		web_s4: string;
+		pc_title: string;
+		pc_badge: string;
+		pc_desc: string;
+		pc_cmd_label: string;
+		send_ping_btn: string;
+		ping_received: string;
+		close_btn: string;
+	};
+	command: {
+		search_placeholder: string;
+		no_results: string;
+		category_core: string;
+		category_operations: string;
+		category_db: string;
+		category_chatops: string;
+		nav_hint: string;
+		select_hint: string;
+	};
+	user_nav: {
+		oncall_role: string;
+		it_support: string;
+		signin: string;
+		oncall_roster: string;
+		roster_schedule: string;
+		covered_branches: string;
+		dashboard_queue: string;
+		system_architecture: string;
+		sign_out: string;
+	};
+};
 
 const dictionaries: Record<Locale, Translations> = {
 	id: {
@@ -823,7 +1122,13 @@ const dictionaries: Record<Locale, Translations> = {
 			reason_placeholder: "cth. Faktur berstatus CLOSED dalam pembukuan akhir bulan; tidak memenuhi SOP koreksi.",
 			cancel: "Batal",
 			confirm_reject: "Konfirmasi Penolakan",
-			rejecting: "Menolak..."
+			rejecting: "Menolak...",
+			confidence: "Tingkat Keyakinan",
+			document_num: "Dokumen #",
+			target_field: "Target:",
+			sql_prepared_label: "Parameterized SQL Prepared Statement (PostgreSQL / Oracle):",
+			bson_command_label: "Perintah BSON Kompensasi (MongoDB / Document Store):",
+			orig_inbound_msg: "Pesan Masuk Asli:"
 		},
 		messages: {
 			title: "Pesan Masuk Saluran (Inbound)",
@@ -967,7 +1272,36 @@ const dictionaries: Record<Locale, Translations> = {
 			memory_rss: "Alokasi Memori",
 			goroutines: "Goroutine Aktif",
 			test_ping: "Kirim Probe Ping Telemetri",
-			ping_success: "Probe ping berhasil dikirim!"
+			ping_success: "Probe ping berhasil dikirim!",
+			how_to_integrate: "Cara Integrasi",
+			lan_ingress_ip: "IP Ingress LAN",
+			lan_port_active: "Port HTTP 8088 Aktif",
+			go_memory_alloc: "Alokasi Memori Go",
+			low_footprint: "Runtime footprint rendah",
+			active_goroutines: "Goroutine Aktif",
+			sse_duplex: "Penyiar dupleks SSE",
+			server_status: "Status Server",
+			online: "ONLINE",
+			uptime_label: "Masa Aktif: {min} mnt",
+			db_pool_telemetry: "Telemetri Connection Pool Database",
+			driver_label: "Driver:",
+			open_connections: "Koneksi Terbuka:",
+			idle_connections: "Koneksi Menganggur:",
+			in_use_concurrency: "Konkurensi Digunakan:",
+			chatops_ingress_telemetry: "Telemetri Ingress Platform ChatOps",
+			realtime_diagnostics: "Metrik runtime real-time, probe heartbeat soket, dan diagnostik throughput paket.",
+			socket_latency: "Probe Latensi Soket",
+			tcp_roundtrip: "Roundtrip TCP",
+			events_captured: "Peristiwa Ditangkap",
+			total_inbound: "Total Inbound",
+			queue_backpressure: "Backpressure Antrean",
+			buffer_depth: "Kedalaman Buffer Nominal",
+			filter_efficiency: "Efisiensi Filter Edge",
+			zero_token_waste: "0 Drop Pemborosan Token",
+			telemetry_state: "Status Telemetri:",
+			send_probe_ping: "Kirim Probe Ping Uji",
+			sending_probe: "Mengirim...",
+			probe_ack: "Probe ping diakui! Paket uji dimasukkan ke Antrean Persetujuan."
 		},
 		logs: {
 			title: "Log Sistem Enterprise & Telemetri Daemon",
@@ -1116,7 +1450,271 @@ const dictionaries: Record<Locale, Translations> = {
 			rows_per_page: "Baris per halaman:",
 			language: "Bahasa",
 			theme: "Tema",
-			sound: "Efek Suara"
+			sound: "Efek Suara",
+			public_home: "Beranda Publik (/)",
+			system_flow: "Alur Sistem (/flow)",
+			launch_cockpit: "Buka Cockpit On-Call",
+			oncall_assistant: "Asisten Operasional On-Call",
+			zero_sql_certified: "Tersertifikasi Zero Raw SQL",
+			universal_lts: "Enterprise LTS Universal",
+			multichannel_chatops: "ChatOps Multi-Saluran",
+			jump_to: "Lompat ke:",
+			filtered_from: "difilter dari",
+			go: "Buka",
+			showing: "Menampilkan"
+		},
+		landing: {
+			pill_announcement: "Engine Guardrail Assurance Aktif",
+			headline_main: "Nol mutasi tanpa verifikasi.",
+			headline_gradient: "ChatOps on-call otonom.",
+			subtitle: "NovaPilot mencerna eskalasi cabang WhatsApp yang kacau, memvalidasi mutasi database dengan zero raw SQL, dan memberi teknisi on-call cockpit persetujuan teraudit sekali klik yang aman untuk tidur nyenyak.",
+			launch_cockpit: "Buka Cockpit On-Call",
+			flow_and_hooks: "Alur Sistem & Hooks",
+			circuit_arch: "Arsitektur Sirkuit Pipeline ChatOps",
+			all_channels: "Semua Saluran",
+			simulate_flow: "Simulasikan Alur Langsung",
+			simulating_stage: "Memproses Tahap {stage}/4...",
+			stage_1: "1. Ingesti Chat",
+			stage_2: "2. Validasi Guardrail",
+			stage_3: "3. Tanda Tangan Manusia",
+			stage_4: "4. Siap Rollback",
+			status_simulating: "Status: SIMULASI SEDANG BERJALAN",
+			status_ready: "Status: SIAP UNTUK INGESTI",
+			cockpit_mockup_title: "Cockpit on-call yang dirancang untuk giliran kerja berstres tinggi",
+			cockpit_mockup_sub: "Setiap tiket tertunda menampilkan bukti asli WhatsApp, SQL terverifikasi AST, dan skor keyakinan sehingga Anda tidak perlu menebak pada jam 3 pagi.",
+			tab_live_ticket: "Tiket Langsung",
+			tab_zero_sql: "Zero Raw SQL",
+			tab_auto_rollback: "Auto Rollback",
+			medan_hub: "DISPATCH HUB MEDAN",
+			medan_msg: "Pak John, tolong perbarui tarif pajak faktur INV-2024-8901 jadi 12%. Memo baru dari finance pusat. Makasih!",
+			sender_info: "Pengirim: +62 812-4491-0021 · Grup: #ops-medan-dc",
+			confidence_score: "Skor Keyakinan:",
+			high_confidence: "KEYAKINAN TINGGI",
+			target_doc: "DOKUMEN TARGET:",
+			current_value: "Nilai Saat Ini",
+			proposed_value: "Nilai yang Diajukan",
+			approve_execute: "Setujui & Eksekusi Sekali Klik",
+			reject: "Tolak",
+			sql_preview_title: "Pratinjau Parameterized Query Ketat",
+			dry_run_passed: "SIMULASI DRY-RUN LOLOS",
+			zero_sql_note: "Tanpa konkatenasi string SQL mentah. Tipe parameter dan batas nilai diperiksa sebelum penguncian DB.",
+			rollback_preview_title: "Skrip Rollback Kompensasi (Dihasilkan Otomatis)",
+			instant_reversible: "DAPAT DIBALIKKAN INSTAN",
+			rollback_note: "Snapshot rollback diarsipkan di PostgreSQL Audit Store. Dapat dieksekusi dalam 1 ketukan jika cabang membatalkan memo.",
+			stat_turnaround: "30dtk",
+			stat_turnaround_sub: "Rata-rata Waktu Penanganan",
+			stat_safety: "100%",
+			stat_safety_sub: "Keamanan Terparameterisasi",
+			stat_unchecked: "0",
+			stat_unchecked_sub: "Mutasi Tanpa Verifikasi",
+			stat_hubs: "4 Hub",
+			stat_hubs_sub: "Replika Pabrik DC",
+			bento_title: "Dirancang untuk keandalan pabrik industri",
+			bento_sub: "Dibangun khusus untuk pabrik industri misi-kritis di mana satu faktur korup dapat menghentikan jalur logistik.",
+			bento_1_title: "Ingesti WhatsApp Pasif",
+			bento_1_desc: "Hanya memantau grup cabang regional resmi. Tanpa spamming dan pola konfirmasi balasan tunggal yang sepenuhnya patuh pada Ketentuan Layanan Meta WhatsApp.",
+			bento_2_title: "Guardrail Zero Raw SQL",
+			bento_2_desc: "Setiap mutasi terikat secara ketat pada prepared statement dengan dry-run skema. Tidak ada interpolasi string mentah yang dapat mencapai replika PostgreSQL atau Oracle Anda.",
+			bento_3_title: "Gerbang Human-in-the-Loop Ketat",
+			bento_3_desc: "Nol mutasi langsung oleh AI. Teknisi on-call meninjau diff visual berdampingan dan menekan 'Setujui' untuk memicu prepared statement transaksional dengan jejak audit lengkap.",
+			how_it_works_title: "Bagaimana NovaPilot mengamankan shift Anda",
+			how_it_works_sub: "Tiga tahap jelas dari penerimaan pesan chat hingga komit database produksi yang dapat diverifikasi.",
+			step_1_title: "Cegat & Ekstraksi",
+			step_1_desc: "Hook WhatsApp mengekstrak nomor faktur, kolom target mutasi, dan nilai dengan skor keyakinan aktif di atas 85%.",
+			step_2_title: "Simulasi Dry-Run",
+			step_2_desc: "Engine menjalankan dry-run simulasi terhadap database, memverifikasi izin cabang, dan menyiapkan skrip auto-rollback.",
+			step_3_title: "Persetujuan Manusia & Audit",
+			step_3_desc: "Teknisi menyetujui perubahan melalui WebUI ramah seluler. Eksekusi transaksional atomik mencatat bukti permanen ke jejak audit.",
+			faq_title: "Pertanyaan yang Sering Diajukan",
+			faq_sub: "Semua yang perlu Anda ketahui tentang arsitektur keamanan, kepatuhan, dan integrasi NovaPilot.",
+			faq_1_q: "Apakah NovaPilot pernah mengeksekusi SQL mentah tanpa escape secara langsung?",
+			faq_1_a: "Tidak pernah. Setiap permintaan chat diurai menjadi parameter terstruktur dan diverifikasi terhadap templat prepared query yang telah ditentukan sebelumnya. Tanpa interpolasi string mentah, mencegah kerusakan skema yang tidak disengaja dan injeksi SQL.",
+			faq_2_q: "Bagaimana NovaPilot terhubung ke WhatsApp tanpa terblokir?",
+			faq_2_a: "NovaPilot menggunakan observer DOM sisi-klien pasif di dalam klien enterprise resmi (resep Ferdium, skrip Rambox, userscript browser, atau desktop observer). Sistem hanya memantau grup cabang internal resmi dan hanya mengirim balasan konfirmasi tunggal setelah persetujuan manusia.",
+			faq_3_q: "Bisakah mutasi yang disetujui di-rollback dalam keadaan darurat?",
+			faq_3_a: "Ya. Setiap mutasi tunggal secara otomatis menghasilkan skrip rollback invers kompensasi sebelum eksekusi. Teknisi on-call dapat memicu rollback sekali klik dari cockpit kapan saja.",
+			faq_4_q: "Bagaimana akses dikontrol untuk teknisi on-call?",
+			faq_4_a: "NovaPilot terintegrasi dengan Better Auth dan izin kriptografis berbasis sesi. Hanya personel on-call terautentikasi dengan token izin aktif yang dapat menyetujui mutasi tertunda."
+		},
+		flow: {
+			title: "Alur Sistem & Arsitektur End-to-End",
+			subtitle: "Dari eskalasi chat {platform} mentah hingga eksekusi prepared statement yang aman: bagaimana NovaPilot AI meniadakan kelelahan on-call sekaligus menjaga tata kelola database tanpa eror.",
+			engine_pipeline: "Pipeline Mesin ChatOps",
+			deterministic_badge: "100% Deterministik & Teraudit",
+			simulate_ingestion: "Simulasikan Ingesti {platform} Langsung",
+			simulating_stage: "Melewati Tahap 0{stage}/06...",
+			get_api_key: "Dapatkan Kunci API {platform}",
+			set_token_dashboard: "Atur Token di Dashboard",
+			gw_daemon_title: "Daemon Layanan Gateway WhatsApp",
+			gw_daemon_sub: "Socket listener Baileys di port 3002. Mencerna chat regional resmi dan mengirimkannya ke inti Golang NovaPilot.",
+			gw_online: "ONLINE (:3002)",
+			gw_offline: "BERHENTI / OFFLINE",
+			gw_starting: "Meluncurkan layanan Gateway WhatsApp...",
+			gw_restarting: "Memulai ulang daemon Gateway WhatsApp...",
+			gw_stopping: "Menghentikan daemon Gateway WhatsApp...",
+			gw_start_btn: "Mulai Layanan",
+			gw_restart_btn: "Mulai Ulang Gateway",
+			gw_stop_btn: "Hentikan",
+			gw_port: "Port Daemon",
+			gw_uptime: "Masa Aktif Proses",
+			gw_memory: "Memori RSS",
+			gw_whitelisted: "JID Masuk Daftar Putih",
+			gw_terminal_btn: "Terminal & Ingress",
+			active_circuit: "Sirkuit Aktif: Pemrosesan Tahap 0{stage}",
+			prev_stage: "← Tahap Sebelumnya",
+			next_stage: "Tahap Berikutnya →",
+			root_mechanics: "Mekanika Eksekusi Inti:",
+			contract_payload: "Kontrak Payload & Kode Eksekusi",
+			code_desc: "Pratinjau skema JSON terstruktur atau cuplikan kode layanan backend.",
+			copy_code: "Salin Kode",
+			copied: "Tersalin!"
+		},
+		auth: {
+			signin_title: "Masuk ke NovaPilot",
+			signup_title: "Buat Akun On-Call",
+			portal_subtitle: "Portal akses resmi untuk teknisi on-call TI pabrik dan penjaga integritas database.",
+			google_btn: "Lanjutkan dengan Google Enterprise",
+			divider_text: "atau lanjutkan dengan kredensial kerja",
+			name_label: "Nama Lengkap",
+			email_label: "Email Kerja Pabrik",
+			password_label: "Kata Sandi",
+			signin_btn: "Masuk ke Operasional",
+			signup_btn: "Daftarkan Operator On-Call",
+			autofill_demo: "Isi Otomatis Kredensial Demo (John Doe - On-Call)",
+			need_credentials: "Perlu kredensial akses baru?",
+			register_link: "Daftar",
+			already_registered: "Sudah memiliki clearance on-call?",
+			signin_link: "Masuk",
+			unauthorized_error: "Akses Ditolak: Guardrail Middleware memblokir akses tanpa autentikasi ke Cockpit On-Call. Harap lakukan autentikasi di bawah ini.",
+			logged_out_msg: "Anda telah keluar dengan aman. Token sesi dicabut.",
+			session_guardrail: "Guardrail Sesi Better Auth Aktif"
+		},
+		platforms: {
+			page_title: "Pengaturan Platform ChatOps & Alur Logika",
+			page_subtitle: "Konfigurasikan kredensial, filter daftar putih, pembatasan kecepatan, dan logika penerimaan untuk setiap platform chat.",
+			hub_badge: "Hub Multi-Saluran",
+			select_method: "Pilih Metode Ingress / Koneksi WhatsApp:",
+			verified_routes: "4 Jalur Terverifikasi",
+			wa_gateway_qr: "WA Gateway (QR)",
+			wa_web: "WhatsApp Web",
+			wa_ferdium: "Ferdium",
+			wa_rambox: "Rambox",
+			qr_title: "Penyandingan QR Multi-Device Baileys",
+			qr_subtitle: "Pindai QR langsung dari aplikasi seluler WhatsApp di ponsel Anda",
+			qr_status_connected: "TERHUBUNG",
+			qr_status_waiting: "MENUNGGU PINDAIAN",
+			qr_status_loading: "MEMUAT...",
+			qr_status_offline: "GATEWAY OFFLINE",
+			qr_refresh_btn: "Segarkan QR",
+			qr_connected_title: "WhatsApp Multi-Device Terhubung!",
+			qr_connected_desc: "Sesi soket Baileys aktif. Gateway sedang mendengarkan pesan masuk dari grup cabang yang masuk daftar putih.",
+			qr_steps_title: "Langkah-langkah Menautkan WhatsApp di Ponsel:",
+			qr_step_1: "Buka aplikasi WhatsApp di ponsel Anda.",
+			qr_step_2: "Ketuk menu titik tiga (Android) atau Pengaturan (iPhone).",
+			qr_step_3: "Pilih Perangkat Tertaut.",
+			qr_step_4: "Pilih Tautkan Perangkat.",
+			qr_step_5: "Arahkan kamera ponsel ke kode QR di samping.",
+			qr_waiting_init: "Menunggu Inisialisasi Gateway",
+			qr_waiting_desc: "Pastikan layanan gateway berjalan: bun run start atau npx tsx src/index.ts di folder whatsapp-gateway.",
+			browser_hook_title: "WhatsApp Web (Hook Tampermonkey)",
+			browser_hook_sub: "Observer DOM pasif pada tab web.whatsapp.com",
+			ferdium_hook_title: "Hook Integrasi Desktop Ferdium",
+			ferdium_hook_sub: "Injeksi JavaScript ke dalam container layanan WhatsApp Ferdium",
+			rambox_hook_title: "Hook Integrasi Workspace Rambox",
+			rambox_hook_sub: "Injeksi JavaScript kustom ke aplikasi WhatsApp di Rambox",
+			how_to_install: "Cara Menginstal:",
+			browser_install_steps: "Pasang ekstensi Tampermonkey atau Violentmonkey di Chrome/Edge/Firefox, buat skrip baru, tempel kode di bawah, lalu buka web.whatsapp.com.",
+			ferdium_install_steps: "Buka Ferdium > Klik kanan layanan WhatsApp > Edit Service > Menu Advanced > Tempel kode ke Custom Code (Inject JavaScript code) > Simpan & Muat Ulang.",
+			rambox_install_steps: "Buka Rambox > Klik kanan tab layanan WhatsApp > Edit > Tab Advanced > Tempel kode ke Inject JavaScript code > Simpan.",
+			network_security_title: "Pengaturan Jaringan & Daftar Putih Keamanan",
+			local_port: "Port Ingress Webhook Lokal",
+			antispam_debounce: "Jeda Anti-Spam Debounce (ms)",
+			antispam_desc: "Mencegah ledakan pesan duplikat dari pengguna",
+			whitelisted_jids: "Daftar Putih JID Grup Regional Resmi",
+			whitelisted_jids_desc: "JID grup WhatsApp dipisahkan koma (cth. 120363028391@g.us)",
+			security_token: "Token Keamanan Tampermonkey / Browser Hook",
+			bot_token: "Token API Telegram BotFather",
+			bot_token_desc: "Diperoleh dengan membuat bot melalui @BotFather di Telegram",
+			delivery_mode: "Mode Pengiriman Ingress",
+			supervisor_id: "ID Pengguna Telegram Supervisor",
+			authorized_chat_ids: "ID Chat Grup Regional Resmi",
+			authorized_chat_ids_desc: "Bilangan bulat negatif untuk supergrup (cth. -100192837482)",
+			discord_token: "Token Bot Discord",
+			guild_id: "ID Server Guild Resmi",
+			rbac_role: "Nama Peran Mutasi RBAC",
+			whitelisted_channels: "ID Saluran Ingress yang Masuk Daftar Putih",
+			slack_token: "Token OAuth Pengguna Bot (xoxb)",
+			signing_secret: "Rahasia Penandatanganan Slack (HMAC SHA256)",
+			signing_secret_desc: "Digunakan untuk memverifikasi X-Slack-Signature secara kriptografis",
+			team_id: "ID Tim Perusahaan",
+			slash_command: "Perintah Garis Miring Terdaftar",
+			logic_flow_title: "Alur Logika Ingesti {platform}",
+			flow_step_1_title: "Gerbang Daftar Putih Edge",
+			flow_step_1_desc: "Pengenal pengirim paket masuk diverifikasi terhadap daftar putih. Obrolan santai diabaikan dengan 0 pemborosan token.",
+			flow_step_2_title: "Penguraian LLM Deterministik",
+			flow_step_2_desc: "Percakapan dikonversi secara ketat ke Skema JSON (intent, no_dokumen, target_kolom, nilai_diajukan) pada Temp = 0.0.",
+			flow_step_3_title: "Aliran Cockpit SSE Langsung",
+			flow_step_3_desc: "Diteruskan seketika ke WebUI Teknisi On-Call untuk ditinjau manusia dan dieksekusi prepared statement secara atomik.",
+			copy_config: "Salin Konfigurasi"
+		},
+		tutorial: {
+			title: "Panduan Integrasi Client Hook",
+			subtitle: "Petunjuk penyiapan dan cuplikan yang dapat disalin untuk Ferdium, Rambox, Web WA, dan PC WA.",
+			tab_ferdium: "Ferdium Desktop",
+			tab_rambox: "Aplikasi Rambox",
+			tab_web: "WhatsApp Web (Chrome / Edge)",
+			tab_pc: "PC WhatsApp (Gateway Baileys)",
+			ferdium_title: "1. Sambungkan via Resep Native Ferdium Electron",
+			ferdium_badge: "Tanpa Pindai QR",
+			ferdium_desc: "Ferdium memungkinkan injeksi skrip langsung ke dalam webview layanan WhatsApp miliknya. NovaPilot menyediakan hook observer khusus yang menangkap chat mutasi faktur tanpa memerlukan ekstensi browser pihak ketiga.",
+			steps_heading: "Langkah-Langkah Instalasi:",
+			ferdium_s1: "Buka folder resep Ferdium Anda: %APPDATA%\\Ferdium\\recipes\\whatsapp\\",
+			ferdium_s2: "Salin berkas novapilot-hook.js ke dalam folder tersebut.",
+			ferdium_s3: "Buka webview.js di folder yang sama, lalu tambahkan cuplikan injeksi di bawah ini.",
+			ferdium_s4: "Di Ferdium, tekan Ctrl + R pada tab WhatsApp Anda.",
+			copy_snippet: "Salin Cuplikan",
+			rambox_title: "2. Sambungkan via Injeksi JavaScript Kustom Rambox",
+			rambox_badge: "Advanced Layanan",
+			rambox_desc: "Rambox mendukung eksekusi JavaScript arbitrer di dalam tab aplikasi apa pun. Dengan menginjeksi observer kami, chat yang berisi mutasi faktur diteruskan secara pasif ke NovaPilot di http://127.0.0.1:8088/api/tickets.",
+			rambox_s1: "Buka Rambox dan klik kanan ikon layanan WhatsApp Anda.",
+			rambox_s2: "Pilih Settings -> Buka tab Advanced.",
+			rambox_s3: "Cari kotak input \"Inject JavaScript code\".",
+			rambox_s4: "Tempel cuplikan skrip di bawah ini lalu klik Save.",
+			web_title: "3. Sambungkan via Userscript Browser (Chrome, Edge, Firefox)",
+			web_badge: "Tampermonkey",
+			web_desc: "Jika Anda menggunakan WhatsApp Web di Google Chrome, Microsoft Edge, atau Mozilla Firefox, Anda dapat memasang userscript Tampermonkey yang ringan untuk menangkap pesan masuk secara otomatis.",
+			web_s1: "Pasang ekstensi Tampermonkey dari Chrome Web Store.",
+			web_s2: "Klik ikon Tampermonkey -> Buat skrip baru.",
+			web_s3: "Tempel kode Userscript di bawah ini lalu tekan Ctrl + S.",
+			web_s4: "Muat ulang web.whatsapp.com.",
+			pc_title: "4. Gateway WhatsApp PC Mandiri (Socket Baileys)",
+			pc_badge: "Headless Daemon",
+			pc_desc: "Jalankan layanan Node.js khusus menggunakan @whiskeysockets/baileys atau whatsapp-web.js secara lokal sebagai Layanan Windows atau proses latar belakang. Layanan ini terhubung langsung ke protokol Multi-Device WhatsApp.",
+			pc_cmd_label: "Perintah Daemon:",
+			send_ping_btn: "Kirim Uji Hook Ping",
+			ping_received: "Ping Diterima di Antrean Persetujuan!",
+			close_btn: "Tutup Panduan"
+		},
+		command: {
+			search_placeholder: "Cari menu, operasional, konektor, atau dokumentasi...",
+			no_results: "Tidak ada hasil yang ditemukan untuk \"{query}\".",
+			category_core: "Navigasi Utama",
+			category_operations: "Operasional",
+			category_db: "Database & Telemetri",
+			category_chatops: "ChatOps & Hooks",
+			nav_hint: "Gunakan ↑ ↓ untuk navigasi",
+			select_hint: "↵ untuk memilih"
+		},
+		user_nav: {
+			oncall_role: "Teknisi On-Call",
+			it_support: "Dukungan TI",
+			signin: "Masuk",
+			oncall_roster: "Jadwal On-Call",
+			roster_schedule: "2x Bulanan (Shift 1 dari 2)",
+			covered_branches: "Cabang yang Dicakup:",
+			dashboard_queue: "Antrean Persetujuan Dashboard",
+			system_architecture: "Alur Arsitektur Sistem",
+			sign_out: "Keluar"
 		}
 	},
 	en: {
@@ -1380,7 +1978,13 @@ const dictionaries: Record<Locale, Translations> = {
 			reason_placeholder: "e.g. Invoice has status CLOSED in month-end accounting; does not satisfy revision SOP.",
 			cancel: "Cancel",
 			confirm_reject: "Confirm Rejection",
-			rejecting: "Rejecting..."
+			rejecting: "Rejecting...",
+			confidence: "Confidence",
+			document_num: "Document #",
+			target_field: "Target:",
+			sql_prepared_label: "Parameterized SQL Prepared Statement (PostgreSQL / Oracle):",
+			bson_command_label: "Compensating BSON Command (MongoDB / Document Store):",
+			orig_inbound_msg: "Original Inbound Message:"
 		},
 		messages: {
 			title: "Inbound Messages Feed",
@@ -1524,7 +2128,36 @@ const dictionaries: Record<Locale, Translations> = {
 			memory_rss: "Allocated Memory",
 			goroutines: "Active Goroutines",
 			test_ping: "Send Telemetry Probe Ping",
-			ping_success: "Probe ping dispatched successfully!"
+			ping_success: "Probe ping dispatched successfully!",
+			how_to_integrate: "How to Integrate",
+			lan_ingress_ip: "LAN Ingress IP",
+			lan_port_active: "HTTP Port 8088 Active",
+			go_memory_alloc: "Go Memory Alloc",
+			low_footprint: "Low footprint runtime",
+			active_goroutines: "Active Goroutines",
+			sse_duplex: "SSE duplex broadcasters",
+			server_status: "Server Status",
+			online: "ONLINE",
+			uptime_label: "Uptime: {min} min",
+			db_pool_telemetry: "Database Connection Pool Telemetry",
+			driver_label: "Driver:",
+			open_connections: "Open Connections:",
+			idle_connections: "Idle Connections:",
+			in_use_concurrency: "In-Use Concurrency:",
+			chatops_ingress_telemetry: "ChatOps Platform Ingress Telemetry",
+			realtime_diagnostics: "Real-time runtime metrics, socket heartbeat probes, and packet throughput diagnostics.",
+			socket_latency: "Socket Latency Probe",
+			tcp_roundtrip: "TCP Roundtrip",
+			events_captured: "Events Captured",
+			total_inbound: "Total Inbound",
+			queue_backpressure: "Queue Backpressure",
+			buffer_depth: "Buffer Depth Nominal",
+			filter_efficiency: "Edge Filter Efficiency",
+			zero_token_waste: "0 Token Waste Drops",
+			telemetry_state: "Telemetry State:",
+			send_probe_ping: "Send Test Probe Ping",
+			sending_probe: "Sending...",
+			probe_ack: "Probe ping acknowledged! Staged test packet into Approval Queue."
 		},
 		logs: {
 			title: "Enterprise System Logs & Daemon Telemetry",
@@ -1673,7 +2306,271 @@ const dictionaries: Record<Locale, Translations> = {
 			rows_per_page: "Rows per page:",
 			language: "Language",
 			theme: "Theme",
-			sound: "Sound Effects"
+			sound: "Sound Effects",
+			public_home: "Public Home (/)",
+			system_flow: "System Flow (/flow)",
+			launch_cockpit: "Launch On-Call Cockpit",
+			oncall_assistant: "On-Call Operations Assistant",
+			zero_sql_certified: "Zero Raw SQL Certified",
+			universal_lts: "Universal Enterprise LTS",
+			multichannel_chatops: "Multi-Platform ChatOps",
+			jump_to: "Jump to:",
+			filtered_from: "filtered from",
+			go: "Go",
+			showing: "Showing"
+		},
+		landing: {
+			pill_announcement: "Guardrail Assurance Engine Active",
+			headline_main: "Zero unchecked mutations.",
+			headline_gradient: "Autonomous on-call ChatOps.",
+			subtitle: "NovaPilot ingests chaotic WhatsApp branch escalations, validates database mutations with zero raw SQL, and gives on-call engineers a sleep-safe, one-click audited signoff cockpit.",
+			launch_cockpit: "Launch On-Call Cockpit",
+			flow_and_hooks: "System Flow & Hooks",
+			circuit_arch: "ChatOps Pipeline Circuit Architecture",
+			all_channels: "All Channels",
+			simulate_flow: "Simulate Live Flow",
+			simulating_stage: "Processing Stage {stage}/4...",
+			stage_1: "1. Ingest Chat",
+			stage_2: "2. Guardrail Validation",
+			stage_3: "3. Human Sign-Off",
+			stage_4: "4. Rollback Ready",
+			status_simulating: "Status: SIMULATION IN PROGRESS",
+			status_ready: "Status: READY FOR INGESTION",
+			cockpit_mockup_title: "The on-call cockpit designed for high-stress shifts",
+			cockpit_mockup_sub: "Every pending ticket displays original WhatsApp evidence, AST-verified SQL, and confidence scores so you never guess at 3 AM.",
+			tab_live_ticket: "Live Ticket",
+			tab_zero_sql: "Zero Raw SQL",
+			tab_auto_rollback: "Auto Rollback",
+			medan_hub: "MEDAN HUB DISPATCH",
+			medan_msg: "Mr. John, please update tax rate for invoice INV-2024-8901 to 12%. New memo from central finance. Thanks!",
+			sender_info: "Sender: +62 812-4491-0021 · Group: #ops-medan-dc",
+			confidence_score: "Confidence Score:",
+			high_confidence: "HIGH CONFIDENCE",
+			target_doc: "TARGET DOCUMENT:",
+			current_value: "Current Value",
+			proposed_value: "Proposed Value",
+			approve_execute: "One-Click Approve & Execute",
+			reject: "Reject",
+			sql_preview_title: "Strict Parameterized Query Preview",
+			dry_run_passed: "DRY-RUN SIMULATION PASSED",
+			zero_sql_note: "Zero raw SQL string concatenation. Parameter types and bounds checked before DB lock.",
+			rollback_preview_title: "Compensating Rollback Script (Auto-Generated)",
+			instant_reversible: "INSTANT REVERSIBLE",
+			rollback_note: "Rollback snapshot archived in PostgreSQL Audit Store. Executable in 1 tap if branch recalls memo.",
+			stat_turnaround: "30s",
+			stat_turnaround_sub: "Average Turnaround",
+			stat_safety: "100%",
+			stat_safety_sub: "Parameterized Safety",
+			stat_unchecked: "0",
+			stat_unchecked_sub: "Unchecked Mutations",
+			stat_hubs: "4 Hubs",
+			stat_hubs_sub: "DC Factory Replicas",
+			bento_title: "Engineered for factory reliability",
+			bento_sub: "Built specifically for mission-critical industrial plants where a single corrupt invoice halts logistics lines.",
+			bento_1_title: "Passive WhatsApp Ingestion",
+			bento_1_desc: "Monitors authorized regional branch groups exclusively. Employs zero spamming and single-reply confirmation patterns strictly compliant with Meta WhatsApp ToS.",
+			bento_2_title: "Zero Raw SQL Guardrail",
+			bento_2_desc: "Every mutation is strictly bound to prepared statements with schema dry-runs. No raw string interpolation can ever reach your PostgreSQL or Oracle replicas.",
+			bento_3_title: "Strict Human-in-the-Loop Gate",
+			bento_3_desc: "Zero direct mutation by AI. On-call engineers review side-by-side visual diffs and tap 'Approve' to trigger transactional prepared statements with complete audit logs.",
+			how_it_works_title: "How NovaPilot secures your shift",
+			how_it_works_sub: "Three clear stages from chat intake to verifiable production database commit.",
+			step_1_title: "Intercept & Extract",
+			step_1_desc: "The WhatsApp hook extracts invoice numbers, target mutated fields, and values with an active confidence score over 85%.",
+			step_2_title: "Dry-Run Simulation",
+			step_2_desc: "The engine runs a simulated dry-run against the database, verifies branch permissions, and prepares an auto-rollback script.",
+			step_3_title: "Human Sign-off & Audit",
+			step_3_desc: "Engineers sign off changes via mobile-responsive WebUI. Atomic transactional execution logs permanent evidence to the audit trail.",
+			faq_title: "Frequently Asked Questions",
+			faq_sub: "Everything you need to know about NovaPilot security architecture, compliance, and integrations.",
+			faq_1_q: "Does NovaPilot ever execute raw, unescaped SQL directly?",
+			faq_1_a: "Never. Every chat request is parsed into structured parameters and verified against predefined parameterized query templates. Zero raw string interpolation is permitted, preventing accidental schema corruption and SQL injection.",
+			faq_2_q: "How does NovaPilot hook into WhatsApp without getting banned?",
+			faq_2_a: "NovaPilot uses passive client-side DOM observers inside authorized enterprise clients (Ferdium recipes, Rambox scripts, browser userscripts, or desktop observers). It exclusively monitors authorized internal branch groups and only sends single confirmation replies upon human sign-off.",
+			faq_3_q: "Can approved mutations be rolled back in an emergency?",
+			faq_3_a: "Yes. Every single mutation automatically generates an inverse compensating rollback script prior to execution. The on-call engineer can trigger a one-click rollback from the cockpit at any time.",
+			faq_4_q: "How is access controlled for on-call engineers?",
+			faq_4_a: "NovaPilot integrates with Better Auth and session-based cryptographic clearance. Only authenticated on-call personnel with active clearance tokens can approve pending mutations."
+		},
+		flow: {
+			title: "End-to-End System Flow & Architecture",
+			subtitle: "From raw {platform} chat escalation to safe prepared statement execution: how NovaPilot AI eliminates on-call burnout while preserving zero-error database governance.",
+			engine_pipeline: "ChatOps Engine Pipeline",
+			deterministic_badge: "100% Deterministic & Audited",
+			simulate_ingestion: "Simulate Live {platform} Ingestion",
+			simulating_stage: "Traversing Stage 0{stage}/06...",
+			get_api_key: "Get {platform} API Key",
+			set_token_dashboard: "Set Token in Dashboard",
+			gw_daemon_title: "WhatsApp Gateway Service Daemon",
+			gw_daemon_sub: "Baileys socket listener on port 3002. Ingests authorized regional chats and dispatches to NovaPilot Golang core.",
+			gw_online: "ONLINE (:3002)",
+			gw_offline: "STOPPED / OFFLINE",
+			gw_starting: "Launching WhatsApp Gateway service...",
+			gw_restarting: "Restarting WhatsApp Gateway daemon...",
+			gw_stopping: "Shutting down WhatsApp Gateway daemon...",
+			gw_start_btn: "Start Service",
+			gw_restart_btn: "Restart Gateway",
+			gw_stop_btn: "Shut Down",
+			gw_port: "Daemon Port",
+			gw_uptime: "Process Uptime",
+			gw_memory: "Memory RSS",
+			gw_whitelisted: "Whitelisted JIDs",
+			gw_terminal_btn: "Terminal & Ingress",
+			active_circuit: "Active Circuit: Stage 0{stage} Processing",
+			prev_stage: "← Previous Stage",
+			next_stage: "Next Stage →",
+			root_mechanics: "Root Execution Mechanics:",
+			contract_payload: "Payload Contract & Execution Code",
+			code_desc: "Preview of structured JSON schema or backend service code snippet.",
+			copy_code: "Copy Code",
+			copied: "Copied!"
+		},
+		auth: {
+			signin_title: "Sign In to NovaPilot",
+			signup_title: "Create On-Call Account",
+			portal_subtitle: "Authorized access portal for plant IT on-call engineers and database gatekeepers.",
+			google_btn: "Continue with Google Enterprise",
+			divider_text: "or continue with work credentials",
+			name_label: "Full Name",
+			email_label: "Plant Work Email",
+			password_label: "Password",
+			signin_btn: "Sign In to Operations",
+			signup_btn: "Register On-Call Operator",
+			autofill_demo: "Autofill Demo Credentials (John Doe - On-Call)",
+			need_credentials: "Need new access credentials?",
+			register_link: "Register",
+			already_registered: "Already have on-call clearance?",
+			signin_link: "Sign In",
+			unauthorized_error: "Access Denied: Middleware Guardrail blocked unauthenticated access to the On-Call Cockpit. Please authenticate below.",
+			logged_out_msg: "You have been signed out safely. Session token revoked.",
+			session_guardrail: "Better Auth Session Guardrail Active"
+		},
+		platforms: {
+			page_title: "ChatOps Platform Settings & Logic Flows",
+			page_subtitle: "Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.",
+			hub_badge: "Multi-Channel Hub",
+			select_method: "Select WhatsApp Ingress / Connection Method:",
+			verified_routes: "4 Verified Paths",
+			wa_gateway_qr: "WA Gateway (QR)",
+			wa_web: "WhatsApp Web",
+			wa_ferdium: "Ferdium",
+			wa_rambox: "Rambox",
+			qr_title: "Baileys Multi-Device QR Pairing",
+			qr_subtitle: "Scan QR directly from WhatsApp mobile app on your smartphone",
+			qr_status_connected: "CONNECTED",
+			qr_status_waiting: "WAITING FOR SCAN",
+			qr_status_loading: "LOADING...",
+			qr_status_offline: "GATEWAY OFFLINE",
+			qr_refresh_btn: "Refresh QR",
+			qr_connected_title: "WhatsApp Multi-Device Connected!",
+			qr_connected_desc: "Baileys socket session active. Gateway is listening for incoming messages from whitelisted branch groups.",
+			qr_steps_title: "Steps to Link WhatsApp on Mobile:",
+			qr_step_1: "Open WhatsApp app on your phone.",
+			qr_step_2: "Tap three-dot menu (Android) or Settings (iPhone).",
+			qr_step_3: "Select Linked Devices.",
+			qr_step_4: "Select Link a Device.",
+			qr_step_5: "Point your phone camera to the QR code on the side.",
+			qr_waiting_init: "Waiting for Gateway Initialization",
+			qr_waiting_desc: "Ensure gateway service is running: bun run start or npx tsx src/index.ts in whatsapp-gateway folder.",
+			browser_hook_title: "WhatsApp Web (Tampermonkey Hook)",
+			browser_hook_sub: "Passive DOM observer on web.whatsapp.com tab",
+			ferdium_hook_title: "Ferdium Desktop Integration Hook",
+			ferdium_hook_sub: "JavaScript injection into Ferdium WhatsApp service container",
+			rambox_hook_title: "Rambox Workspace Integration Hook",
+			rambox_hook_sub: "Custom JavaScript injection into WhatsApp app in Rambox",
+			how_to_install: "How to Install:",
+			browser_install_steps: "Install Tampermonkey or Violentmonkey extension in Chrome/Edge/Firefox, create new script, paste code below, then open web.whatsapp.com.",
+			ferdium_install_steps: "Open Ferdium > Right click WhatsApp service > Edit Service > Advanced menu > Paste code into Custom Code (Inject JavaScript code) > Save & Reload.",
+			rambox_install_steps: "Open Rambox > Right click WhatsApp service tab > Edit > Advanced tab > Paste code into Inject JavaScript code > Save.",
+			network_security_title: "Network Settings & Security Whitelist",
+			local_port: "Local Webhook Ingress Port",
+			antispam_debounce: "Anti-Spam Debounce Delay (ms)",
+			antispam_desc: "Prevents duplicate burst messages from users",
+			whitelisted_jids: "Authorized Regional Group JIDs Whitelist",
+			whitelisted_jids_desc: "Comma-separated WhatsApp group JIDs (e.g. 120363028391@g.us)",
+			security_token: "Tampermonkey / Browser Hook Security Token",
+			bot_token: "Telegram BotFather API Token",
+			bot_token_desc: "Obtained by creating a bot via @BotFather on Telegram",
+			delivery_mode: "Ingress Delivery Mode",
+			supervisor_id: "Supervisor Telegram User ID",
+			authorized_chat_ids: "Authorized Regional Group Chat IDs",
+			authorized_chat_ids_desc: "Negative integers for supergroups (e.g. -100192837482)",
+			discord_token: "Discord Bot Token",
+			guild_id: "Authorized Server Guild ID",
+			rbac_role: "RBAC Mutation Role Name",
+			whitelisted_channels: "Whitelisted Ingress Channel IDs",
+			slack_token: "Bot User OAuth Token (xoxb)",
+			signing_secret: "Slack Signing Secret (HMAC SHA256)",
+			signing_secret_desc: "Used to cryptographically verify X-Slack-Signature",
+			team_id: "Corporate Team ID",
+			slash_command: "Registered Slash Command",
+			logic_flow_title: "{platform} Ingestion Logic Flow",
+			flow_step_1_title: "Edge Whitelist Gate",
+			flow_step_1_desc: "Incoming packet sender identifier is verified against whitelist. Casual banter dropped with 0 token waste.",
+			flow_step_2_title: "Deterministic LLM Parsing",
+			flow_step_2_desc: "Conversation converted strictly to JSON Schema (intent, document_no, target_field, proposed_value) at Temp = 0.0.",
+			flow_step_3_title: "Live SSE Cockpit Stream",
+			flow_step_3_desc: "Pushed immediately to On-Call Engineer's WebUI for human review and atomic prepared statement execution.",
+			copy_config: "Copy Config"
+		},
+		tutorial: {
+			title: "Client Hook Integration Guide",
+			subtitle: "Setup instructions and copyable snippets for Ferdium, Rambox, Web WA, and PC WA.",
+			tab_ferdium: "Ferdium Desktop",
+			tab_rambox: "Rambox App",
+			tab_web: "WhatsApp Web (Chrome / Edge)",
+			tab_pc: "PC WhatsApp (Baileys Gateway)",
+			ferdium_title: "1. Connect via Native Ferdium Electron Recipe",
+			ferdium_badge: "Zero QR Scan",
+			ferdium_desc: "Ferdium allows injecting scripts directly into its WhatsApp service webview. NovaPilot provides a dedicated observer hook that captures invoice mutation chats without requiring third-party browser extensions.",
+			steps_heading: "Step-by-Step Installation:",
+			ferdium_s1: "Locate your Ferdium recipe folder: %APPDATA%\\Ferdium\\recipes\\whatsapp\\",
+			ferdium_s2: "Copy novapilot-hook.js into that folder.",
+			ferdium_s3: "Open webview.js in the same folder, and append the injection snippet below.",
+			ferdium_s4: "In Ferdium, press Ctrl + R on your WhatsApp tab.",
+			copy_snippet: "Copy Snippet",
+			rambox_title: "2. Connect via Rambox Custom JavaScript Injection",
+			rambox_badge: "Service Advanced",
+			rambox_desc: "Rambox supports running arbitrary JavaScript inside any app tab. By injecting our observer, chats containing invoice mutations are passively forwarded to NovaPilot at http://127.0.0.1:8088/api/tickets.",
+			rambox_s1: "Open Rambox and right-click your WhatsApp service icon.",
+			rambox_s2: "Select Settings -> Expand Advanced.",
+			rambox_s3: "Find the \"Inject JavaScript code\" input box.",
+			rambox_s4: "Paste the script snippet below and click Save.",
+			web_title: "3. Connect via Browser Userscript (Chrome, Edge, Firefox)",
+			web_badge: "Tampermonkey",
+			web_desc: "If you use WhatsApp Web in Google Chrome, Microsoft Edge, or Mozilla Firefox, you can install the lightweight Tampermonkey userscript to hook incoming messages automatically.",
+			web_s1: "Install Tampermonkey extension from Chrome Web Store.",
+			web_s2: "Click Tampermonkey icon -> Create a new script.",
+			web_s3: "Paste the Userscript code below and press Ctrl + S.",
+			web_s4: "Reload web.whatsapp.com.",
+			pc_title: "4. Standalone PC WhatsApp Gateway (Baileys Socket)",
+			pc_badge: "Headless Daemon",
+			pc_desc: "Run a dedicated Node.js service using @whiskeysockets/baileys or whatsapp-web.js locally as a Windows Service or background process. It connects directly to the WhatsApp Multi-Device protocol.",
+			pc_cmd_label: "Daemon Command:",
+			send_ping_btn: "Send Test Hook Ping",
+			ping_received: "Ping Received in Approval Queue!",
+			close_btn: "Close Guide"
+		},
+		command: {
+			search_placeholder: "Search menus, operations, connectors, or docs...",
+			no_results: "No results found for \"{query}\".",
+			category_core: "Core Navigation",
+			category_operations: "Operations",
+			category_db: "Databases & Telemetry",
+			category_chatops: "ChatOps & Hooks",
+			nav_hint: "Use ↑ ↓ to navigate",
+			select_hint: "↵ to select"
+		},
+		user_nav: {
+			oncall_role: "On-Call Engineer",
+			it_support: "IT Support",
+			signin: "Sign In",
+			oncall_roster: "On-Call Roster",
+			roster_schedule: "2x Monthly (Shift 1 of 2)",
+			covered_branches: "Covered Branches:",
+			dashboard_queue: "Dashboard Approval Queue",
+			system_architecture: "System Architecture Flow",
+			sign_out: "Sign Out"
 		}
 	}
 };

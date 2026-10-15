@@ -8,6 +8,7 @@
 		Radio
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let { 
 		open = false, 
@@ -75,8 +76,8 @@
 						<BookOpen class="h-5 w-5" />
 					</div>
 					<div>
-						<h3 class="text-base font-semibold text-foreground">Client Hook Integration Guide</h3>
-						<p class="text-xs text-muted-foreground">Setup instructions and copyable snippets for Ferdium, Rambox, Web WA, and PC WA.</p>
+						<h3 class="text-base font-semibold text-foreground">{i18n.t.tutorial.title}</h3>
+						<p class="text-xs text-muted-foreground">{i18n.t.tutorial.subtitle}</p>
 					</div>
 				</div>
 
@@ -96,7 +97,7 @@
 					onclick={() => (activeTutorialTab = "ferdium")}
 					class="px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer {activeTutorialTab === 'ferdium' ? 'border-primary text-foreground font-semibold' : 'border-transparent text-muted-foreground hover:text-foreground'}"
 				>
-					Ferdium Desktop
+					{i18n.t.tutorial.tab_ferdium}
 				</button>
 
 				<button
@@ -104,7 +105,7 @@
 					onclick={() => (activeTutorialTab = "rambox")}
 					class="px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer {activeTutorialTab === 'rambox' ? 'border-primary text-foreground font-semibold' : 'border-transparent text-muted-foreground hover:text-foreground'}"
 				>
-					Rambox App
+					{i18n.t.tutorial.tab_rambox}
 				</button>
 
 				<button
@@ -112,7 +113,7 @@
 					onclick={() => (activeTutorialTab = "web")}
 					class="px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer {activeTutorialTab === 'web' ? 'border-primary text-foreground font-semibold' : 'border-transparent text-muted-foreground hover:text-foreground'}"
 				>
-					WhatsApp Web (Chrome / Edge)
+					{i18n.t.tutorial.tab_web}
 				</button>
 
 				<button
@@ -120,7 +121,7 @@
 					onclick={() => (activeTutorialTab = "pc")}
 					class="px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer {activeTutorialTab === 'pc' ? 'border-primary text-foreground font-semibold' : 'border-transparent text-muted-foreground hover:text-foreground'}"
 				>
-					PC WhatsApp (Baileys Gateway)
+					{i18n.t.tutorial.tab_pc}
 				</button>
 			</div>
 
@@ -129,16 +130,16 @@
 				{#if activeTutorialTab === "ferdium"}
 					<div class="space-y-3.5">
 						<h4 class="font-semibold text-foreground text-sm flex items-center gap-2">
-							<span>1. Connect via Native Ferdium Electron Recipe</span>
-							<span class="text-xs px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-mono">Zero QR Scan</span>
+							<span>{i18n.t.tutorial.ferdium_title}</span>
+							<span class="text-xs px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-mono">{i18n.t.tutorial.ferdium_badge}</span>
 						</h4>
 
 						<p class="text-xs text-muted-foreground leading-relaxed">
-							Ferdium allows injecting scripts directly into its WhatsApp service webview. NovaPilot provides a dedicated observer hook that captures invoice mutation chats without requiring any third-party browser extensions.
+							{i18n.t.tutorial.ferdium_desc}
 						</p>
 
 						<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2 text-xs">
-							<div class="font-semibold text-foreground">Step-by-Step Installation:</div>
+							<div class="font-semibold text-foreground">{i18n.t.tutorial.steps_heading}</div>
 							<ol class="list-decimal pl-4 space-y-1.5 text-muted-foreground text-xs leading-relaxed">
 								<li>Locate your Ferdium recipe folder: <code class="bg-background px-1 py-0.5 rounded border border-input text-foreground font-mono">%APPDATA%\Ferdium\recipes\whatsapp\</code></li>
 								<li>Copy <code class="bg-background px-1 py-0.5 rounded border border-input text-foreground font-mono">novapilot-hook.js</code> into that folder.</li>
@@ -160,7 +161,7 @@
 										<span class="text-emerald-500">Copied!</span>
 									{:else}
 										<ClipboardDocument class="h-3.5 w-3.5" />
-										<span>Copy Snippet</span>
+										<span>{i18n.t.tutorial.copy_snippet}</span>
 									{/if}
 								</button>
 							</div>
@@ -174,12 +175,12 @@ Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));</cod
 				{:else if activeTutorialTab === "rambox"}
 					<div class="space-y-3.5">
 						<h4 class="font-semibold text-foreground text-sm flex items-center gap-2">
-							<span>2. Connect via Rambox Custom JavaScript Injection</span>
-							<span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">Service Advanced</span>
+							<span>{i18n.t.tutorial.rambox_title}</span>
+							<span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">{i18n.t.tutorial.rambox_badge}</span>
 						</h4>
 
 						<p class="text-xs text-muted-foreground leading-relaxed">
-							Rambox supports running arbitrary JavaScript inside any app tab. By injecting our observer, chats containing invoice mutations are passively forwarded to NovaPilot at <code>http://127.0.0.1:8088/api/tickets</code>.
+							{i18n.t.tutorial.rambox_desc}
 						</p>
 
 						<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2 text-xs">
@@ -222,12 +223,12 @@ Ferdium.injectJSUnsafe(_path.default.join(__dirname, 'novapilot-hook.js'));</cod
 				{:else if activeTutorialTab === "web"}
 					<div class="space-y-3.5">
 						<h4 class="font-semibold text-foreground text-sm flex items-center gap-2">
-							<span>3. Connect via Browser Userscript (Chrome, Edge, Firefox)</span>
-							<span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">Tampermonkey</span>
+							<span>{i18n.t.tutorial.web_title}</span>
+							<span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">{i18n.t.tutorial.web_badge}</span>
 						</h4>
 
 						<p class="text-xs text-muted-foreground leading-relaxed">
-							If you use WhatsApp Web in Google Chrome, Microsoft Edge, or Mozilla Firefox, you can install the lightweight Tampermonkey userscript to hook incoming messages automatically.
+							{i18n.t.tutorial.web_desc}
 						</p>
 
 						<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2 text-xs">
@@ -273,16 +274,16 @@ console.log(<span class="text-amber-300">"[NovaPilot Web Hook Active]"</span>);<
 				{:else if activeTutorialTab === "pc"}
 					<div class="space-y-3.5">
 						<h4 class="font-semibold text-foreground text-sm flex items-center gap-2">
-							<span>4. Standalone PC WhatsApp Gateway (Baileys Socket)</span>
-							<span class="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono">Headless Daemon</span>
+							<span>{i18n.t.tutorial.pc_title}</span>
+							<span class="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono">{i18n.t.tutorial.pc_badge}</span>
 						</h4>
 
 						<p class="text-xs text-muted-foreground leading-relaxed">
-							Run a dedicated Node.js service using <code>@whiskeysockets/baileys</code> or <code>whatsapp-web.js</code> locally as a Windows Service or background process. It connects directly to the WhatsApp Multi-Device protocol.
+							{i18n.t.tutorial.pc_desc}
 						</p>
 
 						<div class="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2 text-xs">
-							<div class="font-semibold text-foreground">Daemon Command:</div>
+							<div class="font-semibold text-foreground">{i18n.t.tutorial.pc_cmd_label}</div>
 							<pre class="p-2.5 rounded bg-background border border-border font-mono text-[11px] text-foreground"><code>npm install @whiskeysockets/baileys\nnode ./scripts/baileys-daemon.js --port 8088</code></pre>
 						</div>
 					</div>
@@ -298,11 +299,11 @@ console.log(<span class="text-amber-300">"[NovaPilot Web Hook Active]"</span>);<
 						class="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 flex items-center gap-1.5 cursor-pointer shadow-xs"
 					>
 						<PaperAirplane class="h-3.5 w-3.5" />
-						<span>Send Test Hook Ping</span>
+						<span>{i18n.t.tutorial.send_ping_btn}</span>
 					</button>
 					{#if testHookSuccess}
 						<span class="text-xs text-emerald-500 font-medium flex items-center gap-1">
-							<Check class="h-4 w-4" /> Ping Received in Approval Queue!
+							<Check class="h-4 w-4" /> {i18n.t.tutorial.ping_received}
 						</span>
 					{/if}
 				</div>
@@ -312,7 +313,7 @@ console.log(<span class="text-amber-300">"[NovaPilot Web Hook Active]"</span>);<
 					onclick={onclose}
 					class="h-8 px-4 rounded-md border border-input bg-background hover:bg-muted text-xs font-medium cursor-pointer"
 				>
-					Close Guide
+					{i18n.t.tutorial.close_btn}
 				</button>
 			</div>
 		</div>

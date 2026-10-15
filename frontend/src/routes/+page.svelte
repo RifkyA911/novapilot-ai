@@ -22,6 +22,7 @@
 	} from "svelte-heros-v2";
 	import DottedSurface from "$lib/components/DottedSurface.svelte";
 	import PulsarGridBackground from "$lib/components/PulsarGridBackground.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Interactive Simulation State
 	let isSimulating = $state(false);
@@ -98,24 +99,24 @@
 		}, 1400);
 	}
 
-	const faqs = [
+	const faqs = $derived([
 		{
-			q: "Does NovaPilot ever execute raw, unescaped SQL directly?",
-			a: "Never. Every chat request is parsed into structured parameters and verified against predefined parameterized query templates. Zero raw string interpolation is permitted, preventing accidental schema corruption and SQL injection."
+			q: i18n.t.landing.faq_1_q,
+			a: i18n.t.landing.faq_1_a
 		},
 		{
-			q: "How does NovaPilot hook into WhatsApp without getting banned?",
-			a: "NovaPilot uses passive client-side DOM observers inside authorized enterprise clients (Ferdium recipes, Rambox scripts, browser userscripts, or desktop observers). It exclusively monitors authorized internal branch groups and only sends single confirmation replies upon human sign-off."
+			q: i18n.t.landing.faq_2_q,
+			a: i18n.t.landing.faq_2_a
 		},
 		{
-			q: "Can approved mutations be rolled back in an emergency?",
-			a: "Yes. Every single mutation automatically generates an inverse compensating rollback script prior to execution. The on-call engineer can trigger a one-click rollback from the cockpit at any time."
+			q: i18n.t.landing.faq_3_q,
+			a: i18n.t.landing.faq_3_a
 		},
 		{
-			q: "How is access controlled for on-call engineers?",
-			a: "NovaPilot integrates with Better Auth and session-based cryptographic clearance. Only authenticated on-call personnel (e.g. John Doe, On-Call Engineer) with active clearance tokens can approve pending mutations."
+			q: i18n.t.landing.faq_4_q,
+			a: i18n.t.landing.faq_4_a
 		}
-	];
+	]);
 </script>
 
 <svelte:head>
@@ -192,20 +193,20 @@
 				<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
 				<span class="font-medium text-foreground">NovaPilot 2.0</span>
 				<span class="text-border">·</span>
-				<span>Guardrail Assurance Engine Active</span>
+				<span>{i18n.t.landing.pill_announcement}</span>
 			</div>
 
 			<!-- Aceternity Hero Headline -->
 			<h1 class="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.08] text-balance">
-				Zero unchecked mutations. <br class="max-sm:hidden" />
+				{i18n.t.landing.headline_main} <br class="max-sm:hidden" />
 				<span class="bg-gradient-to-r from-foreground via-foreground/90 to-primary bg-clip-text text-transparent">
-					Autonomous on-call ChatOps.
+					{i18n.t.landing.headline_gradient}
 				</span>
 			</h1>
 
 			<!-- Subtitle -->
 			<p class="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
-				NovaPilot ingests chaotic WhatsApp branch escalations, validates database mutations with zero raw SQL, and gives on-call engineers a sleep-safe, <strong>one-click audited signoff</strong> cockpit.
+				{i18n.t.landing.subtitle}
 			</p>
 
 			<!-- Action Pills / Buttons -->
@@ -215,7 +216,7 @@
 					class="relative inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 bg-foreground text-background hover:opacity-90 shadow-md shadow-foreground/10 active:scale-[0.98]"
 				>
 					<CommandLine class="h-4 w-4" />
-					<span>Launch On-Call Cockpit</span>
+					<span>{i18n.t.landing.launch_cockpit}</span>
 					<ArrowRight class="h-3.5 w-3.5" />
 				</a>
 
@@ -224,7 +225,7 @@
 					class="relative inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 bg-secondary/70 backdrop-blur-md text-foreground ring-1 ring-border/80 hover:bg-secondary hover:ring-foreground/20 active:scale-[0.98]"
 				>
 					<Square3Stack3d class="h-4 w-4 text-emerald-500" />
-					<span>System Flow & Hooks</span>
+					<span>{i18n.t.landing.flow_and_hooks}</span>
 				</a>
 			</div>
 		</div>
@@ -238,14 +239,14 @@
 					<div class="flex items-center gap-2">
 						<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
 						<span class="font-mono font-semibold uppercase tracking-wider text-foreground">
-							ChatOps Pipeline Circuit Architecture
+							{i18n.t.landing.circuit_arch}
 						</span>
 					</div>
 
 					<!-- Platform Switcher Tabs -->
 					<div class="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-secondary/60 border border-border/60">
 						{#each [
-							{ id: 'all', label: 'All Channels' },
+							{ id: 'all', label: i18n.t.landing.all_channels },
 							{ id: 'whatsapp', label: 'WhatsApp' },
 							{ id: 'telegram', label: 'Telegram' },
 							{ id: 'discord', label: 'Discord' },
@@ -268,7 +269,7 @@
 						class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 text-xs font-mono font-medium transition-all cursor-pointer disabled:opacity-50"
 					>
 						<ArrowPath class="h-3 w-3 {isSimulating ? 'animate-spin' : ''}" />
-						<span>{isSimulating ? `Processing Stage ${activeStage}/4...` : 'Simulate Live Flow'}</span>
+						<span>{isSimulating ? i18n.t.landing.simulating_stage.replace('{stage}', String(activeStage)) : i18n.t.landing.simulate_flow}</span>
 					</button>
 				</div>
 
@@ -443,24 +444,24 @@
 					<div class="flex items-center gap-4 flex-wrap">
 						<span class="flex items-center gap-1.5">
 							<span class="h-2 w-2 rounded-full bg-primary"></span>
-							<span>1. Ingest Chat</span>
+							<span>{i18n.t.landing.stage_1}</span>
 						</span>
 						<span class="flex items-center gap-1.5">
 							<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-							<span>2. Guardrail Validation</span>
+							<span>{i18n.t.landing.stage_2}</span>
 						</span>
 						<span class="flex items-center gap-1.5">
 							<span class="h-2 w-2 rounded-full bg-blue-500"></span>
-							<span>3. Human Sign-Off</span>
+							<span>{i18n.t.landing.stage_3}</span>
 						</span>
 						<span class="flex items-center gap-1.5">
 							<span class="h-2 w-2 rounded-full bg-amber-500"></span>
-							<span>4. Rollback Ready</span>
+							<span>{i18n.t.landing.stage_4}</span>
 						</span>
 					</div>
 
 					<span class="text-foreground font-semibold">
-						Status: {isSimulating ? 'SIMULATION IN PROGRESS' : 'READY FOR INGESTION'}
+						{isSimulating ? i18n.t.landing.status_simulating : i18n.t.landing.status_ready}
 					</span>
 				</div>
 			</div>
@@ -471,10 +472,10 @@
 	<section class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="text-center space-y-3 mb-10">
 			<h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-				The on-call cockpit designed for high-stress shifts
+				{i18n.t.landing.cockpit_mockup_title}
 			</h2>
 			<p class="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-				Every pending ticket displays original WhatsApp evidence, AST-verified SQL, and confidence scores so you never guess at 3 AM.
+				{i18n.t.landing.cockpit_mockup_sub}
 			</p>
 		</div>
 
@@ -500,21 +501,21 @@
 						onclick={() => (previewTab = "ticket")}
 						class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {previewTab === 'ticket' ? 'bg-secondary text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}"
 					>
-						Live Ticket
+						{i18n.t.landing.tab_live_ticket}
 					</button>
 					<button
 						type="button"
 						onclick={() => (previewTab = "sql")}
 						class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {previewTab === 'sql' ? 'bg-secondary text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}"
 					>
-						Zero Raw SQL
+						{i18n.t.landing.tab_zero_sql}
 					</button>
 					<button
 						type="button"
 						onclick={() => (previewTab = "rollback")}
 						class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {previewTab === 'rollback' ? 'bg-secondary text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}"
 					>
-						Auto Rollback
+						{i18n.t.landing.tab_auto_rollback}
 					</button>
 				</div>
 			</div>
@@ -529,20 +530,20 @@
 							<div class="space-y-2">
 								<div class="flex items-center justify-between text-xs font-mono">
 									<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
-										MEDAN HUB DISPATCH
+										{i18n.t.landing.medan_hub}
 									</span>
 									<span class="text-muted-foreground">03:14 AM</span>
 								</div>
 
 								<div class="p-3 rounded-xl bg-background border border-border/60 text-xs text-foreground space-y-1">
-									<div class="font-semibold text-emerald-600 dark:text-emerald-400">Pak John, tolong revisi pajak invoice INV-2024-8901 jadi 12% ya. Ada memo baru dr finance pusat. Makasih!</div>
-									<div class="text-[10px] text-muted-foreground font-mono">Sender: +62 812-4491-0021 · Group: #ops-medan-dc</div>
+									<div class="font-semibold text-emerald-600 dark:text-emerald-400">{i18n.t.landing.medan_msg}</div>
+									<div class="text-[10px] text-muted-foreground font-mono">{i18n.t.landing.sender_info}</div>
 								</div>
 							</div>
 
 							<div class="flex items-center justify-between text-[11px] font-mono text-muted-foreground pt-2 border-t border-border/40">
-								<span>Confidence Score: <strong class="text-foreground">96.4%</strong></span>
-								<span class="text-emerald-500 font-semibold">HIGH CONFIDENCE</span>
+								<span>{i18n.t.landing.confidence_score} <strong class="text-foreground">96.4%</strong></span>
+								<span class="text-emerald-500 font-semibold">{i18n.t.landing.high_confidence}</span>
 							</div>
 						</div>
 
@@ -550,20 +551,20 @@
 						<div class="p-4 rounded-2xl bg-card border border-border/70 space-y-3 flex flex-col justify-between">
 							<div class="space-y-2">
 								<div class="flex items-center justify-between text-xs font-mono">
-									<span class="text-muted-foreground font-semibold">TARGET DOCUMENT:</span>
+									<span class="text-muted-foreground font-semibold">{i18n.t.landing.target_doc}</span>
 									<span class="text-foreground font-bold font-mono">INV-2024-8901</span>
 								</div>
 
 								<!-- Side by Side Diff -->
 								<div class="grid grid-cols-2 gap-2 text-xs font-mono">
 									<div class="p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
-										<div class="text-[10px] uppercase font-bold text-destructive/80">Current Value</div>
+										<div class="text-[10px] uppercase font-bold text-destructive/80">{i18n.t.landing.current_value}</div>
 										<div class="font-bold text-sm mt-0.5">11.0%</div>
 										<div class="text-[10px] text-muted-foreground mt-1">TOTAL_TAX_RATE</div>
 									</div>
 
 									<div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-										<div class="text-[10px] uppercase font-bold text-emerald-600/80 dark:text-emerald-400/80">Proposed Value</div>
+										<div class="text-[10px] uppercase font-bold text-emerald-600/80 dark:text-emerald-400/80">{i18n.t.landing.proposed_value}</div>
 										<div class="font-bold text-sm mt-0.5">12.0%</div>
 										<div class="text-[10px] text-muted-foreground mt-1">MUTATED FIELD</div>
 									</div>
@@ -575,13 +576,13 @@
 									href="/dashboard"
 									class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs text-center transition-colors shadow-sm"
 								>
-									One-Click Approve & Execute
+									{i18n.t.landing.approve_execute}
 								</a>
 								<button
 									type="button"
 									class="px-3 py-2 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 text-xs font-semibold transition-colors"
 								>
-									Reject
+									{i18n.t.landing.reject}
 								</button>
 							</div>
 						</div>
@@ -592,10 +593,10 @@
 						<div class="flex items-center justify-between text-xs font-mono">
 							<span class="flex items-center gap-1.5 text-primary font-bold">
 								<CodeBracket class="h-4 w-4" />
-								<span>Strict Parameterized Query Preview</span>
+								<span>{i18n.t.landing.sql_preview_title}</span>
 							</span>
 							<span class="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[10px]">
-								DRY-RUN SIMULATION PASSED
+								{i18n.t.landing.dry_run_passed}
 							</span>
 						</div>
 
@@ -610,7 +611,7 @@
 
 						<div class="text-[11px] text-muted-foreground flex items-center gap-2">
 							<CheckCircle class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-							<span>Zero raw SQL string concatenation. Parameter types and bounds checked before DB lock.</span>
+							<span>{i18n.t.landing.zero_sql_note}</span>
 						</div>
 					</div>
 				{:else}
@@ -619,10 +620,10 @@
 						<div class="flex items-center justify-between text-xs font-mono">
 							<span class="flex items-center gap-1.5 text-amber-500 font-bold">
 								<ArrowPath class="h-4 w-4" />
-								<span>Compensating Rollback Script (Auto-Generated)</span>
+								<span>{i18n.t.landing.rollback_preview_title}</span>
 							</span>
 							<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px]">
-								INSTANT REVERSIBLE
+								{i18n.t.landing.instant_reversible}
 							</span>
 						</div>
 
@@ -637,7 +638,7 @@
 
 						<div class="text-[11px] text-muted-foreground flex items-center gap-2">
 							<CheckCircle class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-							<span>Rollback snapshot archived in PostgreSQL Audit Store. Executable in 1 tap if branch recalls memo.</span>
+							<span>{i18n.t.landing.rollback_note}</span>
 						</div>
 					</div>
 				{/if}
@@ -649,20 +650,20 @@
 	<section class="py-12 border-y border-border/50 bg-secondary/20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
 			<div class="space-y-1">
-				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-500">30s</div>
-				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">Average Turnaround</div>
+				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-500">{i18n.t.landing.stat_turnaround}</div>
+				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">{i18n.t.landing.stat_turnaround_sub}</div>
 			</div>
 			<div class="space-y-1">
-				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">100%</div>
-				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">Parameterized Safety</div>
+				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">{i18n.t.landing.stat_safety}</div>
+				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">{i18n.t.landing.stat_safety_sub}</div>
 			</div>
 			<div class="space-y-1">
-				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-primary">0</div>
-				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">Unchecked Mutations</div>
+				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-primary">{i18n.t.landing.stat_unchecked}</div>
+				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">{i18n.t.landing.stat_unchecked_sub}</div>
 			</div>
 			<div class="space-y-1">
-				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">4 Hubs</div>
-				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">DC Factory Replicas</div>
+				<div class="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">{i18n.t.landing.stat_hubs}</div>
+				<div class="text-xs font-mono text-muted-foreground uppercase tracking-wider">{i18n.t.landing.stat_hubs_sub}</div>
 			</div>
 		</div>
 	</section>
@@ -671,10 +672,10 @@
 	<section class="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="text-center space-y-3 mb-12">
 			<h2 class="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
-				Engineered for factory reliability
+				{i18n.t.landing.bento_title}
 			</h2>
 			<p class="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-				Built specifically for mission-critical industrial plants where a single corrupt invoice halts logistics lines.
+				{i18n.t.landing.bento_sub}
 			</p>
 		</div>
 
@@ -687,9 +688,9 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<h3 class="text-lg font-bold text-foreground">Passive WhatsApp Ingestion</h3>
+						<h3 class="text-lg font-bold text-foreground">{i18n.t.landing.bento_1_title}</h3>
 						<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-							Monitors authorized regional branch groups exclusively. Employs zero spamming and single-reply confirmation patterns strictly compliant with Meta WhatsApp ToS.
+							{i18n.t.landing.bento_1_desc}
 						</p>
 					</div>
 				</div>
@@ -714,9 +715,9 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<h3 class="text-lg font-bold text-foreground">Zero Raw SQL Guardrail</h3>
+						<h3 class="text-lg font-bold text-foreground">{i18n.t.landing.bento_2_title}</h3>
 						<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-							Every mutation is strictly bound to prepared statements with schema dry-runs. No raw string interpolation can ever reach your PostgreSQL or Oracle replicas.
+							{i18n.t.landing.bento_2_desc}
 						</p>
 					</div>
 				</div>
@@ -741,9 +742,9 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<h3 class="text-lg font-bold text-foreground">Strict Human-in-the-Loop Gate</h3>
+						<h3 class="text-lg font-bold text-foreground">{i18n.t.landing.bento_3_title}</h3>
 						<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-							Zero direct mutation by AI. On-call engineers review side-by-side visual diffs and tap 'Approve' to trigger transactional prepared statements with complete audit logs.
+							{i18n.t.landing.bento_3_desc}
 						</p>
 					</div>
 				</div>
@@ -766,10 +767,10 @@
 	<section class="py-16 md:py-24 bg-secondary/20 border-t border-border/50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="text-center space-y-3 mb-14">
 			<h2 class="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
-				How NovaPilot secures your shift
+				{i18n.t.landing.how_it_works_title}
 			</h2>
 			<p class="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-				Three clear stages from chat intake to verifiable production database commit.
+				{i18n.t.landing.how_it_works_sub}
 			</p>
 		</div>
 
@@ -779,9 +780,9 @@
 				<div class="h-8 w-8 rounded-full bg-primary/10 text-primary font-mono font-bold text-xs flex items-center justify-center border border-primary/20">
 					01
 				</div>
-				<h3 class="text-base font-bold text-foreground">Intercept & Extract</h3>
+				<h3 class="text-base font-bold text-foreground">{i18n.t.landing.step_1_title}</h3>
 				<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-					The WhatsApp hook extracts invoice numbers, target mutated fields, and values with an active confidence score over 85%.
+					{i18n.t.landing.step_1_desc}
 				</p>
 			</div>
 
@@ -790,9 +791,9 @@
 				<div class="h-8 w-8 rounded-full bg-emerald-500/10 text-emerald-500 font-mono font-bold text-xs flex items-center justify-center border border-emerald-500/20">
 					02
 				</div>
-				<h3 class="text-base font-bold text-foreground">Dry-Run Simulation</h3>
+				<h3 class="text-base font-bold text-foreground">{i18n.t.landing.step_2_title}</h3>
 				<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-					The engine runs a simulated dry-run against the database, verifies branch permissions, and prepares an auto-rollback script.
+					{i18n.t.landing.step_2_desc}
 				</p>
 			</div>
 
@@ -801,9 +802,9 @@
 				<div class="h-8 w-8 rounded-full bg-blue-500/10 text-blue-500 font-mono font-bold text-xs flex items-center justify-center border border-blue-500/20">
 					03
 				</div>
-				<h3 class="text-base font-bold text-foreground">Single-Click Sign-Off</h3>
+				<h3 class="text-base font-bold text-foreground">{i18n.t.landing.step_3_title}</h3>
 				<p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-					The on-call engineer taps 'Approve' from their phone or workstation. The query commits, audit log streams, and confirmation replies automatically.
+					{i18n.t.landing.step_3_desc}
 				</p>
 			</div>
 		</div>
@@ -813,10 +814,10 @@
 	<section class="py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="text-center space-y-3 mb-10">
 			<h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-				Frequently Asked Questions
+				{i18n.t.landing.faq_title}
 			</h2>
 			<p class="text-xs sm:text-sm text-muted-foreground">
-				Everything you need to know about NovaPilot's on-call guardrails.
+				{i18n.t.landing.faq_sub}
 			</p>
 		</div>
 

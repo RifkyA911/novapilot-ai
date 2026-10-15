@@ -24,6 +24,7 @@
 	} from "svelte-heros-v2";
 	import { sound } from "$lib/audio";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
@@ -312,7 +313,7 @@
 					bind:this={inputEl}
 					bind:value={searchQuery}
 					type="text"
-					placeholder="Search menus, operations, connectors, or docs..."
+					placeholder={i18n.t.command.search_placeholder}
 					class="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none font-sans"
 				/>
 				{#if searchQuery}
@@ -333,7 +334,7 @@
 			<div class="max-h-[380px] overflow-y-auto p-2 space-y-1">
 				{#if filteredItems.length === 0}
 					<div class="py-10 text-center text-xs text-muted-foreground font-mono">
-						No results found for "{searchQuery}".
+						{i18n.t.command.no_results.replace("{query}", searchQuery)}
 					</div>
 				{:else}
 					{#each filteredItems as item, idx}
@@ -363,7 +364,7 @@
 							</div>
 
 							<div class="flex items-center gap-2 shrink-0 pl-2">
-								<span class="text-[10px] font-mono text-muted-foreground hidden sm:inline">{item.category}</span>
+								<span class="text-[10px] font-mono text-muted-foreground hidden sm:inline">{item.category === "Core Navigation" ? i18n.t.command.category_core : item.category === "Operations" ? i18n.t.command.category_operations : item.category === "Databases & Telemetry" ? i18n.t.command.category_db : i18n.t.command.category_chatops}</span>
 								<ArrowRight class="h-3.5 w-3.5 text-muted-foreground opacity-60" />
 							</div>
 						</button>
@@ -374,9 +375,9 @@
 			<!-- Command Palette Footer -->
 			<div class="px-4 py-2 border-t border-border bg-muted/30 flex items-center justify-between text-[11px] font-mono text-muted-foreground">
 				<div class="flex items-center gap-2">
-					<span>Use <kbd class="px-1 rounded bg-muted border border-border">↑</kbd> <kbd class="px-1 rounded bg-muted border border-border">↓</kbd> to navigate</span>
+					<span>{i18n.t.command.nav_hint}</span>
 					<span>•</span>
-					<span><kbd class="px-1.5 rounded bg-muted border border-border">↵</kbd> to select</span>
+					<span>{i18n.t.command.select_hint}</span>
 				</div>
 				<span class="text-emerald-500 font-semibold">{cockpit.platformStatuses[cockpit.chatPlatform].name} ({cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'Live' : 'Standby'})</span>
 			</div>

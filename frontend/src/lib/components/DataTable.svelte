@@ -397,9 +397,9 @@
 		<!-- Pagination Footer -->
 		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-secondary/20 text-[11px] sm:text-xs font-mono">
 			<div class="text-muted-foreground">
-				{i18n.current === 'id' ? 'Menampilkan' : 'Showing'} <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> {i18n.t.common.of} <strong class="text-foreground">{totalItems}</strong> {i18n.t.common.records}
+				{i18n.t.common.showing} <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> {i18n.t.common.of} <strong class="text-foreground">{totalItems}</strong> {i18n.t.common.records}
 				{#if totalItems !== data.length}
-					<span class="text-[11px] sm:text-xs text-primary font-medium">({i18n.current === 'id' ? 'difilter dari' : 'filtered from'} {data.length} {i18n.t.common.records})</span>
+					<span class="text-[11px] sm:text-xs text-primary font-medium">({i18n.t.common.filtered_from} {data.length} {i18n.t.common.records})</span>
 				{/if}
 			</div>
 
@@ -407,7 +407,7 @@
 			<div class="flex flex-wrap items-center gap-3">
 				<!-- Jump to Page Input -->
 				<div class="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-					<span class="whitespace-nowrap font-medium">{i18n.current === 'id' ? 'Loncat ke:' : 'Jump to:'}</span>
+					<span class="whitespace-nowrap font-medium">{i18n.t.common.jump_to}</span>
 					<input
 						type="number"
 						min="1"
@@ -427,7 +427,7 @@
 						onclick={handleJumpPage}
 						class="h-9 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs sm:text-sm font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
 					>
-						Go
+						{i18n.t.common.go}
 					</button>
 				</div>
 

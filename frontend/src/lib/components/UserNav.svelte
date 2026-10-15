@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { i18n } from "$lib/i18n.svelte";
 	import { 
 		UserCircle, 
 		ChevronDown, 
@@ -122,7 +123,7 @@
 					{activeUser.name}
 				</span>
 				<span class="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
-					{activeUser.role === 'oncall_engineer' ? 'On-Call Engineer' : activeUser.role}
+					{activeUser.role === 'oncall_engineer' ? i18n.t.user_nav.oncall_role : activeUser.role}
 				</span>
 			</div>
 
@@ -136,7 +137,7 @@
 				class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
 			>
 				<UserCircle class="w-4 h-4" />
-				<span>Sign In</span>
+				<span>{i18n.t.user_nav.signin}</span>
 			</a>
 		</div>
 	{/if}
@@ -168,7 +169,7 @@
 					<div class="flex items-center gap-1.5">
 						<h4 class="text-sm font-semibold text-foreground truncate">{activeUser.name}</h4>
 						<span class="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-secondary text-muted-foreground border border-border/50">
-							{activeUser.role === 'oncall_engineer' ? 'IT Support' : activeUser.role}
+							{activeUser.role === 'oncall_engineer' ? i18n.t.user_nav.it_support : activeUser.role}
 						</span>
 					</div>
 					<p class="text-xs text-muted-foreground truncate font-mono mt-0.5">{activeUser.email}</p>
@@ -180,17 +181,17 @@
 				<div class="flex items-center justify-between text-muted-foreground">
 					<span class="font-medium flex items-center gap-1.5">
 						<Clock class="w-3.5 h-3.5 text-primary" />
-						<span>On-Call Roster</span>
+						<span>{i18n.t.user_nav.oncall_roster}</span>
 					</span>
 					<span class="font-mono text-[11px] text-foreground font-medium">
-						2x Monthly (Shift 1 of 2)
+						{i18n.t.user_nav.roster_schedule}
 					</span>
 				</div>
 
 				<!-- Authorized Branch Coverage -->
 				<div class="pt-1.5 border-t border-border/30">
 					<span class="text-[10px] text-muted-foreground uppercase font-mono tracking-wider block mb-1">
-						Covered Branches:
+						{i18n.t.user_nav.covered_branches}
 					</span>
 					<div class="flex flex-wrap gap-1">
 						{#each (activeUser.branchClearance || ["SURABAYA_HQ", "MEDAN_HUB", "SEMARANG_DC"]) as branch}
@@ -210,7 +211,7 @@
 					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg hover:bg-secondary text-foreground transition-colors"
 				>
 					<CommandLine class="w-4 h-4 text-primary" />
-					<span>Dashboard Queue</span>
+					<span>{i18n.t.user_nav.dashboard_queue}</span>
 				</a>
 				<a
 					href="/flow"
@@ -218,7 +219,7 @@
 					class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg hover:bg-secondary text-foreground transition-colors"
 				>
 					<Square3Stack3d class="w-4 h-4 text-emerald-500" />
-					<span>System Architecture Flow</span>
+					<span>{i18n.t.user_nav.system_architecture}</span>
 				</a>
 			</div>
 
@@ -231,7 +232,7 @@
 				>
 					<span class="flex items-center gap-2">
 						<ArrowRightOnRectangle class="w-4 h-4" />
-						<span>Sign Out</span>
+						<span>{i18n.t.user_nav.sign_out}</span>
 					</span>
 					<span class="text-[10px] font-mono">
 						johndoe

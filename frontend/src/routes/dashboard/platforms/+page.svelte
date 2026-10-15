@@ -487,15 +487,13 @@
 				</div>
 				<div>
 					<h1 class="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						<span>{i18n.current === 'id' ? 'Pengaturan Platform & Alur Logika ChatOps' : 'ChatOps Platform Settings & Logic Flows'}</span>
+						<span>{i18n.t.platforms.page_title}</span>
 						<span class="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-medium border border-primary/20">
-							Multi-Channel Hub
+							{i18n.t.platforms.hub_badge}
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						{i18n.current === 'id'
-							? 'Konfigurasi kredensial, filter whitelist, pembatasan laju (rate-limiting), dan logika ingesti tiap platform chat.'
-							: 'Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.'}
+						{i18n.t.platforms.page_subtitle}
 					</p>
 				</div>
 			</div>
@@ -603,8 +601,8 @@
 						<!-- Connection Mode Selector Tabs -->
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
-								<span class="font-semibold text-foreground text-xs">Pilih Metode Ingress / Koneksi WhatsApp:</span>
-								<span class="text-[10px] text-muted-foreground font-mono">4 Jalur Terverifikasi</span>
+								<span class="font-semibold text-foreground text-xs">{i18n.t.platforms.select_method}</span>
+								<span class="text-[10px] text-muted-foreground font-mono">{i18n.t.platforms.verified_routes}</span>
 							</div>
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border">
 								<button
@@ -613,7 +611,7 @@
 									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'gateway' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
 									<QrCode class="h-3.5 w-3.5" />
-									<span>WA Gateway (QR)</span>
+									<span>{i18n.t.platforms.wa_gateway_qr}</span>
 								</button>
 								<button
 									type="button"
@@ -621,7 +619,7 @@
 									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'browser' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
 									<GlobeAlt class="h-3.5 w-3.5" />
-									<span>WhatsApp Web</span>
+									<span>{i18n.t.platforms.wa_web}</span>
 								</button>
 								<button
 									type="button"
@@ -629,7 +627,7 @@
 									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'ferdium' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
 									<ComputerDesktop class="h-3.5 w-3.5" />
-									<span>Ferdium</span>
+									<span>{i18n.t.platforms.wa_ferdium}</span>
 								</button>
 								<button
 									type="button"
@@ -637,7 +635,7 @@
 									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'rambox' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
 									<DevicePhoneMobile class="h-3.5 w-3.5" />
-									<span>Rambox</span>
+									<span>{i18n.t.platforms.wa_rambox}</span>
 								</button>
 							</div>
 						</div>
@@ -651,14 +649,14 @@
 											<QrCode class="h-4 w-4" />
 										</div>
 										<div>
-											<h4 class="text-xs font-bold text-foreground">Baileys Multi-Device QR Pairing</h4>
-											<p class="text-[11px] text-muted-foreground">Scan QR langsung dari aplikasi WhatsApp di smartphone Anda</p>
+											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.qr_title}</h4>
+											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.qr_subtitle}</p>
 										</div>
 									</div>
 									
 									<div class="flex items-center gap-2">
 										<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border {qrData.status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : qrData.status === 'WAITING_SCAN' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 animate-pulse' : 'bg-muted text-muted-foreground border-border'}">
-											{qrData.status === 'CONNECTED' ? 'CONNECTED' : qrData.status === 'WAITING_SCAN' ? 'WAITING FOR SCAN' : qrData.status === 'LOADING' ? 'LOADING...' : 'GATEWAY OFFLINE'}
+											{qrData.status === 'CONNECTED' ? i18n.t.platforms.qr_status_connected : qrData.status === 'WAITING_SCAN' ? i18n.t.platforms.qr_status_waiting : qrData.status === 'LOADING' ? i18n.t.platforms.qr_status_loading : i18n.t.platforms.qr_status_offline}
 										</span>
 										<button
 											type="button"
@@ -667,7 +665,7 @@
 											class="h-7 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-[11px] font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
 										>
 											<ArrowPath class="h-3 w-3 {isRefreshingQR ? 'animate-spin' : ''}" />
-											<span>Refresh QR</span>
+											<span>{i18n.t.platforms.qr_refresh_btn}</span>
 										</button>
 									</div>
 								</div>
@@ -677,9 +675,9 @@
 										<div class="h-10 w-10 mx-auto rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
 											<Check class="h-5 w-5" />
 										</div>
-										<div class="text-xs font-bold text-foreground">WhatsApp Multi-Device Terhubung!</div>
+										<div class="text-xs font-bold text-foreground">{i18n.t.platforms.qr_connected_title}</div>
 										<p class="text-[11px] text-muted-foreground max-w-sm mx-auto">
-											Sesi socket Baileys aktif. Gateway sedang mendengarkan pesan masuk dari grup cabang yang telah terdaftar di whitelist.
+											{i18n.t.platforms.qr_connected_desc}
 										</p>
 									</div>
 								{:else if qrData.status === 'WAITING_SCAN' && qrData.qrDataUrl}
@@ -691,14 +689,14 @@
 										<div class="space-y-3 text-xs w-full">
 											<div class="font-semibold text-foreground flex items-center gap-1.5">
 												<span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-												<span>Langkah Tautkan WhatsApp di HP:</span>
+												<span>{i18n.t.platforms.qr_steps_title}</span>
 											</div>
 											<ol class="space-y-2 text-[11px] text-muted-foreground list-decimal list-inside leading-relaxed">
-												<li>Buka aplikasi <strong>WhatsApp</strong> di HP Anda.</li>
-												<li>Ketuk menu titik tiga (Android) atau <strong>Setelan</strong> (iPhone).</li>
-												<li>Pilih <strong>Perangkat Tertaut (Linked Devices)</strong>.</li>
-												<li>Pilih <strong>Tautkan Perangkat (Link a Device)</strong>.</li>
-												<li>Arahkan kamera ponsel ke kode QR di samping.</li>
+												<li>{i18n.t.platforms.qr_step_1}</li>
+												<li>{i18n.t.platforms.qr_step_2}</li>
+												<li>{i18n.t.platforms.qr_step_3}</li>
+												<li>{i18n.t.platforms.qr_step_4}</li>
+												<li>{i18n.t.platforms.qr_step_5}</li>
 											</ol>
 											{#if qrData.updatedAt}
 												<div class="text-[10px] text-muted-foreground font-mono pt-1">
@@ -709,9 +707,9 @@
 									</div>
 								{:else}
 									<div class="p-6 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-2">
-										<div class="text-xs font-bold text-amber-600 dark:text-amber-400">Menunggu Inisialisasi Gateway</div>
+										<div class="text-xs font-bold text-amber-600 dark:text-amber-400">{i18n.t.platforms.qr_waiting_init}</div>
 										<p class="text-[11px] text-muted-foreground max-w-sm mx-auto">
-											Pastikan service gateway aktif: <code>bun run start</code> atau <code>npx tsx src/index.ts</code> di folder <code>whatsapp-gateway</code>.
+											{i18n.t.platforms.qr_waiting_desc}
 										</p>
 									</div>
 								{/if}
@@ -726,8 +724,8 @@
 											<GlobeAlt class="h-4 w-4" />
 										</div>
 										<div>
-											<h4 class="text-xs font-bold text-foreground">WhatsApp Web (Tampermonkey Hook)</h4>
-											<p class="text-[11px] text-muted-foreground">Pasif DOM observer pada tab web.whatsapp.com</p>
+											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.browser_hook_title}</h4>
+											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.browser_hook_sub}</p>
 										</div>
 									</div>
 
@@ -763,8 +761,8 @@
 											<ComputerDesktop class="h-4 w-4" />
 										</div>
 										<div>
-											<h4 class="text-xs font-bold text-foreground">Ferdium Desktop Integration Hook</h4>
-											<p class="text-[11px] text-muted-foreground">Injeksi JavaScript ke dalam container service Ferdium WhatsApp</p>
+											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.ferdium_hook_title}</h4>
+											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.ferdium_hook_sub}</p>
 										</div>
 									</div>
 
@@ -800,8 +798,8 @@
 											<DevicePhoneMobile class="h-4 w-4" />
 										</div>
 										<div>
-											<h4 class="text-xs font-bold text-foreground">Rambox Workspace Integration Hook</h4>
-											<p class="text-[11px] text-muted-foreground">Injeksi JavaScript custom ke dalam app WhatsApp di Rambox</p>
+											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.rambox_hook_title}</h4>
+											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.rambox_hook_sub}</p>
 										</div>
 									</div>
 
@@ -831,11 +829,11 @@
 
 						<!-- Common Network & Filter Parameters -->
 						<div class="pt-3 border-t border-border/50 space-y-4">
-							<h5 class="text-xs font-bold text-foreground">Pengaturan Jaringan &amp; Whitelist Keamanan</h5>
+							<h5 class="text-xs font-bold text-foreground">{i18n.t.platforms.network_security_title}</h5>
 
 							<div class="grid sm:grid-cols-2 gap-4">
 								<div class="space-y-1.5">
-									<label for="wa-port" class="font-medium text-foreground">Local Webhook Ingress Port</label>
+									<label for="wa-port" class="font-medium text-foreground">{i18n.t.platforms.local_port}</label>
 									<input
 										id="wa-port"
 										type="text"
@@ -846,30 +844,30 @@
 								</div>
 
 								<div class="space-y-1.5">
-									<label for="wa-debounce" class="font-medium text-foreground">Anti-Spam Debounce Delay (ms)</label>
+									<label for="wa-debounce" class="font-medium text-foreground">{i18n.t.platforms.antispam_debounce}</label>
 									<input
 										id="wa-debounce"
 										type="number"
 										bind:value={waConfig.rateLimitDebounceMs}
 										class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
 									/>
-									<span class="text-[10px] text-muted-foreground">Mencegah dobel pesan burst dari user</span>
+									<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.antispam_desc}</span>
 								</div>
 							</div>
 
 							<div class="space-y-1.5">
-								<label for="wa-whitelist" class="font-medium text-foreground">Authorized Regional Group JIDs Whitelist</label>
+								<label for="wa-whitelist" class="font-medium text-foreground">{i18n.t.platforms.whitelisted_jids}</label>
 								<textarea
 									id="wa-whitelist"
 									rows="3"
 									bind:value={waConfig.whitelistedJids}
 									class="w-full rounded-xl border border-input bg-background p-2.5 font-mono text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
 								></textarea>
-								<span class="text-[10px] text-muted-foreground">Comma-separated WhatsApp group JIDs (e.g. 120363028391@g.us)</span>
+								<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.whitelisted_jids_desc}</span>
 							</div>
 
 							<div class="space-y-1.5">
-								<label for="wa-token" class="font-medium text-foreground">Tampermonkey / Browser Hook Security Token</label>
+								<label for="wa-token" class="font-medium text-foreground">{i18n.t.platforms.security_token}</label>
 								<div class="relative">
 									<input
 										id="wa-token"
@@ -897,7 +895,7 @@
 				{:else if cockpit.chatPlatform === "telegram"}
 					<div class="space-y-4 text-xs font-sans">
 						<div class="space-y-1.5">
-							<label for="tg-token" class="font-medium text-foreground">Telegram BotFather API Token</label>
+							<label for="tg-token" class="font-medium text-foreground">{i18n.t.platforms.bot_token}</label>
 							<div class="relative">
 								<input
 									id="tg-token"
@@ -918,12 +916,12 @@
 									{/if}
 								</button>
 							</div>
-							<span class="text-[10px] text-muted-foreground">Obtained by creating a bot via @BotFather on Telegram</span>
+							<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.bot_token_desc}</span>
 						</div>
 
 						<div class="grid sm:grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label for="tg-mode" class="font-medium text-foreground">Ingress Delivery Mode</label>
+								<label for="tg-mode" class="font-medium text-foreground">{i18n.t.platforms.delivery_mode}</label>
 								<select
 									id="tg-mode"
 									bind:value={tgConfig.connectionMode}
@@ -935,7 +933,7 @@
 							</div>
 
 							<div class="space-y-1.5">
-								<label for="tg-admin" class="font-medium text-foreground">Supervisor Telegram User ID</label>
+								<label for="tg-admin" class="font-medium text-foreground">{i18n.t.platforms.supervisor_id}</label>
 								<input
 									id="tg-admin"
 									type="text"
@@ -946,14 +944,14 @@
 						</div>
 
 						<div class="space-y-1.5">
-							<label for="tg-whitelist" class="font-medium text-foreground">Authorized Regional Group Chat IDs</label>
+							<label for="tg-whitelist" class="font-medium text-foreground">{i18n.t.platforms.authorized_chat_ids}</label>
 							<textarea
 								id="tg-whitelist"
 								rows="2"
 								bind:value={tgConfig.whitelistedChatIds}
 								class="w-full rounded-xl border border-input bg-background p-2.5 font-mono text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
 							></textarea>
-							<span class="text-[10px] text-muted-foreground">Negative integers for supergroups (e.g. -100192837482)</span>
+							<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.authorized_chat_ids_desc}</span>
 						</div>
 					</div>
 
@@ -961,7 +959,7 @@
 				{:else if cockpit.chatPlatform === "discord"}
 					<div class="space-y-4 text-xs font-sans">
 						<div class="space-y-1.5">
-							<label for="dc-token" class="font-medium text-foreground">Discord Bot Token</label>
+							<label for="dc-token" class="font-medium text-foreground">{i18n.t.platforms.discord_token}</label>
 							<div class="relative">
 								<input
 									id="dc-token"
@@ -985,7 +983,7 @@
 
 						<div class="grid sm:grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label for="dc-guild" class="font-medium text-foreground">Authorized Server Guild ID</label>
+								<label for="dc-guild" class="font-medium text-foreground">{i18n.t.platforms.guild_id}</label>
 								<input
 									id="dc-guild"
 									type="text"
@@ -995,7 +993,7 @@
 							</div>
 
 							<div class="space-y-1.5">
-								<label for="dc-role" class="font-medium text-foreground">RBAC Mutation Role Name</label>
+								<label for="dc-role" class="font-medium text-foreground">{i18n.t.platforms.rbac_role}</label>
 								<input
 									id="dc-role"
 									type="text"
@@ -1006,7 +1004,7 @@
 						</div>
 
 						<div class="space-y-1.5">
-							<label for="dc-channels" class="font-medium text-foreground">Whitelisted Ingress Channel IDs</label>
+							<label for="dc-channels" class="font-medium text-foreground">{i18n.t.platforms.whitelisted_channels}</label>
 							<textarea
 								id="dc-channels"
 								rows="2"
@@ -1020,7 +1018,7 @@
 				{:else if cockpit.chatPlatform === "slack"}
 					<div class="space-y-4 text-xs font-sans">
 						<div class="space-y-1.5">
-							<label for="sl-token" class="font-medium text-foreground">Bot User OAuth Token (xoxb)</label>
+							<label for="sl-token" class="font-medium text-foreground">{i18n.t.platforms.slack_token}</label>
 							<div class="relative">
 								<input
 									id="sl-token"
@@ -1043,19 +1041,19 @@
 						</div>
 
 						<div class="space-y-1.5">
-							<label for="sl-secret" class="font-medium text-foreground">Slack Signing Secret (HMAC SHA256)</label>
+							<label for="sl-secret" class="font-medium text-foreground">{i18n.t.platforms.signing_secret}</label>
 							<input
 								id="sl-secret"
 								type="text"
 								bind:value={slackConfig.signingSecret}
 								class="w-full h-9 rounded-xl border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
 							/>
-							<span class="text-[10px] text-muted-foreground">Used to cryptographically verify X-Slack-Signature</span>
+							<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.signing_secret_desc}</span>
 						</div>
 
 						<div class="grid sm:grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label for="sl-team" class="font-medium text-foreground">Corporate Team ID</label>
+								<label for="sl-team" class="font-medium text-foreground">{i18n.t.platforms.team_id}</label>
 								<input
 									id="sl-team"
 									type="text"
@@ -1065,7 +1063,7 @@
 							</div>
 
 							<div class="space-y-1.5">
-								<label for="sl-cmd" class="font-medium text-foreground">Registered Slash Command</label>
+								<label for="sl-cmd" class="font-medium text-foreground">{i18n.t.platforms.slash_command}</label>
 								<input
 									id="sl-cmd"
 									type="text"
@@ -1086,7 +1084,7 @@
 				<div class="flex items-center gap-2 border-b border-border/50 pb-3">
 					<CommandLine class="h-5 w-5 text-primary" />
 					<h3 class="text-sm font-bold text-foreground">
-						{selectedPlatform.name} Ingestion Logic Flow
+						{i18n.t.platforms.logic_flow_title.replace("{platform}", selectedPlatform.name)}
 					</h3>
 				</div>
 
@@ -1097,9 +1095,9 @@
 							1
 						</span>
 						<div>
-							<div class="font-semibold text-foreground">Edge Whitelist Gate</div>
+							<div class="font-semibold text-foreground">{i18n.t.platforms.flow_step_1_title}</div>
 							<p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-								Incoming {selectedPlatform.name} packet sender identifier is verified against whitelist. Casual banter dropped with 0 token waste.
+								{i18n.t.platforms.flow_step_1_desc}
 							</p>
 						</div>
 					</div>
@@ -1110,9 +1108,9 @@
 							2
 						</span>
 						<div>
-							<div class="font-semibold text-foreground">Deterministic LLM Parsing</div>
+							<div class="font-semibold text-foreground">{i18n.t.platforms.flow_step_2_title}</div>
 							<p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-								Conversation converted strictly to JSON Schema (intent, document_no, target_field, proposed_value) at Temp = 0.0.
+								{i18n.t.platforms.flow_step_2_desc}
 							</p>
 						</div>
 					</div>
@@ -1123,9 +1121,9 @@
 							3
 						</span>
 						<div>
-							<div class="font-semibold text-foreground">Live SSE Cockpit Stream</div>
+							<div class="font-semibold text-foreground">{i18n.t.platforms.flow_step_3_title}</div>
 							<p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-								Pushed immediately to On-Call Engineer's WebUI for human review and atomic prepared statement execution.
+								{i18n.t.platforms.flow_step_3_desc}
 							</p>
 						</div>
 					</div>
@@ -1145,7 +1143,7 @@
 								<span class="text-emerald-500">Copied!</span>
 							{:else}
 								<CodeBracket class="h-3.5 w-3.5" />
-								<span>Copy Config</span>
+								<span>{i18n.t.platforms.copy_config}</span>
 							{/if}
 						</button>
 					</div>

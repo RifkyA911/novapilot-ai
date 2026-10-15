@@ -2,6 +2,7 @@
 	import { ShieldCheck, LockClosed, Envelope, ArrowRight, CheckCircle, ExclamationTriangle, Sparkles, Key } from "svelte-heros-v2";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
+	import { i18n } from "$lib/i18n.svelte";
 
 	let mode = $state<"signin" | "signup">("signin");
 	let email = $state("");
@@ -104,13 +105,13 @@
 			</div>
 			<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-mono text-muted-foreground border border-border/50">
 				<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-				<span>Better Auth Session Guardrail Active</span>
+				<span>{i18n.t.auth.session_guardrail}</span>
 			</div>
 			<h2 class="text-2xl font-bold tracking-tight text-foreground">
-				{mode === "signin" ? "Sign In to NovaPilot" : "Create On-Call Account"}
+				{mode === "signin" ? i18n.t.auth.signin_title : i18n.t.auth.signup_title}
 			</h2>
 			<p class="text-xs text-muted-foreground max-w-xs mx-auto">
-				Authorized access portal for plant IT on-call engineers and database gatekeepers.
+				{i18n.t.auth.portal_subtitle}
 			</p>
 		</div>
 
@@ -118,14 +119,14 @@
 		{#if unauthorizedError}
 			<div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2">
 				<ExclamationTriangle class="h-4 w-4 shrink-0" />
-				<span>Access Denied: Middleware Guardrail blocked unauthenticated access to the On-Call Cockpit. Please authenticate below.</span>
+				<span>{i18n.t.auth.unauthorized_error}</span>
 			</div>
 		{/if}
 
 		{#if loggedOutMsg}
 			<div class="p-3 rounded-lg bg-secondary/80 border border-border text-muted-foreground text-xs flex items-center gap-2">
 				<CheckCircle class="h-4 w-4 shrink-0 text-emerald-400" />
-				<span>You have been signed out safely. Session token revoked.</span>
+				<span>{i18n.t.auth.logged_out_msg}</span>
 			</div>
 		{/if}
 
@@ -168,12 +169,12 @@
 						d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
 					/>
 				</svg>
-				<span>Continue with Google Enterprise</span>
+				<span>{i18n.t.auth.google_btn}</span>
 			</button>
 
 			<div class="relative flex items-center justify-center text-[10px] text-muted-foreground uppercase font-mono tracking-widest">
 				<div class="w-full border-t border-border/50"></div>
-				<span class="bg-card px-3 shrink-0">or continue with work credentials</span>
+				<span class="bg-card px-3 shrink-0">{i18n.t.auth.divider_text}</span>
 				<div class="w-full border-t border-border/50"></div>
 			</div>
 		</div>
@@ -182,7 +183,7 @@
 		<form onsubmit={handleEmailAuth} class="space-y-4">
 			{#if mode === "signup"}
 				<div>
-					<label for="name-input" class="block text-xs font-medium text-foreground mb-1">Full Name</label>
+					<label for="name-input" class="block text-xs font-medium text-foreground mb-1">{i18n.t.auth.name_label}</label>
 					<input
 						id="name-input"
 						type="text"
@@ -195,7 +196,7 @@
 			{/if}
 
 			<div>
-				<label for="email-input" class="block text-xs font-medium text-foreground mb-1">Plant Work Email</label>
+				<label for="email-input" class="block text-xs font-medium text-foreground mb-1">{i18n.t.auth.email_label}</label>
 				<input
 					id="email-input"
 					type="email"
@@ -207,7 +208,7 @@
 			</div>
 
 			<div>
-				<label for="pass-input" class="block text-xs font-medium text-foreground mb-1">Password</label>
+				<label for="pass-input" class="block text-xs font-medium text-foreground mb-1">{i18n.t.auth.password_label}</label>
 				<input
 					id="pass-input"
 					type="password"
@@ -223,7 +224,7 @@
 				disabled={loading}
 				class="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
 			>
-				<span>{mode === "signin" ? "Sign In to Operations" : "Register On-Call Operator"}</span>
+				<span>{mode === "signin" ? i18n.t.auth.signin_btn : i18n.t.auth.signup_btn}</span>
 				<ArrowRight class="h-4 w-4" />
 			</button>
 		</form>
@@ -236,27 +237,27 @@
 				class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-primary font-mono text-[11px] transition-colors border border-border/50"
 			>
 				<Sparkles class="h-3.5 w-3.5" />
-				<span>Autofill Demo Credentials (John Doe - On-Call)</span>
+				<span>{i18n.t.auth.autofill_demo}</span>
 			</button>
 
 			<div class="text-muted-foreground text-[11px]">
 				{#if mode === "signin"}
-					Need new access credentials?
+					{i18n.t.auth.need_credentials}
 					<button
 						type="button"
 						onclick={() => (mode = "signup")}
 						class="text-foreground font-semibold hover:underline ml-1"
 					>
-						Register
+						{i18n.t.auth.register_link}
 					</button>
 				{:else}
-					Already have on-call clearance?
+					{i18n.t.auth.already_registered}
 					<button
 						type="button"
 						onclick={() => (mode = "signin")}
 						class="text-foreground font-semibold hover:underline ml-1"
 					>
-						Sign In
+						{i18n.t.auth.signin_link}
 					</button>
 				{/if}
 			</div>

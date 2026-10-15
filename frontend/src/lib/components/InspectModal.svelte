@@ -48,10 +48,10 @@
 						<h3 class="text-base font-semibold text-foreground flex items-center gap-2">
 							<span>{i18n.t.modals.inspect_title} {ticket.ticket_no}</span>
 							<span class="text-xs px-2 py-0.5 rounded font-mono font-medium {ticket.confidence_score >= 0.9 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">
-								{(ticket.confidence_score * 100).toFixed(0)}% Confidence
+								{(ticket.confidence_score * 100).toFixed(0)}% {i18n.t.modals.confidence}
 							</span>
 						</h3>
-						<p class="text-xs text-muted-foreground font-mono">Document #{ticket.document_no} · Target: {ticket.field_target}</p>
+						<p class="text-xs text-muted-foreground font-mono">{i18n.t.modals.document_num}{ticket.document_no} · {i18n.t.modals.target_field} {ticket.field_target}</p>
 					</div>
 				</div>
 
@@ -110,7 +110,7 @@
 				{#if paradigm === "relational"}
 					<div class="space-y-1.5">
 						<div class="flex items-center justify-between text-muted-foreground text-[11px]">
-							<span>Parameterized SQL Prepared Statement (PostgreSQL / Oracle):</span>
+							<span>{i18n.t.modals.sql_prepared_label}</span>
 							<span class="text-emerald-500">Atomic Tx</span>
 						</div>
 						<pre class="p-3.5 rounded-xl bg-neutral-950 text-neutral-100 overflow-x-auto border border-neutral-800 leading-relaxed">
@@ -132,7 +132,7 @@
 				{:else}
 					<div class="space-y-1.5">
 						<div class="flex items-center justify-between text-muted-foreground text-[11px]">
-							<span>Compensating BSON Command (MongoDB / Document Store):</span>
+							<span>{i18n.t.modals.bson_command_label}</span>
 							<span class="text-emerald-500">Two-Phase Commit</span>
 						</div>
 						<pre class="p-3.5 rounded-xl bg-neutral-950 text-neutral-100 overflow-x-auto border border-neutral-800 leading-relaxed">
@@ -154,7 +154,7 @@ db.invoices.updateOne(
 
 				<!-- Raw Message Context -->
 				<div class="p-3.5 rounded-xl bg-muted/40 border border-border space-y-1.5 text-xs font-sans">
-					<div class="font-semibold text-foreground text-[11px] font-mono uppercase tracking-wider">Original Inbound Message:</div>
+					<div class="font-semibold text-foreground text-[11px] font-mono uppercase tracking-wider">{i18n.t.modals.orig_inbound_msg}</div>
 					<p class="text-muted-foreground italic bg-background p-2.5 rounded-lg border border-border">"{ticket.raw_message}"</p>
 				</div>
 			</div>

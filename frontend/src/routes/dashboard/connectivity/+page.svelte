@@ -91,7 +91,7 @@
 				class="h-9 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
 			>
 				<BookOpen class="h-4 w-4" />
-				<span>{i18n.locale === 'id' ? 'Panduan Integrasi' : 'How to Integrate'}</span>
+				<span>{i18n.t.telemetry.how_to_integrate}</span>
 			</button>
 
 			<button
@@ -109,42 +109,42 @@
 	<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 		<!-- LAN Ingress Probe -->
 		<div class="p-4 rounded-2xl border border-border/80 bg-card shadow-xs space-y-1 hover:border-foreground/30 transition-all">
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">LAN Ingress IP</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.telemetry.lan_ingress_ip}</div>
 			<div class="text-xl sm:text-2xl font-bold font-mono text-foreground flex items-center justify-between">
 				<span>{cockpit.telemetry?.lan_ip || "127.0.0.1"}</span>
 				<Signal class="h-5 w-5 text-emerald-500" />
 			</div>
-			<div class="text-xs text-muted-foreground">HTTP Port 8088 Active</div>
+			<div class="text-xs text-muted-foreground">{i18n.t.telemetry.lan_port_active}</div>
 		</div>
 
 		<!-- Memory Alloc -->
 		<div class="p-4 rounded-2xl border border-border/80 bg-card shadow-xs space-y-1 hover:border-foreground/30 transition-all">
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Go Memory Alloc</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.telemetry.go_memory_alloc}</div>
 			<div class="text-xl sm:text-2xl font-bold font-mono text-primary flex items-center justify-between">
 				<span>{cockpit.telemetry?.memory_alloc_mb || "14.2"} MB</span>
 				<CpuChip class="h-5 w-5 text-primary/40" />
 			</div>
-			<div class="text-xs text-muted-foreground">Low footprint runtime</div>
+			<div class="text-xs text-muted-foreground">{i18n.t.telemetry.low_footprint}</div>
 		</div>
 
 		<!-- Goroutines -->
 		<div class="p-4 rounded-2xl border border-border/80 bg-card shadow-xs space-y-1 hover:border-foreground/30 transition-all">
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Active Goroutines</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.telemetry.active_goroutines}</div>
 			<div class="text-xl sm:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
 				<span>{cockpit.telemetry?.goroutines || 18}</span>
 				<CommandLine class="h-5 w-5 text-emerald-500/40" />
 			</div>
-			<div class="text-xs text-muted-foreground">SSE duplex broadcasters</div>
+			<div class="text-xs text-muted-foreground">{i18n.t.telemetry.sse_duplex}</div>
 		</div>
 
 		<!-- Uptime -->
 		<div class="p-4 rounded-2xl border border-border/80 bg-card shadow-xs space-y-1 hover:border-foreground/30 transition-all">
-			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Server Status</div>
+			<div class="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">{i18n.t.telemetry.server_status}</div>
 			<div class="text-xl sm:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-				<span>ONLINE</span>
+				<span>{i18n.t.telemetry.online}</span>
 				<CheckCircle class="h-5 w-5 text-emerald-500" />
 			</div>
-			<div class="text-xs text-muted-foreground">Uptime: {Math.floor((cockpit.telemetry?.uptime_seconds || 1200) / 60)} min</div>
+			<div class="text-xs text-muted-foreground">{i18n.t.telemetry.uptime_label.replace("{min}", String(Math.floor((cockpit.telemetry?.uptime_seconds || 1200) / 60)))}</div>
 		</div>
 	</div>
 
@@ -156,24 +156,24 @@
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2.5">
 				<ServerStack class="h-5 w-5 text-amber-500" />
-				<h3 class="text-sm font-semibold text-foreground">Database Connection Pool Telemetry</h3>
+				<h3 class="text-sm font-semibold text-foreground">{i18n.t.telemetry.db_pool_telemetry}</h3>
 			</div>
 			<span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
-				Driver: {cockpit.telemetry?.database?.driver || "PostgreSQL ANSI"}
+				{i18n.t.telemetry.driver_label} {cockpit.telemetry?.database?.driver || "PostgreSQL ANSI"}
 			</span>
 		</div>
 
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
 			<div class="p-3 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
-				<span class="text-muted-foreground">Open Connections:</span>
+				<span class="text-muted-foreground">{i18n.t.telemetry.open_connections}</span>
 				<span class="font-bold text-foreground">{cockpit.telemetry?.database?.open_connections || 6}</span>
 			</div>
 			<div class="p-3 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
-				<span class="text-muted-foreground">Idle Connections:</span>
+				<span class="text-muted-foreground">{i18n.t.telemetry.idle_connections}</span>
 				<span class="font-bold text-emerald-600 dark:text-emerald-400">{cockpit.telemetry?.database?.idle || 5}</span>
 			</div>
 			<div class="p-3 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
-				<span class="text-muted-foreground">In-Use Concurrency:</span>
+				<span class="text-muted-foreground">{i18n.t.telemetry.in_use_concurrency}</span>
 				<span class="font-bold text-primary">{cockpit.telemetry?.database?.in_use || 1}</span>
 			</div>
 		</div>
@@ -186,14 +186,14 @@
 				<div class="flex items-center gap-2.5 flex-wrap">
 					<Radio class="h-5 w-5 text-primary" />
 					<h3 class="text-base font-bold text-foreground flex items-center gap-2">
-						<span>ChatOps Platform Ingress Telemetry</span>
+						<span>{i18n.t.telemetry.chatops_ingress_telemetry}</span>
 						<span class="text-xs px-2.5 py-0.5 rounded-full font-mono font-medium bg-secondary text-foreground border border-border/60">
 							{cockpit.platformStatuses[cockpit.chatPlatform].name}
 						</span>
 					</h3>
 				</div>
 				<p class="text-xs text-muted-foreground mt-0.5">
-					Real-time runtime metrics, socket heartbeat probes, and packet throughput diagnostics.
+					{i18n.t.telemetry.realtime_diagnostics}
 				</p>
 			</div>
 
@@ -220,39 +220,39 @@
 		<!-- Live Ingress Telemetry KPI Bar -->
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
 			<div class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-1">
-				<div class="text-[10px] text-muted-foreground uppercase font-semibold">Socket Latency Probe</div>
+				<div class="text-[10px] text-muted-foreground uppercase font-semibold">{i18n.t.telemetry.socket_latency}</div>
 				<div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
 					<span>&lt; 12 ms</span>
 					<Signal class="h-4 w-4 text-emerald-500/60" />
 				</div>
-				<div class="text-[10px] text-muted-foreground">TCP Roundtrip</div>
+				<div class="text-[10px] text-muted-foreground">{i18n.t.telemetry.tcp_roundtrip}</div>
 			</div>
 
 			<div class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-1">
-				<div class="text-[10px] text-muted-foreground uppercase font-semibold">Events Captured</div>
+				<div class="text-[10px] text-muted-foreground uppercase font-semibold">{i18n.t.telemetry.events_captured}</div>
 				<div class="text-lg font-bold text-primary flex items-center justify-between">
 					<span>{cockpit.platformStatuses[cockpit.chatPlatform].eventsCaptured} pkts</span>
 					<CommandLine class="h-4 w-4 text-primary/60" />
 				</div>
-				<div class="text-[10px] text-muted-foreground">Total Inbound</div>
+				<div class="text-[10px] text-muted-foreground">{i18n.t.telemetry.total_inbound}</div>
 			</div>
 
 			<div class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-1">
-				<div class="text-[10px] text-muted-foreground uppercase font-semibold">Queue Backpressure</div>
+				<div class="text-[10px] text-muted-foreground uppercase font-semibold">{i18n.t.telemetry.queue_backpressure}</div>
 				<div class="text-lg font-bold text-foreground flex items-center justify-between">
 					<span>0 / 1024</span>
 					<CheckCircle class="h-4 w-4 text-emerald-500/60" />
 				</div>
-				<div class="text-[10px] text-muted-foreground">Buffer Depth Nominal</div>
+				<div class="text-[10px] text-muted-foreground">{i18n.t.telemetry.buffer_depth}</div>
 			</div>
 
 			<div class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-1">
-				<div class="text-[10px] text-muted-foreground uppercase font-semibold">Edge Filter Efficiency</div>
+				<div class="text-[10px] text-muted-foreground uppercase font-semibold">{i18n.t.telemetry.filter_efficiency}</div>
 				<div class="text-lg font-bold text-foreground flex items-center justify-between">
 					<span>100%</span>
 					<ShieldCheck class="h-4 w-4 text-primary/60" />
 				</div>
-				<div class="text-[10px] text-muted-foreground">0 Token Waste Drops</div>
+				<div class="text-[10px] text-muted-foreground">{i18n.t.telemetry.zero_token_waste}</div>
 			</div>
 		</div>
 
@@ -261,7 +261,7 @@
 			<div class="flex items-center justify-between flex-wrap gap-2">
 				<div class="flex items-center gap-2 font-bold font-mono">
 					<span class="h-2.5 w-2.5 rounded-full {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : cockpit.platformStatuses[cockpit.chatPlatform].status === 'AWAITING_HOOK' ? 'bg-amber-500' : 'bg-rose-500'}"></span>
-					<span>Telemetry State: {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'CONNECTED (LIVE TELEMETRY ACTIVE)' : cockpit.platformStatuses[cockpit.chatPlatform].status === 'AWAITING_HOOK' ? 'PORT 8088 LISTENING — AWAITING PACKET' : 'DISCONNECTED — CREDENTIALS REQUIRED'}</span>
+					<span>{i18n.t.telemetry.telemetry_state} {cockpit.platformStatuses[cockpit.chatPlatform].status === 'CONNECTED' ? 'CONNECTED (LIVE TELEMETRY ACTIVE)' : cockpit.platformStatuses[cockpit.chatPlatform].status === 'AWAITING_HOOK' ? 'PORT 8088 LISTENING — AWAITING PACKET' : 'DISCONNECTED — CREDENTIALS REQUIRED'}</span>
 				</div>
 
 				<button
@@ -270,7 +270,7 @@
 					disabled={pinging}
 					class="px-3 py-1 rounded-lg bg-background text-foreground border border-input hover:bg-muted font-mono text-[11px] font-medium transition-colors shadow-xs cursor-pointer disabled:opacity-50"
 				>
-					{pinging ? "Sending..." : "Send Test Probe Ping"}
+					{pinging ? i18n.t.telemetry.sending_probe : i18n.t.telemetry.send_probe_ping}
 				</button>
 			</div>
 
@@ -282,7 +282,7 @@
 		{#if testPingSuccess}
 			<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
 				<Check class="h-4 w-4" />
-				<span>Probe ping acknowledged! Staged test packet into Approval Queue.</span>
+				<span>{i18n.t.telemetry.probe_ack}</span>
 			</div>
 		{/if}
 
