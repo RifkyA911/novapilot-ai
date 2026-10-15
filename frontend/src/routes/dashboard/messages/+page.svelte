@@ -1014,21 +1014,21 @@
 						</div>
 
 						<!-- Action Buttons -->
-						<div class="flex items-center gap-2.5 self-end sm:self-auto shrink-0 flex-wrap">
+						<div class="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
 							<button
 								type="button"
 								onclick={() => openReplyModal(msg)}
-								class="h-10 px-4.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+								class="h-8.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:shadow-md active:scale-95"
 								title="Balas chat ini via WhatsApp Gateway"
 							>
-								<PaperAirplane class="h-4 w-4" />
+								<PaperAirplane class="h-3.5 w-3.5" />
 								<span>Balas Chat</span>
 							</button>
 
 							<button
 								type="button"
 								onclick={() => openLearningModal(msg)}
-								class="h-10 px-4 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+								class="h-7 px-2.5 rounded-md border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 								title="Ajarkan AI mengenali gaya chat ini sebagai pola mutasi dokumen"
 							>
 								<span>🧠 Ajarkan NovaPilot</span>
@@ -1037,9 +1037,9 @@
 							<button
 								type="button"
 								onclick={() => inspectModalMessage = msg}
-								class="h-10 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+								class="h-7 px-2.5 rounded-md border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
 							>
-								<Eye class="h-4 w-4 text-muted-foreground" />
+								<Eye class="h-3 w-3" />
 								<span>Inspect Details</span>
 							</button>
 
@@ -1047,9 +1047,9 @@
 								<button
 									type="button"
 									onclick={() => openStagingModal(msg)}
-									class="h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+									class="h-7 px-3 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
 								>
-									<Bolt class="h-4 w-4" />
+									<Bolt class="h-3 w-3" />
 									<span>Convert to Ticket</span>
 								</button>
 							{/if}
@@ -1268,11 +1268,11 @@
 					</div>
 				</div>
 
-				<div class="pt-3 flex items-center justify-end gap-3 border-t border-border/50">
+				<div class="pt-3 flex items-center justify-end gap-2 border-t border-border/50">
 					<button
 						type="button"
 						onclick={() => stagingModalMessage = null}
-						class="h-11 px-6 rounded-xl border-2 border-border bg-card hover:bg-muted text-foreground text-sm font-bold flex items-center justify-center cursor-pointer transition-all shadow-2xs"
+						class="h-8 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium cursor-pointer"
 					>
 						Cancel
 					</button>
@@ -1280,13 +1280,13 @@
 						type="button"
 						onclick={handleExecuteStaging}
 						disabled={stagingSubmitting}
-						class="h-11 px-7 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold flex items-center gap-2 cursor-pointer shadow-md hover:shadow-lg active:scale-95 transition-all disabled:opacity-50"
+						class="h-8 px-4 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
 					>
 						{#if stagingSubmitting}
-							<ArrowPath class="h-4 w-4 animate-spin" />
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
 							<span>Staging...</span>
 						{:else}
-							<Bolt class="h-4 w-4" />
+							<Bolt class="h-3.5 w-3.5" />
 							<span>Stage to Approval Queue</span>
 						{/if}
 					</button>
@@ -1396,18 +1396,18 @@
 							Pesan balasan telah diteruskan ke Baileys Gateway daemon dan sukses terkirim ke <span class="font-mono font-bold text-foreground">{replyRecipientPhone}</span> pada pukul <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">{replySuccessTimestamp}</span>.
 						</p>
 					</div>
-					<div class="pt-3 flex items-center justify-center gap-3">
+					<div class="pt-3 flex items-center justify-center gap-2.5">
 						<button
 							type="button"
 							onclick={() => { replySuccess = false; replyText = ""; }}
-							class="h-11 px-6 rounded-xl border-2 border-border bg-card hover:bg-muted text-foreground text-sm font-bold cursor-pointer transition-all shadow-2xs"
+							class="h-8.5 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
 						>
 							Tulis Pesan Lain
 						</button>
 						<button
 							type="button"
 							onclick={() => replyModalMessage = null}
-							class="h-11 px-7 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:bg-primary/90 cursor-pointer transition-all"
+							class="h-8.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
 						>
 							Selesai &amp; Tutup
 						</button>
@@ -1574,11 +1574,11 @@
 						Pesan akan dipancarkan seketika melalui sesi WhatsApp Baileys.
 					</span>
 
-					<div class="flex items-center gap-3 ml-auto">
+					<div class="flex items-center gap-2 ml-auto">
 						<button
 							type="button"
 							onclick={() => replyModalMessage = null}
-							class="h-11 px-6 rounded-xl border-2 border-border bg-card hover:bg-muted text-foreground text-sm font-bold flex items-center justify-center cursor-pointer transition-all shadow-2xs hover:border-foreground/30"
+							class="h-8.5 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
 						>
 							Batal
 						</button>
@@ -1586,13 +1586,13 @@
 							type="button"
 							onclick={handleSendReply}
 							disabled={replySending || !replyText.trim() || !replyRecipientPhone.trim()}
-							class="h-11 px-7 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center justify-center gap-2.5 cursor-pointer shadow-md hover:shadow-lg active:scale-95 transition-all disabled:opacity-50"
+							class="h-8.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
 						>
 							{#if replySending}
-								<ArrowPath class="h-4 w-4 animate-spin" />
+								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
 								<span>Mengirim...</span>
 							{:else}
-								<PaperAirplane class="h-4.5 w-4.5" />
+								<PaperAirplane class="h-3.5 w-3.5" />
 								<span>Kirim Balasan via WA</span>
 							{/if}
 						</button>
@@ -1803,11 +1803,11 @@
 					</div>
 				</div>
 
-				<div class="pt-3 flex items-center justify-end gap-3 border-t border-border/50">
+				<div class="pt-3 flex items-center justify-end gap-2 border-t border-border/50">
 					<button
 						type="button"
 						onclick={() => learningModalMessage = null}
-						class="h-11 px-6 rounded-xl border-2 border-border bg-card hover:bg-muted text-foreground text-sm font-bold flex items-center justify-center cursor-pointer transition-all shadow-2xs"
+						class="h-8.5 px-3.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium cursor-pointer"
 					>
 						Batal
 					</button>
@@ -1815,10 +1815,10 @@
 						type="button"
 						onclick={handleSavePattern}
 						disabled={learnSubmitting || learnSynthesizing}
-						class="h-11 px-7 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold flex items-center gap-2.5 cursor-pointer shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all"
+						class="h-8.5 px-4 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
 					>
 						{#if learnSubmitting}
-							<ArrowPath class="h-4 w-4 animate-spin" />
+							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
 							<span>Menyimpan ke Memory...</span>
 						{:else}
 							<span>🧠 Simpan ke Memory NovaPilot</span>
