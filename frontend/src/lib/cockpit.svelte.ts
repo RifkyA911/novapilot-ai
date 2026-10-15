@@ -323,32 +323,50 @@ class CockpitState {
 		}
 	}
 
-	async fetchTelemetry() {
-		try {
-			this.checkWhatsAppGatewayStatus();
-			const [telRes, gwRes, dbRes, llmRes] = await Promise.allSettled([
-				fetch("/api/telemetry"),
-				fetch("/api/gateway/status"),
-				fetch("/api/database/config"),
-				fetch("/api/llm/config")
-			]);
+	private lastTelemetryFetch = 0;
+	private telemetryInFlight: Promise<void> | null = null;
 
-			if (telRes.status === "fulfilled" && telRes.value.ok) {
-				this.telemetry = await telRes.value.json();
-			}
-			if (gwRes.status === "fulfilled" && gwRes.value.ok) {
-				const gwData = await gwRes.value.json();
-				this.isGatewayRunning = !!gwData.running;
-			}
-			if (dbRes.status === "fulfilled" && dbRes.value.ok) {
-				this.dbConfig = await dbRes.value.json();
-			}
-			if (llmRes.status === "fulfilled" && llmRes.value.ok) {
-				this.llmConfig = await llmRes.value.json();
-			}
-		} catch (err) {
-			console.error("Failed to fetch telemetry:", err);
+	async fetchTelemetry(force = false) {
+		const now = Date.now();
+		if (!force && now - this.lastTelemetryFetch < 3000) {
+			return; // Throttled to prevent redundant parallel network calls
 		}
+		if (this.telemetryInFlight) {
+			return this.telemetryInFlight;
+		}
+
+		this.telemetryInFlight = (async () => {
+			try {
+				this.lastTelemetryFetch = Date.now();
+				this.checkWhatsAppGatewayStatus();
+				const [telRes, gwRes, dbRes, llmRes] = await Promise.allSettled([
+					fetch("/api/telemetry"),
+					fetch("/api/gateway/status"),
+					fetch("/api/database/config"),
+					fetch("/api/llm/config")
+				]);
+
+				if (telRes.status === "fulfilled" && telRes.value.ok) {
+					this.telemetry = await telRes.value.json();
+				}
+				if (gwRes.status === "fulfilled" && gwRes.value.ok) {
+					const gwData = await gwRes.value.json();
+					this.isGatewayRunning = !!gwData.running;
+				}
+				if (dbRes.status === "fulfilled" && dbRes.value.ok) {
+					this.dbConfig = await dbRes.value.json();
+				}
+				if (llmRes.status === "fulfilled" && llmRes.value.ok) {
+					this.llmConfig = await llmRes.value.json();
+				}
+			} catch (err) {
+				console.error("Failed to fetch telemetry:", err);
+			} finally {
+				this.telemetryInFlight = null;
+			}
+		})();
+
+		return this.telemetryInFlight;
 	}
 
 	setupSSE() {

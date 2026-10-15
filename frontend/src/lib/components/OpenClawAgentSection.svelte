@@ -23,6 +23,7 @@
 	import { cockpit } from "$lib/cockpit.svelte";
 	import { sound } from "$lib/audio";
 	import BrandIcon from "$lib/components/BrandIcon.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// OpenClaw Gateway Configuration
 	let gatewayUrl = $state("http://127.0.0.1:18789");
@@ -244,7 +245,7 @@
 		<!-- 1. OpenClaw Gateway Status -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1.5">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Gateway Service</span>
+				<span class="text-xs font-medium">{i18n.t.agents.gateway_service}</span>
 				<BrandIcon name="openclaw" class="h-4 w-4" />
 			</div>
 			<div class="text-sm font-semibold flex items-center gap-1.5 font-mono">
@@ -267,7 +268,7 @@
 		<!-- 2. Browser CDP Connection -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1.5">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Browser Driver</span>
+				<span class="text-xs font-medium">{i18n.t.agents.browser_driver}</span>
 				<ComputerDesktop class="h-4 w-4 text-muted-foreground" />
 			</div>
 			<div class="text-sm font-semibold text-foreground font-mono">
@@ -281,7 +282,7 @@
 		<!-- 3. Safety Approval Gate -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1.5">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Supervisor Gate</span>
+				<span class="text-xs font-medium">{i18n.t.agents.safety_gate}</span>
 				<ShieldCheck class="h-4 w-4 text-emerald-500" />
 			</div>
 			<div class="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -289,21 +290,21 @@
 				HITL Enforcement
 			</div>
 			<div class="text-[11px] text-muted-foreground">
-				Persetujuan ganda operator sebelum mutasi
+				{i18n.current === 'id' ? 'Persetujuan ganda operator sebelum mutasi' : 'Dual-operator sign-off before mutation'}
 			</div>
 		</div>
 
 		<!-- 4. Max Concurrent Workers -->
 		<div class="p-4 rounded-xl bg-card border border-border shadow-xs space-y-1.5">
 			<div class="flex items-center justify-between text-muted-foreground">
-				<span class="text-xs font-medium">Task Capacity</span>
+				<span class="text-xs font-medium">{i18n.t.agents.task_capacity}</span>
 				<Server class="h-4 w-4 text-muted-foreground" />
 			</div>
 			<div class="text-sm font-semibold text-foreground font-mono">
 				{maxConcurrentTasks} Worker Slots
 			</div>
 			<div class="text-[11px] text-muted-foreground">
-				Isolated browser context pool
+				{i18n.current === 'id' ? 'Pool konteks browser terisolasi' : 'Isolated browser context pool'}
 			</div>
 		</div>
 	</div>
@@ -403,8 +404,8 @@
 			<div class="p-5 rounded-xl bg-card border border-border shadow-xs space-y-3">
 				<div class="flex items-center justify-between">
 					<div>
-						<h3 class="text-sm font-semibold text-foreground">Daftar Tugas Otonom (Task Registry)</h3>
-						<p class="text-xs text-muted-foreground">Pilih skenario tugas untuk pengujian automasi atau staging ke approval queue.</p>
+						<h3 class="text-sm font-semibold text-foreground">{i18n.t.agents.task_registry}</h3>
+						<p class="text-xs text-muted-foreground">{i18n.current === 'id' ? 'Pilih skenario tugas untuk pengujian automasi atau staging ke approval queue.' : 'Select task scenario for automation testing or approval queue staging.'}</p>
 					</div>
 					<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
 						{taskRegistry.length} HANDLERS
@@ -463,7 +464,7 @@
 
 				<div class="space-y-2 text-xs">
 					<label for="taskInstructionInput" class="font-medium text-muted-foreground block">
-						Instruksi Tugas (Prompt Eksekusi)
+						{i18n.t.agents.task_instruction}
 					</label>
 					<textarea
 						id="taskInstructionInput"
@@ -499,7 +500,7 @@
 							class="h-9 px-3 rounded-lg border border-border bg-card hover:bg-muted font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
 						>
 							<Play class="h-3.5 w-3.5 text-primary" />
-							<span>{isDispatching ? 'Mengirim...' : 'Kirim ke OpenClaw'}</span>
+							<span>{isDispatching ? (i18n.current === 'id' ? 'Mengirim...' : 'Dispatching...') : i18n.t.agents.dispatch_to_openclaw}</span>
 						</button>
 
 						<button
@@ -509,7 +510,7 @@
 							class="h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
 						>
 							<Bolt class="h-3.5 w-3.5" />
-							<span>{stagingLoading ? 'Menyimpan...' : 'Stage ke Approval'}</span>
+							<span>{stagingLoading ? (i18n.current === 'id' ? 'Menyimpan...' : 'Staging...') : i18n.t.agents.stage_to_approval}</span>
 						</button>
 					</div>
 

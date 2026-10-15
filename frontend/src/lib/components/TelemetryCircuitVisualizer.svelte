@@ -220,18 +220,22 @@
 						.wire-flow-tel {
 							stroke-dasharray: 6 5;
 							animation: wireDashTel 1.1s linear infinite;
+							will-change: stroke-dashoffset;
 						}
 						.wire-flow-tel-fast {
 							stroke-dasharray: 6 5;
 							animation: wireDashTelFast 0.35s linear infinite;
+							will-change: stroke-dashoffset;
 						}
 						.sonar-sweep-group {
 							transform-origin: 0px 0px;
 							animation: radarSweepCentric 4s linear infinite;
+							will-change: transform;
 						}
 						.sonar-sweep-group-fast {
 							transform-origin: 0px 0px;
 							animation: radarSweepCentric 1.5s linear infinite;
+							will-change: transform;
 						}
 						.sonar-echo-ring {
 							animation: sonarEchoPulse 2.2s ease-out infinite;

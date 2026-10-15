@@ -24,6 +24,7 @@
 	import { sound } from "$lib/audio";
 	import OpenClawAgentSection from "$lib/components/OpenClawAgentSection.svelte";
 	import BrandIcon from "$lib/components/BrandIcon.svelte";
+	import { i18n } from "$lib/i18n.svelte";
 
 	// Navigation Tabs: Hermes 3 vs OpenClaw only (9Router completely removed)
 	let activeTab = $state<"hermes" | "openclaw">("hermes");
@@ -307,13 +308,13 @@
 
 				<div>
 					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-						AI Agents Hub
+						{i18n.t.agents.hub_title}
 						<span class="text-[11px] font-mono px-2 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
 							HERMES 3 &bull; OPENCLAW
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Manajemen integrasi model penalaran <strong>Hermes 3</strong> (Cognitive Extraction) dan agen otonom <strong>OpenClaw</strong> (Browser Automation).
+						{i18n.t.agents.hub_subtitle}
 					</p>
 				</div>
 			</div>
@@ -334,7 +335,7 @@
 				class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs"
 			>
 				<Bolt class="h-3.5 w-3.5 text-primary" />
-				<span>Platform Flows</span>
+				<span>{i18n.t.nav.flows}</span>
 			</a>
 
 			<a
@@ -342,7 +343,7 @@
 				class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs"
 			>
 				<ChatBubbleLeftRight class="h-3.5 w-3.5 text-muted-foreground" />
-				<span>Inbound Feed</span>
+				<span>{i18n.t.nav.inbound}</span>
 			</a>
 		</div>
 	</div>
@@ -357,9 +358,9 @@
 			class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer {activeTab === 'hermes' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<BrandIcon name="hermes" class="h-4 w-4" />
-			<span>Hermes 3 Reasoning Agent</span>
+			<span>{i18n.t.agents.hermes_title}</span>
 			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono {activeTab === 'hermes' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}">
-				8B LLM BRAIN
+				{i18n.t.agents.hermes_badge}
 			</span>
 		</button>
 
@@ -369,9 +370,9 @@
 			class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer {activeTab === 'openclaw' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
 		>
 			<BrandIcon name="openclaw" class="h-4 w-4" />
-			<span>OpenClaw Autonomous Agent</span>
+			<span>{i18n.t.agents.openclaw_title}</span>
 			<span class="px-1.5 py-0.2 rounded text-[10px] font-mono {activeTab === 'openclaw' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}">
-				BROWSER &amp; CHANNELS
+				{i18n.t.agents.openclaw_badge}
 			</span>
 		</button>
 	</div>

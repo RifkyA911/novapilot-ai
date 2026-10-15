@@ -29,10 +29,12 @@
 	} from "svelte-heros-v2";
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import SoundToggle from "$lib/components/SoundToggle.svelte";
+	import LocaleToggle from "$lib/components/LocaleToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
 	import CommandPalette from "$lib/components/CommandPalette.svelte";
 	import PlatformSelect from "$lib/components/PlatformSelect.svelte";
 	import { sound } from "$lib/audio";
+	import { i18n } from "$lib/i18n.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import type { LayoutData } from "./$types";
 
@@ -68,21 +70,21 @@
 	}
 
 	// Unified Navigation Items Structure (Shared between Desktop & Mobile)
-	// Badges are ONLY shown if a service is unconfigured or disconnected!
+	// Reactive to language changes (i18n) and service status
 	const navGroups = $derived([
 		{
-			title: "Operations",
+			title: i18n.t.nav.operations,
 			items: [
 				{
 					href: "/dashboard",
-					label: "Dashboard",
+					label: i18n.t.nav.overview,
 					icon: CommandLine,
 					iconColor: "text-primary",
 					title: "Operations Dashboard Overview"
 				},
 				{
 					href: "/dashboard/cockpit",
-					label: "Cockpit Overview",
+					label: i18n.t.nav.cockpit,
 					icon: Sparkles,
 					iconColor: "text-purple-500",
 					title: "Cockpit Overview & AI Analytics",
@@ -91,7 +93,7 @@
 				},
 				{
 					href: "/dashboard/queue",
-					label: "Approval Queue",
+					label: i18n.t.nav.queue,
 					icon: Clock,
 					iconColor: "text-amber-500",
 					title: "Approval Queue",
@@ -99,7 +101,7 @@
 				},
 				{
 					href: "/dashboard/history",
-					label: "Execution History",
+					label: i18n.t.nav.history,
 					icon: ChartBarSquare,
 					iconColor: "text-foreground",
 					title: "Execution History & Audit Log"
@@ -107,11 +109,11 @@
 			]
 		},
 		{
-			title: "Databases & Telemetry",
+			title: i18n.t.nav.databases,
 			items: [
 				{
 					href: "/dashboard/connectors",
-					label: "DB Connectors",
+					label: i18n.t.nav.connectors,
 					icon: CircleStack,
 					iconColor: "text-amber-500",
 					title: "Database Configuration & Setup",
@@ -120,7 +122,7 @@
 				},
 				{
 					href: "/dashboard/mcp",
-					label: "MCP Knowledge",
+					label: i18n.t.nav.mcp,
 					icon: Cube,
 					iconColor: "text-cyan-500",
 					title: "Model Context Protocol (MCP) Knowledge Base & Tools",
@@ -129,14 +131,14 @@
 				},
 				{
 					href: "/dashboard/connectivity",
-					label: "System Telemetry",
+					label: i18n.t.nav.telemetry,
 					icon: CpuChip,
 					iconColor: "text-blue-500",
 					title: "System Telemetry & Platform Probes"
 				},
 				{
 					href: "/dashboard/logs",
-					label: "System Logs",
+					label: i18n.t.nav.logs,
 					icon: DocumentText,
 					iconColor: "text-cyan-500",
 					title: "Enterprise System Logs & Daemon Telemetry"
@@ -148,7 +150,7 @@
 			items: [
 				{
 					href: "/dashboard/messages",
-					label: "Inbound Messages",
+					label: i18n.t.nav.inbound,
 					icon: ChatBubbleLeftRight,
 					iconColor: "text-emerald-500",
 					title: "Omnichannel Inbound Messages Feed",
@@ -156,7 +158,7 @@
 				},
 				{
 					href: "/dashboard/hermes",
-					label: "AI Agents",
+					label: i18n.t.nav.agents,
 					icon: CpuChip,
 					iconColor: "text-sky-500",
 					title: "AI Agents: Hermes 3 Reasoning & OpenClaw Autonomous Engine",
@@ -165,14 +167,14 @@
 				},
 				{
 					href: "/dashboard/hooks",
-					label: "Client Hook Flows",
+					label: i18n.t.nav.hooks,
 					icon: CodeBracket,
 					iconColor: "text-purple-500",
 					title: "Client Hook Flows"
 				},
 				{
 					href: "/dashboard/contacts",
-					label: "Group Contacts",
+					label: i18n.t.nav.contacts,
 					icon: UserGroup,
 					iconColor: "text-teal-500",
 					title: "Omnichannel Group Contacts & Directory",
@@ -190,7 +192,7 @@
 				},
 				{
 					href: "/dashboard/platforms",
-					label: "Platform Flows",
+					label: i18n.t.nav.flows,
 					icon: AdjustmentsHorizontal,
 					iconColor: "text-sky-500",
 					title: "ChatOps Platform Settings & Logic Flows",
@@ -200,11 +202,11 @@
 			]
 		},
 		{
-			title: "System & Config",
+			title: i18n.t.nav.settings,
 			items: [
 				{
 					href: "/dashboard/settings",
-					label: "Settings",
+					label: i18n.t.nav.settings,
 					icon: Cog6Tooth,
 					iconColor: "text-zinc-400",
 					title: "System Settings & Gatekeeper Policies"
@@ -449,8 +451,11 @@
 				</button>
 			</div>
 
-			<!-- Right: SOUND TOGGLE, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
+			<!-- Right: LOCALE TOGGLE, SOUND TOGGLE, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
 			<div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+				<!-- Language Switcher (Intl ID/EN) -->
+				<LocaleToggle />
+
 				<!-- Corporate AI Sound Toggle -->
 				<SoundToggle />
 

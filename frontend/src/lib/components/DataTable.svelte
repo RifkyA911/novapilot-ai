@@ -14,6 +14,7 @@
 	} from "svelte-heros-v2";
 
 	import type { ColumnDef } from "$lib/types/table";
+	import { i18n } from "$lib/i18n.svelte";
 	export type { ColumnDef };
 
 	interface Props {
@@ -38,26 +39,45 @@
 		columns,
 		title,
 		subtitle,
-		searchPlaceholder = "Cari data dalam tabel...",
+		searchPlaceholder,
 		searchKeys = [],
 		filterKey,
 		filterOptions = [],
 		defaultPageSize = 10,
 		enableExport = true,
 		exportFilename = "novapilot-export",
-		emptyMessage = "Tidak ada data yang cocok dengan pencarian",
+		emptyMessage,
 		toolbar,
 		rowCell
 	}: Props = $props();
 
 	// State
 	let searchQuery = $state("");
+	let rawSearchInput = $state("");
+	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let selectedFilter = $state("ALL");
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<"asc" | "desc">("asc");
 	let currentPage = $state(1);
 	let pageSize = $state(defaultPageSize);
 	let jumpPageInput = $state("");
+
+	function handleSearchInput(e: Event) {
+		const val = (e.target as HTMLInputElement).value;
+		rawSearchInput = val;
+		if (searchTimeout) clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			searchQuery = val;
+			currentPage = 1;
+		}, 120);
+	}
+
+	function clearSearch() {
+		rawSearchInput = "";
+		searchQuery = "";
+		if (searchTimeout) clearTimeout(searchTimeout);
+		currentPage = 1;
+	}
 
 	function handleJumpPage() {
 		const trimmed = String(jumpPageInput).trim();
@@ -205,7 +225,7 @@
 				<div class="flex items-center gap-2.5 shrink-0">
 					<h2 class="text-base sm:text-lg font-bold text-foreground tracking-tight whitespace-nowrap">{title}</h2>
 					<span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
-						{totalItems} data
+						{totalItems} {i18n.t.common.records}
 					</span>
 				</div>
 			{/if}
@@ -223,7 +243,7 @@
 					onchange={() => currentPage = 1}
 					class="w-full sm:w-auto h-10 px-3.5 pr-9 rounded-xl bg-secondary/50 border border-input text-xs sm:text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer appearance-none transition-all shadow-2xs hover:bg-secondary/70"
 				>
-					<option value="ALL">Semua Kategori</option>
+					<option value="ALL">{i18n.t.common.all}</option>
 					{#each filterOptions as opt}
 						<option value={opt.value}>{opt.label}</option>
 					{/each}
@@ -241,7 +261,7 @@
 			<div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
 				<!-- Show Entries Dropdown -->
 				<div class="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-secondary/50 h-10 px-3 py-1.5 rounded-xl border border-input/60 shrink-0">
-					<span>Show:</span>
+					<span>{i18n.t.common.rows_per_page}</span>
 					<select
 						bind:value={pageSize}
 						onchange={() => currentPage = 1}
@@ -258,20 +278,20 @@
 				<!-- Divider "|" -->
 				<div class="h-5 w-px bg-border shrink-0 hidden sm:block"></div>
 
-				<!-- Search Bar -->
+				<!-- Search Bar (Debounced for High Performance) -->
 				<div class="relative flex-1 sm:w-80 min-w-[220px]">
 					<MagnifyingGlass class="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
 					<input
 						type="text"
-						bind:value={searchQuery}
-						oninput={() => currentPage = 1}
-						placeholder={searchPlaceholder}
+						value={rawSearchInput}
+						oninput={handleSearchInput}
+						placeholder={searchPlaceholder || i18n.t.actions.search}
 						class="w-full h-10 pl-10 pr-8 rounded-xl bg-secondary/50 border border-input/60 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
 					/>
-					{#if searchQuery}
+					{#if rawSearchInput}
 						<button
 							type="button"
-							onclick={() => { searchQuery = ""; currentPage = 1; }}
+							onclick={clearSearch}
 							class="absolute right-3 top-2.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
 						>
 							✕
@@ -299,7 +319,7 @@
 						class="h-10 px-3.5 rounded-xl border border-border bg-background hover:bg-muted text-xs sm:text-sm font-semibold text-foreground flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
 						title="Cetak atau simpan sebagai PDF"
 					>
-						<Printer class="h-4 w-4 text-sky-500" />
+						<Printer class="h-4 w-4 text-blue-500" />
 						<span>PDF</span>
 					</button>
 				{/if}
@@ -350,8 +370,8 @@
 									<div class="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
 										<MagnifyingGlass class="h-5 w-5" />
 									</div>
-									<p class="font-medium text-foreground">{emptyMessage}</p>
-									<p class="text-xs text-muted-foreground">Coba sesuaikan kata kunci pencarian atau reset filter kategori.</p>
+									<p class="font-medium text-foreground">{emptyMessage || i18n.t.common.no_data}</p>
+									<p class="text-xs text-muted-foreground">{i18n.current === 'id' ? 'Coba sesuaikan kata kunci pencarian atau reset filter kategori.' : 'Try adjusting your search query or reset category filter.'}</p>
 								</div>
 							</td>
 						</tr>
@@ -377,9 +397,9 @@
 		<!-- Pagination Footer -->
 		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-secondary/20 text-[11px] sm:text-xs font-mono">
 			<div class="text-muted-foreground">
-				Menampilkan <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> dari <strong class="text-foreground">{totalItems}</strong> data
+				{i18n.current === 'id' ? 'Menampilkan' : 'Showing'} <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> {i18n.t.common.of} <strong class="text-foreground">{totalItems}</strong> {i18n.t.common.records}
 				{#if totalItems !== data.length}
-					<span class="text-[11px] sm:text-xs text-primary font-medium">(difilter dari total {data.length} data)</span>
+					<span class="text-[11px] sm:text-xs text-primary font-medium">({i18n.current === 'id' ? 'difilter dari' : 'filtered from'} {data.length} {i18n.t.common.records})</span>
 				{/if}
 			</div>
 
@@ -387,7 +407,7 @@
 			<div class="flex flex-wrap items-center gap-3">
 				<!-- Jump to Page Input -->
 				<div class="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-					<span class="whitespace-nowrap font-medium">Loncat ke:</span>
+					<span class="whitespace-nowrap font-medium">{i18n.current === 'id' ? 'Loncat ke:' : 'Jump to:'}</span>
 					<input
 						type="number"
 						min="1"

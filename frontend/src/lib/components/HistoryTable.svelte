@@ -18,6 +18,7 @@
 	import DataTable from "$lib/components/DataTable.svelte";
 	import type { ColumnDef } from "$lib/types/table";
 	import { timeAgo } from "$lib/utils";
+	import { i18n } from "$lib/i18n.svelte";
 	import { sound } from "$lib/audio";
 
 	export interface TicketItem {
@@ -218,7 +219,7 @@
 
 			{:else if column.id === "created_at"}
 				<div class="font-mono text-xs text-muted-foreground" title={row.updated_at || row.created_at}>
-					{timeAgo(row.updated_at || row.created_at)}
+					{timeAgo(row.updated_at || row.created_at, i18n.current)}
 				</div>
 
 			{:else if column.id === "actions"}
