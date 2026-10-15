@@ -179,6 +179,15 @@ func main() {
 		api.POST("/gateway/restart", apiHandler.RestartGateway)
 		api.POST("/gateway/stop", apiHandler.StopGateway)
 		api.POST("/gateway/send", apiHandler.SendGatewayMessage)
+
+		// Autonomous Inbound Auto-Reply Engine
+		api.GET("/auto-reply/rules", apiHandler.GetAutoReplyRules)
+		api.POST("/auto-reply/rules", apiHandler.SaveAutoReplyRule)
+		api.POST("/auto-reply/rules/:id/toggle", apiHandler.ToggleAutoReplyRule)
+		api.DELETE("/auto-reply/rules/:id", apiHandler.DeleteAutoReplyRule)
+		api.GET("/auto-reply/config", apiHandler.GetAutoReplyConfig)
+		api.POST("/auto-reply/config", apiHandler.SaveAutoReplyConfig)
+		api.POST("/auto-reply/simulate", apiHandler.SimulateAutoReply)
 	}
 
 	// 5. Connect MCP Reference Database (Database 2 - Enterprise ERP Source)

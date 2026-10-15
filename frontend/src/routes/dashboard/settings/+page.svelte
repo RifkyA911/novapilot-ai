@@ -1234,167 +1234,169 @@
 				{/if}
 			</div>
 
-			<!-- Section: S3 Cloud Object Storage Settings -->
-			<div class="p-6 rounded-3xl border border-border bg-card shadow-xs space-y-5">
-				<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border/60 gap-3">
-					<div class="flex items-center gap-3">
-						<div class="h-9 w-9 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold shadow-xs border border-sky-500/20">
-							<Cloud class="h-5 w-5" />
+			<!-- Section: S3 Cloud Object Storage Settings (Only shown if S3 backend is active) -->
+			{#if storageActiveBackend === "s3"}
+				<div class="p-6 rounded-3xl border border-sky-500/40 bg-card shadow-xs space-y-5 animate-in fade-in duration-150">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border/60 gap-3">
+						<div class="flex items-center gap-3">
+							<div class="h-9 w-9 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold shadow-xs border border-sky-500/20">
+								<Cloud class="h-5 w-5" />
+							</div>
+							<div>
+								<h4 class="text-sm font-bold text-foreground">S3 / MinIO Cloud Object Storage Gateway</h4>
+								<p class="text-xs text-muted-foreground">Configure AWS S3 or private MinIO credentials for cloud asset replication.</p>
+							</div>
 						</div>
-						<div>
-							<h4 class="text-sm font-bold text-foreground">S3 / MinIO Cloud Object Storage Gateway</h4>
-							<p class="text-xs text-muted-foreground">Configure AWS S3 or private MinIO credentials for cloud asset replication.</p>
-						</div>
-					</div>
 
-					<label class="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
-						<input
-							type="checkbox"
-							bind:checked={s3Enabled}
-							class="h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
-						/>
-						<span>Enable S3 Storage Engine</span>
-					</label>
-				</div>
-
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-					<!-- Endpoint -->
-					<div class="space-y-1.5">
-						<label for="s3EndpointInput" class="font-semibold text-foreground block">S3 Endpoint URL / Host:</label>
-						<input
-							id="s3EndpointInput"
-							type="text"
-							bind:value={s3Endpoint}
-							placeholder="s3.ap-southeast-1.amazonaws.com or localhost:9000"
-							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-						/>
-					</div>
-
-					<!-- Region -->
-					<div class="space-y-1.5">
-						<label for="s3RegionInput" class="font-semibold text-foreground block">S3 Region:</label>
-						<input
-							id="s3RegionInput"
-							type="text"
-							bind:value={s3Region}
-							placeholder="ap-southeast-1"
-							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-						/>
-					</div>
-
-					<!-- Bucket Name -->
-					<div class="space-y-1.5">
-						<label for="s3BucketInput" class="font-semibold text-foreground block">Bucket Name:</label>
-						<input
-							id="s3BucketInput"
-							type="text"
-							bind:value={s3Bucket}
-							placeholder="novapilot-vault"
-							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-						/>
-					</div>
-
-					<!-- Access Key -->
-					<div class="space-y-1.5">
-						<label for="s3AccessKeyInput" class="font-semibold text-foreground block">Access Key ID:</label>
-						<input
-							id="s3AccessKeyInput"
-							type="text"
-							bind:value={s3AccessKey}
-							placeholder="AKIA..."
-							class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-						/>
-					</div>
-
-					<!-- Secret Key -->
-					<div class="space-y-1.5 md:col-span-2">
-						<label for="s3SecretKeyInput" class="font-semibold text-foreground block">Secret Access Key:</label>
-						<div class="relative">
+						<label class="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
 							<input
-								id="s3SecretKeyInput"
-								type={showS3SecretKey ? "text" : "password"}
-								bind:value={s3SecretKey}
-								class="w-full h-10 pl-3.5 pr-10 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+								type="checkbox"
+								bind:checked={s3Enabled}
+								class="h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
 							/>
-							<button
-								type="button"
-								onclick={() => showS3SecretKey = !showS3SecretKey}
-								class="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-							>
-								{#if showS3SecretKey}
-									<EyeSlash class="h-4 w-4" />
-								{:else}
-									<Eye class="h-4 w-4" />
-								{/if}
-							</button>
+							<span>Enable S3 Storage Engine</span>
+						</label>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+						<!-- Endpoint -->
+						<div class="space-y-1.5">
+							<label for="s3EndpointInput" class="font-semibold text-foreground block">S3 Endpoint URL / Host:</label>
+							<input
+								id="s3EndpointInput"
+								type="text"
+								bind:value={s3Endpoint}
+								placeholder="s3.ap-southeast-1.amazonaws.com or localhost:9000"
+								class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+							/>
+						</div>
+
+						<!-- Region -->
+						<div class="space-y-1.5">
+							<label for="s3RegionInput" class="font-semibold text-foreground block">S3 Region:</label>
+							<input
+								id="s3RegionInput"
+								type="text"
+								bind:value={s3Region}
+								placeholder="ap-southeast-1"
+								class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+							/>
+						</div>
+
+						<!-- Bucket Name -->
+						<div class="space-y-1.5">
+							<label for="s3BucketInput" class="font-semibold text-foreground block">Bucket Name:</label>
+							<input
+								id="s3BucketInput"
+								type="text"
+								bind:value={s3Bucket}
+								placeholder="novapilot-vault"
+								class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+							/>
+						</div>
+
+						<!-- Access Key -->
+						<div class="space-y-1.5">
+							<label for="s3AccessKeyInput" class="font-semibold text-foreground block">Access Key ID:</label>
+							<input
+								id="s3AccessKeyInput"
+								type="text"
+								bind:value={s3AccessKey}
+								placeholder="AKIA..."
+								class="w-full h-10 px-3.5 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+							/>
+						</div>
+
+						<!-- Secret Key -->
+						<div class="space-y-1.5 md:col-span-2">
+							<label for="s3SecretKeyInput" class="font-semibold text-foreground block">Secret Access Key:</label>
+							<div class="relative">
+								<input
+									id="s3SecretKeyInput"
+									type={showS3SecretKey ? "text" : "password"}
+									bind:value={s3SecretKey}
+									class="w-full h-10 pl-3.5 pr-10 rounded-xl border border-input bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+								/>
+								<button
+									type="button"
+									onclick={() => showS3SecretKey = !showS3SecretKey}
+									class="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+								>
+									{#if showS3SecretKey}
+										<EyeSlash class="h-4 w-4" />
+									{:else}
+										<Eye class="h-4 w-4" />
+									{/if}
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<!-- Advanced S3 Options -->
-				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
-					<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
-						<input
-							type="checkbox"
-							bind:checked={s3PathStyle}
-							class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
-						/>
-						<div class="space-y-0.5">
-							<div class="font-bold text-foreground">Enable Path-Style URL Format</div>
-							<p class="text-[11px] text-muted-foreground">Required for on-prem MinIO, Ceph, and LocalStack instances.</p>
-						</div>
-					</label>
+					<!-- Advanced S3 Options -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
+						<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+							<input
+								type="checkbox"
+								bind:checked={s3PathStyle}
+								class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
+							/>
+							<div class="space-y-0.5">
+								<div class="font-bold text-foreground">Enable Path-Style URL Format</div>
+								<p class="text-[11px] text-muted-foreground">Required for on-prem MinIO, Ceph, and LocalStack instances.</p>
+							</div>
+						</label>
 
-					<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
-						<input
-							type="checkbox"
-							bind:checked={s3UseSSL}
-							class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
-						/>
-						<div class="space-y-0.5">
-							<div class="font-bold text-foreground">Enforce HTTPS / SSL Encryption</div>
-							<p class="text-[11px] text-muted-foreground">Secures all object transmissions with TLS v1.3 encryption.</p>
-						</div>
-					</label>
-				</div>
-
-				<!-- Action Buttons for S3 -->
-				<div class="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60">
-					<button
-						type="button"
-						onclick={testS3Connection}
-						disabled={s3Testing}
-						class="h-8.5 px-4 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
-					>
-						{#if s3Testing}
-							<ArrowPath class="h-3.5 w-3.5 animate-spin" />
-							<span>Connecting...</span>
-						{:else}
-							<Cloud class="h-3.5 w-3.5" />
-							<span>Test S3 Handshake</span>
-						{/if}
-					</button>
-
-					<button
-						type="button"
-						onclick={saveStorageConfig}
-						class="h-8.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-					>
-						<Check class="h-3.5 w-3.5" />
-						<span>Save S3 Configuration</span>
-					</button>
-				</div>
-
-				{#if s3TestResult}
-					<div class="p-3.5 rounded-2xl text-xs flex items-center justify-between gap-3 animate-in fade-in {s3TestResult.success ? 'bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-300' : 'bg-destructive/10 border border-destructive/30 text-destructive'}">
-						<div class="flex items-center gap-2">
-							<Cloud class="h-4 w-4 shrink-0" />
-							<span>{s3TestResult.message}</span>
-						</div>
-						<span class="font-mono text-[10px] font-bold">{s3TestResult.latency}ms</span>
+						<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+							<input
+								type="checkbox"
+								bind:checked={s3UseSSL}
+								class="mt-0.5 h-4 w-4 rounded border-input text-sky-500 focus:ring-sky-500 cursor-pointer"
+							/>
+							<div class="space-y-0.5">
+								<div class="font-bold text-foreground">Enforce HTTPS / SSL Encryption</div>
+								<p class="text-[11px] text-muted-foreground">Secures all object transmissions with TLS v1.3 encryption.</p>
+							</div>
+						</label>
 					</div>
-				{/if}
-			</div>
+
+					<!-- Action Buttons for S3 -->
+					<div class="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60">
+						<button
+							type="button"
+							onclick={testS3Connection}
+							disabled={s3Testing}
+							class="h-8.5 px-4 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+						>
+							{#if s3Testing}
+								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+								<span>Connecting...</span>
+							{:else}
+								<Cloud class="h-3.5 w-3.5" />
+								<span>Test S3 Handshake</span>
+							{/if}
+						</button>
+
+						<button
+							type="button"
+							onclick={saveStorageConfig}
+							class="h-8.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+						>
+							<Check class="h-3.5 w-3.5" />
+							<span>Save S3 Configuration</span>
+						</button>
+					</div>
+
+					{#if s3TestResult}
+						<div class="p-3.5 rounded-2xl text-xs flex items-center justify-between gap-3 animate-in fade-in {s3TestResult.success ? 'bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-300' : 'bg-destructive/10 border border-destructive/30 text-destructive'}">
+							<div class="flex items-center gap-2">
+								<Cloud class="h-4 w-4 shrink-0" />
+								<span>{s3TestResult.message}</span>
+							</div>
+							<span class="font-mono text-[10px] font-bold">{s3TestResult.latency}ms</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	{/if}
 

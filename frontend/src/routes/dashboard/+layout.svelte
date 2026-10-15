@@ -157,6 +157,15 @@
 					count: cockpit.needsReviewCount
 				},
 				{
+					href: "/dashboard/automation",
+					label: i18n.t.nav.automation,
+					icon: Sparkles,
+					iconColor: "text-emerald-500",
+					title: "Autonomous Inbound Reply Engine & Rules Automation",
+					badge: "AI",
+					badgeColor: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+				},
+				{
 					href: "/dashboard/hermes",
 					label: i18n.t.nav.agents,
 					icon: CpuChip,

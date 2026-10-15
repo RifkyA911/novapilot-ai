@@ -23,6 +23,7 @@ export interface Translations {
 		flows: string;
 		about: string;
 		simulator: string;
+		automation: string;
 		chatops_gateways: string;
 	};
 	actions: {
@@ -881,6 +882,7 @@ const dictionaries: Record<Locale, Translations> = {
 			flows: "Platform Flows",
 			about: "Tentang Kami",
 			simulator: "Simulator",
+			automation: "Otomasi Balasan",
 			chatops_gateways: "ChatOps Gateways"
 		},
 		actions: {
@@ -1737,6 +1739,7 @@ const dictionaries: Record<Locale, Translations> = {
 			flows: "Platform Flows",
 			about: "About Us",
 			simulator: "Simulator",
+			automation: "Auto-Reply Engine",
 			chatops_gateways: "ChatOps Gateways"
 		},
 		actions: {

@@ -2495,6 +2495,368 @@ func (h *APIHandler) TestStorageConnection(c *gin.Context) {
 	})
 }
 
+// =========================================================================
+// AUTONOMOUS INBOUND AUTO-REPLY RULES & SIMULATOR ENGINE
+// =========================================================================
+
+type AutoReplyRule struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description"`
+	Enabled         bool     `json:"enabled"`
+	Category        string   `json:"category"`        // "INVOICE", "OCR", "CUSTOMER_SERVICE", "AFTER_HOURS", "SECURITY"
+	Channels        []string `json:"channels"`        // "whatsapp", "telegram", "slack", "discord"
+	TriggerIntent   string   `json:"trigger_intent"`  // "UPDATE_CUSTOMER_NAME", "CANCEL_INVOICE", "PRICE_CORRECTION", "RECEIPT_OCR", "ANY"
+	PatternRegex    string   `json:"pattern_regex"`
+	Mode            string   `json:"mode"`            // "TEMPLATE", "HERMES_DRAFT", "STAGED_REVIEW"
+	Template        string   `json:"template"`
+	TypingDelayMs   int      `json:"typing_delay_ms"` // e.g. 1500
+	CooldownSec     int      `json:"cooldown_sec"`    // e.g. 180
+	RequireDLP      bool     `json:"require_dlp"`
+	TimesTriggered  int      `json:"times_triggered"`
+	LastTriggeredAt string   `json:"last_triggered_at,omitempty"`
+}
+
+type AutoReplyConfig struct {
+	MasterEnabled     bool   `json:"master_enabled"`
+	WorkingHoursStart string `json:"working_hours_start"`
+	WorkingHoursEnd   string `json:"working_hours_end"`
+	DefaultChannel    string `json:"default_channel"`
+	GlobalCooldownSec int    `json:"global_cooldown_sec"`
+	SimulateTyping    bool   `json:"simulate_typing"`
+	HermesFallback    bool   `json:"hermes_fallback"`
+	DLPEnforcement    bool   `json:"dlp_enforcement"`
+}
+
+var (
+	autoReplyMutex  sync.RWMutex
+	autoReplyConfig = AutoReplyConfig{
+		MasterEnabled:     true,
+		WorkingHoursStart: "08:00",
+		WorkingHoursEnd:   "17:00",
+		DefaultChannel:    "whatsapp",
+		GlobalCooldownSec: 180,
+		SimulateTyping:    true,
+		HermesFallback:    true,
+		DLPEnforcement:    true,
+	}
+	autoReplyRules = []AutoReplyRule{
+		{
+			ID:             "rule-ocr-ack",
+			Name:           "Instant Receipt / Nota OCR Confirmation",
+			Description:    "Kirim konfirmasi seketika saat foto nota/faktur terdeteksi dan di-extract oleh Tesseract OCR",
+			Enabled:        true,
+			Category:       "OCR",
+			Channels:       []string{"whatsapp", "telegram"},
+			TriggerIntent:  "RECEIPT_OCR",
+			PatternRegex:   "(?i)(foto|nota|bukti|struk|transfer|kwitansi)",
+			Mode:           "TEMPLATE",
+			Template:       "Halo {{sender_name}}, foto nota/dokumen Anda telah kami terima dan berhasil terbaca oleh NovaPilot OCR. Tiket verifikasi {{ticket_no}} telah dibuatkan untuk tim On-Call.",
+			TypingDelayMs:  1800,
+			CooldownSec:    120,
+			RequireDLP:     true,
+			TimesTriggered: 48,
+		},
+		{
+			ID:             "rule-inv-mutation",
+			Name:           "Customer Name & Data Revision Acknowledgement",
+			Description:    "Pemberitahuan resmi nomor tiket dan estimasi SLA saat revisi nama klien diajukan via chat kasual",
+			Enabled:        true,
+			Category:       "INVOICE",
+			Channels:       []string{"whatsapp", "telegram", "slack"},
+			TriggerIntent:  "UPDATE_CUSTOMER_NAME",
+			PatternRegex:   "(?i)(ubah|ganti|revisi|koreksi).*?(nama|customer|klien)",
+			Mode:           "TEMPLATE",
+			Template:       "Permintaan perubahan nama pelanggan untuk invoice {{doc_no}} menjadi '{{target_value}}' telah masuk ke antrean validasi ERP. Tiket referensi: {{ticket_no}}. Estimasi SLA: 10 menit.",
+			TypingDelayMs:  1500,
+			CooldownSec:    180,
+			RequireDLP:     true,
+			TimesTriggered: 64,
+		},
+		{
+			ID:             "rule-cancel-ack",
+			Name:           "Document Cancellation Ticket Notice",
+			Description:    "Konfirmasi status pembatalan faktur dan permintaan bukti pendukung",
+			Enabled:        true,
+			Category:       "INVOICE",
+			Channels:       []string{"whatsapp", "slack"},
+			TriggerIntent:  "CANCEL_INVOICE",
+			PatternRegex:   "(?i)(batal|cancel|void).*?(invoice|faktur|nota|dn)",
+			Mode:           "TEMPLATE",
+			Template:       "Pembatalan dokumen {{doc_no}} sedang diproses oleh supervisor finance dengan nomor tiket {{ticket_no}}. Mohon pastikan bukti retur/pembatalan telah lengkap.",
+			TypingDelayMs:  2000,
+			CooldownSec:    300,
+			RequireDLP:     true,
+			TimesTriggered: 19,
+		},
+		{
+			ID:             "rule-price-correction",
+			Name:           "Price & Discount Correction Staging",
+			Description:    "Pemberitahuan bahwa koreksi nominal membutuhkan otorisasi Level 3",
+			Enabled:        true,
+			Category:       "INVOICE",
+			Channels:       []string{"whatsapp"},
+			TriggerIntent:  "PRICE_CORRECTION",
+			PatternRegex:   "(?i)(koreksi|ganti|ubah|revisi).*?(harga|diskon|total|nominal)",
+			Mode:           "HERMES_DRAFT",
+			Template:       "Koreksi harga/diskon untuk {{doc_no}} telah terdeteksi. Karena perubahan nominal membutuhkan otorisasi Level 3, supervisor kami akan mereview dan mengonfirmasi dalam waktu dekat.",
+			TypingDelayMs:  2200,
+			CooldownSec:    180,
+			RequireDLP:     true,
+			TimesTriggered: 12,
+		},
+		{
+			ID:             "rule-after-hours",
+			Name:           "After-Hours / Out of Office Auto-Responder",
+			Description:    "Respon otomatis di luar jam kerja dengan jaminan tindak lanjut pagi hari",
+			Enabled:        true,
+			Category:       "AFTER_HOURS",
+			Channels:       []string{"whatsapp", "telegram"},
+			TriggerIntent:  "AFTER_HOURS",
+			PatternRegex:   ".*",
+			Mode:           "TEMPLATE",
+			Template:       "Terima kasih telah menghubungi NovaPilot ERP Ops. Jam operasional kami adalah Senin-Jumat 08:00-17:00 WIB. Pesan Anda tetap tercatat dalam antrean prioritas besok pagi.",
+			TypingDelayMs:  1200,
+			CooldownSec:    600,
+			RequireDLP:     false,
+			TimesTriggered: 35,
+		},
+		{
+			ID:             "rule-dlp-warning",
+			Name:           "DLP Security & Credential Leak Interception",
+			Description:    "Peringatan seketika saat pesan chat terindikasi membocorkan token, API key, atau kredensial rahasia",
+			Enabled:        true,
+			Category:       "SECURITY",
+			Channels:       []string{"whatsapp", "slack", "discord"},
+			TriggerIntent:  "SECURITY_ALERT",
+			PatternRegex:   "(?i)(password|passwd|rahasia|pin|secret_key|api_key|token)[=:\\s]+[A-Za-z0-9_-]{6,}",
+			Mode:           "TEMPLATE",
+			Template:       "[SECURITY NOTICE] Pesan Anda mengandung informasi sensitif yang disanitasi otomatis oleh NovaPilot DLP Guardrail. Harap hindari mengirim kredensial melalui kanal publik.",
+			TypingDelayMs:  800,
+			CooldownSec:    60,
+			RequireDLP:     false,
+			TimesTriggered: 7,
+		},
+	}
+)
+
+func (h *APIHandler) GetAutoReplyRules(c *gin.Context) {
+	autoReplyMutex.RLock()
+	defer autoReplyMutex.RUnlock()
+	c.JSON(http.StatusOK, gin.H{
+		"ok":    true,
+		"rules": autoReplyRules,
+		"count": len(autoReplyRules),
+	})
+}
+
+func (h *APIHandler) SaveAutoReplyRule(c *gin.Context) {
+	var input AutoReplyRule
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Invalid rule payload: " + err.Error()})
+		return
+	}
+
+	autoReplyMutex.Lock()
+	defer autoReplyMutex.Unlock()
+
+	if input.ID == "" {
+		input.ID = fmt.Sprintf("rule-%d", time.Now().UnixNano()%1000000)
+	}
+
+	found := false
+	for i, r := range autoReplyRules {
+		if r.ID == input.ID {
+			autoReplyRules[i] = input
+			found = true
+			break
+		}
+	}
+	if !found {
+		autoReplyRules = append([]AutoReplyRule{input}, autoReplyRules...)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true, "rule": input})
+}
+
+func (h *APIHandler) ToggleAutoReplyRule(c *gin.Context) {
+	id := c.Param("id")
+	autoReplyMutex.Lock()
+	defer autoReplyMutex.Unlock()
+
+	for i, r := range autoReplyRules {
+		if r.ID == id {
+			autoReplyRules[i].Enabled = !autoReplyRules[i].Enabled
+			c.JSON(http.StatusOK, gin.H{"ok": true, "rule": autoReplyRules[i]})
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Rule not found"})
+}
+
+func (h *APIHandler) DeleteAutoReplyRule(c *gin.Context) {
+	id := c.Param("id")
+	autoReplyMutex.Lock()
+	defer autoReplyMutex.Unlock()
+
+	var updated []AutoReplyRule
+	found := false
+	for _, r := range autoReplyRules {
+		if r.ID == id {
+			found = true
+			continue
+		}
+		updated = append(updated, r)
+	}
+
+	if !found {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Rule not found"})
+		return
+	}
+
+	autoReplyRules = updated
+	c.JSON(http.StatusOK, gin.H{"ok": true, "deleted_id": id})
+}
+
+func (h *APIHandler) GetAutoReplyConfig(c *gin.Context) {
+	autoReplyMutex.RLock()
+	defer autoReplyMutex.RUnlock()
+	c.JSON(http.StatusOK, gin.H{"ok": true, "config": autoReplyConfig})
+}
+
+func (h *APIHandler) SaveAutoReplyConfig(c *gin.Context) {
+	var input AutoReplyConfig
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Invalid config payload"})
+		return
+	}
+
+	autoReplyMutex.Lock()
+	autoReplyConfig = input
+	autoReplyMutex.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{"ok": true, "config": autoReplyConfig})
+}
+
+type AutoReplySimulateRequest struct {
+	Message    string `json:"message"`
+	SenderName string `json:"sender_name"`
+	Phone      string `json:"phone"`
+	Platform   string `json:"platform"`
+	DocNo      string `json:"doc_no"`
+	Target     string `json:"target"`
+}
+
+func (h *APIHandler) SimulateAutoReply(c *gin.Context) {
+	var req AutoReplySimulateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Format request tidak valid"})
+		return
+	}
+
+	if strings.TrimSpace(req.Message) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Pesan simulasi wajib diisi"})
+		return
+	}
+
+	if req.SenderName == "" {
+		req.SenderName = "Pelanggan Cabang"
+	}
+	if req.Phone == "" {
+		req.Phone = "6281228632195"
+	}
+	if req.DocNo == "" {
+		req.DocNo = "INV/2026/001"
+	}
+	if req.Target == "" {
+		req.Target = "PT Sumber Berkah"
+	}
+	if req.Platform == "" {
+		req.Platform = "whatsapp"
+	}
+
+	autoReplyMutex.RLock()
+	defer autoReplyMutex.RUnlock()
+
+	// Check master enabled
+	if !autoReplyConfig.MasterEnabled {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":             false,
+			"master_blocked": true,
+			"reason":         "Master Auto-Reply switch is currently DISABLED in settings.",
+		})
+		return
+	}
+
+	var matchedRule *AutoReplyRule
+	msgLower := strings.ToLower(req.Message)
+
+	for _, rule := range autoReplyRules {
+		if !rule.Enabled {
+			continue
+		}
+		// Match channel
+		channelMatched := false
+		for _, ch := range rule.Channels {
+			if strings.EqualFold(ch, req.Platform) {
+				channelMatched = true
+				break
+			}
+		}
+		if !channelMatched && len(rule.Channels) > 0 {
+			continue
+		}
+
+		// Regex match
+		if rule.PatternRegex != "" {
+			re, err := regexp.Compile(rule.PatternRegex)
+			if err == nil && re.MatchString(msgLower) {
+				matchedRule = &rule
+				break
+			}
+		}
+	}
+
+	if matchedRule == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":             true,
+			"matched":        false,
+			"reason":         "No matching enabled auto-reply rule found for this message pattern.",
+			"simulated_text": "Pesan diterima dan dialihkan ke inbox antrean operator.",
+		})
+		return
+	}
+
+	// Generate interpolated response
+	replyText := matchedRule.Template
+	ticketNo := fmt.Sprintf("TCK-%d", time.Now().Unix()%100000)
+	replyText = strings.ReplaceAll(replyText, "{{sender_name}}", req.SenderName)
+	replyText = strings.ReplaceAll(replyText, "{{doc_no}}", req.DocNo)
+	replyText = strings.ReplaceAll(replyText, "{{ticket_no}}", ticketNo)
+	replyText = strings.ReplaceAll(replyText, "{{target_value}}", req.Target)
+
+	// Validate DLP
+	dlpError := ""
+	if matchedRule.RequireDLP && autoReplyConfig.DLPEnforcement {
+		if err := guardrail.ValidateOutboundMessage(req.Phone, replyText); err != nil {
+			dlpError = err.Error()
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":             true,
+		"matched":        true,
+		"rule":           matchedRule,
+		"generated_text": replyText,
+		"ticket_no":      ticketNo,
+		"dlp_passed":     dlpError == "",
+		"dlp_error":      dlpError,
+		"typing_delay":   matchedRule.TypingDelayMs,
+		"simulated_at":   time.Now().Format(time.RFC3339),
+	})
+}
+
 
 
 
