@@ -46,6 +46,16 @@ const logBuffer: GatewayLogEntry[] = [];
 let logSeq = 0;
 let activeSock: any = null;
 
+process.on("unhandledRejection", (reason: any) => {
+    const msg = reason?.message || String(reason);
+    appendGatewayLog("WARN", `[BAILEYS NON-FATAL REJECTION] ${msg}`);
+});
+
+process.on("uncaughtException", (err: any) => {
+    const msg = err?.message || String(err);
+    appendGatewayLog("ERROR", `[GATEWAY NON-FATAL EXCEPTION] ${msg}`);
+});
+
 function appendGatewayLog(level: "INFO" | "WARN" | "ERROR" | "EXEC", ...args: any[]) {
     const text = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
     logSeq++;
@@ -1105,15 +1115,27 @@ async function startLiveGateway() {
                         `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
                         `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._`;
 
-                    await sock.sendMessage(fromJid, { text: ackText });
-                    console.log(`[ACK SENT] Replied to ${fromJid}`);
+                    try {
+                        await sock.sendMessage(fromJid, { text: ackText });
+                        console.log(`[ACK SENT] Replied to ${fromJid}`);
+                    } catch (e: any) {
+                        console.warn(`[ACK SEND FAILED] ${e.message}`);
+                    }
                 }
             } else if (mcpSalesReply && AUTO_REPLY) {
-                await sock.sendMessage(fromJid, { text: mcpSalesReply });
-                console.log(`[MCP SALES SENT] Sent sales records reply to ${fromJid}`);
+                try {
+                    await sock.sendMessage(fromJid, { text: mcpSalesReply });
+                    console.log(`[MCP SALES SENT] Sent sales records reply to ${fromJid}`);
+                } catch (e: any) {
+                    console.warn(`[MCP SALES SEND FAILED] ${e.message}`);
+                }
             } else if (mcpPricingReply && AUTO_REPLY) {
-                await sock.sendMessage(fromJid, { text: mcpPricingReply });
-                console.log(`[MCP PRICING SENT] Sent pricing catalog reply to ${fromJid}`);
+                try {
+                    await sock.sendMessage(fromJid, { text: mcpPricingReply });
+                    console.log(`[MCP PRICING SENT] Sent pricing catalog reply to ${fromJid}`);
+                } catch (e: any) {
+                    console.warn(`[MCP PRICING SEND FAILED] ${e.message}`);
+                }
             } else {
                 if (classification === "NEEDS_REVIEW") {
                     console.log(`[NEEDS REVIEW]: "${body}" contains mutation intent (${fallbackTarget || 'unknown'}) without full invoice number. Synced to Dashboard Feed for 1-click Staging.`);
