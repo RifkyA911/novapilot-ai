@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const HighValueThreshold = 100000000.00 // Rp 100,000,000 (Secondary sign-off required)
+
 type SSEBroadcaster interface {
 	Broadcast(event string, data interface{})
 }
@@ -76,11 +78,16 @@ func (s *TicketService) CreateTicketFromChat(input domain.CreateTicketInput) (*d
 	}
 
 	// 4. Record Audit Log
-	oldState, _ := json.Marshal(map[string]string{"customer_name": inv.CustomerName})
-	newState, _ := json.Marshal(map[string]string{"proposed_name": input.ProposedValue})
+	action := "CREATED_PENDING_APPROVAL"
+	if inv.Amount >= HighValueThreshold {
+		action = "CREATED_HIGH_VALUE_PENDING"
+		log.Printf("[POLICY] High-value ticket created: %s for %s (Amount: Rp %.2f >= Threshold Rp %.2f)", ticket.TicketNo, inv.InvoiceNo, inv.Amount, HighValueThreshold)
+	}
+	oldState, _ := json.Marshal(map[string]interface{}{"customer_name": inv.CustomerName, "amount": inv.Amount})
+	newState, _ := json.Marshal(map[string]interface{}{"proposed_name": input.ProposedValue, "high_value": inv.Amount >= HighValueThreshold})
 	_ = s.auditRepo.Record(&domain.AuditLog{
 		TicketID:    ticket.ID,
-		Action:      "CREATED_PENDING_APPROVAL",
+		Action:      action,
 		PerformedBy: "AI_INGEST_GATEWAY",
 		OldState:    string(oldState),
 		NewState:    string(newState),
@@ -90,6 +97,13 @@ func (s *TicketService) CreateTicketFromChat(input domain.CreateTicketInput) (*d
 	// 5. Notify Real-time SSE Clients
 	if s.broadcaster != nil {
 		s.broadcaster.Broadcast("ticket_created", ticket)
+		if inv.Amount >= HighValueThreshold {
+			s.broadcaster.Broadcast("high_value_alert", map[string]interface{}{
+				"ticket_no": ticket.TicketNo,
+				"amount":    inv.Amount,
+				"warning":   "High-value threshold exceeded. Secondary sign-off required.",
+			})
+		}
 	}
 
 	log.Printf("[SERVICE] Created ticket %s for document %s", ticket.TicketNo, ticket.DocumentNo)
@@ -119,11 +133,17 @@ func (s *TicketService) ApproveTicket(id int, approver string) (*domain.Ticket, 
 	}
 
 	// Record Audit
+	approveAction := "APPROVED_AND_MUTATED"
+	if inv, err := s.invoiceRepo.GetByInvoiceNo(ticket.DocumentNo); err == nil && inv != nil && inv.Amount >= HighValueThreshold {
+		approveAction = "APPROVED_HIGH_VALUE_MUTATED"
+		log.Printf("[POLICY] High-value invoice mutation approved: %s (Rp %.2f) by %s", ticket.DocumentNo, inv.Amount, approver)
+	}
+
 	oldState, _ := json.Marshal(map[string]string{"customer_name": ticket.CurrentValue})
 	newState, _ := json.Marshal(map[string]string{"customer_name": ticket.ProposedValue})
 	_ = s.auditRepo.Record(&domain.AuditLog{
 		TicketID:    ticket.ID,
-		Action:      "APPROVED_AND_MUTATED",
+		Action:      approveAction,
 		PerformedBy: approver,
 		OldState:    string(oldState),
 		NewState:    string(newState),

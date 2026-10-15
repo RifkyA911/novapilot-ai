@@ -316,7 +316,7 @@
 		<!-- Table Scrollable Area -->
 		<div class="overflow-x-auto">
 			<table class="w-full text-left text-xs sm:text-sm">
-				<thead class="bg-secondary/40 border-b border-border text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+				<thead class="bg-secondary/40 border-b border-border text-[10px] sm:text-[11px] font-mono font-semibold text-muted-foreground uppercase tracking-wider">
 					<tr>
 						{#each columns as col}
 							<th 
@@ -375,7 +375,7 @@
 		</div>
 
 		<!-- Pagination Footer -->
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-border bg-secondary/20 text-xs sm:text-sm">
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-secondary/20 text-[11px] sm:text-xs font-mono">
 			<div class="text-muted-foreground">
 				Menampilkan <strong class="text-foreground">{startIndex}</strong> - <strong class="text-foreground">{endIndex}</strong> dari <strong class="text-foreground">{totalItems}</strong> data
 				{#if totalItems !== data.length}

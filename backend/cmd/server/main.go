@@ -91,7 +91,7 @@ func main() {
 	if _, err := os.Stat("uploads"); err == nil {
 		uploadDir = "uploads"
 	}
-	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, repo, repo, sseHub, uploadDir, db)
+	apiHandler := handler.NewAPIHandler(ticketService, repo, repo, repo, repo, repo, sseHub, uploadDir, db)
 	hermesAdapter := llm.NewHermesAdapter(llm.DefaultConfig())
 	apiHandler.SetHermesAdapter(hermesAdapter)
 
@@ -133,6 +133,16 @@ func main() {
 		api.POST("/inbound-messages", apiHandler.CreateInboundMessage)
 		api.POST("/inbound-messages/:id/stage-ticket", apiHandler.StageTicketFromMessage)
 
+		// Whitelisted Channels & Contact Directory
+		api.GET("/channels", apiHandler.ListChannels)
+		api.POST("/channels", apiHandler.CreateChannel)
+		api.DELETE("/channels/:id", apiHandler.DeleteChannel)
+		api.PATCH("/channels/:id/toggle-whitelist", apiHandler.ToggleChannelWhitelist)
+
+		// Omnichannel Webhooks
+		api.POST("/webhooks/telegram", apiHandler.HandleTelegramWebhook)
+		api.POST("/webhooks/discord", apiHandler.HandleDiscordWebhook)
+
 		// Learned Patterns (Self-Learning Loop)
 		api.GET("/learned-patterns", apiHandler.ListLearnedPatterns)
 		api.POST("/learned-patterns", apiHandler.CreateLearnedPattern)
@@ -156,7 +166,15 @@ func main() {
 		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 
 		// Hermes 3 Agentic LLM Engine
+		api.GET("/llm/config", apiHandler.GetLLMConfig)
+		api.POST("/llm/config", apiHandler.UpdateLLMConfig)
 		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
+
+		// WhatsApp Gateway Lifecycle Management (:3002)
+		api.GET("/gateway/status", apiHandler.GetGatewayStatus)
+		api.POST("/gateway/start", apiHandler.StartGateway)
+		api.POST("/gateway/restart", apiHandler.RestartGateway)
+		api.POST("/gateway/stop", apiHandler.StopGateway)
 	}
 
 	// 5. Connect MCP Reference Database (Database 2 - Enterprise ERP Source)

@@ -132,42 +132,7 @@
 		playgroundResponse = null;
 
 		try {
-			if (selectedTool === "check_invoice") {
-				const res = await fetch("/api/invoices");
-				if (res.ok) {
-					const invoices = await res.json();
-					const found = invoices.find((inv: any) => inv.invoice_no === playgroundInvoiceNo);
-					if (found) {
-						playgroundResponse = JSON.stringify({
-							jsonrpc: "2.0",
-							result: {
-								content: [
-									{
-										type: "text",
-										text: JSON.stringify({
-											invoice_no: found.invoice_no,
-											current_customer_name: found.customer_name,
-											amount: found.amount,
-											status: found.status,
-											is_posted: found.is_posted,
-											eligible_for_change: found.status === "OPEN" && !found.is_posted
-										}, null, 2)
-									}
-								]
-							}
-						}, null, 2);
-					} else {
-						playgroundResponse = JSON.stringify({
-							jsonrpc: "2.0",
-							result: {
-								content: [{ type: "text", text: `Invoice ${playgroundInvoiceNo} NOT found in database.` }]
-							}
-						}, null, 2);
-					}
-				} else {
-					throw new Error("Backend query failed");
-				}
-			} else if (selectedTool === "list_pending_tickets") {
+			if (selectedTool === "list_pending_tickets") {
 				const res = await fetch("/api/tickets");
 				if (res.ok) {
 					const tickets = await res.json();
@@ -183,19 +148,44 @@
 							]
 						}
 					}, null, 2);
+					return;
 				}
-			} else {
-				// Simulated staging result
+			}
+
+			// Call real backend MCP endpoint
+			const res = await fetch("/api/mcp/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					tool_name: selectedTool,
+					parameters: {
+						invoice_no: playgroundInvoiceNo,
+						proposed_value: playgroundProposedValue,
+						branch_id: 1
+					}
+				})
+			});
+
+			if (res.ok) {
+				const data = await res.json();
 				playgroundResponse = JSON.stringify({
 					jsonrpc: "2.0",
 					result: {
+						protocol: data.protocol || "Model Context Protocol v1.0",
+						latency_ms: data.latency_ms,
 						content: [
 							{
 								type: "text",
-								text: `Successfully staged ticket for ${playgroundInvoiceNo} with proposed value "${playgroundProposedValue}". Status: PENDING_APPROVAL. Waiting for engineer sign-off in WebUI.`
+								text: JSON.stringify(data.result || data, null, 2)
 							}
 						]
 					}
+				}, null, 2);
+			} else {
+				const errData = await res.json();
+				playgroundResponse = JSON.stringify({
+					jsonrpc: "2.0",
+					error: { code: -32603, message: errData.error || "Backend MCP error" }
 				}, null, 2);
 			}
 		} catch (e: any) {

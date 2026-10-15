@@ -20,6 +20,8 @@ export default defineConfig({
 			'/api/database': 'http://127.0.0.1:8088',
 			'/api/mcp': 'http://127.0.0.1:8088',
 			'/api/llm': 'http://127.0.0.1:8088',
+			'/api/channels': 'http://127.0.0.1:8088',
+			'/api/gateway': 'http://127.0.0.1:8088',
 			'/uploads': 'http://127.0.0.1:8088',
 			// WhatsApp Gateway daemon exec & logs (Bun on port 3002)
 			'/api/wa-gateway': {

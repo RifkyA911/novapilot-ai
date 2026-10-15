@@ -17,6 +17,7 @@
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import TutorialModal from "$lib/components/TutorialModal.svelte";
+	import TelemetryCircuitVisualizer from "$lib/components/TelemetryCircuitVisualizer.svelte";
 
 	let showTutorial = $state(false);
 	let testPingSuccess = $state(false);
@@ -145,6 +146,9 @@
 			<div class="text-xs text-muted-foreground">Uptime: {Math.floor((cockpit.telemetry?.uptime_seconds || 1200) / 60)} min</div>
 		</div>
 	</div>
+
+	<!-- Interactive Animated System Telemetry Visualizer (SVG with Pan & Zoom) -->
+	<TelemetryCircuitVisualizer />
 
 	<!-- Database Connection Pool Probe -->
 	<div class="p-5 rounded-3xl border border-border/80 bg-card shadow-xs space-y-4">

@@ -32,6 +32,7 @@
 	import UserNav from "$lib/components/UserNav.svelte";
 	import CommandPalette from "$lib/components/CommandPalette.svelte";
 	import PlatformSelect from "$lib/components/PlatformSelect.svelte";
+	import { sound } from "$lib/audio";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import type { LayoutData } from "./$types";
 
@@ -67,6 +68,7 @@
 	}
 
 	// Unified Navigation Items Structure (Shared between Desktop & Mobile)
+	// Badges are ONLY shown if a service is unconfigured or disconnected!
 	const navGroups = $derived([
 		{
 			title: "Operations",
@@ -84,7 +86,7 @@
 					icon: Sparkles,
 					iconColor: "text-purple-500",
 					title: "Cockpit Overview & AI Analytics",
-					badge: "DUMMY",
+					badge: "DMY",
 					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
@@ -113,8 +115,8 @@
 					icon: CircleStack,
 					iconColor: "text-amber-500",
 					title: "Database Configuration & Setup",
-					badge: "SETUP",
-					badgeColor: "bg-secondary text-muted-foreground border border-border"
+					badge: !cockpit.isDbConfigured ? "SETUP" : undefined,
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
 					href: "/dashboard/mcp",
@@ -122,8 +124,8 @@
 					icon: Cube,
 					iconColor: "text-cyan-500",
 					title: "Model Context Protocol (MCP) Knowledge Base & Tools",
-					badge: "SPEC",
-					badgeColor: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30"
+					badge: !cockpit.isMcpConfigured ? "SETUP" : undefined,
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
 					href: "/dashboard/connectivity",
@@ -137,9 +139,7 @@
 					label: "System Logs",
 					icon: DocumentText,
 					iconColor: "text-cyan-500",
-					title: "Enterprise System Logs & Daemon Telemetry",
-					badge: "STREAM",
-					badgeColor: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30"
+					title: "Enterprise System Logs & Daemon Telemetry"
 				}
 			]
 		},
@@ -155,13 +155,20 @@
 					count: cockpit.needsReviewCount
 				},
 				{
+					href: "/dashboard/hermes",
+					label: "AI Agents",
+					icon: CpuChip,
+					iconColor: "text-sky-500",
+					title: "AI Agents: Hermes 3 Reasoning & OpenClaw Autonomous Engine",
+					badge: !cockpit.isHermesConfigured ? "SETUP" : undefined,
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+				},
+				{
 					href: "/dashboard/hooks",
 					label: "Client Hook Flows",
 					icon: CodeBracket,
 					iconColor: "text-purple-500",
-					title: "Client Hook Flows",
-					badge: cockpit.chatPlatform,
-					badgeColor: "bg-primary/10 text-primary border border-primary/20"
+					title: "Client Hook Flows"
 				},
 				{
 					href: "/dashboard/contacts",
@@ -169,7 +176,7 @@
 					icon: UserGroup,
 					iconColor: "text-teal-500",
 					title: "Omnichannel Group Contacts & Directory",
-					badge: "DUMMY",
+					badge: "DMY",
 					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
@@ -178,7 +185,7 @@
 					icon: PaperAirplane,
 					iconColor: "text-foreground",
 					title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
-					badge: "EXP",
+					badge: "DMY",
 					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 				},
 				{
@@ -187,8 +194,8 @@
 					icon: AdjustmentsHorizontal,
 					iconColor: "text-sky-500",
 					title: "ChatOps Platform Settings & Logic Flows",
-					badge: "Flows",
-					badgeColor: "bg-primary/10 text-primary border border-primary/20"
+					badge: !cockpit.isGatewayRunning ? "OFFLINE" : undefined,
+					badgeColor: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
 				}
 			]
 		},
@@ -207,9 +214,7 @@
 					label: "About & Repo",
 					icon: InformationCircle,
 					iconColor: "text-purple-500",
-					title: "About NovaPilot AI & Creator",
-					badge: "v1.0",
-					badgeColor: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+					title: "About NovaPilot AI & Creator"
 				}
 			]
 		}
@@ -322,6 +327,7 @@
 							<div class="flex justify-center py-0.5">
 								<a
 									href={item.href}
+									onclick={() => sound.playNavClick()}
 									class="relative h-9 w-9 rounded-xl flex items-center justify-center transition-all {isActive ? 'bg-primary text-primary-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 									title="{item.title}{item.count && item.count > 0 ? ` (${item.count} items)` : item.badge ? ` [${item.badge}]` : ''}"
 								>
@@ -339,6 +345,7 @@
 							<!-- Expanded Mode: Full Width Row with Label and Side Badge -->
 							<a
 								href={item.href}
+								onclick={() => sound.playNavClick()}
 								class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all {isActive ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 								title={item.title}
 							>
@@ -525,7 +532,7 @@
 								{@const isActive = currentPath === item.href}
 								<a
 									href={item.href}
-									onclick={closeMobileMenu}
+									onclick={() => { sound.playNavClick(); closeMobileMenu(); }}
 									class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all {isActive ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 								>
 									<div class="flex items-center gap-2.5 min-w-0">

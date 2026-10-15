@@ -22,7 +22,7 @@ func TestFullLifecycle_InboundToMutationAndAudit(t *testing.T) {
 	sseHub := handler.NewSSEHub()
 	ticketSvc := service.NewTicketService(repo, repo, repo, repo, sseHub)
 	uploadDir := os.TempDir() + "/novapilot_integration_uploads"
-	apiHandler := handler.NewAPIHandler(ticketSvc, repo, repo, repo, repo, sseHub, uploadDir, nil)
+	apiHandler := handler.NewAPIHandler(ticketSvc, repo, repo, repo, repo, repo, sseHub, uploadDir, nil)
 
 	router := gin.New()
 	api := router.Group("/api")

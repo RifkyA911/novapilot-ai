@@ -24,7 +24,7 @@ func setupTestServer() (*gin.Engine, *postgres.Repository) {
 	ticketSvc := service.NewTicketService(repo, repo, repo, repo, sseHub)
 	uploadDir := os.TempDir() + "/novapilot_test_uploads"
 
-	apiHandler := handler.NewAPIHandler(ticketSvc, repo, repo, repo, repo, sseHub, uploadDir, nil)
+	apiHandler := handler.NewAPIHandler(ticketSvc, repo, repo, repo, repo, repo, sseHub, uploadDir, nil)
 
 	r := gin.New()
 	api := r.Group("/api")

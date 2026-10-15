@@ -20,7 +20,8 @@
 		ShieldCheck,
 		CommandLine,
 		Play,
-		Trash
+		Trash,
+		CpuChip
 	} from "svelte-heros-v2";
 	import { cockpit, type InboundMessage, type Ticket } from "$lib/cockpit.svelte";
 	import { timeAgo } from "$lib/utils";
@@ -324,16 +325,19 @@
 	<!-- ========================================================================= -->
 	<!-- 1. HEADER SECTION                                                         -->
 	<!-- ========================================================================= -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/50">
+	<!-- ========================================================================= -->
+	<!-- 1. HEADER SECTION (ROW 1: TITLE & TOP ACTIONS)                            -->
+	<!-- ========================================================================= -->
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-border/50">
 		<div class="space-y-1">
 			<div class="flex items-center gap-2.5">
-				<div class="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-xs">
+				<div class="h-10 w-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-xs">
 					<ChatBubbleLeftRight class="h-5 w-5" />
 				</div>
 				<div>
-					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+					<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
 						Omnichannel Inbound Feed
-						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+						<span class="text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
 							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
 							REALTIME INGRESS
 						</span>
@@ -345,44 +349,88 @@
 			</div>
 		</div>
 
+		<!-- Top Row Primary Navigation Actions -->
 		<div class="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-			<!-- WhatsApp Gateway Daemon Exec Terminal Button -->
+			<button
+				type="button"
+				onclick={handleRefresh}
+				disabled={isRefreshing}
+				class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+			>
+				<ArrowPath class="h-3.5 w-3.5 {isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}" />
+				<span>Refresh Feed</span>
+			</button>
+
+			<a
+				href="/dashboard/queue"
+				class="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all"
+			>
+				<span>Approval Queue</span>
+				{#if cockpit.pendingCount > 0}
+					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-primary-foreground/20 text-primary-foreground font-mono font-bold">
+						{cockpit.pendingCount}
+					</span>
+				{/if}
+				<ArrowTopRightOnSquare class="h-3.5 w-3.5" />
+			</a>
+		</div>
+	</div>
+
+	<!-- ========================================================================= -->
+	<!-- 1B. INGRESS COMMAND & INTEGRATION DECK (ROW 2: SEPARATED DEDICATED ROW)   -->
+	<!-- ========================================================================= -->
+	<div class="p-3.5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+		<!-- Left Group: Daemon Controls & AI Memory -->
+		<div class="flex items-center gap-2.5 flex-wrap">
+			<!-- WhatsApp Gateway Daemon Status & Terminal Trigger -->
 			<button
 				type="button"
 				onclick={openTerminalModal}
-				class="h-9 px-3.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
-				title="Open Real-time Terminal for WhatsApp Gateway Daemon (:3002)"
+				class="h-9 px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+				title="Buka Real-time Terminal WhatsApp Gateway Daemon (:3002)"
 			>
 				<CommandLine class="h-4 w-4" />
 				<span>Exec Terminal WA Gateway</span>
-				<span class="h-2 w-2 rounded-full {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+				<span class="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+					<span class="h-1.5 w-1.5 rounded-full {terminalStatus?.status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+					{terminalStatus?.status || "LIVE :3002"}
+				</span>
 			</button>
 
+			<!-- Memory Pola AI Trigger -->
 			<button
 				type="button"
 				onclick={() => showPatternsDrawer = true}
-				class="h-9 px-3.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+				class="h-9 px-3.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+				title="Buka Kamus Pola Self-Learning AI"
 			>
 				<span>🧠 Memory Pola AI</span>
 				<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-500/20 font-mono font-bold">
 					{cockpit.learnedPatterns.length}
 				</span>
 			</button>
-			<button
-				type="button"
-				onclick={handleRefresh}
-				disabled={isRefreshing}
-				class="h-9 px-3.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-			>
-				<ArrowPath class="h-3.5 w-3.5 {isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}" />
-				<span>Refresh Feed</span>
-			</button>
+		</div>
+
+		<!-- Right Group: Hermes Engine & Flow Shortcuts -->
+		<div class="flex items-center gap-2.5 flex-wrap font-mono text-xs">
+			<!-- Link to Hermes 3 GUI -->
 			<a
-				href="/dashboard/queue"
-				class="h-9 px-3.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+				href="/dashboard/hermes"
+				class="h-9 px-3 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all"
+				title="Buka GUI Hermes 3 Agentic Engine & Reasoning Inspector"
 			>
-				<span>Approval Queue</span>
-				<ArrowTopRightOnSquare class="h-3.5 w-3.5" />
+				<CpuChip class="h-4 w-4 text-sky-500" />
+				<span>Hermes 3 AI Engine</span>
+				<span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-700 dark:text-sky-300 font-bold">8B</span>
+			</a>
+
+			<!-- Link to Platform Flows -->
+			<a
+				href="/flow"
+				class="h-9 px-3 rounded-xl border border-border bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all"
+			>
+				<Bolt class="h-3.5 w-3.5 text-primary" />
+				<span>Platform Flows</span>
 			</a>
 		</div>
 	</div>

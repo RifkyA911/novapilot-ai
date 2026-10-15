@@ -22,8 +22,10 @@
 		Key,
 		Bolt,
 		Signal,
-		Radio
+		Radio,
+		CursorArrowRays
 	} from "svelte-heros-v2";
+	import { sound } from "$lib/audio";
 
 	// Active Navigation Tab
 	type SettingsTab = "gatekeeper" | "ai_model" | "chatops" | "database" | "alerts" | "interface";
@@ -75,8 +77,9 @@
 	let mcpBearerToken = $state("");
 
 	// 5. Alert, Notifikasi & Audio Feedback
-	let soundAlerts = $state(true);
-	let soundVolume = $state(70);
+	let soundAlerts = $state(sound.enabled);
+	let soundVolume = $state(Math.round(sound.volume * 100));
+	let navSoundEnabled = $state(sound.navEnabled);
 	let browserPushAlerts = $state(true);
 	let highValueAlertEscalation = $state(true);
 	let idleEscalationMinutes = $state(30);
@@ -138,9 +141,18 @@
 				if (s.mcpEndpoint) mcpEndpoint = s.mcpEndpoint;
 				if (s.safeDryRunMode !== undefined) safeDryRunMode = s.safeDryRunMode;
 
-				if (s.soundAlerts !== undefined) soundAlerts = s.soundAlerts;
-				if (s.soundVolume !== undefined) soundVolume = s.soundVolume;
-				if (s.browserPushAlerts !== undefined) browserPushAlerts = s.browserPushAlerts;
+				if (s.soundAlerts !== undefined) {
+					soundAlerts = s.soundAlerts;
+					sound.enabled = s.soundAlerts;
+				}
+				if (s.soundVolume !== undefined) {
+					soundVolume = s.soundVolume;
+					sound.volume = s.soundVolume / 100;
+				}
+				if (s.navSoundEnabled !== undefined) {
+					navSoundEnabled = s.navSoundEnabled;
+					sound.navEnabled = s.navSoundEnabled;
+				}
 				if (s.highValueAlertEscalation !== undefined) highValueAlertEscalation = s.highValueAlertEscalation;
 				if (s.idleEscalationMinutes !== undefined) idleEscalationMinutes = s.idleEscalationMinutes;
 
@@ -191,6 +203,7 @@
 				safeDryRunMode,
 				soundAlerts,
 				soundVolume,
+				navSoundEnabled,
 				browserPushAlerts,
 				highValueAlertEscalation,
 				idleEscalationMinutes,
@@ -200,6 +213,11 @@
 				defaultExportFormat,
 				lastSavedAt: new Date().toISOString()
 			};
+
+			// Sync with global sound engine
+			sound.enabled = soundAlerts;
+			sound.volume = soundVolume / 100;
+			sound.navEnabled = navSoundEnabled;
 
 			localStorage.setItem("novapilot_settings", JSON.stringify(configObj));
 
@@ -218,39 +236,12 @@
 		window.location.reload();
 	}
 
-	// Web Audio API Synthesizer (Pleasant Gentle Dual-Tone Alert)
 	function playTestSound() {
-		try {
-			const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-			if (!AudioCtx) return;
-			const ctx = new AudioCtx();
-			const now = ctx.currentTime;
-			const vol = (soundVolume / 100) * 0.12;
+		sound.playInboundPing();
+	}
 
-			const osc1 = ctx.createOscillator();
-			const gain1 = ctx.createGain();
-			osc1.type = "sine";
-			osc1.frequency.setValueAtTime(659.25, now); // E5
-			gain1.gain.setValueAtTime(vol, now);
-			gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
-			osc1.connect(gain1);
-			gain1.connect(ctx.destination);
-			osc1.start(now);
-			osc1.stop(now + 0.3);
-
-			const osc2 = ctx.createOscillator();
-			const gain2 = ctx.createGain();
-			osc2.type = "sine";
-			osc2.frequency.setValueAtTime(880, now + 0.1); // A5
-			gain2.gain.setValueAtTime(vol, now + 0.1);
-			gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
-			osc2.connect(gain2);
-			gain2.connect(ctx.destination);
-			osc2.start(now + 0.1);
-			osc2.stop(now + 0.45);
-		} catch (e) {
-			console.error("Audio playback error:", e);
-		}
+	function playTestNavClick() {
+		sound.playNavClick();
 	}
 
 	// Simulation for DB 1 Ping
@@ -1201,14 +1192,24 @@
 						</div>
 					</div>
 
-					<button
-						type="button"
-						onclick={playTestSound}
-						class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-					>
-						<SpeakerWave class="h-3.5 w-3.5 text-purple-500" />
-						<span>Uji Nada Dering</span>
-					</button>
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={playTestSound}
+							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+						>
+							<SpeakerWave class="h-3.5 w-3.5 text-purple-500" />
+							<span>Uji Nada Dering</span>
+						</button>
+						<button
+							type="button"
+							onclick={playTestNavClick}
+							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+						>
+							<CursorArrowRays class="h-3.5 w-3.5 text-primary" />
+							<span>Uji Klik Navigasi</span>
+						</button>
+					</div>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
@@ -1216,7 +1217,8 @@
 						<input
 							type="checkbox"
 							bind:checked={soundAlerts}
-							class="h-4 w-4 rounded border-input text-primary focus:ring-primary shrink-0"
+							onchange={() => { sound.enabled = soundAlerts; }}
+							class="h-4 w-4 rounded border-input text-primary focus:ring-primary shrink-0 cursor-pointer"
 						/>
 						<div>
 							<div class="font-bold text-foreground">Aktifkan Efek Suara (Audio Notification)</div>
@@ -1231,14 +1233,37 @@
 						</div>
 						<input
 							type="range"
-							min="10"
+							min="0"
 							max="100"
 							step="5"
 							bind:value={soundVolume}
+							oninput={() => { sound.volume = soundVolume / 100; }}
 							disabled={!soundAlerts}
 							class="w-full h-2 rounded-lg bg-secondary appearance-none cursor-pointer accent-purple-500 disabled:opacity-40"
 						/>
 					</div>
+				</div>
+
+				<!-- Navigation Click Sound Toggle Row -->
+				<div class="pt-4 border-t border-border/60 text-xs">
+					<label class="p-3.5 rounded-2xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-all flex items-start gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={navSoundEnabled}
+							onchange={() => { sound.navEnabled = navSoundEnabled; }}
+							disabled={!soundAlerts}
+							class="h-4 w-4 mt-0.5 rounded border-input text-primary focus:ring-primary shrink-0 cursor-pointer disabled:opacity-40"
+						/>
+						<div>
+							<div class="font-bold text-foreground flex items-center gap-2">
+								<CursorArrowRays class="h-4 w-4 text-primary" />
+								<span>Suara Navigasi Menu (Menu Navigation Sound Feedback)</span>
+							</div>
+							<div class="text-[11px] text-muted-foreground mt-0.5">
+								Bunyikan haptic micro-click yang halus saat berpindah antar halaman atau mengklik item menu sidebar &amp; command palette.
+							</div>
+						</div>
+					</label>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border/60 text-xs">

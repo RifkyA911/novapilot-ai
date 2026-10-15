@@ -137,6 +137,21 @@ class CockpitState {
 		}
 	});
 
+	// Extra Service & Component Configurations
+	dbConfig = $state<{
+		system_db?: { status: string; dbname: string };
+		mcp_ref_db?: { status: string; dbname: string };
+	} | null>(null);
+
+	llmConfig = $state<{
+		mode: string;
+		status: string;
+		cli_available?: boolean;
+		model?: string;
+	} | null>(null);
+
+	isGatewayRunning = $state(false);
+
 	// Reactive counts
 	pendingCount = $derived(this.tickets.filter(t => t.status === "PENDING_APPROVAL").length);
 	executedCount = $derived(this.tickets.filter(t => t.status === "EXECUTED").length);
@@ -144,6 +159,22 @@ class CockpitState {
 	actionableCount = $derived(this.inboundMessages.filter(m => m.classification === "ACTIONABLE").length);
 	needsReviewCount = $derived(this.inboundMessages.filter(m => m.classification === "NEEDS_REVIEW").length);
 	casualBanterCount = $derived(this.inboundMessages.filter(m => m.classification === "CASUAL_BANTER").length);
+
+	// Reactive Service Setup Statuses (Used to hide static badges and show only when unconfigured)
+	isDbConfigured = $derived(
+		this.telemetry?.database?.status === "HEALTHY" ||
+		this.telemetry?.database?.status === "CONNECTED" ||
+		this.dbConfig?.system_db?.status === "CONNECTED"
+	);
+
+	isMcpConfigured = $derived(
+		this.dbConfig?.mcp_ref_db?.status === "CONNECTED"
+	);
+
+	isHermesConfigured = $derived(
+		this.llmConfig?.cli_available === true ||
+		this.llmConfig?.status === "ACTIVE"
+	);
 
 	recordPlatformEvent(platform: ChatPlatform) {
 		this.platformStatuses[platform].status = "CONNECTED";
@@ -171,6 +202,10 @@ class CockpitState {
 				}
 			}
 		} catch {}
+	}
+
+	refreshTickets() {
+		return this.fetchTickets();
 	}
 
 	async fetchTickets() {
@@ -291,9 +326,25 @@ class CockpitState {
 	async fetchTelemetry() {
 		try {
 			this.checkWhatsAppGatewayStatus();
-			const res = await fetch("/api/telemetry");
-			if (res.ok) {
-				this.telemetry = await res.json();
+			const [telRes, gwRes, dbRes, llmRes] = await Promise.allSettled([
+				fetch("/api/telemetry"),
+				fetch("/api/gateway/status"),
+				fetch("/api/database/config"),
+				fetch("/api/llm/config")
+			]);
+
+			if (telRes.status === "fulfilled" && telRes.value.ok) {
+				this.telemetry = await telRes.value.json();
+			}
+			if (gwRes.status === "fulfilled" && gwRes.value.ok) {
+				const gwData = await gwRes.value.json();
+				this.isGatewayRunning = !!gwData.running;
+			}
+			if (dbRes.status === "fulfilled" && dbRes.value.ok) {
+				this.dbConfig = await dbRes.value.json();
+			}
+			if (llmRes.status === "fulfilled" && llmRes.value.ok) {
+				this.llmConfig = await llmRes.value.json();
 			}
 		} catch (err) {
 			console.error("Failed to fetch telemetry:", err);

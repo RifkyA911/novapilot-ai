@@ -17,6 +17,7 @@
 		ServerStack
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import CockpitTelemetryVisualizer from "$lib/components/CockpitTelemetryVisualizer.svelte";
 
 	let timeRange = $state<"24h" | "7d" | "30d">("7d");
 	let isRefreshing = $state(false);
@@ -49,11 +50,11 @@
 						Cockpit Overview &amp; AI Analytics
 						<span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
 							<span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-							[DUMMY / PREVIEW]
+							DMY
 						</span>
 					</h1>
 					<p class="text-xs text-muted-foreground mt-0.5">
-						Analisa komprehensif performa inferensi AI, akurasi OCR Tesseract, distribusi intent tiket, dan guardrail pencegahan SQL injection.
+						Analisa komprehensif performa inferensi AI, akurasi OCR Tesseract, visualisasi sirkuit ChatOps, dan invariant transaksi SQL.
 					</p>
 				</div>
 			</div>
@@ -175,7 +176,12 @@
 	</div>
 
 	<!-- ========================================================================= -->
-	<!-- 3. AI INTENT & CLASSIFICATION BREAKDOWN CHARTS                             -->
+	<!-- 3. LIVE INTERACTIVE CHATOPS ARCHITECTURE TELEMETRY (ANIMATED SVG)        -->
+	<!-- ========================================================================= -->
+	<CockpitTelemetryVisualizer />
+
+	<!-- ========================================================================= -->
+	<!-- 4. AI INTENT & CLASSIFICATION BREAKDOWN CHARTS                             -->
 	<!-- ========================================================================= -->
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 		<!-- Chart 1: Intent Distribution -->
@@ -190,8 +196,8 @@
 						<p class="text-[11px] font-mono text-muted-foreground">Klasifikasi ekstraksi otomatis dari chat WhatsApp &amp; Telegram</p>
 					</div>
 				</div>
-				<span class="text-[9px] px-2 py-0.5 rounded font-mono font-bold bg-muted text-muted-foreground border">
-					DUMMY
+				<span class="text-[9px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+					DMY
 				</span>
 			</div>
 
@@ -256,8 +262,8 @@
 						<p class="text-[11px] font-mono text-muted-foreground">Kualitas ekstraksi teks dari gambar struk/nota fisik &amp; PDF</p>
 					</div>
 				</div>
-				<span class="text-[9px] px-2 py-0.5 rounded font-mono font-bold bg-muted text-muted-foreground border">
-					DUMMY
+				<span class="text-[9px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+					DMY
 				</span>
 			</div>
 

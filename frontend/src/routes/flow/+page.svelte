@@ -1,14 +1,95 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { 
 		ShieldCheck, CheckCircle, ArrowRight, ServerStack, CpuChip, Radio, LockClosed, Bolt, 
 		DocumentText, Sparkles, CommandLine, Square3Stack3d, ArrowPath, ExclamationTriangle, 
-		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight, Key, ArrowTopRightOnSquare
+		Check, XMark, Server, ChatBubbleLeftRight, CodeBracket, ChevronRight, Key, ArrowTopRightOnSquare,
+		Play
 	} from "svelte-heros-v2";
 	import HookEcosystemVisualizer from "$lib/components/HookEcosystemVisualizer.svelte";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 
 	let activeStage = $state(1);
 	let isSimulating = $state(false);
+
+	// WhatsApp Gateway Service Controller State (:3002)
+	let gwLoading = $state(false);
+	let gwActionMessage = $state<string | null>(null);
+	let gwActionType = $state<"success" | "error" | "info">("info");
+	let gwRunning = $state(false);
+	let gwStatusData = $state<{
+		service?: string;
+		port?: number;
+		status?: string;
+		uptime_seconds?: number;
+		memory_rss_mb?: string;
+		mode?: string;
+		whitelisted_groups?: string[];
+	} | null>(null);
+
+	let pollTimer: any = null;
+
+	async function fetchGatewayStatus() {
+		try {
+			const res = await fetch("/api/gateway/status");
+			if (res.ok) {
+				const json = await res.json();
+				gwRunning = json.running === true;
+				gwStatusData = json.data || null;
+			}
+		} catch (e) {
+			console.error("Failed to poll gateway status:", e);
+		}
+	}
+
+	async function triggerGatewayAction(action: "start" | "restart" | "stop") {
+		gwLoading = true;
+		gwActionMessage = 
+			action === "start" ? "Launching WhatsApp Gateway service (bun run start / npx tsx)..." :
+			action === "restart" ? "Restarting WhatsApp Gateway daemon on port 3002..." :
+			"Shutting down WhatsApp Gateway daemon (:3002)...";
+		gwActionType = "info";
+
+		try {
+			const res = await fetch(`/api/gateway/${action}`, { method: "POST" });
+			const json = await res.json();
+			if (res.ok && json.ok) {
+				gwActionMessage = json.message || `Service ${action} executed successfully.`;
+				gwActionType = "success";
+			} else {
+				gwActionMessage = json.error || json.message || `Service ${action} failed.`;
+				gwActionType = "error";
+			}
+			await fetchGatewayStatus();
+		} catch (e: any) {
+			gwActionMessage = `API connection error: ${e.message}`;
+			gwActionType = "error";
+		} finally {
+			gwLoading = false;
+			setTimeout(() => {
+				if (gwActionType === "success") gwActionMessage = null;
+			}, 7000);
+		}
+	}
+
+	function formatUptime(seconds?: number): string {
+		if (!seconds || seconds <= 0) return "0s";
+		const h = Math.floor(seconds / 3600);
+		const m = Math.floor((seconds % 3600) / 60);
+		const s = seconds % 60;
+		if (h > 0) return `${h}h ${m}m ${s}s`;
+		if (m > 0) return `${m}m ${s}s`;
+		return `${s}s`;
+	}
+
+	onMount(() => {
+		fetchGatewayStatus();
+		pollTimer = setInterval(fetchGatewayStatus, 4000);
+	});
+
+	onDestroy(() => {
+		if (pollTimer) clearInterval(pollTimer);
+	});
 
 	const platformMeta = $derived({
 		whatsapp: {
@@ -386,6 +467,161 @@ if humanCorrectedValue != aiExtractedValue {
 		</div>
 	</div>
 
+	<!-- ========================================================================= -->
+	<!-- WHATSAPP GATEWAY SERVICE CONTROLLER & LIFECYCLE DECK (:3002)             -->
+	<!-- ========================================================================= -->
+	<div class="p-5 sm:p-6 rounded-3xl bg-card border {gwRunning ? 'border-emerald-500/40 bg-gradient-to-br from-card via-card to-emerald-500/5' : 'border-border bg-card/60'} shadow-xl space-y-4 relative z-10 transition-all">
+		<!-- Top Row: Service Title, Status Chip & Quick Actions -->
+		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-border/50">
+			<div class="flex items-center gap-3.5">
+				<div class="h-12 w-12 rounded-2xl {gwRunning ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-muted text-muted-foreground border border-border'} flex items-center justify-center shadow-xs">
+					<Radio class="h-6 w-6 {gwRunning ? 'animate-pulse text-emerald-500' : 'text-muted-foreground'}" />
+				</div>
+				<div>
+					<div class="flex items-center gap-2 flex-wrap">
+						<h2 class="text-base sm:text-lg font-bold text-foreground">
+							WhatsApp Gateway Service Daemon
+						</h2>
+						<!-- Live Status Chip -->
+						<span class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 {gwRunning ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'}">
+							<span class="h-2 w-2 rounded-full {gwRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}"></span>
+							{gwRunning ? (gwStatusData?.status || 'ONLINE (:3002)') : 'STOPPED / OFFLINE'}
+						</span>
+						{#if gwStatusData?.mode}
+							<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
+								{gwStatusData.mode}
+							</span>
+						{/if}
+					</div>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Baileys socket listener on port <code class="text-foreground font-mono font-semibold">3002</code>. Ingests authorized regional chats and dispatches to NovaPilot Golang core.
+					</p>
+				</div>
+			</div>
+
+			<!-- Real-Time Gateway Action Buttons (Start, Restart, Shut Down) -->
+			<div class="flex items-center gap-2 flex-wrap">
+				<!-- 1. Start Button -->
+				<button
+					type="button"
+					onclick={() => triggerGatewayAction('start')}
+					disabled={gwRunning || gwLoading}
+					class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer {gwRunning ? 'bg-secondary text-muted-foreground/50 border border-border/50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-emerald-500/20 shadow-md'}"
+					title="Start WhatsApp Gateway Service (bun run start / npx tsx src/index.ts)"
+				>
+					<Play class="h-3.5 w-3.5" />
+					<span>{gwLoading && gwActionType === 'info' ? 'Starting...' : 'Start Service'}</span>
+				</button>
+
+				<!-- 2. Restart Button -->
+				<button
+					type="button"
+					onclick={() => triggerGatewayAction('restart')}
+					disabled={gwLoading}
+					class="px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+					title="Gracefully restart WhatsApp Gateway daemon"
+				>
+					<ArrowPath class="h-3.5 w-3.5 {gwLoading ? 'animate-spin text-primary' : 'text-muted-foreground'}" />
+					<span>Restart Gateway</span>
+				</button>
+
+				<!-- 3. Shut Down Button -->
+				<button
+					type="button"
+					onclick={() => triggerGatewayAction('stop')}
+					disabled={!gwRunning || gwLoading}
+					class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer {!gwRunning ? 'bg-secondary text-muted-foreground/50 border border-border/50 cursor-not-allowed' : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-bold'}"
+					title="Shut down WhatsApp Gateway daemon process"
+				>
+					<XMark class="h-3.5 w-3.5" />
+					<span>Shut Down</span>
+				</button>
+
+				<!-- 4. Refresh Button -->
+				<button
+					type="button"
+					onclick={fetchGatewayStatus}
+					disabled={gwLoading}
+					class="p-2 rounded-xl border border-border bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs transition-all cursor-pointer"
+					title="Refresh gateway live telemetry"
+				>
+					<ArrowPath class="h-4 w-4 {gwLoading ? 'animate-spin' : ''}" />
+				</button>
+			</div>
+		</div>
+
+		<!-- Action Feedback Banner (if any) -->
+		{#if gwActionMessage}
+			<div class="p-3 rounded-2xl text-xs flex items-center justify-between gap-3 {gwActionType === 'success' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : gwActionType === 'error' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30' : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30'}">
+				<div class="flex items-center gap-2">
+					{#if gwActionType === 'success'}
+						<CheckCircle class="h-4 w-4 shrink-0 text-emerald-500" />
+					{:else if gwActionType === 'error'}
+						<ExclamationTriangle class="h-4 w-4 shrink-0 text-rose-500" />
+					{:else}
+						<ArrowPath class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+					{/if}
+					<span class="font-medium">{gwActionMessage}</span>
+				</div>
+				<button
+					type="button"
+					onclick={() => gwActionMessage = null}
+					class="p-1 hover:opacity-70 text-foreground"
+				>
+					<XMark class="h-3.5 w-3.5" />
+				</button>
+			</div>
+		{/if}
+
+		<!-- Telemetry Cards & Shortcuts Row -->
+		<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 pt-1">
+			<!-- Metric 1: Daemon Port -->
+			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">Daemon Port</span>
+				<div class="text-sm font-bold font-mono text-foreground flex items-center gap-1.5">
+					<ServerStack class="h-3.5 w-3.5 text-primary" />
+					<span>:3002</span>
+				</div>
+			</div>
+
+			<!-- Metric 2: Process Uptime -->
+			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">Process Uptime</span>
+				<div class="text-sm font-bold font-mono text-foreground">
+					{formatUptime(gwStatusData?.uptime_seconds)}
+				</div>
+			</div>
+
+			<!-- Metric 3: Memory RSS -->
+			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">Memory RSS</span>
+				<div class="text-sm font-bold font-mono text-foreground">
+					{gwStatusData?.memory_rss_mb ? `${gwStatusData.memory_rss_mb} MB` : (gwRunning ? 'Active' : '0 MB')}
+				</div>
+			</div>
+
+			<!-- Metric 4: Whitelisted Groups -->
+			<div class="p-3 rounded-2xl bg-secondary/30 border border-border/50 space-y-0.5">
+				<span class="text-[10px] font-mono text-muted-foreground uppercase">Whitelisted JIDs</span>
+				<div class="text-sm font-bold font-mono text-foreground">
+					{gwStatusData?.whitelisted_groups?.length || 0} Groups
+				</div>
+			</div>
+
+			<!-- Quick Shortcuts Deck -->
+			<div class="col-span-2 sm:col-span-4 lg:col-span-1 flex items-center gap-2">
+				<a
+					href="/dashboard/messages"
+					class="w-full h-full min-h-[50px] p-2.5 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-center"
+					title="Lihat pesan WhatsApp live & buka Exec Terminal di Omnichannel Inbound Feed"
+				>
+					<CommandLine class="h-3.5 w-3.5" />
+					<span>Terminal & Ingress</span>
+				</a>
+			</div>
+		</div>
+	</div>
+
 	<!-- Signature Animated Pipeline Circuit Canvas -->
 	<div class="p-5 rounded-3xl bg-card/60 backdrop-blur-md border border-border shadow-xl overflow-hidden relative">
 		<div class="flex items-center justify-between pb-3 border-b border-border/50 text-xs font-mono text-muted-foreground">
@@ -535,7 +771,14 @@ if humanCorrectedValue != aiExtractedValue {
 									<span>Stage {s.id} Execution Code</span>
 								</div>
 								<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-card border border-border/50 text-foreground">
-									Verified Implementation
+									{#if s.id === 1 && cockpit.chatPlatform === 'whatsapp'}
+										<span class="inline-flex items-center gap-1.5 {gwRunning ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-semibold'}">
+											<span class="h-1.5 w-1.5 rounded-full {gwRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}"></span>
+											{gwRunning ? (gwStatusData?.status === 'CONNECTED' ? 'GATEWAY CONNECTED' : 'DAEMON RUNNING :3002') : 'DAEMON STOPPED'}
+										</span>
+									{:else}
+										Verified Implementation
+									{/if}
 								</span>
 							</div>
 							<pre class="p-4 text-[11px] font-mono text-foreground/90 overflow-x-auto leading-relaxed flex-1 bg-black/40"><code>{s.codeSnippet}</code></pre>

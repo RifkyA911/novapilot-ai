@@ -129,6 +129,12 @@ try {
                     }), { headers: corsHeaders });
                 }
 
+                if ((url.pathname === "/api/shutdown" || url.pathname === "/shutdown") && req.method === "POST") {
+                    console.log("[GATEWAY] Shutdown requested via WebUI.");
+                    setTimeout(() => { process.exit(0); }, 300);
+                    return new Response(JSON.stringify({ ok: true, message: "Gateway daemon shutting down..." }), { headers: corsHeaders });
+                }
+
                 if ((url.pathname === "/api/exec" || url.pathname === "/exec") && req.method === "POST") {
                     try {
                         const rawText = await req.text();

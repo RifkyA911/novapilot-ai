@@ -11,6 +11,7 @@
 		ArrowPath
 	} from "svelte-heros-v2";
 	import { cockpit } from "$lib/cockpit.svelte";
+	import SimulatorPipelineVisualizer from "$lib/components/SimulatorPipelineVisualizer.svelte";
 
 	let simMessage = $state("Hello IT Support, please update invoice INV/2026/001 customer name from PT Sumber Makmur to PT Sumber Makmur Abadi due to branch tax invoice amendment. Thanks!");
 	let simDocNo = $state("INV/2026/001");
@@ -23,33 +24,94 @@
 	async function runSimulation() {
 		if (simLoading) return;
 		simLoading = true;
-		simStep = 1; // WhatsApp Ingestion
+		simStep = 1; // 1. WhatsApp Inbound Ingestion
 		simSuccess = false;
 
-		await new Promise(r => setTimeout(r, 800));
-		simStep = 2; // LLM Extraction
-
-		await new Promise(r => setTimeout(r, 900));
-		simStep = 3; // Database Pre-check
-
-		await new Promise(r => setTimeout(r, 800));
-		simStep = 4; // Ready for Sign-off
+		let inboundMsgId: number | null = null;
+		let extractedDoc = simDocNo;
+		let extractedProposed = simProposed;
 
 		try {
-			const res = await fetch("/api/tickets", {
+			// Step 1: Real Inbound Message Ingestion
+			const ingestRes = await fetch("/api/inbound-messages", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
+					platform: cockpit.chatPlatform,
+					sender_id: cockpit.chatPlatform === "whatsapp" ? "6281234567890@s.whatsapp.net" : "@warehouse_ops",
+					sender_name: "Surabaya Logistics Admin",
 					raw_message: simMessage,
+					media_type: "text",
+					classification: "ACTIONABLE",
+					extracted_doc: simDocNo,
 					extracted_intent: "UPDATE_CUSTOMER_NAME",
-					document_no: simDocNo,
-					field_target: "customer_name",
-					proposed_value: simProposed,
-					branch_id: simBranchId,
-					confidence_score: 0.98
+					extracted_target: simProposed
 				})
 			});
-			if (res.ok) {
+			if (ingestRes.ok) {
+				const ingestData = await ingestRes.json();
+				inboundMsgId = ingestData.id;
+			}
+
+			// Step 2: Real Agentic Hermes 3 LLM Extraction
+			simStep = 2; // 2. LLM Extraction
+			const llmRes = await fetch("/api/llm/process", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: simMessage,
+					branch_context: `Branch ID ${simBranchId} (Surabaya)`
+				})
+			});
+			if (llmRes.ok) {
+				const llmData = await llmRes.json();
+				if (llmData.tool_call?.arguments?.invoice_no) {
+					extractedDoc = String(llmData.tool_call.arguments.invoice_no);
+					simDocNo = extractedDoc;
+				}
+				if (llmData.tool_call?.arguments?.proposed_value) {
+					extractedProposed = String(llmData.tool_call.arguments.proposed_value);
+					simProposed = extractedProposed;
+				}
+			}
+
+			// Step 3: Real Database Pre-Check & Validation
+			simStep = 3; // 3. DB Pre-Check
+			const invRes = await fetch("/api/invoices");
+			if (invRes.ok) {
+				const invoices = await invRes.json();
+				const found = invoices.find((i: any) => i.invoice_no === extractedDoc);
+				if (found && found.status === "CLOSED") {
+					throw new Error(`Policy violation: invoice ${extractedDoc} is closed`);
+				}
+			}
+
+			// Step 4: Real Staging into HITL Approval Queue
+			simStep = 4; // 4. Ready for Sign-Off
+			let stageOk = false;
+			if (inboundMsgId) {
+				const stageRes = await fetch(`/api/inbound-messages/${inboundMsgId}/stage-ticket`, {
+					method: "POST"
+				});
+				stageOk = stageRes.ok;
+			} else {
+				const res = await fetch("/api/tickets", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						raw_message: simMessage,
+						extracted_intent: "UPDATE_CUSTOMER_NAME",
+						document_no: extractedDoc,
+						field_target: "customer_name",
+						proposed_value: extractedProposed,
+						branch_id: simBranchId,
+						confidence_score: 0.98
+					})
+				});
+				stageOk = res.ok;
+			}
+
+			if (stageOk) {
 				cockpit.recordPlatformEvent(cockpit.chatPlatform);
 				simSuccess = true;
 				await cockpit.fetchTickets();
@@ -92,6 +154,15 @@
 			</span>
 		</div>
 	</div>
+
+	<!-- Interactive Animated Pipeline SVG Visualizer with Pan & Zoom -->
+	<SimulatorPipelineVisualizer 
+		{simStep} 
+		{simLoading} 
+		{simDocNo} 
+		{simProposed} 
+		onExecute={runSimulation} 
+	/>
 
 	<!-- Step Progression Visualizer -->
 	<div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">

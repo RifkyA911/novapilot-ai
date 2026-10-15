@@ -22,6 +22,7 @@
 		InformationCircle,
 		Cog6Tooth
 	} from "svelte-heros-v2";
+	import { sound } from "$lib/audio";
 	import { cockpit } from "$lib/cockpit.svelte";
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
@@ -79,7 +80,7 @@
 			category: "Operations",
 			url: "/dashboard/cockpit",
 			icon: Sparkles,
-			badge: "AI Analytics",
+			badge: "DMY",
 			keywords: ["cockpit", "ai", "analytics", "intent", "ocr", "tesseract", "confidence", "metrics", "chart"]
 		},
 		{
@@ -139,7 +140,7 @@
 			category: "ChatOps & Hooks",
 			url: "/dashboard/contacts",
 			icon: UserGroup,
-			badge: "Directory",
+			badge: "DMY",
 			keywords: ["contacts", "groups", "whatsapp", "branches", "directory", "whitelist", "surabaya", "medan", "jakarta"]
 		},
 		{
@@ -149,7 +150,6 @@
 			category: "ChatOps & Hooks",
 			url: "/dashboard/hooks",
 			icon: CodeBracket,
-			badge: "WA Active",
 			keywords: ["hooks", "extension", "tampermonkey", "whatsapp", "script", "observer", "baileys", "client"]
 		},
 		{
@@ -159,7 +159,6 @@
 			category: "Databases & Telemetry",
 			url: "/dashboard/mcp",
 			icon: Cube,
-			badge: "MCP v1.0",
 			keywords: ["mcp", "model context protocol", "dual-db", "oracle", "sap", "erp", "tools", "resources", "specification"]
 		},
 		{
@@ -169,7 +168,7 @@
 			category: "ChatOps & Hooks",
 			url: "/dashboard/simulator",
 			icon: PaperAirplane,
-			badge: "Experimental",
+			badge: "DMY",
 			keywords: ["simulator", "test", "whatsapp", "simulate", "ingest", "mock", "pipeline", "experimental"]
 		},
 		{
@@ -181,6 +180,16 @@
 			icon: ChatBubbleLeftRight,
 			badge: "Live Feed",
 			keywords: ["messages", "inbound", "chat", "whatsapp", "telegram", "discord", "slack", "feed", "staging", "viewer"]
+		},
+		{
+			id: "agents",
+			title: "AI Agents (Hermes 3 & OpenClaw)",
+			description: "Local reasoning with Hermes 3 & autonomous browser task automation with OpenClaw",
+			category: "ChatOps & Hooks",
+			url: "/dashboard/hermes",
+			icon: CpuChip,
+			badge: "AI Fleet",
+			keywords: ["agents", "ai", "hermes", "openclaw", "claw", "llm", "reasoning", "browser", "playwright", "automation", "tool_call", "autonomous"]
 		},
 		{
 			id: "platforms",
@@ -228,6 +237,7 @@
 	);
 
 	function navigateTo(url: string) {
+		sound.playNavClick();
 		open = false;
 		searchQuery = "";
 		goto(url);

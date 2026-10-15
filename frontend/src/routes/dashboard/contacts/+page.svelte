@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { 
 		UserGroup, 
 		User,
@@ -59,6 +60,24 @@
 
 	let testPingId = $state<string | null>(null);
 	let copiedJid = $state<string | null>(null);
+
+	onMount(async () => {
+		await loadChannels();
+	});
+
+	async function loadChannels() {
+		try {
+			const res = await fetch("/api/channels");
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data) && data.length > 0) {
+					channels = data;
+				}
+			}
+		} catch (e) {
+			console.error("Failed to load channels from backend:", e);
+		}
+	}
 
 	// Whitelisted regional branch contacts (both Groups and Individuals)
 	let channels = $state<ContactChannel[]>([
@@ -345,11 +364,16 @@
 	);
 
 	// Interactive whitelist toggle
-	function toggleWhitelist(channelId: string) {
+	async function toggleWhitelist(channelId: string) {
 		const target = channels.find(c => c.id === channelId);
 		if (target) {
 			target.isWhitelisted = !target.isWhitelisted;
 			target.status = target.isWhitelisted ? "ACTIVE" : "MUTED";
+			try {
+				await fetch(`/api/channels/${channelId}/toggle-whitelist`, { method: "PATCH" });
+			} catch (e) {
+				console.error("Failed to toggle whitelist on backend:", e);
+			}
 		}
 	}
 
@@ -459,7 +483,7 @@
 		isAddModalOpen = true;
 	}
 
-	function saveContact() {
+	async function saveContact() {
 		if (!newContact.name.trim()) {
 			formError = "Nama saluran atau grup wajib diisi.";
 			return;
@@ -509,7 +533,22 @@
 			] : undefined
 		};
 
-		channels = [createdChannel, ...channels];
+		try {
+			const res = await fetch("/api/channels", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(createdChannel)
+			});
+			if (res.ok) {
+				const saved = await res.json();
+				channels = [saved, ...channels.filter(c => c.id !== saved.id)];
+			} else {
+				channels = [createdChannel, ...channels];
+			}
+		} catch (e) {
+			console.error("Failed to persist channel to backend:", e);
+			channels = [createdChannel, ...channels];
+		}
 		isAddModalOpen = false;
 	}
 
@@ -518,9 +557,15 @@
 		isDeleteModalOpen = true;
 	}
 
-	function confirmDelete() {
+	async function confirmDelete() {
 		if (channelToDelete) {
-			channels = channels.filter(c => c.id !== channelToDelete!.id);
+			const id = channelToDelete.id;
+			channels = channels.filter(c => c.id !== id);
+			try {
+				await fetch(`/api/channels/${id}`, { method: "DELETE" });
+			} catch (e) {
+				console.error("Failed to delete channel from backend:", e);
+			}
 			channelToDelete = null;
 			isDeleteModalOpen = false;
 		}

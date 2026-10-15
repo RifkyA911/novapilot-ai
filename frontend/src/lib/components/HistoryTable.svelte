@@ -1,21 +1,26 @@
 <script lang="ts">
-	import {
-		createTable,
-		FlexRender,
-		tableFeatures,
-		rowPaginationFeature,
-		rowSortingFeature,
-		type PaginationState,
-		type SortingState
-	} from "@tanstack/svelte-table";
 	import { 
-		MagnifyingGlass, Funnel, ArrowUp, ArrowDown, 
-		ChevronLeft, ChevronRight, CheckCircle, XCircle,
-		ArrowsUpDown, Sparkles
+		CheckCircle, 
+		XCircle, 
+		Clock, 
+		BuildingOffice2, 
+		DocumentText, 
+		ShieldCheck, 
+		CommandLine, 
+		ClipboardDocument, 
+		Check, 
+		XMark, 
+		ArrowPath, 
+		Funnel, 
+		CodeBracket,
+		User
 	} from "svelte-heros-v2";
+	import DataTable from "$lib/components/DataTable.svelte";
+	import type { ColumnDef } from "$lib/types/table";
 	import { timeAgo } from "$lib/utils";
+	import { sound } from "$lib/audio";
 
-	interface Ticket {
+	export interface TicketItem {
 		id: number;
 		ticket_no: string;
 		branch_id?: number;
@@ -34,300 +39,312 @@
 		updated_at?: string;
 	}
 
-	let { tickets = [] }: { tickets: Ticket[] } = $props();
+	let { tickets = [] }: { tickets: TicketItem[] } = $props();
 
-	// History data (processed / completed tickets)
-	let historyData = $derived(tickets.filter(t => t.status !== "PENDING_APPROVAL"));
+	// History data (audited & completed tickets)
+	let historyData = $derived(
+		tickets.filter(t => t.status !== "PENDING_APPROVAL")
+	);
 
-	const features = tableFeatures({
-		rowPaginationFeature,
-		rowSortingFeature
-	});
-
-	const columns = [
+	// Table column definitions
+	const columns: ColumnDef<TicketItem>[] = [
 		{
+			id: "ticket_no",
+			header: "Tiket #",
 			accessorKey: "ticket_no",
-			header: "Ticket #",
-			enableSorting: true
+			sortable: true
 		},
 		{
+			id: "document_no",
+			header: "No Faktur / Dokumen",
 			accessorKey: "document_no",
-			header: "Invoice No",
-			enableSorting: true
+			sortable: true
 		},
 		{
-			accessorKey: "branch_name",
-			header: "Branch Hub",
-			enableSorting: true
+			id: "branch_name",
+			header: "Cabang / Hub",
+			accessorKey: (row: TicketItem) => row.branch_name || "Surabaya HQ",
+			sortable: true
 		},
 		{
-			accessorKey: "proposed_value",
-			header: "Mutated Value",
-			enableSorting: true
+			id: "mutation",
+			header: "Target Mutasi ERP",
+			sortable: false
 		},
 		{
+			id: "status",
+			header: "Status Audit",
 			accessorKey: "status",
-			header: "Status",
-			enableSorting: true
+			sortable: true,
+			align: "center"
 		},
 		{
-			accessorKey: "approved_by",
-			header: "Audited By",
-			enableSorting: true
+			id: "approved_by",
+			header: "Penandatangan",
+			accessorKey: (row: TicketItem) => row.approved_by || "System Automated",
+			sortable: true
 		},
 		{
-			accessorKey: "created_at",
-			header: "Timestamp",
-			enableSorting: true
+			id: "created_at",
+			header: "Waktu Eksekusi",
+			accessorKey: (row: TicketItem) => row.updated_at || row.created_at,
+			sortable: true
+		},
+		{
+			id: "actions",
+			header: "Aksi / Rollback",
+			sortable: false,
+			align: "center"
 		}
 	];
 
-	let globalSearch = $state("");
-	let statusFilter = $state<"ALL" | "EXECUTED" | "REJECTED">("ALL");
-	let branchFilter = $state<string>("ALL");
-	let sorting = $state<SortingState>([{ id: "created_at", desc: true }]);
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 8 });
+	// Filter options for Status
+	const filterOptions = [
+		{ label: "Semua Status", value: "ALL" },
+		{ label: "EXECUTED (Tereksekusi)", value: "EXECUTED" },
+		{ label: "REJECTED (Ditolak)", value: "REJECTED" },
+		{ label: "APPROVED (Disetujui)", value: "APPROVED" }
+	];
 
-	// Filtered data stream
-	let processedData = $derived(
-		historyData.filter(item => {
-			if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
-			if (branchFilter !== "ALL" && item.branch_name !== branchFilter) return false;
-			if (!globalSearch.trim()) return true;
-			const q = globalSearch.toLowerCase();
-			return (
-				item.ticket_no.toLowerCase().includes(q) ||
-				item.document_no.toLowerCase().includes(q) ||
-				item.proposed_value.toLowerCase().includes(q) ||
-				(item.branch_name && item.branch_name.toLowerCase().includes(q)) ||
-				(item.approved_by && item.approved_by.toLowerCase().includes(q))
-			);
-		})
-	);
+	// Modal detail & rollback state
+	let activeDetailTicket = $state<TicketItem | null>(null);
+	let copiedScript = $state(false);
 
-	const table = createTable({
-		features,
-		columns,
-		get data() {
-			return processedData;
-		},
-		state: {
-			get sorting() {
-				return sorting;
-			},
-			get pagination() {
-				return pagination;
-			}
-		},
-		onSortingChange: (updater) => {
-			sorting = typeof updater === "function" ? updater(sorting) : updater;
-		},
-		onPaginationChange: (updater) => {
-			pagination = typeof updater === "function" ? updater(pagination) : updater;
-		}
-	});
+	function openAuditDetails(ticket: TicketItem) {
+		sound.playNavClick();
+		activeDetailTicket = ticket;
+		copiedScript = false;
+	}
 
-	let pageIndex = $derived(table.atoms.pagination.get().pageIndex);
-	let pageSize = $derived(table.atoms.pagination.get().pageSize);
-	let totalPages = $derived(Math.ceil(processedData.length / pageSize) || 1);
+	function closeAuditDetails() {
+		activeDetailTicket = null;
+	}
+
+	function copyRollbackScript(ticket: TicketItem) {
+		const targetField = ticket.field_target || "customer_name";
+		const previousVal = ticket.current_value ? `'${ticket.current_value}'` : "NULL";
+		const script = `-- COMPENSATING ROLLBACK TRANSACTION FOR ${ticket.ticket_no}\n-- Generated by NovaPilot AI Gatekeeper\nBEGIN;\nUPDATE erp_invoices\n  SET ${targetField} = ${previousVal},\n      updated_at = NOW(),\n      audit_note = 'Rollback compensating script for ${ticket.ticket_no}'\nWHERE invoice_no = '${ticket.document_no}';\nCOMMIT;`;
+
+		navigator.clipboard.writeText(script);
+		copiedScript = true;
+		sound.playNavClick();
+		setTimeout(() => (copiedScript = false), 2500);
+	}
 </script>
 
-<div class="space-y-3 font-sans">
-	<!-- TanStack Filter & Control Bar -->
-	<div class="p-3 rounded-2xl bg-card border border-border/70 shadow-xs flex flex-wrap items-center justify-between gap-3">
-		<!-- Search & Filter Controls -->
-		<div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
-			<!-- Global Search -->
-			<div class="relative flex-1 min-w-[200px] max-w-sm">
-				<MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-				<input
-					type="text"
-					bind:value={globalSearch}
-					placeholder="Search ticket, invoice, customer, engineer…"
-					class="h-8.5 w-full rounded-xl border border-border/80 bg-background pl-8.5 pr-8 text-[13px] outline-none transition-colors focus:border-foreground/40 font-mono shadow-xs placeholder:text-muted-foreground/70"
-				/>
-				{#if globalSearch}
+<div class="space-y-4 font-sans">
+	<!-- Reusable TanStack-Powered Data Table Matching Group Contacts -->
+	<DataTable
+		data={historyData}
+		{columns}
+		title="Tabel Rekam Jejak Eksekusi (Execution Audit Log)"
+		subtitle="Log mutasi ERP yang telah diaudit, ditandatangani oleh operator, dilengkapi skrip rollback dan verifikasi status."
+		searchPlaceholder="Cari nomor tiket, no faktur, nama cabang, atau penandatangan..."
+		searchKeys={["ticket_no", "document_no", "branch_name", "proposed_value", "approved_by"]}
+		filterKey="status"
+		{filterOptions}
+		defaultPageSize={10}
+		enableExport={true}
+		exportFilename="novapilot_execution_audit_history"
+		emptyMessage="Tidak ditemukan rekam jejak audit yang sesuai"
+	>
+		<!-- Custom Cell Rendering via Svelte Snippet -->
+		{#snippet rowCell({ row, column })}
+			{#if column.id === "ticket_no"}
+				<div class="flex items-center gap-2">
 					<button
-						onclick={() => (globalSearch = "")}
-						class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-muted-foreground hover:text-foreground"
+						type="button"
+						onclick={() => openAuditDetails(row)}
+						class="font-mono font-bold text-xs text-primary hover:underline hover:text-primary/80 transition-colors cursor-pointer flex items-center gap-1.5"
+						title="Klik untuk membuka detail audit dan skrip kompensasi"
 					>
-						✕
-					</button>
-				{/if}
-			</div>
-
-			<!-- Status Filter Dropdown -->
-			<div class="flex items-center gap-1.5">
-				<Funnel class="h-3.5 w-3.5 text-muted-foreground" />
-				<select
-					bind:value={statusFilter}
-					class="h-8.5 px-2.5 rounded-xl border border-border/80 bg-background text-[12px] font-mono outline-none focus:border-foreground/40 text-foreground cursor-pointer"
-				>
-					<option value="ALL">All Statuses</option>
-					<option value="EXECUTED">Executed Only</option>
-					<option value="REJECTED">Rejected Only</option>
-				</select>
-			</div>
-
-			<!-- Branch Filter Dropdown -->
-			<select
-				bind:value={branchFilter}
-				class="h-8.5 px-2.5 rounded-xl border border-border/80 bg-background text-[12px] font-mono outline-none focus:border-foreground/40 text-foreground cursor-pointer"
-			>
-				<option value="ALL">All Branches</option>
-				<option value="Surabaya HQ">Surabaya HQ</option>
-				<option value="Medan Hub">Medan Hub</option>
-				<option value="Semarang DC">Semarang DC</option>
-				<option value="Makassar Hub">Makassar Hub</option>
-			</select>
-		</div>
-
-		<!-- TanStack Stack Engine Tag -->
-		<div class="flex items-center gap-2">
-			<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary border border-border/60 text-[11px] font-mono text-muted-foreground">
-				<Sparkles class="h-3 w-3 text-primary" />
-				<span class="font-bold text-foreground">TanStack Table</span> v9 Active
-			</span>
-			<span class="text-[12px] font-mono text-muted-foreground">
-				{processedData.length} records
-			</span>
-		</div>
-	</div>
-
-	<!-- TanStack Data Table Card -->
-	<div class="rounded-2xl bg-card border border-border/80 overflow-hidden shadow-xs">
-		<div class="overflow-x-auto">
-			<table class="w-full text-left text-[13px]">
-				<!-- Table Header with Sorting -->
-				<thead class="bg-secondary/60 text-muted-foreground uppercase font-mono text-[11px] border-b border-border/60">
-					{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-						<tr>
-							{#each headerGroup.headers as header (header.id)}
-								<th class="p-3 select-none">
-									{#if !header.isPlaceholder}
-										<button
-											onclick={header.column.getToggleSortingHandler()}
-											class="flex items-center gap-1.5 hover:text-foreground transition-colors font-bold uppercase tracking-wider text-left w-full cursor-pointer"
-										>
-											<span>{header.column.columnDef.header}</span>
-											{#if header.column.getIsSorted() === 'asc'}
-												<ArrowUp class="h-3 w-3 text-primary shrink-0" />
-											{:else if header.column.getIsSorted() === 'desc'}
-												<ArrowDown class="h-3 w-3 text-primary shrink-0" />
-											{:else}
-												<ArrowsUpDown class="h-2.5 w-2.5 text-muted-foreground/40 shrink-0" />
-											{/if}
-										</button>
-									{/if}
-								</th>
-							{/each}
-						</tr>
-					{/each}
-				</thead>
-
-				<!-- Table Body -->
-				<tbody class="divide-y divide-border/40">
-					{#if table.getRowModel().rows.length === 0}
-						<tr>
-							<td colspan={columns.length} class="py-12 text-center text-muted-foreground text-[13px] font-mono">
-								No matching audit records found.
-							</td>
-						</tr>
-					{:else}
-						{#each table.getRowModel().rows as row (row.id)}
-							<tr class="hover:bg-secondary/40 transition-colors">
-								<!-- Ticket No -->
-								<td class="p-3 font-mono font-bold text-foreground">
-									#{row.original.ticket_no}
-								</td>
-
-								<!-- Document No -->
-								<td class="p-3 font-mono text-foreground/90">
-									{row.original.document_no}
-								</td>
-
-								<!-- Branch -->
-								<td class="p-3 text-muted-foreground font-medium">
-									{row.original.branch_name || "Surabaya HQ"}
-								</td>
-
-								<!-- Proposed Value -->
-								<td class="p-3 font-medium text-foreground">
-									{row.original.proposed_value}
-								</td>
-
-								<!-- Status Badge -->
-								<td class="p-3">
-									{#if row.original.status === "EXECUTED"}
-										<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-											<CheckCircle class="h-3 w-3" />
-											<span>EXECUTED</span>
-										</span>
-									{:else}
-										<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-destructive/10 text-destructive border border-destructive/20">
-											<XCircle class="h-3 w-3" />
-											<span>REJECTED</span>
-										</span>
-									{/if}
-								</td>
-
-								<!-- Approved By -->
-								<td class="p-3 text-muted-foreground font-medium">
-									{row.original.approved_by || "John Doe"}
-								</td>
-
-								<!-- Timestamp -->
-								<td class="p-3 text-muted-foreground font-mono text-[12px]">
-									{timeAgo(row.original.updated_at || row.original.created_at)}
-								</td>
-							</tr>
-						{/each}
-					{/if}
-				</tbody>
-			</table>
-		</div>
-
-		<!-- TanStack Pagination Toolbar -->
-		<div class="p-3 border-t border-border/50 bg-secondary/20 flex flex-wrap items-center justify-between gap-3 text-[12px] font-mono">
-			<div class="flex items-center gap-2 text-muted-foreground">
-				<span>Page <strong class="text-foreground">{pageIndex + 1}</strong> of <strong class="text-foreground">{totalPages}</strong></span>
-				<span class="text-border">|</span>
-				<span>Total {processedData.length} entries</span>
-			</div>
-
-			<div class="flex items-center gap-2">
-				<!-- Page Size Select -->
-				<select
-					value={pageSize}
-					onchange={(e) => table.setPageSize(Number((e.target as HTMLSelectElement).value))}
-					class="h-7 px-2 rounded-lg border border-border/80 bg-background text-[11px] font-mono text-foreground cursor-pointer"
-				>
-					<option value={8}>8 / page</option>
-					<option value={15}>15 / page</option>
-					<option value={25}>25 / page</option>
-				</select>
-
-				<!-- Prev / Next Buttons -->
-				<div class="flex items-center gap-1">
-					<button
-						onclick={() => table.previousPage()}
-						disabled={!table.getCanPreviousPage()}
-						class="p-1.5 rounded-lg border border-border/70 bg-background hover:bg-secondary text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
-						title="Previous Page"
-					>
-						<ChevronLeft class="h-3.5 w-3.5" />
-					</button>
-
-					<button
-						onclick={() => table.nextPage()}
-						disabled={!table.getCanNextPage()}
-						class="p-1.5 rounded-lg border border-border/70 bg-background hover:bg-secondary text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
-						title="Next Page"
-					>
-						<ChevronRight class="h-3.5 w-3.5" />
+						<span>#{row.ticket_no}</span>
 					</button>
 				</div>
+
+			{:else if column.id === "document_no"}
+				<div class="font-mono text-xs font-semibold text-foreground flex items-center gap-1.5">
+					<DocumentText class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+					<span class="truncate max-w-[140px]">{row.document_no}</span>
+				</div>
+
+			{:else if column.id === "branch_name"}
+				<div class="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+					<BuildingOffice2 class="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+					<span class="truncate max-w-[160px]">{row.branch_name || "Surabaya HQ"}</span>
+				</div>
+
+			{:else if column.id === "mutation"}
+				<div class="space-y-0.5 text-xs min-w-[200px]">
+					<div class="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
+						<span>Field:</span>
+						<span class="font-bold text-foreground">{row.field_target || "customer_name"}</span>
+					</div>
+					<div class="font-medium text-foreground truncate max-w-[260px]" title={row.proposed_value}>
+						{row.proposed_value}
+					</div>
+					{#if row.current_value}
+						<div class="text-[10px] text-muted-foreground truncate max-w-[260px]">
+							Semula: <span class="line-through">{row.current_value}</span>
+						</div>
+					{/if}
+				</div>
+
+			{:else if column.id === "status"}
+				<div class="flex items-center justify-center">
+					{#if row.status === "EXECUTED"}
+						<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+							<CheckCircle class="h-3 w-3 shrink-0" />
+							<span>EXECUTED</span>
+						</span>
+					{:else if row.status === "REJECTED"}
+						<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+							<XCircle class="h-3 w-3 shrink-0" />
+							<span>REJECTED</span>
+						</span>
+					{:else}
+						<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+							<Clock class="h-3 w-3 shrink-0" />
+							<span>{row.status}</span>
+						</span>
+					{/if}
+				</div>
+
+			{:else if column.id === "approved_by"}
+				<div class="flex items-center gap-1.5 text-xs font-medium text-foreground">
+					<User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+					<span class="truncate max-w-[130px]">{row.approved_by || "System Automated"}</span>
+				</div>
+
+			{:else if column.id === "created_at"}
+				<div class="font-mono text-xs text-muted-foreground" title={row.updated_at || row.created_at}>
+					{timeAgo(row.updated_at || row.created_at)}
+				</div>
+
+			{:else if column.id === "actions"}
+				<div class="flex items-center justify-center">
+					<button
+						type="button"
+						onclick={() => openAuditDetails(row)}
+						class="h-7 px-2.5 rounded-lg border border-border/80 bg-secondary/50 hover:bg-secondary text-[11px] font-medium text-foreground flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+						title="Buka Skrip Kompensasi Rollback &amp; Detail Audit"
+					>
+						<CodeBracket class="h-3.5 w-3.5 text-primary" />
+						<span>Rollback</span>
+					</button>
+				</div>
+			{/if}
+		{/snippet}
+	</DataTable>
+</div>
+
+<!-- Audit Detail & Rollback Script Modal -->
+{#if activeDetailTicket}
+	<div 
+		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
+		role="dialog"
+	>
+		<div 
+			class="w-full max-w-xl rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+		>
+			<!-- Modal Header -->
+			<div class="flex items-start justify-between gap-3 pb-3 border-b border-border/60">
+				<div class="flex items-center gap-3">
+					<div class="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+						<ShieldCheck class="h-5 w-5" />
+					</div>
+					<div>
+						<h3 class="text-base font-bold text-foreground flex items-center gap-2">
+							Audit Trail #{activeDetailTicket.ticket_no}
+							<span class="text-[10px] px-2 py-0.2 rounded-full font-mono font-bold {activeDetailTicket.status === 'EXECUTED' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'}">
+								{activeDetailTicket.status}
+							</span>
+						</h3>
+						<p class="text-xs text-muted-foreground mt-0.5">
+							Dokumen: {activeDetailTicket.document_no} • {activeDetailTicket.branch_name || "Surabaya HQ"}
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onclick={closeAuditDetails}
+					class="h-8 w-8 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+				>
+					<XMark class="h-4 w-4" />
+				</button>
+			</div>
+
+			<!-- Mutation Summary -->
+			<div class="p-3.5 rounded-2xl bg-secondary/30 border border-border/50 grid grid-cols-2 gap-3 text-xs font-mono">
+				<div>
+					<span class="text-muted-foreground text-[10px] block">TARGET FIELD</span>
+					<span class="font-bold text-foreground">{activeDetailTicket.field_target || "customer_name"}</span>
+				</div>
+				<div>
+					<span class="text-muted-foreground text-[10px] block">AUDITED BY</span>
+					<span class="font-bold text-primary">{activeDetailTicket.approved_by || "System"}</span>
+				</div>
+				<div>
+					<span class="text-muted-foreground text-[10px] block">ORIGINAL VALUE</span>
+					<span class="font-medium text-foreground">{activeDetailTicket.current_value || "PT Sumber Makmur"}</span>
+				</div>
+				<div>
+					<span class="text-muted-foreground text-[10px] block">MUTATED VALUE</span>
+					<span class="font-bold text-emerald-500">{activeDetailTicket.proposed_value}</span>
+				</div>
+			</div>
+
+			<!-- Generated Pre-Calculated Compensating Rollback SQL -->
+			<div class="space-y-1.5">
+				<div class="flex items-center justify-between text-xs">
+					<span class="font-semibold text-foreground flex items-center gap-1.5">
+						<CommandLine class="h-3.5 w-3.5 text-primary" />
+						Skrip Kompensasi Rollback SQL (Atomic Safe)
+					</span>
+					<button
+						type="button"
+						onclick={() => activeDetailTicket && copyRollbackScript(activeDetailTicket)}
+						class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+					>
+						{#if copiedScript}
+							<Check class="h-3.5 w-3.5 text-emerald-500" />
+							<span class="text-emerald-500">Tersalin!</span>
+						{:else}
+							<ClipboardDocument class="h-3.5 w-3.5" />
+							<span>Salin Skrip</span>
+						{/if}
+					</button>
+				</div>
+				<pre class="p-3.5 rounded-2xl bg-muted/60 border border-border text-[11px] font-mono text-foreground overflow-x-auto selection:bg-primary/20"><code>-- COMPENSATING ROLLBACK TRANSACTION FOR {activeDetailTicket.ticket_no}
+-- Generated by NovaPilot AI Gatekeeper
+BEGIN;
+UPDATE erp_invoices
+  SET {activeDetailTicket.field_target || "customer_name"} = {activeDetailTicket.current_value ? `'${activeDetailTicket.current_value}'` : "NULL"},
+      updated_at = NOW(),
+      audit_note = 'Rollback compensating script for {activeDetailTicket.ticket_no}'
+WHERE invoice_no = '{activeDetailTicket.document_no}';
+COMMIT;</code></pre>
+			</div>
+
+			<!-- Raw Inbound Message Context -->
+			<div class="space-y-1 text-xs">
+				<span class="font-semibold text-muted-foreground text-[11px]">Pesan Awal ChatOps:</span>
+				<div class="p-3 rounded-xl bg-secondary/20 border border-border/40 text-[11px] text-muted-foreground italic">
+					"{activeDetailTicket.raw_message}"
+				</div>
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+				<button
+					type="button"
+					onclick={closeAuditDetails}
+					class="h-9 px-4 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+				>
+					Tutup
+				</button>
 			</div>
 		</div>
 	</div>
-</div>
+{/if}

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"novapilot-ai/backend/internal/domain"
 	"sync"
@@ -16,6 +17,7 @@ type Repository struct {
 	docs     []domain.Document
 	messages []domain.InboundMessage
 	patterns []domain.LearnedPattern
+	channels []domain.ContactChannel
 	mu       sync.RWMutex
 }
 
@@ -718,5 +720,189 @@ func (r *Repository) IncrementMatched(id int) error {
 	}
 	return nil
 }
+
+// ==========================================
+// CHANNELS DIRECTORY REPOSITORY
+// ==========================================
+
+func (r *Repository) ListChannels() ([]domain.ContactChannel, error) {
+	if r.db != nil {
+		query := `
+			SELECT id, type, name, branch, platform, jid_or_chat_id, status, is_whitelisted,
+			       contact_person, contact_phone, total_messages, actionable_tickets, latency_ms,
+			       last_activity, members_json, created_at, updated_at
+			FROM channels
+			ORDER BY created_at DESC
+		`
+		rows, err := r.db.Query(query)
+		if err == nil {
+			defer rows.Close()
+			var chs []domain.ContactChannel
+			for rows.Next() {
+				var ch domain.ContactChannel
+				var membersJSON []byte
+				if err := rows.Scan(
+					&ch.ID, &ch.Type, &ch.Name, &ch.Branch, &ch.Platform, &ch.JidOrChatId,
+					&ch.Status, &ch.IsWhitelisted, &ch.ContactPerson, &ch.ContactPhone,
+					&ch.TotalMessages, &ch.ActionableTickets, &ch.LatencyMs, &ch.LastActivity,
+					&membersJSON, &ch.CreatedAt, &ch.UpdatedAt,
+				); err == nil {
+					if len(membersJSON) > 0 {
+						_ = json.Unmarshal(membersJSON, &ch.Members)
+					}
+					chs = append(chs, ch)
+				}
+			}
+			return chs, nil
+		}
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.channels, nil
+}
+
+func (r *Repository) GetChannelByID(id string) (*domain.ContactChannel, error) {
+	if r.db != nil {
+		query := `
+			SELECT id, type, name, branch, platform, jid_or_chat_id, status, is_whitelisted,
+			       contact_person, contact_phone, total_messages, actionable_tickets, latency_ms,
+			       last_activity, members_json, created_at, updated_at
+			FROM channels
+			WHERE id = $1
+		`
+		var ch domain.ContactChannel
+		var membersJSON []byte
+		err := r.db.QueryRow(query, id).Scan(
+			&ch.ID, &ch.Type, &ch.Name, &ch.Branch, &ch.Platform, &ch.JidOrChatId,
+			&ch.Status, &ch.IsWhitelisted, &ch.ContactPerson, &ch.ContactPhone,
+			&ch.TotalMessages, &ch.ActionableTickets, &ch.LatencyMs, &ch.LastActivity,
+			&membersJSON, &ch.CreatedAt, &ch.UpdatedAt,
+		)
+		if err == nil {
+			if len(membersJSON) > 0 {
+				_ = json.Unmarshal(membersJSON, &ch.Members)
+			}
+			return &ch, nil
+		}
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, ch := range r.channels {
+		if ch.ID == id {
+			return &ch, nil
+		}
+	}
+	return nil, fmt.Errorf("channel not found: %s", id)
+}
+
+func (r *Repository) SaveChannel(channel *domain.ContactChannel) error {
+	r.mu.Lock()
+	found := false
+	for i, c := range r.channels {
+		if c.ID == channel.ID {
+			r.channels[i] = *channel
+			found = true
+			break
+		}
+	}
+	if !found {
+		r.channels = append([]domain.ContactChannel{*channel}, r.channels...)
+	}
+	r.mu.Unlock()
+
+	if r.db != nil {
+		membersJSON, _ := json.Marshal(channel.Members)
+		if len(membersJSON) == 0 {
+			membersJSON = []byte("[]")
+		}
+
+		query := `
+			INSERT INTO channels (
+				id, type, name, branch, platform, jid_or_chat_id, status, is_whitelisted,
+				contact_person, contact_phone, total_messages, actionable_tickets, latency_ms,
+				last_activity, members_json, created_at, updated_at
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8,
+				$9, $10, $11, $12, $13,
+				$14, $15, $16, $17
+			)
+			ON CONFLICT (id) DO UPDATE SET
+				type = EXCLUDED.type,
+				name = EXCLUDED.name,
+				branch = EXCLUDED.branch,
+				platform = EXCLUDED.platform,
+				jid_or_chat_id = EXCLUDED.jid_or_chat_id,
+				status = EXCLUDED.status,
+				is_whitelisted = EXCLUDED.is_whitelisted,
+				contact_person = EXCLUDED.contact_person,
+				contact_phone = EXCLUDED.contact_phone,
+				total_messages = EXCLUDED.total_messages,
+				actionable_tickets = EXCLUDED.actionable_tickets,
+				latency_ms = EXCLUDED.latency_ms,
+				last_activity = EXCLUDED.last_activity,
+				members_json = EXCLUDED.members_json,
+				updated_at = NOW()
+		`
+		now := time.Now()
+		if channel.CreatedAt.IsZero() {
+			channel.CreatedAt = now
+		}
+		channel.UpdatedAt = now
+
+		_, err := r.db.Exec(
+			query,
+			channel.ID, channel.Type, channel.Name, channel.Branch, channel.Platform, channel.JidOrChatId,
+			channel.Status, channel.IsWhitelisted, channel.ContactPerson, channel.ContactPhone,
+			channel.TotalMessages, channel.ActionableTickets, channel.LatencyMs,
+			channel.LastActivity, membersJSON, channel.CreatedAt, channel.UpdatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("saving channel to db: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Repository) DeleteChannel(id string) error {
+	r.mu.Lock()
+	for i, c := range r.channels {
+		if c.ID == id {
+			r.channels = append(r.channels[:i], r.channels[i+1:]...)
+			break
+		}
+	}
+	r.mu.Unlock()
+
+	if r.db != nil {
+		_, err := r.db.Exec("DELETE FROM channels WHERE id = $1", id)
+		if err != nil {
+			return fmt.Errorf("deleting channel from db: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Repository) ToggleChannelWhitelist(id string) (*domain.ContactChannel, error) {
+	ch, err := r.GetChannelByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	ch.IsWhitelisted = !ch.IsWhitelisted
+	if ch.IsWhitelisted {
+		ch.Status = "ACTIVE"
+	} else {
+		ch.Status = "MUTED"
+	}
+	ch.UpdatedAt = time.Now()
+
+	if err := r.SaveChannel(ch); err != nil {
+		return nil, err
+	}
+	return ch, nil
+}
+
 
 

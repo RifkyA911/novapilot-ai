@@ -50,12 +50,22 @@ func DefaultConfig() Config {
 
 	cliPath := os.Getenv("HERMES_CLI_PATH")
 	if cliPath == "" {
-		// Auto-detect standard Windows AppData user path
+		// Auto-detect standard Windows AppData user path & local wrappers
 		userHome, _ := os.UserHomeDir()
-		standardWinPath := filepath.Join(userHome, "AppData", "Local", "hermes", "bin", "hermes.exe")
-		if _, err := os.Stat(standardWinPath); err == nil {
-			cliPath = standardWinPath
-		} else {
+		candidates := []string{
+			filepath.Join(userHome, ".local", "bin", "hermes.cmd"),
+			filepath.Join(userHome, ".local", "bin", "hermes.ps1"),
+			filepath.Join(userHome, "AppData", "Local", "hermes", "hermes-agent", "cli.py"),
+			filepath.Join(userHome, "AppData", "Local", "hermes", "bin", "hermes.exe"),
+			"hermes",
+		}
+		for _, cand := range candidates {
+			if _, err := os.Stat(cand); err == nil {
+				cliPath = cand
+				break
+			}
+		}
+		if cliPath == "" {
 			cliPath = "hermes"
 		}
 	}
@@ -158,6 +168,17 @@ func NewHermesAdapter(cfg Config) *HermesAdapter {
 		httpClient: &http.Client{
 			Timeout: cfg.Timeout,
 		},
+	}
+}
+
+func (h *HermesAdapter) GetConfig() Config {
+	return h.cfg
+}
+
+func (h *HermesAdapter) UpdateConfig(cfg Config) {
+	h.cfg = cfg
+	if cfg.Timeout > 0 && h.httpClient != nil {
+		h.httpClient.Timeout = cfg.Timeout
 	}
 }
 
@@ -298,7 +319,7 @@ func (h *HermesAdapter) ProcessViaHTTP(ctx context.Context, rawMessage string, b
 	}, nil
 }
 
-// ProcessViaCLI executes Hermes 3 via local hermes.exe CLI in oneshot mode
+// ProcessViaCLI executes Hermes 3 via local Hermes Agent CLI in oneshot mode
 func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
 	start := time.Now()
 
@@ -307,22 +328,30 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 		userPrompt += fmt.Sprintf("\n\nBranch Context: %s", branchContext)
 	}
 
-	cmdArgs := []string{
-		"--provider", h.cfg.CLIProvider,
-		"-m", h.cfg.CLIModel,
-		"-z", userPrompt,
-	}
-
-	cliTimeout := 8 * time.Second
-	if h.cfg.Timeout > 0 && h.cfg.Timeout < cliTimeout {
+	cliTimeout := 45 * time.Second
+	if h.cfg.Timeout > 0 && h.cfg.Timeout > cliTimeout {
 		cliTimeout = h.cfg.Timeout
 	}
 	cliCtx, cancel := context.WithTimeout(ctx, cliTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(cliCtx, h.cfg.CLIPath, cmdArgs...)
-	outBytes, err := cmd.Output()
-	if err != nil {
+	userHome, _ := os.UserHomeDir()
+	var cmd *exec.Cmd
+
+	if strings.HasSuffix(h.cfg.CLIPath, ".py") {
+		pythonPath := filepath.Join(userHome, "AppData", "Local", "hermes", "tools", "python-3.14.7+20260901-win32-x64", "python.exe")
+		if _, err := os.Stat(pythonPath); err != nil {
+			pythonPath = "python"
+		}
+		cmd = exec.CommandContext(cliCtx, pythonPath, h.cfg.CLIPath, "-q", userPrompt, "--oneshot", "-t", "")
+	} else if strings.HasSuffix(h.cfg.CLIPath, ".cmd") || strings.HasSuffix(h.cfg.CLIPath, ".bat") {
+		cmd = exec.CommandContext(cliCtx, "cmd.exe", "/C", h.cfg.CLIPath, "-q", userPrompt, "--oneshot", "-t", "")
+	} else {
+		cmd = exec.CommandContext(cliCtx, h.cfg.CLIPath, "-q", userPrompt, "--oneshot", "-t", "")
+	}
+
+	outBytes, err := cmd.CombinedOutput()
+	if err != nil && len(outBytes) == 0 {
 		res := h.FallbackHeuristic(rawMessage)
 		res.LatencyMs = time.Since(start).Milliseconds()
 		return res, nil
@@ -347,14 +376,16 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 		Thought:    thought,
 		ToolCall:   toolCall,
 		IsFallback: false,
-		ModelUsed:  fmt.Sprintf("hermes-cli:%s/%s", h.cfg.CLIProvider, h.cfg.CLIModel),
+		ModelUsed:  fmt.Sprintf("hermes-cli:%s", filepath.Base(h.cfg.CLIPath)),
 		LatencyMs:  latency,
 	}, nil
 }
 
 var (
-	thoughtRegex  = regexp.MustCompile(`(?s)<thought>(.*?)</thought>`)
-	toolCallRegex = regexp.MustCompile(`(?s)<tool_call>(.*?)</tool_call>`)
+	thoughtRegex      = regexp.MustCompile(`(?s)<thought>(.*?)</thought>`)
+	toolCallRegex     = regexp.MustCompile(`(?s)<tool_call>(.*?)</tool_call>`)
+	cliReasoningRegex = regexp.MustCompile(`(?s)┌─ Reasoning ─+┐\s*(.*?)\s*└─+┘`)
+	cliHermesBoxRegex = regexp.MustCompile(`(?s)╭─ ☤ Hermes ─+╮\s*(.*?)\s*╰─+╯`)
 )
 
 // ParseHermesOutput extracts <thought> and <tool_call> blocks from raw LLM output
@@ -366,6 +397,12 @@ func ParseHermesOutput(raw string) (string, *ToolCallPayload) {
 	thoughtMatch := thoughtRegex.FindStringSubmatch(raw)
 	if len(thoughtMatch) > 1 {
 		thought = strings.TrimSpace(thoughtMatch[1])
+	} else {
+		// Fallback to CLI's native reasoning box
+		cliThoughtMatch := cliReasoningRegex.FindStringSubmatch(raw)
+		if len(cliThoughtMatch) > 1 {
+			thought = strings.TrimSpace(cliThoughtMatch[1])
+		}
 	}
 
 	// 2. Extract Tool Call
@@ -383,7 +420,21 @@ func ParseHermesOutput(raw string) (string, *ToolCallPayload) {
 		}
 	}
 
-	// 3. Fallback: If no tags found but looks like raw JSON
+	// 3. Fallback: If no <tool_call> tag, check inside CLI Hermes box
+	if toolCall == nil {
+		boxMatch := cliHermesBoxRegex.FindStringSubmatch(raw)
+		if len(boxMatch) > 1 {
+			boxContent := strings.TrimSpace(boxMatch[1])
+			if innerMatch := toolCallRegex.FindStringSubmatch(boxContent); len(innerMatch) > 1 {
+				var payload ToolCallPayload
+				if err := json.Unmarshal([]byte(strings.TrimSpace(innerMatch[1])), &payload); err == nil && payload.Name != "" {
+					toolCall = &payload
+				}
+			}
+		}
+	}
+
+	// 4. Fallback: If no tags found but looks like raw JSON
 	if toolCall == nil && strings.HasPrefix(strings.TrimSpace(raw), "{") && strings.HasSuffix(strings.TrimSpace(raw), "}") {
 		var payload ToolCallPayload
 		if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &payload); err == nil && payload.Name != "" {
