@@ -772,6 +772,28 @@ type DBTestRequest struct {
 	SSHBastionHost string `json:"ssh_bastion_host"`
 	SSHBastionPort string `json:"ssh_bastion_port"`
 	SSHBastionUser string `json:"ssh_bastion_user"`
+	TNS            string `json:"tns,omitempty"`
+	ServiceName    string `json:"service_name,omitempty"`
+}
+
+func parseOracleTNS(tns string) (host, port, serviceName string) {
+	reHost := regexp.MustCompile(`(?i)HOST\s*=\s*([^\)\s]+)`)
+	rePort := regexp.MustCompile(`(?i)PORT\s*=\s*([^\)\s]+)`)
+	reSvc := regexp.MustCompile(`(?i)SERVICE_NAME\s*=\s*([^\)\s]+)`)
+	reSid := regexp.MustCompile(`(?i)SID\s*=\s*([^\)\s]+)`)
+
+	if m := reHost.FindStringSubmatch(tns); len(m) > 1 {
+		host = strings.TrimSpace(m[1])
+	}
+	if m := rePort.FindStringSubmatch(tns); len(m) > 1 {
+		port = strings.TrimSpace(m[1])
+	}
+	if m := reSvc.FindStringSubmatch(tns); len(m) > 1 {
+		serviceName = strings.TrimSpace(m[1])
+	} else if m := reSid.FindStringSubmatch(tns); len(m) > 1 {
+		serviceName = strings.TrimSpace(m[1])
+	}
+	return
 }
 
 func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
@@ -815,21 +837,42 @@ func (h *APIHandler) TestDatabaseConnection(c *gin.Context) {
 
 	// 2. If non-PostgreSQL platform is selected (e.g. Oracle, SAP, MySQL, MSSQL)
 	if req.Platform != "" && !strings.Contains(strings.ToLower(req.Platform), "postgres") {
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort(req.Host, req.Port), 2500*time.Millisecond)
+		targetHost := req.Host
+		targetPort := req.Port
+		targetSvc := req.ServiceName
+
+		if req.TNS != "" || strings.Contains(req.Host, "DESCRIPTION") {
+			tHost, tPort, tSvc := parseOracleTNS(req.TNS)
+			if tHost == "" && strings.Contains(req.Host, "DESCRIPTION") {
+				tHost, tPort, tSvc = parseOracleTNS(req.Host)
+			}
+			if tHost != "" { targetHost = tHost }
+			if tPort != "" { targetPort = tPort }
+			if tSvc != "" { targetSvc = tSvc }
+		}
+		if targetPort == "" {
+			if req.Platform == "oracle" { targetPort = "1521" } else { targetPort = "3306" }
+		}
+
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(targetHost, targetPort), 3000*time.Millisecond)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"ok":    false,
-				"error": fmt.Sprintf("Failed to open TCP socket to platform %s (%s:%s): %v", req.Platform, req.Host, req.Port, err),
+				"error": fmt.Sprintf("Failed to open TCP socket to platform %s (%s:%s): %v", req.Platform, targetHost, targetPort, err),
 			})
 			return
 		}
 		conn.Close()
 
 		latency := time.Since(start).Milliseconds()
+		msg := fmt.Sprintf("%s platform connection verified! Endpoint: %s:%s/%s | Roundtrip: %dms", strings.ToUpper(req.Platform), targetHost, targetPort, req.DBName, latency)
+		if req.Platform == "oracle" {
+			msg = fmt.Sprintf("Oracle 11g TNS connection verified! Host: %s:%s | Service: %s | DB: %s | Roundtrip: %dms", targetHost, targetPort, targetSvc, req.DBName, latency)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"ok":         true,
 			"latency_ms": latency,
-			"message":    fmt.Sprintf("%s platform connection verified! Endpoint: %s:%s/%s | Roundtrip: %dms", req.Platform, req.Host, req.Port, req.DBName, latency),
+			"message":    msg,
 		})
 		return
 	}
@@ -1087,76 +1130,90 @@ type ReferenceDBConfig struct {
 	IsActive    bool   `json:"is_active"`
 	LatencyMs   int64  `json:"latency_ms,omitempty"`
 	Description string `json:"description,omitempty"`
+	TNS         string `json:"tns,omitempty"`
+	ServiceName string `json:"service_name,omitempty"`
 	CreatedAt   string `json:"created_at"`
 }
 
 var (
 	refDBsMutex sync.RWMutex
-	refDBsStore = []ReferenceDBConfig{
-		{
+	refDBsStore []ReferenceDBConfig
+	refDBsOnce  sync.Once
+)
+
+func initRefDBs() {
+	refDBsOnce.Do(func() {
+		// 1. Check if Oracle 11g / Enterprise reference DB is provided via ENV (DB_HOST, DB_USERNAME, DB, ORACLE_TNS)
+		oracleTNS := os.Getenv("DB_HOST")
+		if oracleTNS == "" { oracleTNS = os.Getenv("ORACLE_TNS") }
+		oracleDB := os.Getenv("DB")
+		if oracleDB == "" { oracleDB = os.Getenv("ORACLE_DB") }
+		oracleUser := os.Getenv("DB_USERNAME")
+		if oracleUser == "" { oracleUser = os.Getenv("ORACLE_USER") }
+		oraclePass := os.Getenv("DB_PASSWORD")
+		if oraclePass == "" { oraclePass = os.Getenv("ORACLE_PASSWORD") }
+
+		hasOracleEnv := oracleTNS != "" || oracleDB != ""
+
+		if hasOracleEnv {
+			tHost, tPort, tSvc := parseOracleTNS(oracleTNS)
+			if tHost == "" { tHost = os.Getenv("ORACLE_HOST") }
+			if tPort == "" { tPort = os.Getenv("ORACLE_PORT") }
+			if tPort == "" { tPort = "1521" }
+			if tSvc == "" { tSvc = os.Getenv("ORACLE_SERVICE_NAME") }
+
+			refDBsStore = append(refDBsStore, ReferenceDBConfig{
+				ID:          "ref-oracle-env",
+				Name:        fmt.Sprintf("Oracle Reference DB (%s)", oracleDB),
+				Platform:    "oracle",
+				Host:        tHost,
+				Port:        tPort,
+				ServiceName: tSvc,
+				DBName:      oracleDB,
+				User:        oracleUser,
+				Password:    oraclePass,
+				TNS:         oracleTNS,
+				SSLMode:     "disable",
+				Mode:        "local",
+				Status:      "STANDBY",
+				IsActive:    true,
+				Description: "Configured dynamically from environment variables (.env)",
+				CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+			})
+		}
+
+		// 2. Primary MCP Reference Store (PostgreSQL default from env)
+		pgHost := os.Getenv("MCP_REF_DB_HOST")
+		if pgHost == "" { pgHost = "localhost" }
+		pgPort := os.Getenv("MCP_REF_DB_PORT")
+		if pgPort == "" { pgPort = "5432" }
+		pgDB := os.Getenv("MCP_REF_DB_NAME")
+		if pgDB == "" { pgDB = "novapilot_mcp_ref" }
+		pgUser := os.Getenv("MCP_REF_DB_USER")
+		if pgUser == "" { pgUser = "postgres" }
+		pgPass := os.Getenv("MCP_REF_DB_PASSWORD")
+
+		refDBsStore = append(refDBsStore, ReferenceDBConfig{
 			ID:          "ref-pg-sales",
 			Name:        "Primary MCP Reference Store",
 			Platform:    "postgres",
-			Host:        "localhost",
-			Port:        "5432",
-			DBName:      "novapilot_mcp_ref",
-			User:        "postgres",
-			SSLMode:     "disable",
-			Mode:        "local",
-			Status:      "CONNECTED",
-			IsActive:    true,
-			Description: "Live Enterprise Sales Orders, Quotations & Invoice Verification",
-			CreatedAt:   "2026-10-14T08:00:00Z",
-		},
-		{
-			ID:          "ref-oracle-gl",
-			Name:        "Oracle 19c Enterprise General Ledger",
-			Platform:    "oracle",
-			Host:        "10.0.12.44",
-			Port:        "1521",
-			DBName:      "ORCL_FIN_PROD",
-			User:        "erp_reader",
-			SSLMode:     "require",
-			Mode:        "ssl",
-			Status:      "STANDBY",
-			IsActive:    false,
-			Description: "Corporate ERP General Ledger, Accounts Receivable, and Customer Master",
-			CreatedAt:   "2026-10-15T09:30:00Z",
-		},
-		{
-			ID:          "ref-sap-s4hana",
-			Name:        "SAP S/4HANA Finance & Controlling",
-			Platform:    "sap",
-			Host:        "sap-gateway.internal.corp",
-			Port:        "3300",
-			DBName:      "S4H_ERP_01",
-			User:        "bapi_user",
-			SSLMode:     "require",
-			Mode:        "ssh_tunnel",
-			Status:      "STANDBY",
-			IsActive:    false,
-			Description: "BAPI & RFC Production Data for Factory Invoicing and Billing Documents",
-			CreatedAt:   "2026-10-15T10:15:00Z",
-		},
-		{
-			ID:          "ref-mysql-crm",
-			Name:        "Regional Customer & CRM Cluster",
-			Platform:    "mysql",
-			Host:        "10.0.18.20",
-			Port:        "3306",
-			DBName:      "crm_customers",
-			User:        "crm_ro",
+			Host:        pgHost,
+			Port:        pgPort,
+			DBName:      pgDB,
+			User:        pgUser,
+			Password:    pgPass,
 			SSLMode:     "disable",
 			Mode:        "local",
 			Status:      "STANDBY",
-			IsActive:    false,
-			Description: "Wholesale Customer Master Directory & Regional Branch Registrations",
-			CreatedAt:   "2026-10-15T11:00:00Z",
-		},
-	}
-)
+			IsActive:    !hasOracleEnv,
+			Description: "Enterprise Sales Orders, Quotations & Invoice Verification",
+			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+}
 
 func (h *APIHandler) ListReferenceDBs(c *gin.Context) {
+	initRefDBs()
 	refDBsMutex.RLock()
 	defer refDBsMutex.RUnlock()
 
@@ -1190,6 +1247,23 @@ func (h *APIHandler) CreateReferenceDB(c *gin.Context) {
 	if input.Name == "" {
 		input.Name = fmt.Sprintf("%s Reference DB (%s)", strings.ToUpper(input.Platform), input.DBName)
 	}
+
+	if input.TNS != "" || strings.Contains(input.Host, "DESCRIPTION") {
+		tHost, tPort, tSvc := parseOracleTNS(input.TNS)
+		if tHost == "" && strings.Contains(input.Host, "DESCRIPTION") {
+			tHost, tPort, tSvc = parseOracleTNS(input.Host)
+		}
+		if tHost != "" && (input.Host == "" || strings.Contains(input.Host, "DESCRIPTION")) {
+			input.Host = tHost
+		}
+		if tPort != "" && (input.Port == "" || input.Port == "1521") {
+			input.Port = tPort
+		}
+		if tSvc != "" && input.ServiceName == "" {
+			input.ServiceName = tSvc
+		}
+	}
+
 	if input.Port == "" {
 		switch input.Platform {
 		case "oracle":
@@ -1213,10 +1287,62 @@ func (h *APIHandler) CreateReferenceDB(c *gin.Context) {
 	refDBsStore = append(refDBsStore, input)
 	refDBsMutex.Unlock()
 
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"ok":      true,
 		"message": fmt.Sprintf("Database referensi '%s' berhasil ditambahkan ke pool!", input.Name),
 		"db":      input,
+	})
+}
+
+func (h *APIHandler) UpdateReferenceDB(c *gin.Context) {
+	id := c.Param("id")
+	var input ReferenceDBConfig
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	refDBsMutex.Lock()
+	defer refDBsMutex.Unlock()
+
+	var updated *ReferenceDBConfig
+	for i := range refDBsStore {
+		if refDBsStore[i].ID == id {
+			if input.Name != "" { refDBsStore[i].Name = input.Name }
+			if input.Platform != "" { refDBsStore[i].Platform = input.Platform }
+			if input.Host != "" { refDBsStore[i].Host = input.Host }
+			if input.Port != "" { refDBsStore[i].Port = input.Port }
+			if input.DBName != "" { refDBsStore[i].DBName = input.DBName }
+			if input.User != "" { refDBsStore[i].User = input.User }
+			if input.Password != "" { refDBsStore[i].Password = input.Password }
+			if input.SSLMode != "" { refDBsStore[i].SSLMode = input.SSLMode }
+			if input.Mode != "" { refDBsStore[i].Mode = input.Mode }
+			if input.Description != "" { refDBsStore[i].Description = input.Description }
+			if input.ServiceName != "" { refDBsStore[i].ServiceName = input.ServiceName }
+			if input.TNS != "" || strings.Contains(input.Host, "DESCRIPTION") {
+				refDBsStore[i].TNS = input.TNS
+				tHost, tPort, tSvc := parseOracleTNS(input.TNS)
+				if tHost == "" && strings.Contains(input.Host, "DESCRIPTION") {
+					tHost, tPort, tSvc = parseOracleTNS(input.Host)
+				}
+				if tHost != "" { refDBsStore[i].Host = tHost }
+				if tPort != "" { refDBsStore[i].Port = tPort }
+				if tSvc != "" { refDBsStore[i].ServiceName = tSvc }
+			}
+			updated = &refDBsStore[i]
+			break
+		}
+	}
+
+	if updated == nil {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Database referensi tidak ditemukan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":           true,
+		"message":      fmt.Sprintf("Konfigurasi database referensi '%s' berhasil diperbarui!", updated.Name),
+		"reference_db": updated,
 	})
 }
 
@@ -1263,6 +1389,15 @@ func (h *APIHandler) ActivateReferenceDB(c *gin.Context) {
 	os.Setenv("MCP_REF_DB_USER", target.User)
 	os.Setenv("MCP_REF_DB_NAME", target.DBName)
 	os.Setenv("MCP_REF_DB_SSLMODE", target.SSLMode)
+	if target.TNS != "" {
+		os.Setenv("MCP_REF_DB_TNS", target.TNS)
+		os.Setenv("DB_HOST", target.TNS)
+		os.Setenv("ORACLE_TNS", target.TNS)
+	}
+	if target.ServiceName != "" {
+		os.Setenv("MCP_REF_DB_SERVICE_NAME", target.ServiceName)
+		os.Setenv("ORACLE_SERVICE_NAME", target.ServiceName)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"ok":      true,
@@ -1321,6 +1456,7 @@ func (h *APIHandler) TestReferenceDB(c *gin.Context) {
 	}
 
 	start := time.Now()
+	var targetSvc string
 	if target.Platform == "postgres" {
 		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
 			target.Host, target.Port, target.User, target.Password, target.DBName, target.SSLMode)
@@ -1335,9 +1471,26 @@ func (h *APIHandler) TestReferenceDB(c *gin.Context) {
 			return
 		}
 	} else {
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort(target.Host, target.Port), 2500*time.Millisecond)
+		targetHost := target.Host
+		targetPort := target.Port
+		targetSvc = target.ServiceName
+
+		if target.TNS != "" || strings.Contains(target.Host, "DESCRIPTION") {
+			tHost, tPort, tSvc := parseOracleTNS(target.TNS)
+			if tHost == "" && strings.Contains(target.Host, "DESCRIPTION") {
+				tHost, tPort, tSvc = parseOracleTNS(target.Host)
+			}
+			if tHost != "" { targetHost = tHost }
+			if tPort != "" { targetPort = tPort }
+			if tSvc != "" { targetSvc = tSvc }
+		}
+		if targetPort == "" {
+			if target.Platform == "oracle" { targetPort = "1521" } else { targetPort = "3306" }
+		}
+
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(targetHost, targetPort), 3000*time.Millisecond)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal membuka koneksi TCP ke %s (%s:%s): %v", target.Platform, target.Host, target.Port, err)})
+			c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal membuka koneksi TCP ke %s (%s:%s): %v", target.Platform, targetHost, targetPort, err)})
 			return
 		}
 		conn.Close()
@@ -1347,12 +1500,20 @@ func (h *APIHandler) TestReferenceDB(c *gin.Context) {
 	refDBsMutex.Lock()
 	target.Status = "CONNECTED"
 	target.LatencyMs = latency
+	if targetSvc != "" && target.ServiceName == "" {
+		target.ServiceName = targetSvc
+	}
 	refDBsMutex.Unlock()
+
+	msg := fmt.Sprintf("Koneksi ke database referensi '%s' (%s) berhasil diverifikasi! Latensi: %dms", target.Name, target.Platform, latency)
+	if target.Platform == "oracle" {
+		msg = fmt.Sprintf("Koneksi TNS Oracle 11g '%s' (Host: %s:%s, Service: %s, DB: %s) BERHASIL! Latensi: %dms", target.Name, target.Host, target.Port, target.ServiceName, target.DBName, latency)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"ok":         true,
 		"latency_ms": latency,
-		"message":    fmt.Sprintf("Koneksi ke database referensi '%s' (%s) berhasil diverifikasi! Latensi: %dms", target.Name, target.Platform, latency),
+		"message":    msg,
 	})
 }
 

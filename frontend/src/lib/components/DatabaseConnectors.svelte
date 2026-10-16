@@ -20,7 +20,8 @@
 		Plus,
 		Trash,
 		Play,
-		Star
+		Star,
+		PencilSquare
 	} from "svelte-heros-v2";
 	import { i18n } from "$lib/i18n.svelte";
 	import DatabasePlatformSelect, { type PlatformOption } from "./DatabasePlatformSelect.svelte";
@@ -133,12 +134,15 @@
 		port: string;
 		dbname: string;
 		user: string;
+		password?: string;
 		sslmode: string;
 		mode: string;
 		status: string;
 		is_active: boolean;
 		latency_ms?: number;
 		description?: string;
+		tns?: string;
+		service_name?: string;
 		created_at: string;
 	}
 
@@ -160,8 +164,151 @@
 		password: "",
 		sslmode: "disable",
 		mode: "local",
-		description: ""
+		description: "",
+		tns: "",
+		service_name: ""
 	});
+
+	// Edit Reference DB Modal State
+	let showEditRefModal = $state(false);
+	let editingRefDB = $state<ReferenceDB | null>(null);
+	let isUpdatingRefDB = $state(false);
+	let isTestingEditRefDB = $state(false);
+	let editTestResult = $state<{ ok: boolean; message: string; latency_ms?: number } | null>(null);
+	let showEditRefPass = $state(false);
+	let showNewRefPass = $state(false);
+	let mcpOracleTNS = $state("");
+
+	// Oracle TNS Auto-parser helper
+	function parseOracleTNS(tns: string) {
+		let host = "";
+		let port = "1521";
+		let serviceName = "";
+
+		const hostMatch = tns.match(/HOST\s*=\s*([^)\s]+)/i);
+		if (hostMatch) host = hostMatch[1].trim();
+
+		const portMatch = tns.match(/PORT\s*=\s*([0-9]+)/i);
+		if (portMatch) port = portMatch[1].trim();
+
+		const svcMatch = tns.match(/SERVICE_NAME\s*=\s*([^)\s]+)/i);
+		if (svcMatch) serviceName = svcMatch[1].trim();
+
+		const sidMatch = tns.match(/SID\s*=\s*([^)\s]+)/i);
+		if (!serviceName && sidMatch) serviceName = sidMatch[1].trim();
+
+		return { host, port, serviceName };
+	}
+
+	function handleEditTNSInput() {
+		if (!editingRefDB || !editingRefDB.tns) return;
+		const { host, port, serviceName } = parseOracleTNS(editingRefDB.tns);
+		if (host) editingRefDB.host = host;
+		if (port) editingRefDB.port = port;
+		if (serviceName) {
+			editingRefDB.service_name = serviceName;
+			if (!editingRefDB.dbname || editingRefDB.dbname === "XE" || editingRefDB.dbname === "ORCL") {
+				editingRefDB.dbname = serviceName;
+			}
+		}
+	}
+
+	function handleNewRefTNSInput() {
+		if (!newRefDB.tns) return;
+		const { host, port, serviceName } = parseOracleTNS(newRefDB.tns);
+		if (host) newRefDB.host = host;
+		if (port) newRefDB.port = port;
+		if (serviceName) {
+			newRefDB.service_name = serviceName;
+			if (!newRefDB.dbname) newRefDB.dbname = serviceName;
+		}
+	}
+
+	function handleMcpTNSInput() {
+		if (!mcpOracleTNS) return;
+		const { host, port, serviceName } = parseOracleTNS(mcpOracleTNS);
+		if (host) mcpConfig.host = host;
+		if (port) mcpConfig.port = port;
+		if (serviceName) mcpConfig.dbname = serviceName;
+	}
+
+	function openEditRefModal(db: ReferenceDB) {
+		editingRefDB = {
+			...db,
+			password: db.password || "",
+			tns: db.tns || (db.host && db.host.includes("DESCRIPTION") ? db.host : ""),
+			service_name: db.service_name || ""
+		};
+		if (editingRefDB.tns && (!editingRefDB.host || editingRefDB.host.includes("DESCRIPTION"))) {
+			const { host, port, serviceName } = parseOracleTNS(editingRefDB.tns);
+			if (host) editingRefDB.host = host;
+			if (port) editingRefDB.port = port;
+			if (serviceName) editingRefDB.service_name = serviceName;
+		}
+		editTestResult = null;
+		showEditRefPass = false;
+		showEditRefModal = true;
+	}
+
+	async function handleUpdateRefDB() {
+		if (!editingRefDB) return;
+		isUpdatingRefDB = true;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${editingRefDB.id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(editingRefDB)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message || "Konfigurasi database referensi berhasil diperbarui!" };
+				showEditRefModal = false;
+				editingRefDB = null;
+				await fetchReferenceDBs();
+				await fetchConfigAndTelemetry();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal memperbarui database referensi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isUpdatingRefDB = false;
+		}
+	}
+
+	async function testEditingRefDB() {
+		if (!editingRefDB) return;
+		isTestingEditRefDB = true;
+		editTestResult = null;
+		try {
+			const res = await fetch("/api/database/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					platform: editingRefDB.platform,
+					host: editingRefDB.host,
+					port: editingRefDB.port,
+					user: editingRefDB.user,
+					password: editingRefDB.password,
+					dbname: editingRefDB.dbname,
+					sslmode: editingRefDB.sslmode,
+					tns: editingRefDB.tns,
+					service_name: editingRefDB.service_name
+				})
+			});
+			const data = await res.json();
+			editTestResult = {
+				ok: data.ok,
+				message: data.message || data.error || (data.ok ? "Koneksi berhasil diverifikasi!" : "Gagal terkoneksi"),
+				latency_ms: data.latency_ms
+			};
+		} catch (e: any) {
+			editTestResult = { ok: false, message: e.message };
+		} finally {
+			isTestingEditRefDB = false;
+		}
+	}
 
 	async function fetchReferenceDBs() {
 		isLoadingRefDBs = true;
@@ -254,7 +401,9 @@
 					password: "",
 					sslmode: "disable",
 					mode: "local",
-					description: ""
+					description: "",
+					tns: "",
+					service_name: ""
 				};
 				await fetchReferenceDBs();
 			} else {
@@ -2232,16 +2381,24 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{#each referenceDBs as db}
 							{@const isActive = db.is_active}
-							<div class="p-4 rounded-xl border transition-all duration-200 relative flex flex-col justify-between space-y-3 shadow-2xs {isActive ? 'border-cyan-500/70 bg-cyan-500/5 ring-2 ring-cyan-500/20' : 'border-border/70 bg-secondary/30 hover:border-border hover:bg-secondary/50'}">
+							<div 
+								class="p-4 rounded-xl border transition-all duration-200 relative flex flex-col justify-between space-y-3 shadow-2xs cursor-pointer group {isActive ? 'border-cyan-500/70 bg-cyan-500/5 ring-2 ring-cyan-500/20' : 'border-border/70 bg-secondary/30 hover:border-cyan-500/50 hover:bg-secondary/60'}"
+								onclick={() => openEditRefModal(db)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditRefModal(db); } }}
+								title="Klik untuk membuka editor konfigurasi database ini"
+							>
 								<!-- Card Top: Brand Icon + Platform Badge + Active State -->
 								<div class="flex items-start justify-between gap-2">
 									<div class="flex items-center gap-2.5">
-										<div class="p-1.5 rounded-lg bg-background border border-border/60 shadow-2xs">
+										<div class="p-1.5 rounded-lg bg-background border border-border/60 shadow-2xs group-hover:border-cyan-500/40 transition-colors">
 											<BrandIcon name={db.platform} class="h-6 w-6" />
 										</div>
 										<div>
 											<div class="text-xs font-bold text-foreground leading-snug flex items-center gap-1.5">
 												<span>{db.name}</span>
+												<PencilSquare class="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
 											</div>
 											<div class="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
 												<span>{db.platform}</span>
@@ -2259,7 +2416,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									{:else}
 										<button
 											type="button"
-											onclick={() => activateReferenceDB(db.id)}
+											onclick={(e) => { e.stopPropagation(); activateReferenceDB(db.id); }}
 											disabled={isActivatingRefDB === db.id}
 											class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary hover:bg-primary hover:text-primary-foreground border border-border text-foreground transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
 											title="Aktifkan sebagai database referensi utama untuk agent MCP"
@@ -2291,7 +2448,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									{/if}
 								</div>
 
-								<!-- Card Footer: Test & Delete Actions -->
+								<!-- Card Footer: Edit, Test & Delete Actions -->
 								<div class="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
 									<div class="flex items-center gap-1.5 font-mono text-[10px]">
 										<span class="h-2 w-2 rounded-full {db.status === 'CONNECTED' ? 'bg-emerald-500' : 'bg-zinc-400'}"></span>
@@ -2304,9 +2461,19 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									<div class="flex items-center gap-1">
 										<button
 											type="button"
-											onclick={() => testSingleRefDB(db.id)}
+											onclick={(e) => { e.stopPropagation(); openEditRefModal(db); }}
+											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+											title="Edit konfigurasi koneksi database ini"
+										>
+											<PencilSquare class="h-3 w-3 text-cyan-500" />
+											<span>Edit</span>
+										</button>
+
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); testSingleRefDB(db.id); }}
 											disabled={isTestingRefDB === db.id}
-											class="h-7 px-2.5 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
 											title="Uji koneksi jaringan ke endpoint ini"
 										>
 											<ArrowPath class="h-3 w-3 {isTestingRefDB === db.id ? 'animate-spin text-cyan-500' : ''}" />
@@ -2315,7 +2482,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 										<button
 											type="button"
-											onclick={() => deleteSingleRefDB(db.id)}
+											onclick={(e) => { e.stopPropagation(); deleteSingleRefDB(db.id); }}
 											class="h-7 w-7 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 flex items-center justify-center transition-colors cursor-pointer"
 											title="Hapus dari pool"
 										>
@@ -2376,6 +2543,30 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								/>
 							</div>
 
+							<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+							{#if newRefDB.platform === 'oracle'}
+								<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+									<div class="flex items-center justify-between">
+										<label for="new-ref-tns" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+											<BrandIcon name="oracle" class="h-4 w-4" />
+											<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+										</label>
+										<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+									</div>
+									<textarea
+										id="new-ref-tns"
+										bind:value={newRefDB.tns}
+										oninput={handleNewRefTNSInput}
+										rows={3}
+										placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+										class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									></textarea>
+									<p class="text-[10px] text-muted-foreground">
+										Format TNS Oracle 11g diekstrak otomatis: Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.port || '-'}</span>), Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.service_name || newRefDB.dbname || '-'}</span>).
+									</p>
+								</div>
+							{/if}
+
 							<!-- Host & Port -->
 							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								<div class="sm:col-span-2 space-y-1">
@@ -2432,13 +2623,26 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div class="space-y-1">
 									<label for="new-ref-password" class="font-semibold text-muted-foreground">Password:</label>
-									<input
-										id="new-ref-password"
-										type="password"
-										bind:value={newRefDB.password}
-										placeholder="••••••••"
-										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
-									/>
+									<div class="relative">
+										<input
+											id="new-ref-password"
+											type={showNewRefPass ? "text" : "password"}
+											bind:value={newRefDB.password}
+											placeholder="••••••••"
+											class="w-full h-9 px-3 pr-9 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+										/>
+										<button
+											type="button"
+											onclick={() => showNewRefPass = !showNewRefPass}
+											class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+										>
+											{#if showNewRefPass}
+												<EyeSlash class="h-4 w-4" />
+											{:else}
+												<Eye class="h-4 w-4" />
+											{/if}
+										</button>
+									</div>
 								</div>
 								<div class="space-y-1">
 									<label for="new-ref-sslmode" class="font-semibold text-muted-foreground">SSL / TLS Mode:</label>
@@ -2492,6 +2696,262 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									<Plus class="h-4 w-4" />
 									<span>Simpan ke Pool</span>
 								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			{/if}
+
+			<!-- MODAL: Edit Database Referensi Pool -->
+			{#if showEditRefModal && editingRefDB}
+				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150">
+					<div class="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+						<div class="flex items-center justify-between pb-3 border-b border-border/50">
+							<div class="flex items-center gap-2.5">
+								<div class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+									<PencilSquare class="h-5 w-5" />
+								</div>
+								<div>
+									<h3 class="text-base font-bold text-foreground">Edit Database Referensi Pool</h3>
+									<p class="text-[11px] text-muted-foreground font-mono">{editingRefDB.id} • {editingRefDB.name}</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => { showEditRefModal = false; editingRefDB = null; }}
+								class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+							>
+								<XMark class="h-4 w-4" />
+							</button>
+						</div>
+
+						<!-- Test Connection Banner in Modal -->
+						{#if editTestResult}
+							<div class="p-3.5 rounded-xl border flex items-start gap-2.5 text-xs {editTestResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+								{#if editTestResult.ok}
+									<CheckCircle class="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+								{:else}
+									<XCircle class="h-4 w-4 shrink-0 text-rose-500 mt-0.5" />
+								{/if}
+								<div class="flex-1 font-mono">
+									<div class="font-bold flex items-center justify-between">
+										<span>{editTestResult.ok ? 'KONEKSI BERHASIL TERVERIFIKASI' : 'GAGAL TERKONEKSI'}</span>
+										{#if editTestResult.latency_ms}
+											<span class="opacity-80">({editTestResult.latency_ms}ms)</span>
+										{/if}
+									</div>
+									<div class="mt-1 text-[11px]">{editTestResult.message}</div>
+								</div>
+								<button
+									type="button"
+									onclick={() => editTestResult = null}
+									class="text-muted-foreground hover:text-foreground cursor-pointer"
+								>
+									<XMark class="h-3.5 w-3.5" />
+								</button>
+							</div>
+						{/if}
+
+						<form onsubmit={(e) => { e.preventDefault(); handleUpdateRefDB(); }} class="space-y-4 text-xs">
+							<!-- Platform Selector with Official Brand Icons -->
+							<div class="space-y-1.5">
+								<label for="edit-ref-platform" class="font-bold text-foreground flex items-center justify-between">
+									<span>Platform Database:</span>
+									<span class="text-[10px] text-cyan-500 font-mono font-bold">PLATFORM SELECTOR</span>
+								</label>
+								<DatabasePlatformSelect
+									id="edit-ref-platform"
+									bind:value={editingRefDB.platform}
+									onchange={(opt) => {
+										if (editingRefDB) editingRefDB.port = opt.defaultPort;
+									}}
+								/>
+							</div>
+
+							<!-- Database Alias / Name -->
+							<div class="space-y-1">
+								<label for="edit-ref-name" class="font-semibold text-muted-foreground">Label / Nama Database:</label>
+								<input
+									id="edit-ref-name"
+									type="text"
+									required
+									bind:value={editingRefDB.name}
+									placeholder="Contoh: Oracle 11g Enterprise Test Database"
+									class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold focus:ring-2 focus:ring-primary/20 focus:outline-none"
+								/>
+							</div>
+
+							<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+							{#if editingRefDB.platform === 'oracle'}
+								<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+									<div class="flex items-center justify-between">
+										<label for="edit-ref-tns" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+											<BrandIcon name="oracle" class="h-4 w-4" />
+											<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+										</label>
+										<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+									</div>
+									<textarea
+										id="edit-ref-tns"
+										bind:value={editingRefDB.tns}
+										oninput={handleEditTNSInput}
+										rows={4}
+										placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+										class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									></textarea>
+									<p class="text-[10px] text-muted-foreground">
+										Format TNS Oracle 11g diekstrak otomatis: Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.port || '-'}</span>), Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.service_name || editingRefDB.dbname || '-'}</span>).
+									</p>
+								</div>
+							{/if}
+
+							<!-- Host & Port -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="sm:col-span-2 space-y-1">
+									<label for="edit-ref-host" class="font-semibold text-muted-foreground">Host / IP Address:</label>
+									<input
+										id="edit-ref-host"
+										type="text"
+										required
+										bind:value={editingRefDB.host}
+										placeholder="172.20.173.35"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-port" class="font-semibold text-muted-foreground">Port:</label>
+									<input
+										id="edit-ref-port"
+										type="text"
+										required
+										bind:value={editingRefDB.port}
+										placeholder="1521"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- DB Name & User -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-dbname" class="font-semibold text-muted-foreground">Database / Service Name / SID:</label>
+									<input
+										id="edit-ref-dbname"
+										type="text"
+										required
+										bind:value={editingRefDB.dbname}
+										placeholder="HAWILA_TEST"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-user" class="font-semibold text-muted-foreground">Username Kredensial:</label>
+									<input
+										id="edit-ref-user"
+										type="text"
+										required
+										bind:value={editingRefDB.user}
+										placeholder="HBS_TEST"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Password & SSL Mode -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-password" class="font-semibold text-muted-foreground">Password Kredensial:</label>
+									<div class="relative">
+										<input
+											id="edit-ref-password"
+											type={showEditRefPass ? "text" : "password"}
+											bind:value={editingRefDB.password}
+											placeholder="••••••••"
+											class="w-full h-9 px-3 pr-9 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+										/>
+										<button
+											type="button"
+											onclick={() => showEditRefPass = !showEditRefPass}
+											class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+										>
+											{#if showEditRefPass}
+												<EyeSlash class="h-4 w-4" />
+											{:else}
+												<Eye class="h-4 w-4" />
+											{/if}
+										</button>
+									</div>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-sslmode" class="font-semibold text-muted-foreground">SSL / TLS Mode:</label>
+									<CustomSelect
+										id="edit-ref-sslmode"
+										bind:value={editingRefDB.sslmode}
+										options={["disable", "require", "verify-ca", "verify-full"]}
+									/>
+								</div>
+							</div>
+
+							<!-- Mode Selector & Description -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-mode" class="font-semibold text-muted-foreground">Konektivitas:</label>
+									<CustomSelect
+										id="edit-ref-mode"
+										bind:value={editingRefDB.mode}
+										options={[
+											{ value: "local", label: "Direct LAN / Local" },
+											{ value: "ssl", label: "Encrypted SSL/TLS" },
+											{ value: "ssh", label: "SSH Bastion Tunnel" }
+										]}
+									/>
+								</div>
+								<div class="sm:col-span-2 space-y-1">
+									<label for="edit-ref-desc" class="font-semibold text-muted-foreground">Keterangan / Scope Data:</label>
+									<input
+										id="edit-ref-desc"
+										type="text"
+										bind:value={editingRefDB.description}
+										placeholder="Contoh: Oracle 11g Enterprise Test Database"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex items-center justify-between gap-2.5 pt-3 border-t border-border/50">
+								<button
+									type="button"
+									onclick={testEditingRefDB}
+									disabled={isTestingEditRefDB}
+									class="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+								>
+									<ArrowPath class="h-3.5 w-3.5 {isTestingEditRefDB ? 'animate-spin text-cyan-500' : ''}" />
+									<span>{isTestingEditRefDB ? 'Menguji Koneksi...' : 'Uji Koneksi'}</span>
+								</button>
+
+								<div class="flex items-center gap-2">
+									<button
+										type="button"
+										onclick={() => { showEditRefModal = false; editingRefDB = null; }}
+										class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+									>
+										Batal
+									</button>
+									<button
+										type="submit"
+										disabled={isUpdatingRefDB}
+										class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+									>
+										{#if isUpdatingRefDB}
+											<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+											<span>Menyimpan...</span>
+										{:else}
+											<Check class="h-4 w-4" />
+											<span>Simpan Perubahan</span>
+										{/if}
+									</button>
+								</div>
 							</div>
 						</form>
 					</div>
@@ -2635,6 +3095,30 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								/>
 							</div>
 						</div>
+					</div>
+				{/if}
+
+				<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+				{#if mcpPlatform === 'oracle'}
+					<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+						<div class="flex items-center justify-between">
+							<label for="mcp-tns-runtime" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+								<BrandIcon name="oracle" class="h-4 w-4" />
+								<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+							</label>
+							<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+						</div>
+						<textarea
+							id="mcp-tns-runtime"
+							bind:value={mcpOracleTNS}
+							oninput={handleMcpTNSInput}
+							rows={3}
+							placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+							class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+						></textarea>
+						<p class="text-[10px] text-muted-foreground">
+							Format TNS Oracle 11g diekstrak otomatis ke Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.port || '-'}</span>), dan Database / Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.dbname || '-'}</span>).
+						</p>
 					</div>
 				{/if}
 

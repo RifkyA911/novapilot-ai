@@ -127,7 +127,7 @@
 	};
 
 	// Registered MCP Tools State (from Backend Catalog)
-	export interface RegisteredMCPTool {
+	interface RegisteredMCPTool {
 		id: string;
 		name: string;
 		version: string;
