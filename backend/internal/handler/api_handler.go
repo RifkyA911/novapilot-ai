@@ -422,6 +422,29 @@ func (h *APIHandler) CreateInboundMessage(c *gin.Context) {
 		}
 	}
 
+	aiReply := ""
+	if h.hermesAdapter != nil {
+		cfg := h.hermesAdapter.GetConfig()
+		var toolCall *llm.ToolCallPayload
+		if extractedDoc != "" || extractedTarget != "" || extractedIntent != "" {
+			toolCall = &llm.ToolCallPayload{
+				Name: extractedIntent,
+				Arguments: map[string]interface{}{
+					"document_no":    extractedDoc,
+					"proposed_value": extractedTarget,
+				},
+			}
+		}
+		aiReply = h.hermesAdapter.GenerateAutoReply(
+			input.RawMessage,
+			toolCall,
+			false,
+			cfg.ReplyTone,
+			cfg.ReplyPrefix,
+			cfg.ReplyLanguage,
+		)
+	}
+
 	msg := &domain.InboundMessage{
 		Platform:        input.Platform,
 		SenderID:        input.SenderID,
@@ -434,6 +457,7 @@ func (h *APIHandler) CreateInboundMessage(c *gin.Context) {
 		ExtractedDoc:    extractedDoc,
 		ExtractedIntent: extractedIntent,
 		ExtractedTarget: extractedTarget,
+		AIReply:         aiReply,
 		CreatedAt:       time.Now(),
 	}
 
@@ -444,6 +468,21 @@ func (h *APIHandler) CreateInboundMessage(c *gin.Context) {
 
 	if h.sseHub != nil {
 		h.sseHub.Broadcast("inbound_message", msg)
+	}
+
+	// Auto-dispatch reply back to WhatsApp if enabled and not in manual mode
+	if h.hermesAdapter != nil && aiReply != "" {
+		cfg := h.hermesAdapter.GetConfig()
+		if cfg.AutoReplyEnabled && cfg.AutoReplyMode != "manual" && input.Platform == "whatsapp" && input.SenderID != "" {
+			go func(to string, text string) {
+				payload, _ := json.Marshal(map[string]string{
+					"phone":   to,
+					"message": text,
+				})
+				client := http.Client{Timeout: 4 * time.Second}
+				_, _ = client.Post("http://127.0.0.1:3002/api/send", "application/json", bytes.NewReader(payload))
+			}(input.SenderID, aiReply)
+		}
 	}
 
 	c.JSON(http.StatusCreated, msg)
@@ -1626,12 +1665,23 @@ func (h *APIHandler) GetLLMConfig(c *gin.Context) {
 	if model == "" { model = "hermes3:8b" }
 	cliPath := os.Getenv("HERMES_CLI_PATH")
 
+	autoReplyEnabled := true
+	autoReplyMode := "smart"
+	replyTone := "professional"
+	replyPrefix := "[NovaPilot AI]"
+	replyLanguage := "id"
+
 	cliAvailable := false
 	if h.hermesAdapter != nil {
 		cfg := h.hermesAdapter.GetConfig()
 		if cliPath == "" {
 			cliPath = cfg.CLIPath
 		}
+		autoReplyEnabled = cfg.AutoReplyEnabled
+		autoReplyMode = cfg.AutoReplyMode
+		replyTone = cfg.ReplyTone
+		replyPrefix = cfg.ReplyPrefix
+		replyLanguage = cfg.ReplyLanguage
 	}
 	if cliPath != "" {
 		if fi, err := os.Stat(cliPath); err == nil && !fi.IsDir() {
@@ -1642,24 +1692,34 @@ func (h *APIHandler) GetLLMConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"mode":          mode,
-		"base_url":      baseURL,
-		"model":         model,
-		"cli_path":      cliPath,
-		"cli_available": cliAvailable,
-		"cli_name":      "Hermes Agent CLI (Windows Native)",
-		"provider":      "NousResearch / Hermes-3-Llama-3.1",
-		"status":        "ACTIVE",
-		"capabilities":  []string{"thought_reasoning", "tool_calling", "heuristic_fallback"},
+		"mode":               mode,
+		"base_url":           baseURL,
+		"model":              model,
+		"cli_path":           cliPath,
+		"cli_available":      cliAvailable,
+		"cli_name":           "Hermes Agent CLI (Windows Native)",
+		"provider":           "NousResearch / Hermes-3-Llama-3.1",
+		"status":             "ACTIVE",
+		"capabilities":       []string{"thought_reasoning", "tool_calling", "auto_reply_generation", "heuristic_fallback"},
+		"auto_reply_enabled": autoReplyEnabled,
+		"auto_reply_mode":    autoReplyMode,
+		"reply_tone":         replyTone,
+		"reply_prefix":       replyPrefix,
+		"reply_language":     replyLanguage,
 	})
 }
 
 func (h *APIHandler) UpdateLLMConfig(c *gin.Context) {
 	var req struct {
-		Mode    string `json:"mode"`
-		BaseURL string `json:"base_url"`
-		Model   string `json:"model"`
-		CLIPath string `json:"cli_path"`
+		Mode             string `json:"mode"`
+		BaseURL          string `json:"base_url"`
+		Model            string `json:"model"`
+		CLIPath          string `json:"cli_path"`
+		AutoReplyEnabled *bool  `json:"auto_reply_enabled"`
+		AutoReplyMode    string `json:"auto_reply_mode"`
+		ReplyTone        string `json:"reply_tone"`
+		ReplyPrefix      string `json:"reply_prefix"`
+		ReplyLanguage    string `json:"reply_language"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1683,14 +1743,125 @@ func (h *APIHandler) UpdateLLMConfig(c *gin.Context) {
 		os.Setenv("HERMES_CLI_PATH", req.CLIPath)
 		updates["HERMES_CLI_PATH"] = req.CLIPath
 	}
+	if req.AutoReplyEnabled != nil {
+		val := "true"
+		if !*req.AutoReplyEnabled {
+			val = "false"
+		}
+		os.Setenv("AUTO_REPLY_ENABLED", val)
+		os.Setenv("AI_AUTO_REPLY_ENABLED", val)
+		updates["AUTO_REPLY_ENABLED"] = val
+		updates["AI_AUTO_REPLY_ENABLED"] = val
+	}
+	if req.AutoReplyMode != "" {
+		os.Setenv("AI_AUTO_REPLY_MODE", req.AutoReplyMode)
+		updates["AI_AUTO_REPLY_MODE"] = req.AutoReplyMode
+	}
+	if req.ReplyTone != "" {
+		os.Setenv("AI_REPLY_TONE", req.ReplyTone)
+		updates["AI_REPLY_TONE"] = req.ReplyTone
+	}
+	if req.ReplyPrefix != "" {
+		os.Setenv("AI_REPLY_PREFIX", req.ReplyPrefix)
+		updates["AI_REPLY_PREFIX"] = req.ReplyPrefix
+	}
+	if req.ReplyLanguage != "" {
+		os.Setenv("AI_REPLY_LANGUAGE", req.ReplyLanguage)
+		updates["AI_REPLY_LANGUAGE"] = req.ReplyLanguage
+	}
 
 	_ = persistEnvFile(updates)
 	h.hermesAdapter = llm.NewHermesAdapter(llm.DefaultConfig())
 
 	c.JSON(http.StatusOK, gin.H{
 		"ok":      true,
-		"message": "Hermes 3 configuration updated and persisted to .env!",
+		"message": "Konfigurasi Hermes 3 & AI Auto-Reply berhasil disimpan ke .env!",
 		"config":  updates,
+	})
+}
+
+type GenerateLLMReplyInput struct {
+	Message       string `json:"message" binding:"required"`
+	Tone          string `json:"tone"`
+	Mode          string `json:"mode"`
+	Prefix        string `json:"prefix"`
+	Language      string `json:"language"`
+	SenderName    string `json:"sender_name"`
+	DocumentNo    string `json:"document_no"`
+	ProposedValue string `json:"proposed_value"`
+	BranchContext string `json:"branch_context"`
+}
+
+func (h *APIHandler) GenerateLLMReply(c *gin.Context) {
+	var input GenerateLLMReplyInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	adapter := h.hermesAdapter
+	if adapter == nil {
+		adapter = llm.NewHermesAdapter(llm.DefaultConfig())
+	}
+	cfg := adapter.GetConfig()
+
+	tone := input.Tone
+	if tone == "" { tone = cfg.ReplyTone }
+	prefix := input.Prefix
+	if prefix == "" { prefix = cfg.ReplyPrefix }
+	lang := input.Language
+	if lang == "" { lang = cfg.ReplyLanguage }
+
+	start := time.Now()
+
+	// 1. Process message through Hermes to extract reasoning & intent
+	res, _ := adapter.ProcessMessage(c.Request.Context(), input.Message, input.BranchContext)
+	latency := time.Since(start).Milliseconds()
+
+	// If manual override parameters passed in
+	if res != nil && (input.DocumentNo != "" || input.ProposedValue != "") {
+		if res.ToolCall == nil {
+			res.ToolCall = &llm.ToolCallPayload{
+				Name: "stage_invoice_update",
+				Arguments: map[string]interface{}{},
+			}
+		}
+		if input.DocumentNo != "" {
+			res.ToolCall.Arguments["document_no"] = input.DocumentNo
+		}
+		if input.ProposedValue != "" {
+			res.ToolCall.Arguments["proposed_value"] = input.ProposedValue
+		}
+		res.GeneratedReply = adapter.GenerateAutoReply(input.Message, res.ToolCall, res.IsFallback, tone, prefix, lang)
+	}
+
+	reply := ""
+	modelUsed := "heuristic-fallback"
+	thought := ""
+	var toolCall *llm.ToolCallPayload
+	isFallback := true
+
+	if res != nil {
+		if input.Tone != "" || input.Prefix != "" || input.Language != "" || res.GeneratedReply == "" {
+			res.GeneratedReply = adapter.GenerateAutoReply(input.Message, res.ToolCall, res.IsFallback, tone, prefix, lang)
+		}
+		reply = res.GeneratedReply
+		modelUsed = res.ModelUsed
+		thought = res.Thought
+		toolCall = res.ToolCall
+		isFallback = res.IsFallback
+	} else {
+		reply = adapter.GenerateAutoReply(input.Message, nil, true, tone, prefix, lang)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":              true,
+		"generated_reply": reply,
+		"model_used":      modelUsed,
+		"latency_ms":      latency,
+		"thought":         thought,
+		"tool_call":       toolCall,
+		"is_fallback":     isFallback,
 	})
 }
 
@@ -2001,16 +2172,19 @@ func (h *APIHandler) HandleWhatsAppWebhook(c *gin.Context) {
 
 				if h.hermesAdapter != nil {
 					llmRes, err := h.hermesAdapter.ProcessMessage(c.Request.Context(), rawBody, "WhatsApp Cloud API Ingress")
-					if err == nil && llmRes != nil && llmRes.ToolCall != nil {
-						msg.Classification = domain.ClassActionable
-						msg.ExtractedIntent = llmRes.ToolCall.Name
-						if doc, ok := llmRes.ToolCall.Arguments["invoice_no"].(string); ok {
-							msg.ExtractedDoc = doc
-						}
-						if target, ok := llmRes.ToolCall.Arguments["proposed_value"].(string); ok {
-							msg.ExtractedTarget = target
-						} else if target, ok := llmRes.ToolCall.Arguments["target_client"].(string); ok {
-							msg.ExtractedTarget = target
+					if err == nil && llmRes != nil {
+						msg.AIReply = llmRes.GeneratedReply
+						if llmRes.ToolCall != nil {
+							msg.Classification = domain.ClassActionable
+							msg.ExtractedIntent = llmRes.ToolCall.Name
+							if doc, ok := llmRes.ToolCall.Arguments["invoice_no"].(string); ok {
+								msg.ExtractedDoc = doc
+							}
+							if target, ok := llmRes.ToolCall.Arguments["proposed_value"].(string); ok {
+								msg.ExtractedTarget = target
+							} else if target, ok := llmRes.ToolCall.Arguments["target_client"].(string); ok {
+								msg.ExtractedTarget = target
+							}
 						}
 					}
 				}

@@ -172,6 +172,7 @@ func main() {
 		api.GET("/llm/config", apiHandler.GetLLMConfig)
 		api.POST("/llm/config", apiHandler.UpdateLLMConfig)
 		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
+		api.POST("/llm/generate-reply", apiHandler.GenerateLLMReply)
 
 		// WhatsApp Gateway Lifecycle Management (:3002)
 		api.GET("/gateway/status", apiHandler.GetGatewayStatus)

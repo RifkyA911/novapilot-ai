@@ -23,6 +23,7 @@
 	let simLoading = $state(false);
 	let simStep = $state(0);
 	let simSuccess = $state(false);
+	let simAIReply = $state<string | null>(null);
 
 	// Real WhatsApp Dispatch (EXP) - Configurable via .env: WA_TEST_RECIPIENT
 	let testPhone = $state("081228632195");
@@ -84,6 +85,7 @@
 		simLoading = true;
 		simStep = 1; // 1. WhatsApp Inbound Ingestion
 		simSuccess = false;
+		simAIReply = null;
 
 		let inboundMsgId: number | null = null;
 		let extractedDoc = simDocNo;
@@ -109,6 +111,9 @@
 			if (ingestRes.ok) {
 				const ingestData = await ingestRes.json();
 				inboundMsgId = ingestData.id;
+				if (ingestData.ai_reply) {
+					simAIReply = ingestData.ai_reply;
+				}
 			}
 
 			// Step 2: Real Agentic Hermes 3 LLM Extraction
@@ -123,6 +128,9 @@
 			});
 			if (llmRes.ok) {
 				const llmData = await llmRes.json();
+				if (llmData.generated_reply) {
+					simAIReply = llmData.generated_reply;
+				}
 				if (llmData.tool_call?.arguments?.invoice_no) {
 					extractedDoc = String(llmData.tool_call.arguments.invoice_no);
 					simDocNo = extractedDoc;
@@ -437,6 +445,23 @@
 			<a href="/dashboard/queue" class="font-semibold underline hover:opacity-80">
 				{i18n.locale === 'id' ? 'Buka di Antrean Persetujuan →' : 'View in Approval Queue →'}
 			</a>
+		</div>
+	{/if}
+
+	{#if simAIReply}
+		<div class="p-4 rounded-2xl bg-primary/5 border border-primary/25 space-y-2 animate-in fade-in duration-200">
+			<div class="flex items-center justify-between">
+				<span class="text-xs font-semibold text-primary flex items-center gap-1.5">
+					<Sparkles class="h-3.5 w-3.5" />
+					{i18n.locale === 'id' ? 'Respons Otomatis AI (Hermes 3 Engine)' : 'Auto-Generated AI Reply (Hermes 3 Engine)'}
+				</span>
+				<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+					AUTONOMOUS REPLY
+				</span>
+			</div>
+			<p class="text-xs text-foreground bg-background/80 p-3 rounded-xl border border-border/60 font-sans leading-relaxed">
+				{simAIReply}
+			</p>
 		</div>
 	{/if}
 </div>

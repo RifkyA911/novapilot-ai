@@ -125,6 +125,31 @@ export interface Translations {
 		openclaw_disconnected_desc: string;
 		check_connection: string;
 		checking: string;
+		auto_reply_card_title: string;
+		auto_reply_card_subtitle: string;
+		auto_reply_toggle_label: string;
+		auto_reply_toggle_desc: string;
+		auto_reply_mode_label: string;
+		auto_reply_mode_smart: string;
+		auto_reply_mode_actionable: string;
+		auto_reply_mode_all: string;
+		auto_reply_mode_manual: string;
+		auto_reply_tone_label: string;
+		auto_reply_tone_professional: string;
+		auto_reply_tone_friendly: string;
+		auto_reply_tone_concise: string;
+		auto_reply_prefix_label: string;
+		auto_reply_lang_label: string;
+		auto_reply_lang_auto: string;
+		auto_reply_lang_id: string;
+		auto_reply_lang_en: string;
+		auto_reply_sandbox_title: string;
+		auto_reply_sandbox_desc: string;
+		auto_reply_generate_btn: string;
+		auto_reply_generating: string;
+		auto_reply_result_label: string;
+		auto_reply_test_dispatch: string;
+		auto_reply_dispatched: string;
 	};
 	overview: {
 		guardrail_title: string;
@@ -1016,7 +1041,32 @@ const dictionaries: Record<Locale, Translations> = {
 			openclaw_disconnected_title: "OpenClaw Gateway belum terdeteksi aktif di {url}",
 			openclaw_disconnected_desc: "NovaPilot siap mengintegrasikan alur tugas otonom. Untuk mengaktifkan eksekusi browser Playwright lokal, jalankan perintah berikut di terminal:",
 			check_connection: "Cek Ulang Koneksi",
-			checking: "Mengecek..."
+			checking: "Mengecek...",
+			auto_reply_card_title: "AI Auto-Generate Reply Chat",
+			auto_reply_card_subtitle: "Konfigurasi mesin otomatisasi respons balasan chat berbasis Hermes 3 & Fallback Heuristik untuk WhatsApp & Omnichannel.",
+			auto_reply_toggle_label: "Aktifkan Balasan Otomatis AI (Auto-Reply)",
+			auto_reply_toggle_desc: "Jika aktif, AI secara cerdas menghasilkan draf balasan kontekstual dan dapat membalas langsung ke nomor WhatsApp/grup.",
+			auto_reply_mode_label: "Mode Pemicu Respons",
+			auto_reply_mode_smart: "Smart Auto (Konfirmasi Mutasi, Kueri ERP & Klarifikasi Sopan)",
+			auto_reply_mode_actionable: "Hanya Mutasi Faktur (Actionable Only)",
+			auto_reply_mode_all: "Semua Pesan (Termasuk Sapaan & Obrolan Santai)",
+			auto_reply_mode_manual: "Manual Clearance (Hanya Buat Draf Balasan di Dashboard)",
+			auto_reply_tone_label: "Gaya Bahasa Respons (Tone)",
+			auto_reply_tone_professional: "Formal Korporat (SOP Baku & Audit-Ready)",
+			auto_reply_tone_friendly: "Ramah & Cepat (Bahasa Percakapan Santun)",
+			auto_reply_tone_concise: "Ringkas Operasional (Format Singkat ChatOps)",
+			auto_reply_prefix_label: "Awalan Bot (Prefix)",
+			auto_reply_lang_label: "Bahasa Balasan",
+			auto_reply_lang_auto: "Deteksi Otomatis (Mengikuti Bahasa Pesan)",
+			auto_reply_lang_id: "Bahasa Indonesia",
+			auto_reply_lang_en: "English (International)",
+			auto_reply_sandbox_title: "Sandbox Pengujian Auto-Generate Balasan AI",
+			auto_reply_sandbox_desc: "Ketik simulasi pesan masuk dari WhatsApp/grup untuk melihat dan menguji respons instan yang digenerate oleh AI.",
+			auto_reply_generate_btn: "Generate Balasan AI",
+			auto_reply_generating: "Menghasilkan Balasan...",
+			auto_reply_result_label: "Hasil Balasan yang Digenerate AI",
+			auto_reply_test_dispatch: "Kirim Balasan Uji ke WhatsApp",
+			auto_reply_dispatched: "Terkirim ke WhatsApp!"
 		},
 		overview: {
 			guardrail_title: "Guardrail Assurance & Intake Engine",
@@ -1906,7 +1956,32 @@ const dictionaries: Record<Locale, Translations> = {
 			openclaw_disconnected_title: "OpenClaw Gateway not detected on {url}",
 			openclaw_disconnected_desc: "NovaPilot is ready to orchestrate autonomous browser flows. To enable local browser automation, start the gateway via terminal:",
 			check_connection: "Recheck Connection",
-			checking: "Checking..."
+			checking: "Checking...",
+			auto_reply_card_title: "AI Auto-Generate Reply Chat",
+			auto_reply_card_subtitle: "Configure autonomous chat response generation powered by Hermes 3 & Heuristic Fallback for WhatsApp & Omnichannel.",
+			auto_reply_toggle_label: "Enable AI Auto-Reply",
+			auto_reply_toggle_desc: "When enabled, AI intelligently generates contextual replies and can reply back to WhatsApp users or groups.",
+			auto_reply_mode_label: "Trigger Mode",
+			auto_reply_mode_smart: "Smart Auto (Mutation Acks, ERP Queries & Polite Clarifications)",
+			auto_reply_mode_actionable: "Actionable Mutations Only",
+			auto_reply_mode_all: "All Messages (Including Greetings & Casual Chat)",
+			auto_reply_mode_manual: "Manual Clearance (Draft Replies in Dashboard Only)",
+			auto_reply_tone_label: "Response Tone",
+			auto_reply_tone_professional: "Corporate Formal (Audit-Ready & Standard SOP)",
+			auto_reply_tone_friendly: "Warm & Helpful (Polite Conversational)",
+			auto_reply_tone_concise: "Concise Telemetry (Fast ChatOps Format)",
+			auto_reply_prefix_label: "Bot Prefix",
+			auto_reply_lang_label: "Response Language",
+			auto_reply_lang_auto: "Auto-Detect (Follows Inbound Message Language)",
+			auto_reply_lang_id: "Bahasa Indonesia",
+			auto_reply_lang_en: "English",
+			auto_reply_sandbox_title: "AI Reply Sandbox & Live Preview",
+			auto_reply_sandbox_desc: "Type a simulated incoming message from WhatsApp or ChatOps to preview instant AI response generation.",
+			auto_reply_generate_btn: "Generate AI Reply",
+			auto_reply_generating: "Generating Reply...",
+			auto_reply_result_label: "AI Generated Response Preview",
+			auto_reply_test_dispatch: "Send Test Reply to WhatsApp",
+			auto_reply_dispatched: "Delivered to WhatsApp!"
 		},
 		overview: {
 			guardrail_title: "Guardrail Assurance & Intake Engine",

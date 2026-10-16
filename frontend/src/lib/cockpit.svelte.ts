@@ -63,6 +63,7 @@ export interface InboundMessage {
 	extracted_target?: string;
 	ticket_id?: number;
 	ticket_no?: string;
+	ai_reply?: string;
 	created_at: string;
 }
 

@@ -1018,7 +1018,7 @@ async function startLiveGateway() {
             }
 
             // Ingest to Omnichannel Feed (Real-Time Ingestion for Dashboard Viewers - Triggers Cockpit SSE & Corporate Chime)
-            await submitInboundMessage({
+            const inboundData = await submitInboundMessage({
                 platform: "whatsapp",
                 sender_id: fromJid,
                 sender_name: senderName,
@@ -1032,19 +1032,22 @@ async function startLiveGateway() {
                 extracted_target: extracted?.proposedValue || fallbackTarget
             });
 
-            // Dispatch appropriate replies
+            // Dispatch appropriate replies via AI Auto-Reply Engine
+            const aiGeneratedReply = inboundData?.ai_reply;
+
             if (extracted) {
                 console.log(`[DETECTED REQUEST]: Document ${extracted.documentNo} -> ${extracted.proposedValue}`);
                 const ticket = await submitTicketToBackend(body, extracted, fromJid);
 
-                if (ticket && AUTO_REPLY) {
-                    const ackText = 
+                if (AUTO_REPLY) {
+                    const ackText = aiGeneratedReply || (ticket ? 
                         `*[NovaPilot AI • Permintaan Dicatat]*\n\n` +
                         `📋 *No Tiket:* ${ticket.ticket_no}\n` +
                         `📄 *Dokumen:* ${extracted.documentNo}\n` +
                         `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
                         `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
-                        `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._`;
+                        `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._` :
+                        `[NovaPilot AI] Permintaan mutasi telah dicatat ke sistem.`);
 
                     await sock.sendMessage(fromJid, { text: ackText });
                     console.log(`[ACK SENT] Replied to ${fromJid}`);
@@ -1055,6 +1058,10 @@ async function startLiveGateway() {
             } else if (mcpPricingReply && AUTO_REPLY) {
                 await sock.sendMessage(fromJid, { text: mcpPricingReply });
                 console.log(`[MCP PRICING SENT] Sent pricing catalog reply to ${fromJid}`);
+            } else if (aiGeneratedReply && AUTO_REPLY) {
+                // AI Generated contextual reply for greetings or clarifying questions
+                await sock.sendMessage(fromJid, { text: aiGeneratedReply });
+                console.log(`[AI AUTO-REPLY SENT] Sent AI generated reply to ${fromJid}`);
             } else {
                 if (classification === "NEEDS_REVIEW") {
                     console.log(`[NEEDS REVIEW]: "${body}" contains mutation intent (${fallbackTarget || 'unknown'}) without full invoice number. Synced to Dashboard Feed for 1-click Staging.`);

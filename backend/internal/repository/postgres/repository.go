@@ -119,15 +119,17 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 
 	if db != nil {
+		_, _ = db.Exec("ALTER TABLE inbound_messages ADD COLUMN IF NOT EXISTS ai_reply TEXT DEFAULT ''")
+
 		var count int
 		_ = db.QueryRow("SELECT COUNT(*) FROM inbound_messages").Scan(&count)
 		if count == 0 {
 			query := `
-				INSERT INTO inbound_messages (platform, sender_id, sender_name, raw_message, media_type, classification, extracted_doc, extracted_intent, extracted_target, ticket_no, created_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				INSERT INTO inbound_messages (platform, sender_id, sender_name, raw_message, media_type, classification, extracted_doc, extracted_intent, extracted_target, ticket_no, ai_reply, created_at)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			`
 			for _, m := range initialMessages {
-				_, _ = db.Exec(query, m.Platform, m.SenderID, m.SenderName, m.RawMessage, m.MediaType, m.Classification, m.ExtractedDoc, m.ExtractedIntent, m.ExtractedTarget, m.TicketNo, m.CreatedAt)
+				_, _ = db.Exec(query, m.Platform, m.SenderID, m.SenderName, m.RawMessage, m.MediaType, m.Classification, m.ExtractedDoc, m.ExtractedIntent, m.ExtractedTarget, m.TicketNo, m.AIReply, m.CreatedAt)
 			}
 		}
 	}
@@ -512,15 +514,15 @@ func (r *Repository) SaveMessage(msg *domain.InboundMessage) error {
 
 	if r.db != nil {
 		query := `
-			INSERT INTO inbound_messages (platform, sender_id, sender_name, raw_message, media_type, media_url, ocr_text, classification, extracted_doc, extracted_intent, extracted_target, ticket_id, ticket_no, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+			INSERT INTO inbound_messages (platform, sender_id, sender_name, raw_message, media_type, media_url, ocr_text, classification, extracted_doc, extracted_intent, extracted_target, ticket_id, ticket_no, ai_reply, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 			RETURNING id, created_at
 		`
 		_ = r.db.QueryRow(
 			query,
 			msg.Platform, msg.SenderID, msg.SenderName, msg.RawMessage,
 			msg.MediaType, msg.MediaURL, msg.OCRText, msg.Classification, msg.ExtractedDoc, msg.ExtractedIntent,
-			msg.ExtractedTarget, msg.TicketID, msg.TicketNo, msg.CreatedAt,
+			msg.ExtractedTarget, msg.TicketID, msg.TicketNo, msg.AIReply, msg.CreatedAt,
 		).Scan(&msg.ID, &msg.CreatedAt)
 	}
 	return nil
@@ -536,7 +538,7 @@ func (r *Repository) ListMessages(limit int, platform string, classification str
 			SELECT id, platform, sender_id, sender_name, raw_message, media_type,
 			       COALESCE(media_url, ''), COALESCE(ocr_text, ''),
 			       classification, COALESCE(extracted_doc, ''), COALESCE(extracted_intent, ''),
-			       COALESCE(extracted_target, ''), ticket_id, COALESCE(ticket_no, ''), created_at
+			       COALESCE(extracted_target, ''), ticket_id, COALESCE(ticket_no, ''), COALESCE(ai_reply, ''), created_at
 			FROM inbound_messages
 			WHERE 1=1
 		`
@@ -568,7 +570,7 @@ func (r *Repository) ListMessages(limit int, platform string, classification str
 					&m.ID, &m.Platform, &m.SenderID, &m.SenderName, &m.RawMessage, &m.MediaType,
 					&m.MediaURL, &m.OCRText,
 					&m.Classification, &m.ExtractedDoc, &m.ExtractedIntent, &m.ExtractedTarget,
-					&ticketID, &m.TicketNo, &m.CreatedAt,
+					&ticketID, &m.TicketNo, &m.AIReply, &m.CreatedAt,
 				); err == nil {
 					if ticketID.Valid {
 						tid := int(ticketID.Int64)
@@ -602,7 +604,7 @@ func (r *Repository) GetMessageByID(id int) (*domain.InboundMessage, error) {
 			SELECT id, platform, sender_id, sender_name, raw_message, media_type,
 			       COALESCE(media_url, ''), COALESCE(ocr_text, ''),
 			       classification, COALESCE(extracted_doc, ''), COALESCE(extracted_intent, ''),
-			       COALESCE(extracted_target, ''), ticket_id, COALESCE(ticket_no, ''), created_at
+			       COALESCE(extracted_target, ''), ticket_id, COALESCE(ticket_no, ''), COALESCE(ai_reply, ''), created_at
 			FROM inbound_messages
 			WHERE id = $1
 		`
@@ -612,7 +614,7 @@ func (r *Repository) GetMessageByID(id int) (*domain.InboundMessage, error) {
 			&m.ID, &m.Platform, &m.SenderID, &m.SenderName, &m.RawMessage, &m.MediaType,
 			&m.MediaURL, &m.OCRText,
 			&m.Classification, &m.ExtractedDoc, &m.ExtractedIntent, &m.ExtractedTarget,
-			&ticketID, &m.TicketNo, &m.CreatedAt,
+			&ticketID, &m.TicketNo, &m.AIReply, &m.CreatedAt,
 		)
 		if err == nil {
 			if ticketID.Valid {
