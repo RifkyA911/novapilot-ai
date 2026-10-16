@@ -1118,32 +1118,56 @@ async function startLiveGateway() {
                         `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._` :
                         `[NovaPilot AI] Permintaan mutasi telah dicatat ke sistem.`);
 
-                    try {
-                        await sock.sendMessage(fromJid, { text: ackText });
-                        console.log(`[ACK SENT] Replied to ${fromJid}`);
-                    } catch (e: any) {
-                        console.warn(`[ACK SEND FAILED] ${e.message}`);
-                    }
+                    // Strict Testing Safety Guard: Auto-reply ONLY to 081228632195, never to any other number or group!
+                    const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
+                    const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
+
+                    const sendSafeAutoReply = async (text: string, label: string) => {
+                        try {
+                            const isDirectToTester = fromJid.replace(/\D/g, "").includes("81228632195");
+                            const finalText = isDirectToTester 
+                                ? text 
+                                : `*[Auto-Reply Sandbox Forwarded to 081228632195]*\n_Asal pesan: ${senderName} (${fromJid})_\n\n${text}`;
+                            
+                            await sock.sendMessage(testTargetJid, { text: finalText });
+                            console.log(`[${label} SENT -> 081228632195] Delivered test auto-reply safely (origin: ${fromJid})`);
+                        } catch (e: any) {
+                            console.warn(`[${label} SEND FAILED] ${e.message}`);
+                        }
+                    };
+
+                    await sendSafeAutoReply(ackText, "ACK");
                 }
             } else if (mcpSalesReply && AUTO_REPLY) {
+                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
+                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
                 try {
-                    await sock.sendMessage(fromJid, { text: mcpSalesReply });
-                    console.log(`[MCP SALES SENT] Sent sales records reply to ${fromJid}`);
+                    await sock.sendMessage(testTargetJid, { text: mcpSalesReply });
+                    console.log(`[MCP SALES SENT -> 081228632195] Sent sales records reply (origin: ${fromJid})`);
                 } catch (e: any) {
                     console.warn(`[MCP SALES SEND FAILED] ${e.message}`);
                 }
             } else if (mcpPricingReply && AUTO_REPLY) {
+                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
+                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
                 try {
-                    await sock.sendMessage(fromJid, { text: mcpPricingReply });
-                    console.log(`[MCP PRICING SENT] Sent pricing catalog reply to ${fromJid}`);
+                    await sock.sendMessage(testTargetJid, { text: mcpPricingReply });
+                    console.log(`[MCP PRICING SENT -> 081228632195] Sent pricing catalog reply (origin: ${fromJid})`);
                 } catch (e: any) {
                     console.warn(`[MCP PRICING SEND FAILED] ${e.message}`);
                 }
             } else if (aiGeneratedReply && AUTO_REPLY) {
-                // AI Generated contextual reply for greetings or clarifying questions
+                // AI Generated contextual reply for greetings or clarifying questions locked to 081228632195
+                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
+                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
                 try {
-                    await sock.sendMessage(fromJid, { text: aiGeneratedReply });
-                    console.log(`[AI AUTO-REPLY SENT] Sent AI generated reply to ${fromJid}`);
+                    const isDirectToTester = fromJid.replace(/\D/g, "").includes("81228632195");
+                    const finalText = isDirectToTester 
+                        ? aiGeneratedReply 
+                        : `*[Auto-Reply Sandbox Forwarded to 081228632195]*\n_Asal pesan: ${senderName} (${fromJid})_\n\n${aiGeneratedReply}`;
+
+                    await sock.sendMessage(testTargetJid, { text: finalText });
+                    console.log(`[AI AUTO-REPLY SENT -> 081228632195] Sent AI generated reply safely (origin: ${fromJid})`);
                 } catch (e: any) {
                     console.warn(`[AI AUTO-REPLY SEND FAILED] ${e.message}`);
                 }
