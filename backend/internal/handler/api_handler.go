@@ -1069,6 +1069,294 @@ func (h *APIHandler) ApplyDatabaseConfig(c *gin.Context) {
 }
 
 // =========================================================================
+// MULTI-REFERENCE DATABASE REGISTRY & POOL
+// =========================================================================
+
+type ReferenceDBConfig struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Platform    string `json:"platform"`
+	Host        string `json:"host"`
+	Port        string `json:"port"`
+	DBName      string `json:"dbname"`
+	User        string `json:"user"`
+	Password    string `json:"password,omitempty"`
+	SSLMode     string `json:"sslmode"`
+	Mode        string `json:"mode"`
+	Status      string `json:"status"`
+	IsActive    bool   `json:"is_active"`
+	LatencyMs   int64  `json:"latency_ms,omitempty"`
+	Description string `json:"description,omitempty"`
+	CreatedAt   string `json:"created_at"`
+}
+
+var (
+	refDBsMutex sync.RWMutex
+	refDBsStore = []ReferenceDBConfig{
+		{
+			ID:          "ref-pg-sales",
+			Name:        "Primary MCP Reference Store",
+			Platform:    "postgres",
+			Host:        "localhost",
+			Port:        "5432",
+			DBName:      "novapilot_mcp_ref",
+			User:        "postgres",
+			SSLMode:     "disable",
+			Mode:        "local",
+			Status:      "CONNECTED",
+			IsActive:    true,
+			Description: "Live Enterprise Sales Orders, Quotations & Invoice Verification",
+			CreatedAt:   "2026-10-14T08:00:00Z",
+		},
+		{
+			ID:          "ref-oracle-gl",
+			Name:        "Oracle 19c Enterprise General Ledger",
+			Platform:    "oracle",
+			Host:        "10.0.12.44",
+			Port:        "1521",
+			DBName:      "ORCL_FIN_PROD",
+			User:        "erp_reader",
+			SSLMode:     "require",
+			Mode:        "ssl",
+			Status:      "STANDBY",
+			IsActive:    false,
+			Description: "Corporate ERP General Ledger, Accounts Receivable, and Customer Master",
+			CreatedAt:   "2026-10-15T09:30:00Z",
+		},
+		{
+			ID:          "ref-sap-s4hana",
+			Name:        "SAP S/4HANA Finance & Controlling",
+			Platform:    "sap",
+			Host:        "sap-gateway.internal.corp",
+			Port:        "3300",
+			DBName:      "S4H_ERP_01",
+			User:        "bapi_user",
+			SSLMode:     "require",
+			Mode:        "ssh_tunnel",
+			Status:      "STANDBY",
+			IsActive:    false,
+			Description: "BAPI & RFC Production Data for Factory Invoicing and Billing Documents",
+			CreatedAt:   "2026-10-15T10:15:00Z",
+		},
+		{
+			ID:          "ref-mysql-crm",
+			Name:        "Regional Customer & CRM Cluster",
+			Platform:    "mysql",
+			Host:        "10.0.18.20",
+			Port:        "3306",
+			DBName:      "crm_customers",
+			User:        "crm_ro",
+			SSLMode:     "disable",
+			Mode:        "local",
+			Status:      "STANDBY",
+			IsActive:    false,
+			Description: "Wholesale Customer Master Directory & Regional Branch Registrations",
+			CreatedAt:   "2026-10-15T11:00:00Z",
+		},
+	}
+)
+
+func (h *APIHandler) ListReferenceDBs(c *gin.Context) {
+	refDBsMutex.RLock()
+	defer refDBsMutex.RUnlock()
+
+	for i := range refDBsStore {
+		if refDBsStore[i].IsActive && refDBsStore[i].Platform == "postgres" {
+			if h.mcpRefDB != nil && h.mcpRefDB.Ping() == nil {
+				refDBsStore[i].Status = "CONNECTED"
+			} else {
+				refDBsStore[i].Status = "DISCONNECTED"
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":            true,
+		"reference_dbs": refDBsStore,
+		"count":         len(refDBsStore),
+	})
+}
+
+func (h *APIHandler) CreateReferenceDB(c *gin.Context) {
+	var input ReferenceDBConfig
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+
+	if input.ID == "" {
+		input.ID = fmt.Sprintf("ref-%s-%d", input.Platform, time.Now().UnixMilli())
+	}
+	if input.Name == "" {
+		input.Name = fmt.Sprintf("%s Reference DB (%s)", strings.ToUpper(input.Platform), input.DBName)
+	}
+	if input.Port == "" {
+		switch input.Platform {
+		case "oracle":
+			input.Port = "1521"
+		case "sap":
+			input.Port = "3300"
+		case "mysql":
+			input.Port = "3306"
+		case "mssql":
+			input.Port = "1433"
+		default:
+			input.Port = "5432"
+		}
+	}
+	if input.Status == "" {
+		input.Status = "STANDBY"
+	}
+	input.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+
+	refDBsMutex.Lock()
+	refDBsStore = append(refDBsStore, input)
+	refDBsMutex.Unlock()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"ok":      true,
+		"message": fmt.Sprintf("Database referensi '%s' berhasil ditambahkan ke pool!", input.Name),
+		"db":      input,
+	})
+}
+
+func (h *APIHandler) ActivateReferenceDB(c *gin.Context) {
+	id := c.Param("id")
+	refDBsMutex.Lock()
+	defer refDBsMutex.Unlock()
+
+	var target *ReferenceDBConfig
+	for i := range refDBsStore {
+		if refDBsStore[i].ID == id {
+			refDBsStore[i].IsActive = true
+			target = &refDBsStore[i]
+		} else {
+			refDBsStore[i].IsActive = false
+		}
+	}
+
+	if target == nil {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Database referensi tidak ditemukan"})
+		return
+	}
+
+	if target.Platform == "postgres" {
+		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
+			target.Host, target.Port, target.User, target.Password, target.DBName, target.SSLMode)
+		newDB, err := sql.Open("postgres", connStr)
+		if err == nil && newDB.Ping() == nil {
+			if h.mcpRefDB != nil {
+				_ = h.mcpRefDB.Close()
+			}
+			h.mcpRefDB = newDB
+			target.Status = "CONNECTED"
+		} else {
+			target.Status = "DISCONNECTED"
+		}
+	} else {
+		target.Status = "CONNECTED"
+	}
+
+	os.Setenv("MCP_REF_DB_PLATFORM", target.Platform)
+	os.Setenv("MCP_REF_DB_HOST", target.Host)
+	os.Setenv("MCP_REF_DB_PORT", target.Port)
+	os.Setenv("MCP_REF_DB_USER", target.User)
+	os.Setenv("MCP_REF_DB_NAME", target.DBName)
+	os.Setenv("MCP_REF_DB_SSLMODE", target.SSLMode)
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":      true,
+		"message": fmt.Sprintf("Database referensi aktif berhasil dialihkan ke '%s' (%s:%s/%s)!", target.Name, target.Host, target.Port, target.DBName),
+		"db":      target,
+	})
+}
+
+func (h *APIHandler) DeleteReferenceDB(c *gin.Context) {
+	id := c.Param("id")
+	refDBsMutex.Lock()
+	defer refDBsMutex.Unlock()
+
+	var updated []ReferenceDBConfig
+	deleted := false
+	for _, db := range refDBsStore {
+		if db.ID == id {
+			if db.IsActive {
+				c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Tidak dapat menghapus database referensi yang sedang aktif. Aktifkan database lain terlebih dahulu."})
+				return
+			}
+			deleted = true
+			continue
+		}
+		updated = append(updated, db)
+	}
+
+	if !deleted {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Database referensi tidak ditemukan"})
+		return
+	}
+
+	refDBsStore = updated
+	c.JSON(http.StatusOK, gin.H{
+		"ok":      true,
+		"message": "Database referensi berhasil dihapus dari pool.",
+		"id":      id,
+	})
+}
+
+func (h *APIHandler) TestReferenceDB(c *gin.Context) {
+	id := c.Param("id")
+	refDBsMutex.RLock()
+	var target *ReferenceDBConfig
+	for i := range refDBsStore {
+		if refDBsStore[i].ID == id {
+			target = &refDBsStore[i]
+			break
+		}
+	}
+	refDBsMutex.RUnlock()
+
+	if target == nil {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Database referensi tidak ditemukan"})
+		return
+	}
+
+	start := time.Now()
+	if target.Platform == "postgres" {
+		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=3",
+			target.Host, target.Port, target.User, target.Password, target.DBName, target.SSLMode)
+		testDB, err := sql.Open("postgres", connStr)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal inisialisasi driver: %v", err)})
+			return
+		}
+		defer testDB.Close()
+		if err := testDB.Ping(); err != nil {
+			c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal ping PostgreSQL: %v", err)})
+			return
+		}
+	} else {
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(target.Host, target.Port), 2500*time.Millisecond)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"ok": false, "error": fmt.Sprintf("Gagal membuka koneksi TCP ke %s (%s:%s): %v", target.Platform, target.Host, target.Port, err)})
+			return
+		}
+		conn.Close()
+	}
+
+	latency := time.Since(start).Milliseconds()
+	refDBsMutex.Lock()
+	target.Status = "CONNECTED"
+	target.LatencyMs = latency
+	refDBsMutex.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":         true,
+		"latency_ms": latency,
+		"message":    fmt.Sprintf("Koneksi ke database referensi '%s' (%s) berhasil diverifikasi! Latensi: %dms", target.Name, target.Platform, latency),
+	})
+}
+
+// =========================================================================
 // MCP TOOLS REGISTRY & UPLOAD HANDLERS
 // =========================================================================
 

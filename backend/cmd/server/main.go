@@ -162,6 +162,11 @@ func main() {
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)
 		api.POST("/database/test", apiHandler.TestDatabaseConnection)
 		api.POST("/database/apply", apiHandler.ApplyDatabaseConfig)
+		api.GET("/database/reference-dbs", apiHandler.ListReferenceDBs)
+		api.POST("/database/reference-dbs", apiHandler.CreateReferenceDB)
+		api.POST("/database/reference-dbs/:id/activate", apiHandler.ActivateReferenceDB)
+		api.DELETE("/database/reference-dbs/:id", apiHandler.DeleteReferenceDB)
+		api.POST("/database/reference-dbs/:id/test", apiHandler.TestReferenceDB)
 
 		// MCP Tool Catalog & Manifest Upload
 		api.GET("/mcp/tools", apiHandler.ListMCPTools)

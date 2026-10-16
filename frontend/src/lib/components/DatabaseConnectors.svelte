@@ -16,9 +16,16 @@
 		ClipboardDocument,
 		TableCells,
 		CommandLine,
-		ArrowTopRightOnSquare
+		ArrowTopRightOnSquare,
+		Plus,
+		Trash,
+		Play,
+		Star
 	} from "svelte-heros-v2";
 	import { i18n } from "$lib/i18n.svelte";
+	import DatabasePlatformSelect, { type PlatformOption } from "./DatabasePlatformSelect.svelte";
+	import CustomSelect from "./CustomSelect.svelte";
+	import BrandIcon from "./BrandIcon.svelte";
 
 	// Database Connection Form States
 	let sysConfig = $state({
@@ -113,6 +120,149 @@
 	function triggerDb2Burst() {
 		isSimulatingDb2 = true;
 		setTimeout(() => { isSimulatingDb2 = false; }, 1800);
+	}
+
+	// =========================================================================
+	// MULTI-REFERENCE DATABASE POOL STATE & API METHODS
+	// =========================================================================
+	export interface ReferenceDB {
+		id: string;
+		name: string;
+		platform: string;
+		host: string;
+		port: string;
+		dbname: string;
+		user: string;
+		sslmode: string;
+		mode: string;
+		status: string;
+		is_active: boolean;
+		latency_ms?: number;
+		description?: string;
+		created_at: string;
+	}
+
+	let referenceDBs = $state<ReferenceDB[]>([]);
+	let isLoadingRefDBs = $state(false);
+	let isActivatingRefDB = $state<string | null>(null);
+	let isTestingRefDB = $state<string | null>(null);
+	let refDBActionMessage = $state<{ ok: boolean; text: string } | null>(null);
+
+	// Add New Reference DB Modal State
+	let showAddRefModal = $state(false);
+	let newRefDB = $state({
+		name: "",
+		platform: "postgres",
+		host: "localhost",
+		port: "5432",
+		dbname: "",
+		user: "postgres",
+		password: "",
+		sslmode: "disable",
+		mode: "local",
+		description: ""
+	});
+
+	async function fetchReferenceDBs() {
+		isLoadingRefDBs = true;
+		try {
+			const res = await fetch("/api/database/reference-dbs");
+			if (res.ok) {
+				const data = await res.json();
+				referenceDBs = data.reference_dbs || [];
+			}
+		} catch (e) {
+			console.error("Failed to fetch reference dbs:", e);
+		} finally {
+			isLoadingRefDBs = false;
+		}
+	}
+
+	async function activateReferenceDB(id: string) {
+		isActivatingRefDB = id;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}/activate`, { method: "POST" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+				await fetchConfigAndTelemetry();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal mengaktifkan database referensi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isActivatingRefDB = null;
+		}
+	}
+
+	async function testSingleRefDB(id: string) {
+		isTestingRefDB = id;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}/test`, { method: "POST" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal verifikasi koneksi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isTestingRefDB = null;
+		}
+	}
+
+	async function deleteSingleRefDB(id: string) {
+		if (!confirm("Hapus database referensi ini dari pool?")) return;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}`, { method: "DELETE" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		}
+	}
+
+	async function handleCreateRefDB() {
+		try {
+			const res = await fetch("/api/database/reference-dbs", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(newRefDB)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				showAddRefModal = false;
+				newRefDB = {
+					name: "",
+					platform: "postgres",
+					host: "localhost",
+					port: "5432",
+					dbname: "",
+					user: "postgres",
+					password: "",
+					sslmode: "disable",
+					mode: "local",
+					description: ""
+				};
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal menambahkan database" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		}
 	}
 
 	// =========================================================================
@@ -865,6 +1015,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	onMount(() => {
 		fetchConfigAndTelemetry();
 		fetchMCPTools();
+		fetchReferenceDBs();
 	});
 </script>
 
@@ -1869,16 +2020,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 					<div class="space-y-1">
 						<label for="sys-sslmode" class="font-semibold text-muted-foreground">SSL Mode:</label>
-						<select
+						<CustomSelect
 							id="sys-sslmode"
 							bind:value={sysConfig.sslmode}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
-						>
-							<option value="disable">disable</option>
-							<option value="require">require</option>
-							<option value="verify-ca">verify-ca</option>
-							<option value="verify-full">verify-full</option>
-						</select>
+							options={["disable", "require", "verify-ca", "verify-full"]}
+						/>
 					</div>
 				</div>
 
@@ -2007,11 +2153,356 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	<!-- ========================================================================= -->
 	{#if activeTab === "mcp"}
 		<div class="space-y-6">
-			<!-- Config Form Box -->
+			<!-- Multi-Reference Database Pool Section -->
+			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+					<div class="space-y-0.5">
+						<div class="flex items-center gap-2">
+							<h2 class="text-sm font-bold text-foreground">Multi-Source Enterprise Reference Database Pool</h2>
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+								{referenceDBs.length} SOURCE{referenceDBs.length === 1 ? '' : 'S'}
+							</span>
+						</div>
+						<p class="text-xs text-muted-foreground">
+							Kelola berbagai database referensi (ERP SAP, Oracle Finance, PostgreSQL Warehouse, MySQL CRM). Agent MCP membaca data dari database yang sedang diaktifkan.
+						</p>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={fetchReferenceDBs}
+							disabled={isLoadingRefDBs}
+							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isLoadingRefDBs ? 'animate-spin' : ''}" />
+							<span>{isLoadingRefDBs ? 'Refreshing...' : 'Refresh Pool'}</span>
+						</button>
+
+						<button
+							type="button"
+							onclick={() => showAddRefModal = true}
+							class="h-8 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+						>
+							<Plus class="h-4 w-4" />
+							<span>Tambah Database</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Action Result Feedback Notification -->
+				{#if refDBActionMessage}
+					<div class="p-3 rounded-xl border flex items-center justify-between text-xs {refDBActionMessage.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+						<div class="flex items-center gap-2">
+							{#if refDBActionMessage.ok}
+								<CheckCircle class="h-4 w-4 text-emerald-500 shrink-0" />
+							{:else}
+								<XCircle class="h-4 w-4 text-rose-500 shrink-0" />
+							{/if}
+							<span>{refDBActionMessage.text}</span>
+						</div>
+						<button
+							type="button"
+							onclick={() => refDBActionMessage = null}
+							class="text-muted-foreground hover:text-foreground cursor-pointer"
+						>
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				<!-- Pool Grid of Reference Databases -->
+				{#if referenceDBs.length === 0 && !isLoadingRefDBs}
+					<div class="p-8 text-center rounded-xl border border-dashed border-border/80 bg-secondary/20 space-y-3">
+						<CircleStack class="h-8 w-8 mx-auto text-muted-foreground opacity-50" />
+						<div class="text-xs font-bold text-foreground">Belum ada database referensi tambahan di pool</div>
+						<p class="text-xs text-muted-foreground max-w-md mx-auto">
+							Daftarkan database Oracle, SAP HANA, MySQL CRM, atau PostgreSQL tambahan agar AI Agent dapat memverifikasi faktur lintas sistem.
+						</p>
+						<button
+							type="button"
+							onclick={() => showAddRefModal = true}
+							class="h-8 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+						>
+							<Plus class="h-3.5 w-3.5" />
+							<span>Tambah Database Pertama</span>
+						</button>
+					</div>
+				{:else}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{#each referenceDBs as db}
+							{@const isActive = db.is_active}
+							<div class="p-4 rounded-xl border transition-all duration-200 relative flex flex-col justify-between space-y-3 shadow-2xs {isActive ? 'border-cyan-500/70 bg-cyan-500/5 ring-2 ring-cyan-500/20' : 'border-border/70 bg-secondary/30 hover:border-border hover:bg-secondary/50'}">
+								<!-- Card Top: Brand Icon + Platform Badge + Active State -->
+								<div class="flex items-start justify-between gap-2">
+									<div class="flex items-center gap-2.5">
+										<div class="p-1.5 rounded-lg bg-background border border-border/60 shadow-2xs">
+											<BrandIcon name={db.platform} class="h-6 w-6" />
+										</div>
+										<div>
+											<div class="text-xs font-bold text-foreground leading-snug flex items-center gap-1.5">
+												<span>{db.name}</span>
+											</div>
+											<div class="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
+												<span>{db.platform}</span>
+												<span>•</span>
+												<span class="text-cyan-600 dark:text-cyan-400 font-bold">{db.mode}</span>
+											</div>
+										</div>
+									</div>
+
+									{#if isActive}
+										<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 shrink-0">
+											<Star class="h-3 w-3 fill-current" />
+											<span>ACTIVE</span>
+										</span>
+									{:else}
+										<button
+											type="button"
+											onclick={() => activateReferenceDB(db.id)}
+											disabled={isActivatingRefDB === db.id}
+											class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary hover:bg-primary hover:text-primary-foreground border border-border text-foreground transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+											title="Aktifkan sebagai database referensi utama untuk agent MCP"
+										>
+											<Play class="h-2.5 w-2.5" />
+											<span>{isActivatingRefDB === db.id ? 'Mengaktifkan...' : 'Aktifkan'}</span>
+										</button>
+									{/if}
+								</div>
+
+								<!-- Card Body: Connection Spec -->
+								<div class="p-2.5 rounded-lg bg-background/80 border border-border/50 font-mono text-[11px] space-y-1">
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>Target:</span>
+										<span class="text-foreground font-semibold truncate max-w-[170px]">{db.host}:{db.port}</span>
+									</div>
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>Database:</span>
+										<span class="text-cyan-600 dark:text-cyan-400 font-bold truncate max-w-[170px]">{db.dbname}</span>
+									</div>
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>User:</span>
+										<span class="text-foreground truncate max-w-[170px]">{db.user}</span>
+									</div>
+									{#if db.description}
+										<div class="pt-1 border-t border-border/40 text-[10px] font-sans text-muted-foreground line-clamp-2">
+											{db.description}
+										</div>
+									{/if}
+								</div>
+
+								<!-- Card Footer: Test & Delete Actions -->
+								<div class="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
+									<div class="flex items-center gap-1.5 font-mono text-[10px]">
+										<span class="h-2 w-2 rounded-full {db.status === 'CONNECTED' ? 'bg-emerald-500' : 'bg-zinc-400'}"></span>
+										<span class="{db.status === 'CONNECTED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">{db.status || 'UNTESTED'}</span>
+										{#if db.latency_ms}
+											<span class="text-muted-foreground">({db.latency_ms}ms)</span>
+										{/if}
+									</div>
+
+									<div class="flex items-center gap-1">
+										<button
+											type="button"
+											onclick={() => testSingleRefDB(db.id)}
+											disabled={isTestingRefDB === db.id}
+											class="h-7 px-2.5 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+											title="Uji koneksi jaringan ke endpoint ini"
+										>
+											<ArrowPath class="h-3 w-3 {isTestingRefDB === db.id ? 'animate-spin text-cyan-500' : ''}" />
+											<span>{isTestingRefDB === db.id ? 'Testing...' : 'Uji'}</span>
+										</button>
+
+										<button
+											type="button"
+											onclick={() => deleteSingleRefDB(db.id)}
+											class="h-7 w-7 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 flex items-center justify-center transition-colors cursor-pointer"
+											title="Hapus dari pool"
+										>
+											<Trash class="h-3.5 w-3.5" />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- MODAL: Tambah Database Referensi Baru -->
+			{#if showAddRefModal}
+				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150">
+					<div class="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+						<div class="flex items-center justify-between pb-3 border-b border-border/50">
+							<div class="flex items-center gap-2">
+								<CircleStack class="h-5 w-5 text-cyan-500" />
+								<h3 class="text-base font-bold text-foreground">Tambah Database Referensi ke Pool</h3>
+							</div>
+							<button
+								type="button"
+								onclick={() => showAddRefModal = false}
+								class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+							>
+								<XMark class="h-4 w-4" />
+							</button>
+						</div>
+
+						<form onsubmit={(e) => { e.preventDefault(); handleCreateRefDB(); }} class="space-y-4 text-xs">
+							<!-- Platform Selector with Official Brand Icons -->
+							<div class="space-y-1.5">
+								<label for="new-ref-platform" class="font-bold text-foreground flex items-center justify-between">
+									<span>Platform Database:</span>
+									<span class="text-[10px] text-cyan-500 font-mono font-bold">BRANDED ICON SELECTOR</span>
+								</label>
+								<DatabasePlatformSelect
+									id="new-ref-platform"
+									bind:value={newRefDB.platform}
+									onchange={(opt) => {
+										newRefDB.port = opt.defaultPort;
+									}}
+								/>
+							</div>
+
+							<!-- Database Alias / Name -->
+							<div class="space-y-1">
+								<label for="new-ref-name" class="font-semibold text-muted-foreground">Label / Nama Database (e.g. ERP Finance, SAP Materials):</label>
+								<input
+									id="new-ref-name"
+									type="text"
+									required
+									bind:value={newRefDB.name}
+									placeholder="Contoh: Oracle ERP Keuangan Pusat"
+									class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold focus:ring-2 focus:ring-primary/20 focus:outline-none"
+								/>
+							</div>
+
+							<!-- Host & Port -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="sm:col-span-2 space-y-1">
+									<label for="new-ref-host" class="font-semibold text-muted-foreground">Host / IP Address:</label>
+									<input
+										id="new-ref-host"
+										type="text"
+										required
+										bind:value={newRefDB.host}
+										placeholder="erp-db.internal atau 10.0.1.50"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-port" class="font-semibold text-muted-foreground">Port:</label>
+									<input
+										id="new-ref-port"
+										type="text"
+										required
+										bind:value={newRefDB.port}
+										placeholder="1521"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- DB Name & User -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-dbname" class="font-semibold text-muted-foreground">Nama Database / SID / PDB:</label>
+									<input
+										id="new-ref-dbname"
+										type="text"
+										required
+										bind:value={newRefDB.dbname}
+										placeholder="ERP_PROD_PDB"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-user" class="font-semibold text-muted-foreground">Username Kredensial:</label>
+									<input
+										id="new-ref-user"
+										type="text"
+										required
+										bind:value={newRefDB.user}
+										placeholder="mcp_reader"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Password & SSL Mode -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-password" class="font-semibold text-muted-foreground">Password:</label>
+									<input
+										id="new-ref-password"
+										type="password"
+										bind:value={newRefDB.password}
+										placeholder="••••••••"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-sslmode" class="font-semibold text-muted-foreground">SSL / TLS Mode:</label>
+									<CustomSelect
+										id="new-ref-sslmode"
+										bind:value={newRefDB.sslmode}
+										options={["disable", "require", "verify-ca", "verify-full"]}
+									/>
+								</div>
+							</div>
+
+							<!-- Mode Selector & Description -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-mode" class="font-semibold text-muted-foreground">Konektivitas:</label>
+									<CustomSelect
+										id="new-ref-mode"
+										bind:value={newRefDB.mode}
+										options={[
+											{ value: "local", label: "Direct LAN / Local" },
+											{ value: "ssl", label: "Encrypted SSL/TLS" },
+											{ value: "ssh", label: "SSH Bastion Tunnel" }
+										]}
+									/>
+								</div>
+								<div class="sm:col-span-2 space-y-1">
+									<label for="new-ref-desc" class="font-semibold text-muted-foreground">Keterangan / Scope Data (Opsional):</label>
+									<input
+										id="new-ref-desc"
+										type="text"
+										bind:value={newRefDB.description}
+										placeholder="Contoh: Faktur pajak dan master vendor wilayah timur"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex items-center justify-end gap-2.5 pt-3 border-t border-border/50">
+								<button
+									type="button"
+									onclick={() => showAddRefModal = false}
+									class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+								>
+									Batal
+								</button>
+								<button
+									type="submit"
+									class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+								>
+									<Plus class="h-4 w-4" />
+									<span>Simpan ke Pool</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Config Form Box (Active Source) -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/50">
 					<div>
-						<h2 class="text-sm font-bold text-foreground">MCP &amp; ERP Reference Database Setup</h2>
+						<h2 class="text-sm font-bold text-foreground">Parameter Konfigurasi Sumber Aktif (Runtime)</h2>
 						<p class="text-xs text-muted-foreground">Business invoices &amp; customer master data source accessed strictly via Model Context Protocol tools (Zero Raw SQL).</p>
 					</div>
 					<div class="flex items-center gap-2">
@@ -2050,22 +2541,18 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-secondary/40 border border-border/60">
 					<!-- Platform Database Selector -->
 					<div class="space-y-1.5">
-						<label for="mcp-platform" class="text-xs font-bold text-foreground flex items-center gap-1.5">
+						<label for="mcp-platform" class="text-xs font-bold text-foreground flex items-center justify-between">
 							<span>Reference Database Platform:</span>
+							<span class="text-[10px] text-cyan-500 font-mono font-bold">PLATFORM SELECTOR</span>
 						</label>
-						<select
+						<DatabasePlatformSelect
 							id="mcp-platform"
-							value={mcpPlatform}
-							onchange={handlePlatformChange}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-cyan-500/20 focus:outline-none"
-						>
-							<option value="postgres">PostgreSQL 16/18 (novapilot_mcp_ref / Enterprise MCP)</option>
-							<option value="oracle">Oracle 19c / 21c Enterprise (ERP Prod / Financials)</option>
-							<option value="sap">SAP S/4HANA (BAPI / RFC Data Source)</option>
-							<option value="mysql">MySQL / MariaDB Enterprise Cluster</option>
-							<option value="mssql">Microsoft SQL Server (MSSQL Enterprise)</option>
-							<option value="custom_rest">Custom MCP REST / GraphQL Adapter</option>
-						</select>
+							bind:value={mcpPlatform}
+							onchange={(opt) => {
+								mcpPlatform = opt.value as any;
+								handlePlatformChange({ target: { value: opt.value } } as any);
+							}}
+						/>
 						<p class="text-[11px] text-muted-foreground">Default port automatically adjusts to the selected platform architecture.</p>
 					</div>
 
@@ -2224,16 +2711,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 					<div class="space-y-1">
 						<label for="mcp-sslmode" class="font-semibold text-muted-foreground">SSL Encryption Level:</label>
-						<select
+						<CustomSelect
 							id="mcp-sslmode"
 							bind:value={mcpConfig.sslmode}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
-						>
-							<option value="disable">disable (No Encryption)</option>
-							<option value="require">require (Enforce TLS)</option>
-							<option value="verify-ca">verify-ca (Validate CA Certificate)</option>
-							<option value="verify-full">verify-full (Validate CA &amp; Hostname)</option>
-						</select>
+							options={[
+								{ value: "disable", label: "disable (No Encryption)" },
+								{ value: "require", label: "require (Enforce TLS)" },
+								{ value: "verify-ca", label: "verify-ca (Validate CA Certificate)" },
+								{ value: "verify-full", label: "verify-full (Validate CA & Hostname)" }
+							]}
+						/>
 					</div>
 				</div>
 

@@ -427,6 +427,8 @@ export interface Translations {
 		tab_resources: string;
 		tab_tools: string;
 		tab_playground: string;
+		tab_upload: string;
+		tab_multi_db: string;
 		sop_policy: string;
 		branches_directory: string;
 		execute_tool: string;
@@ -1345,6 +1347,8 @@ const dictionaries: Record<Locale, Translations> = {
 			tab_resources: "Sumber Konteks",
 			tab_tools: "Alat Skema",
 			tab_playground: "Playground Agen",
+			tab_upload: "Upload & Registrasi Tool",
+			tab_multi_db: "Pool Multi-Database Referensi",
 			sop_policy: "Kebijakan SOP Support Pabrik",
 			branches_directory: "Direktori Cabang",
 			execute_tool: "Jalankan Alat"
@@ -2261,6 +2265,8 @@ const dictionaries: Record<Locale, Translations> = {
 			tab_resources: "Context Resources",
 			tab_tools: "Schema Tools",
 			tab_playground: "Agent Playground",
+			tab_upload: "Upload & Register Tools",
+			tab_multi_db: "Multi-Source Reference DB Pool",
 			sop_policy: "Factory Support SOP Policy",
 			branches_directory: "Branch Directory",
 			execute_tool: "Execute Tool"

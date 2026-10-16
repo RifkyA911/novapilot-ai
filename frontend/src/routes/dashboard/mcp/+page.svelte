@@ -12,12 +12,302 @@
 		CommandLine,
 		LockClosed,
 		CpuChip,
-		ArrowPath
+		ArrowPath,
+		ArrowUpTray,
+		CheckCircle,
+		XCircle,
+		XMark,
+		Plus,
+		Trash,
+		Star,
+		ServerStack
 	} from "svelte-heros-v2";
 	import { i18n } from "$lib/i18n.svelte";
+	import CustomSelect from "$lib/components/CustomSelect.svelte";
+	import BrandIcon from "$lib/components/BrandIcon.svelte";
 
 	// Active Tab State
-	let activeTab = $state<"dual-db" | "resources" | "tools" | "playground">("dual-db");
+	let activeTab = $state<"dual-db" | "resources" | "tools" | "playground" | "upload">("dual-db");
+
+	// Quick Preset Manifest Templates for MCP Tools
+	const PRESET_TOOL_MANIFESTS: Record<string, any> = {
+		postgres_invoicing: {
+			name: "mutate_invoice_record",
+			version: "1.2.0",
+			category: "ERP_INTEGRATION",
+			description: "Atomically update invoice customer name in PostgreSQL enterprise reference database after on-call supervisor sign-off.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					invoice_no: { type: "string", description: "Target invoice document number (e.g. INV/2026/001)" },
+					proposed_name: { type: "string", description: "Validated legal entity name (e.g. PT Maju Bersama)" },
+					ticket_id: { type: "string", description: "Approved ticket reference ID" }
+				},
+				required: ["invoice_no", "proposed_name"]
+			}
+		},
+		customer_master_query: {
+			name: "query_customer_master",
+			version: "1.0.4",
+			category: "CUSTOMER_360",
+			description: "Lookup real-time credit limit, tax identification (NPWP), and legal address from reference DB.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					customer_code: { type: "string", description: "Customer ERP code (e.g. CUST-00921)" },
+					tax_number: { type: "string", description: "16-digit NPWP format" }
+				},
+				required: ["customer_code"]
+			}
+		},
+		oracle_invoicing: {
+			name: "oracle_ebs_ar_update",
+			version: "2.1.0",
+			category: "ORACLE_EBS",
+			description: "Execute PL/SQL package AR_INVOICE_API_PUB to stage receivable invoice adjustments.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					trx_number: { type: "string", description: "Oracle transaction number" },
+					org_id: { type: "string", description: "Operating Unit ID" },
+					new_customer_name: { type: "string", description: "Revised customer company name" }
+				},
+				required: ["trx_number", "new_customer_name"]
+			}
+		},
+		sap_bapi_customer: {
+			name: "sap_bapi_customer_change",
+			version: "3.0.1",
+			category: "SAP_RFC",
+			description: "Invokes BAPI_CUSTOMER_CHANGEFROMDATA1 via SAP NetWeaver RFC Gateway for central master data.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					customer_no: { type: "string", description: "SAP KUNNR 10-digit customer code" },
+					name1: { type: "string", description: "Name 1 (Company Name)" },
+					sales_org: { type: "string", description: "VKORG Sales Organization" }
+				},
+				required: ["customer_no", "name1"]
+			}
+		},
+		tax_compliance_djp: {
+			name: "validate_faktur_pajak",
+			version: "1.1.0",
+			category: "COMPLIANCE_TAX",
+			description: "Verify electronic tax invoice (e-Faktur) against Directorate General of Taxes (DJP) QR signature.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					nomor_faktur: { type: "string", description: "16-digit e-Faktur Pajak code" },
+					npwp_penjual: { type: "string", description: "Seller Tax ID" }
+				},
+				required: ["nomor_faktur"]
+			}
+		},
+		warehouse_stock_sync: {
+			name: "sync_warehouse_inventory",
+			version: "1.0.0",
+			category: "LOGISTICS",
+			description: "Query current inventory availability across multiple factory warehouses before fulfilling invoice.",
+			transport: "stdio / json-rpc 2.0",
+			inputSchema: {
+				type: "object",
+				properties: {
+					item_sku: { type: "string", description: "Stock Keeping Unit identifier" },
+					warehouse_code: { type: "string", description: "Warehouse branch ID (e.g. SBY-01)" }
+				},
+				required: ["item_sku"]
+			}
+		}
+	};
+
+	// Registered MCP Tools State (from Backend Catalog)
+	export interface RegisteredMCPTool {
+		id: string;
+		name: string;
+		version: string;
+		category: string;
+		description: string;
+		transport: string;
+		inputSchema: {
+			type: string;
+			properties: Record<string, { type: string; description: string }>;
+			required?: string[];
+		};
+		status: string;
+		created_at?: string;
+	}
+
+	let registeredTools = $state<RegisteredMCPTool[]>([]);
+	let isLoadingTools = $state(false);
+
+	// Upload Tool State
+	let uploadManifestText = $state("");
+	let isUploadingTool = $state(false);
+	let uploadSuccess = $state<string | null>(null);
+	let uploadError = $state<string | null>(null);
+
+	// Dry Run Simulation Sandbox State
+	let activeToolForTest = $state<RegisteredMCPTool | null>(null);
+	let testParamsInput = $state<Record<string, string>>({});
+	let toolTestExecutionResult = $state<{
+		ok: boolean;
+		protocol: string;
+		latency_ms: number;
+		result?: any;
+		error?: string;
+		timestamp: string;
+	} | null>(null);
+	let isExecutingToolTest = $state(false);
+
+	async function fetchRegisteredTools() {
+		isLoadingTools = true;
+		try {
+			const res = await fetch("/api/mcp/tools");
+			if (res.ok) {
+				const data = await res.json();
+				registeredTools = data.tools || [];
+			}
+		} catch (e) {
+			console.error("Failed to fetch registered MCP tools:", e);
+		} finally {
+			isLoadingTools = false;
+		}
+	}
+
+	function loadPresetManifest(key: string) {
+		const preset = PRESET_TOOL_MANIFESTS[key];
+		if (preset) {
+			uploadManifestText = JSON.stringify(preset, null, 2);
+			uploadError = null;
+		}
+	}
+
+	function handleFileSelect(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const content = event.target?.result as string;
+			uploadManifestText = content;
+			uploadError = null;
+		};
+		reader.onerror = () => {
+			uploadError = "Gagal membaca berkas manifest";
+		};
+		reader.readAsText(file);
+	}
+
+	async function registerUploadedMCPTool() {
+		uploadError = null;
+		uploadSuccess = null;
+
+		if (!uploadManifestText.trim()) {
+			uploadError = "Manifest tool tidak boleh kosong";
+			return;
+		}
+
+		let parsed: any;
+		try {
+			parsed = JSON.parse(uploadManifestText);
+		} catch (e: any) {
+			uploadError = "Format JSON tidak valid: " + e.message;
+			return;
+		}
+
+		if (!parsed.name) {
+			uploadError = "Manifest wajib memiliki properti 'name'";
+			return;
+		}
+
+		isUploadingTool = true;
+		try {
+			const res = await fetch("/api/mcp/tools", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(parsed)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				uploadSuccess = data.message || `Tool '${parsed.name}' berhasil diregistrasikan!`;
+				uploadManifestText = "";
+				await fetchRegisteredTools();
+			} else {
+				uploadError = data.error || "Gagal meregistrasikan MCP Tool";
+			}
+		} catch (e: any) {
+			uploadError = e.message || "Network error saat registrasi tool";
+		} finally {
+			isUploadingTool = false;
+		}
+	}
+
+	function openToolTestModal(tool: RegisteredMCPTool) {
+		activeToolForTest = tool;
+		toolTestExecutionResult = null;
+		testParamsInput = {};
+		if (tool.inputSchema?.properties) {
+			for (const [key, val] of Object.entries(tool.inputSchema.properties)) {
+				testParamsInput[key] = key.includes("invoice") ? "INV/2026/001" : key.includes("name") ? "PT Sumber Makmur" : "SAMPLE_VAL";
+			}
+		}
+	}
+
+	async function executeToolTest() {
+		if (!activeToolForTest) return;
+		isExecutingToolTest = true;
+		toolTestExecutionResult = null;
+
+		try {
+			const res = await fetch("/api/mcp/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					tool_name: activeToolForTest.name,
+					parameters: testParamsInput
+				})
+			});
+			const data = await res.json();
+			if (res.ok) {
+				toolTestExecutionResult = {
+					ok: true,
+					protocol: data.protocol || "Model Context Protocol v1.0",
+					latency_ms: data.latency_ms || 12,
+					result: data.result || data,
+					timestamp: new Date().toLocaleTimeString()
+				};
+			} else {
+				toolTestExecutionResult = {
+					ok: false,
+					protocol: "Model Context Protocol v1.0",
+					latency_ms: 0,
+					error: data.error || "Execution failed",
+					timestamp: new Date().toLocaleTimeString()
+				};
+			}
+		} catch (e: any) {
+			toolTestExecutionResult = {
+				ok: false,
+				protocol: "Model Context Protocol v1.0",
+				latency_ms: 0,
+				error: e.message,
+				timestamp: new Date().toLocaleTimeString()
+			};
+		} finally {
+			isExecutingToolTest = false;
+		}
+	}
+
+	onMount(() => {
+		fetchRegisteredTools();
+	});
 
 	// Real MCP Resources data matching mcp-server/src/index.ts
 	const mcpResources = [
@@ -127,6 +417,20 @@
 	let playgroundProposedValue = $state("PT Sumber Makmur Sentosa");
 	let isExecutingPlayground = $state(false);
 	let playgroundResponse = $state<string | null>(null);
+
+	// Dynamic Options for Tool Select in Playground
+	let playgroundToolOptions = $derived([
+		{ value: "check_invoice", label: "check_invoice (Verifikasi Faktur)", description: "Query invoice and status" },
+		{ value: "stage_invoice_update", label: "stage_invoice_update (Tahap Perubahan)", description: "Stage revision for approval" },
+		{ value: "list_pending_tickets", label: "list_pending_tickets (Daftar Antrean)", description: "Get queue tickets" },
+		...registeredTools
+			.filter(t => !["check_invoice", "stage_invoice_update", "list_pending_tickets"].includes(t.name))
+			.map(t => ({
+				value: t.name,
+				label: `${t.name} (Custom MCP Tool)`,
+				description: t.description
+			}))
+	]);
 
 	async function runPlayground() {
 		isExecutingPlayground = true;
@@ -244,7 +548,7 @@
 		<button
 			type="button"
 			onclick={() => activeTab = "dual-db"}
-			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'dual-db' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'dual-db' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CircleStack class="h-4 w-4" />
 			<span>1. {i18n.t.mcp.tab_dual_db}</span>
@@ -252,7 +556,7 @@
 		<button
 			type="button"
 			onclick={() => activeTab = "resources"}
-			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'resources' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'resources' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<DocumentText class="h-4 w-4" />
 			<span>2. {i18n.t.mcp.tab_resources} ({mcpResources.length})</span>
@@ -260,7 +564,7 @@
 		<button
 			type="button"
 			onclick={() => activeTab = "tools"}
-			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CpuChip class="h-4 w-4" />
 			<span>3. {i18n.t.mcp.tab_tools} ({mcpTools.length})</span>
@@ -268,10 +572,18 @@
 		<button
 			type="button"
 			onclick={() => activeTab = "playground"}
-			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'playground' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'playground' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CommandLine class="h-4 w-4" />
 			<span>4. {i18n.t.mcp.tab_playground}</span>
+		</button>
+		<button
+			type="button"
+			onclick={() => activeTab = "upload"}
+			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'upload' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+		>
+			<ArrowUpTray class="h-4 w-4" />
+			<span>5. {i18n.t.mcp.tab_upload} ({registeredTools.length})</span>
 		</button>
 	</div>
 
@@ -300,7 +612,7 @@
 							</div>
 							<div>
 								<div class="text-sm font-bold text-foreground">DB 1: Internal System Store</div>
-								<div class="text-[10px] font-mono text-muted-foreground">PostgreSQL 18 / Local SQLite WAL</div>
+								<div class="text-[10px] font-mono text-muted-foreground">PostgreSQL 14–18 (ACID Core Required)</div>
 							</div>
 						</div>
 						<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -328,13 +640,13 @@
 						</div>
 
 						<div class="pt-2 border-t border-border/40 text-[11px] font-mono text-muted-foreground flex items-center justify-between">
-							<span>Pool: Max 25 open / 10 idle</span>
+							<span>Engine: PostgreSQL Internal</span>
 							<span class="text-emerald-500 font-bold">Koneksi: Aktif</span>
 						</div>
 					</div>
 				</div>
 
-				<!-- DB 2: Enterprise Business Data Store (ERP) -->
+				<!-- DB 2: Multi-Source Enterprise Reference Database Pool -->
 				<div class="p-5 rounded-2xl border border-cyan-500/30 bg-card/70 space-y-4 shadow-xs">
 					<div class="flex items-center justify-between pb-3 border-b border-border/50">
 						<div class="flex items-center gap-2.5">
@@ -342,34 +654,72 @@
 								<LockClosed class="h-4 w-4" />
 							</div>
 							<div>
-								<div class="text-sm font-bold text-foreground">DB 2: Enterprise Data (ERP Core)</div>
-								<div class="text-[10px] font-mono text-muted-foreground">Oracle 19c / SAP HANA / PostgreSQL Enterprise</div>
+								<div class="text-sm font-bold text-foreground">DB 2: Multi-Source Reference Database Pool</div>
+								<div class="text-[10px] font-mono text-muted-foreground">Oracle 19c / SAP HANA / PostgreSQL / MySQL / MSSQL</div>
 							</div>
 						</div>
-						<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-							MCP ISOLATED
-						</span>
+						<div class="flex items-center gap-1.5">
+							<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
+								MCP ISOLATED
+							</span>
+							<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+								MULTI-POOL
+							</span>
+						</div>
 					</div>
 
 					<div class="space-y-3 text-xs">
 						<div>
 							<span class="font-semibold text-muted-foreground">Tujuan & Fungsi:</span>
 							<p class="text-foreground mt-0.5">
-								Buku besar faktur utama perusahaan (ledger faktur, master data pelanggan, saldo piutang). Terisolasi ketat di balik boundary tool MCP.
+								Buku besar faktur utama perusahaan & master pelanggan terisolasi ketat di balik boundary MCP. Sistem mendukung <strong>multi-database referensi</strong> dengan pergantian sumber aktif secara dinamis.
 							</p>
 						</div>
 
-						<div class="space-y-1">
-							<span class="font-semibold text-muted-foreground">Tabel Sasaran ERP:</span>
-							<ul class="list-disc list-inside text-muted-foreground space-y-0.5 font-mono text-[11px]">
-								<li><span class="text-foreground font-semibold">invoices</span> - Data nota faktur (hanya status OPEN & unposted)</li>
-								<li><span class="text-foreground font-semibold">customer_master</span> - Master nama entitas bisnis</li>
-								<li><span class="text-foreground font-semibold">ar_ledger</span> - Buku piutang (Read-only check)</li>
-							</ul>
+						<!-- Supported Platform Badges with Brand Icons -->
+						<div class="space-y-1.5 pt-1">
+							<span class="font-semibold text-muted-foreground text-[11px]">Platform Terintegrasi:</span>
+							<div class="flex items-center gap-2 flex-wrap">
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="postgresql" class="h-3.5 w-3.5" />
+									<span>PostgreSQL</span>
+								</div>
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="oracle" class="h-3.5 w-3.5" />
+									<span>Oracle 19c</span>
+								</div>
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="sap" class="h-3.5 w-3.5" />
+									<span>SAP S/4HANA</span>
+								</div>
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="mysql" class="h-3.5 w-3.5" />
+									<span>MySQL</span>
+								</div>
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="mssql" class="h-3.5 w-3.5" />
+									<span>MS SQL</span>
+								</div>
+								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
+									<BrandIcon name="mongodb" class="h-3.5 w-3.5" />
+									<span>MongoDB</span>
+								</div>
+							</div>
 						</div>
 
 						<div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[11px] text-cyan-700 dark:text-cyan-300">
 							🔒 <strong>Aturan Isolasi:</strong> Bot WhatsApp tidak pernah diizinkan menjalankan <code>UPDATE invoices SET ...</code> secara manual. Hanya tool <code>check_invoice</code> dan approval 1-klik di WebUI yang dapat memutasi data.
+						</div>
+
+						<div class="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
+							<span class="text-muted-foreground text-[11px]">Kelola konektor pool database:</span>
+							<a
+								href="/dashboard/connectors"
+								class="text-primary hover:underline font-semibold flex items-center gap-1 text-[11px]"
+							>
+								<span>Buka Database Connectors</span>
+								<ArrowTopRightOnSquare class="h-3 w-3" />
+							</a>
 						</div>
 					</div>
 				</div>
@@ -452,15 +802,11 @@
 				<div class="space-y-3 text-xs">
 					<div class="space-y-1">
 						<label for="mcp-tool-select" class="font-semibold text-muted-foreground">Pilih Tool MCP:</label>
-						<select
+						<CustomSelect
 							id="mcp-tool-select"
 							bind:value={selectedTool}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold"
-						>
-							<option value="check_invoice">check_invoice (Verifikasi Faktur)</option>
-							<option value="stage_invoice_update">stage_invoice_update (Tahap Perubahan)</option>
-							<option value="list_pending_tickets">list_pending_tickets (Daftar Antrean)</option>
-						</select>
+							options={playgroundToolOptions}
+						/>
 					</div>
 
 					{#if selectedTool === "check_invoice" || selectedTool === "stage_invoice_update"}
@@ -523,6 +869,305 @@
 					{/if}
 				</div>
 			</div>
+		</div>
+	{/if}
+
+	<!-- ========================================================================= -->
+	<!-- TAB 5: UPLOAD & REGISTRASI TOOL MCP                                       -->
+	<!-- ========================================================================= -->
+	{#if activeTab === "upload"}
+		<div class="space-y-6">
+			<!-- Header & Preset Loader -->
+			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+					<div>
+						<h2 class="text-sm font-bold text-foreground">Model Context Protocol (MCP) Tool Catalog &amp; Registration</h2>
+						<p class="text-xs text-muted-foreground">Upload custom tool manifests (JSON / YAML) allowing the AI Agent to interact securely with external enterprise databases.</p>
+					</div>
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={fetchRegisteredTools}
+							disabled={isLoadingTools}
+							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isLoadingTools ? 'animate-spin' : ''}" />
+							<span>{isLoadingTools ? 'Loading...' : 'Reload Tools'}</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Upload Success / Error Notifications -->
+				{#if uploadSuccess}
+					<div class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<CheckCircle class="h-4 w-4 text-emerald-500 shrink-0" />
+							<span>{uploadSuccess}</span>
+						</div>
+						<button type="button" onclick={() => uploadSuccess = null} class="text-muted-foreground hover:text-foreground cursor-pointer">
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				{#if uploadError}
+					<div class="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<XCircle class="h-4 w-4 text-rose-500 shrink-0" />
+							<span>{uploadError}</span>
+						</div>
+						<button type="button" onclick={() => uploadError = null} class="text-muted-foreground hover:text-foreground cursor-pointer">
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				<!-- Upload Zone & Preset Buttons -->
+				<div class="space-y-3">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+						<span class="font-bold text-foreground">Load Quick Preset Templates:</span>
+						<div class="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("postgres_invoicing")}
+								class="px-2.5 py-1 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 text-[11px] font-mono cursor-pointer transition-colors font-semibold"
+							>
+								PostgreSQL Invoice Mutation
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("customer_master_query")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								Customer Master Query
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("oracle_invoicing")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								Oracle Invoice Mutation
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("sap_bapi_customer")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								SAP Customer Master
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("tax_compliance_djp")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								DJP Tax Validator
+							</button>
+							<button
+								type="button"
+								onclick={() => loadPresetManifest("warehouse_stock_sync")}
+								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+							>
+								Stock Sync
+							</button>
+						</div>
+					</div>
+
+					<!-- Drag & Drop / File Input -->
+					<div class="flex items-center gap-3">
+						<label class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
+							<ArrowUpTray class="h-3.5 w-3.5 text-cyan-500" />
+							<span>Select File (.json / .yaml)</span>
+							<input
+								type="file"
+								accept=".json,.yaml,.yml,.txt"
+								onchange={handleFileSelect}
+								class="hidden"
+							/>
+						</label>
+						<span class="text-xs text-muted-foreground">or paste tool manifest JSON directly below:</span>
+					</div>
+
+					<!-- Manifest Textarea -->
+					<div class="relative">
+						<textarea
+							bind:value={uploadManifestText}
+							rows={8}
+							placeholder={`{
+  "name": "mutate_custom_tool",
+  "version": "1.0.0",
+  "category": "ERP_INTEGRATION",
+  "description": "MCP tool function description",
+  "transport": "stdio / json-rpc 2.0",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "record_id": { "type": "string", "description": "Entity ID" }
+    },
+    "required": ["record_id"]
+  }
+}`}
+							class="w-full p-3 rounded-xl border border-input bg-secondary/50 font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none leading-relaxed"
+						></textarea>
+					</div>
+
+					<div class="flex items-center justify-between pt-1">
+						<button
+							type="button"
+							onclick={() => uploadManifestText = ""}
+							class="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+						>
+							Clear Form
+						</button>
+
+						<button
+							type="button"
+							onclick={registerUploadedMCPTool}
+							disabled={isUploadingTool || !uploadManifestText.trim()}
+							class="h-9 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isUploadingTool ? 'animate-spin' : ''}" />
+							<span>{isUploadingTool ? 'Registering Tool...' : 'Upload &amp; Register MCP Tool'}</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Registered Tools List -->
+			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
+				<div class="flex items-center justify-between pb-2 border-b border-border/50">
+					<div class="text-xs font-bold text-foreground">Active &amp; Registered MCP Tools ({registeredTools.length})</div>
+					<span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+						ZERO RAW SQL ENFORCED
+					</span>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{#each registeredTools as tool}
+						<div class="p-4 rounded-xl border border-border/70 bg-secondary/40 space-y-3 hover:border-cyan-500/40 transition-colors shadow-2xs">
+							<div class="flex items-start justify-between gap-2">
+								<div class="space-y-0.5">
+									<div class="font-mono font-bold text-xs text-foreground flex items-center gap-1.5">
+										<CommandLine class="h-3.5 w-3.5 text-cyan-500" />
+										<span>{tool.name}</span>
+										<span class="text-[10px] font-normal px-1.5 py-0.2 rounded bg-muted text-muted-foreground">v{tool.version}</span>
+									</div>
+									<div class="text-[10px] font-mono text-cyan-600 dark:text-cyan-400">{tool.transport} • {tool.category}</div>
+								</div>
+
+								<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+									● {tool.status}
+								</span>
+							</div>
+
+							<p class="text-xs text-muted-foreground leading-relaxed">
+								{tool.description}
+							</p>
+
+							<!-- Schema Properties Preview -->
+							{#if tool.inputSchema?.properties}
+								<div class="p-2.5 rounded-lg bg-background/80 border border-border/60 space-y-1 font-mono text-[11px]">
+									<div class="text-[10px] font-bold text-muted-foreground uppercase">Input Parameters:</div>
+									{#each Object.entries(tool.inputSchema.properties) as [paramKey, paramVal]}
+										<div class="flex items-baseline justify-between gap-2 text-foreground">
+											<span class="font-bold text-cyan-600 dark:text-cyan-400">{paramKey}</span>
+											<span class="text-muted-foreground text-[10px]">({paramVal.type})</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
+
+							<div class="pt-2 flex items-center justify-end">
+								<button
+									type="button"
+									onclick={() => openToolTestModal(tool)}
+									class="h-7 px-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+								>
+									<span>Test Tool Call (Dry-Run)</span>
+									<ArrowTopRightOnSquare class="h-3 w-3" />
+								</button>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Interactive Dry-Run Execution Modal / Panel -->
+			{#if activeToolForTest}
+				<div class="p-5 rounded-2xl border border-cyan-500/30 bg-card space-y-4 shadow-md">
+					<div class="flex items-center justify-between pb-3 border-b border-border/50">
+						<div class="flex items-center gap-2">
+							<CommandLine class="h-4 w-4 text-cyan-500" />
+							<h3 class="text-sm font-bold text-foreground">
+								Execution Simulation Sandbox: <span class="font-mono text-cyan-500">{activeToolForTest.name}</span>
+							</h3>
+						</div>
+						<button
+							type="button"
+							onclick={() => activeToolForTest = null}
+							class="p-1 rounded hover:bg-muted text-muted-foreground cursor-pointer"
+						>
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+
+					<p class="text-xs text-muted-foreground">
+						Safely test calling this MCP tool with sample parameters without permanently altering production records.
+					</p>
+
+					<!-- Parameters Form -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+						{#each Object.entries(testParamsInput) as [key, val]}
+							<div class="space-y-1">
+								<label for="mcp-test-param-{key}" class="font-mono font-bold text-foreground">{key}:</label>
+								<input
+									id="mcp-test-param-{key}"
+									type="text"
+									value={val}
+									oninput={(e) => testParamsInput[key] = (e.target as HTMLInputElement).value}
+									class="w-full h-8 px-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:outline-none"
+								/>
+							</div>
+						{/each}
+					</div>
+
+					<!-- Execution Result -->
+					{#if toolTestExecutionResult}
+						<div class="p-3.5 rounded-xl border text-xs font-mono space-y-2 {toolTestExecutionResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200' : 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200'}">
+							<div class="flex items-center justify-between font-bold">
+								<span>{toolTestExecutionResult.ok ? 'MCP PROTOCOL SIMULATION RESULT (SUCCESS)' : 'TOOL EXECUTION FAILED'}</span>
+								<span class="text-[10px] opacity-75">{toolTestExecutionResult.timestamp}</span>
+							</div>
+							{#if toolTestExecutionResult.ok}
+								<div class="text-[11px] opacity-90">
+									Roundtrip: <span class="font-bold">{toolTestExecutionResult.latency_ms}ms</span> • Protocol: {toolTestExecutionResult.protocol}
+								</div>
+								<pre class="p-2.5 rounded bg-black/10 dark:bg-black/30 overflow-x-auto text-[11px] leading-relaxed">{JSON.stringify(toolTestExecutionResult.result, null, 2)}</pre>
+							{:else}
+								<div>{toolTestExecutionResult.error}</div>
+							{/if}
+						</div>
+					{/if}
+
+					<div class="flex items-center justify-end gap-2 pt-1">
+						<button
+							type="button"
+							onclick={() => activeToolForTest = null}
+							class="h-8 px-3 rounded-lg border border-border text-xs font-semibold hover:bg-muted cursor-pointer"
+						>
+							Close
+						</button>
+						<button
+							type="button"
+							onclick={executeToolTest}
+							disabled={isExecutingToolTest}
+							class="h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isExecutingToolTest ? 'animate-spin' : ''}" />
+							<span>{isExecutingToolTest ? 'Executing...' : 'Run MCP Tool Simulation'}</span>
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>
