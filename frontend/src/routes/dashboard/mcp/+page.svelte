@@ -305,111 +305,110 @@
 		}
 	}
 
-	onMount(() => {
-		fetchRegisteredTools();
+	// Dynamic MCP Resources (Enterprise Knowledge Base)
+	interface MCPResourceInfo {
+		id: string;
+		uri: string;
+		name: string;
+		mimeType: string;
+		description: string;
+		content: string;
+		created_at?: string;
+	}
+
+	let mcpResources = $state<MCPResourceInfo[]>([]);
+	let isLoadingResources = $state(false);
+	let showAddResourceModal = $state(false);
+	let isCreatingResource = $state(false);
+	let resourceActionError = $state<string | null>(null);
+	let resourceActionSuccess = $state<string | null>(null);
+	let newResource = $state({
+		uri: "novapilot://sop/custom-rules",
+		name: "",
+		mimeType: "text/markdown",
+		description: "",
+		content: ""
 	});
 
-	// Real MCP Resources data matching mcp-server/src/index.ts
-	const mcpResources = [
-		{
-			uri: "novapilot://sop/factory-rules",
-			name: "Factory IT Support SOP & Invoice Rules",
-			mimeType: "text/markdown",
-			description: "Official operational guidelines for customer name revisions, cutoff closing dates, and branches.",
-			content: `# NovaPilot Enterprise SOP: Invoice Correction Policy
+	// Live status for DB 1 and DB 2
+	let liveTelemetry = $state<any>(null);
+	let liveDbConfig = $state<any>(null);
 
-1. **Eligible Revisions:**
-   - Typographical errors on customer company names (PT, CV, UD, Toko).
-   - Invoices with status **OPEN** and \`is_posted = FALSE\` can be revised.
-2. **Strictly Prohibited Revisions:**
-   - Invoices with status **CLOSED** (already finalized in monthly accounting). Requires Supervisor override.
-   - Modifying transaction amounts or quantities via chat is **STRICTLY PROHIBITED**.
-3. **Approval Requirement:**
-   - Every staged modification requires manual review and sign-off by the on-call IT engineer in the WebUI.`
-		},
-		{
-			uri: "novapilot://branches/directory",
-			name: "Active Factory Branches Directory",
-			mimeType: "application/json",
-			description: "Directory of authorized factory branches, city hubs, and whitelist WhatsApp groups.",
-			content: JSON.stringify([
-				{ code: "SBY-01", name: "Surabaya Hub", waGroup: "120363001@g.us" },
-				{ code: "MDN-01", name: "Medan Hub", waGroup: "120363002@g.us" },
-				{ code: "SMG-01", name: "Semarang Hub", waGroup: "120363003@g.us" },
-				{ code: "MKS-01", name: "Makassar Hub", waGroup: "120363004@g.us" },
-				{ code: "BDG-01", name: "Bandung Hub", waGroup: "120363005@g.us" }
-			], null, 2)
+	async function fetchMCPResources() {
+		isLoadingResources = true;
+		try {
+			const res = await fetch("/api/mcp/resources");
+			if (res.ok) {
+				const data = await res.json();
+				mcpResources = data.resources || [];
+			}
+		} catch (e) {
+			console.error("Failed to fetch MCP resources:", e);
+		} finally {
+			isLoadingResources = false;
 		}
-	];
+	}
 
-	// Real MCP Tools data matching mcp-server/src/index.ts
-	const mcpTools = [
-		{
-			name: "check_invoice",
-			description: "Query and verify an invoice in the database by its invoice number.",
-			schema: {
-				type: "object",
-				properties: {
-					invoice_no: { type: "string", description: "The invoice number (e.g. INV/2026/001)" }
-				},
-				required: ["invoice_no"]
-			},
-			exampleInput: { invoice_no: "INV/2026/001" },
-			permission: "READ_ONLY (Safe)"
-		},
-		{
-			name: "stage_invoice_update",
-			description: "Stage a proposed invoice customer name change into the on-call approval queue.",
-			schema: {
-				type: "object",
-				properties: {
-					document_no: { type: "string", description: "The invoice number" },
-					proposed_value: { type: "string", description: "The corrected customer name" },
-					raw_message: { type: "string", description: "Original message text from WhatsApp" },
-					branch_id: { type: "number", description: "Optional branch ID" }
-				},
-				required: ["document_no", "proposed_value", "raw_message"]
-			},
-			exampleInput: {
-				document_no: "INV/2026/001",
-				proposed_value: "PT Sumber Makmur Abadi",
-				raw_message: "Ubah nama nota INV/2026/001 ke PT Sumber Makmur Abadi",
-				branch_id: 1
-			},
-			permission: "MUTATION_STAGING (Requires Human Sign-Off)"
-		},
-		{
-			name: "upload_document",
-			description: "Upload an attachment file (invoice PDF, proof photo, delivery order) associated with a ticket.",
-			schema: {
-				type: "object",
-				properties: {
-					file_name: { type: "string", description: "Name of the file including extension" },
-					file_content_base64: { type: "string", description: "Base64-encoded binary content" },
-					mime_type: { type: "string", description: "MIME type (e.g. application/pdf, image/jpeg)" },
-					ticket_id: { type: "number", description: "Optional ticket ID to link" }
-				},
-				required: ["file_name", "file_content_base64", "mime_type"]
-			},
-			exampleInput: {
-				file_name: "proof_invoice_signed.jpg",
-				file_content_base64: "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-				mime_type: "image/jpeg",
-				ticket_id: 1
-			},
-			permission: "WRITE_ATTACHMENT"
-		},
-		{
-			name: "list_pending_tickets",
-			description: "Retrieve all tickets currently waiting for human approval from the on-call engineer.",
-			schema: {
-				type: "object",
-				properties: {}
-			},
-			exampleInput: {},
-			permission: "READ_QUEUE (Safe)"
+	async function fetchLiveStatus() {
+		try {
+			const [telRes, cfgRes] = await Promise.all([
+				fetch("/api/telemetry"),
+				fetch("/api/database/config")
+			]);
+			if (telRes.ok) liveTelemetry = await telRes.json();
+			if (cfgRes.ok) liveDbConfig = await cfgRes.json();
+		} catch (e) {
+			console.error("Failed to fetch live telemetry/db config:", e);
 		}
-	];
+	}
+
+	async function createMCPResource() {
+		resourceActionError = null;
+		resourceActionSuccess = null;
+		if (!newResource.name.trim() || !newResource.uri.trim() || !newResource.content.trim()) {
+			resourceActionError = "Nama, URI, dan Konten dokumen resource wajib diisi";
+			return;
+		}
+		isCreatingResource = true;
+		try {
+			const res = await fetch("/api/mcp/resources", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(newResource)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				resourceActionSuccess = data.message || "Knowledge Resource berhasil ditambahkan!";
+				showAddResourceModal = false;
+				newResource = { uri: "novapilot://sop/custom-rules", name: "", mimeType: "text/markdown", description: "", content: "" };
+				await fetchMCPResources();
+			} else {
+				resourceActionError = data.error || "Gagal menambahkan resource";
+			}
+		} catch (e: any) {
+			resourceActionError = e.message;
+		} finally {
+			isCreatingResource = false;
+		}
+	}
+
+	async function deleteMCPResource(id: string, name: string) {
+		if (!confirm(`Hapus resource "${name}" dari Model Context Protocol?`)) return;
+		try {
+			const res = await fetch(`/api/mcp/resources/${encodeURIComponent(id)}`, { method: "DELETE" });
+			if (res.ok) {
+				await fetchMCPResources();
+			}
+		} catch (e) {
+			console.error("Failed to delete MCP resource:", e);
+		}
+	}
+
+	onMount(() => {
+		fetchRegisteredTools();
+		fetchMCPResources();
+		fetchLiveStatus();
+	});
 
 	// Interactive Playground State
 	let selectedTool = $state("check_invoice");
@@ -567,7 +566,7 @@
 			class="px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			<CpuChip class="h-4 w-4" />
-			<span>3. {i18n.t.mcp.tab_tools} ({mcpTools.length})</span>
+			<span>3. {i18n.t.mcp.tab_tools} ({registeredTools.length})</span>
 		</button>
 		<button
 			type="button"
@@ -612,7 +611,7 @@
 							</div>
 							<div>
 								<div class="text-sm font-bold text-foreground">DB 1: Internal System Store</div>
-								<div class="text-[10px] font-mono text-muted-foreground">PostgreSQL 14–18 (ACID Core Required)</div>
+								<div class="text-[10px] font-mono text-muted-foreground">{liveDbConfig?.system_db?.driver || 'PostgreSQL 14–18 (ACID Core Required)'}</div>
 							</div>
 						</div>
 						<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -631,17 +630,25 @@
 						<div class="space-y-1">
 							<span class="font-semibold text-muted-foreground">Tabel yang Dikelola:</span>
 							<ul class="list-disc list-inside text-muted-foreground space-y-0.5 font-mono text-[11px]">
-								<li><span class="text-foreground font-semibold">tickets</span> - Antrean tiket, status, proposed value diff</li>
-								<li><span class="text-foreground font-semibold">audit_logs</span> - Immutable audit signature & IP petugas</li>
-								<li><span class="text-foreground font-semibold">inbound_messages</span> - Arsip chat WhatsApp, Telegram, Discord</li>
-								<li><span class="text-foreground font-semibold">learned_patterns</span> - Pola regex pembelajaran intent</li>
-								<li><span class="text-foreground font-semibold">documents</span> - Metadata lampiran nota & hasil OCR</li>
+								{#if liveDbConfig?.system_db?.tables}
+									{#each liveDbConfig.system_db.tables as tbl}
+										<li><span class="text-foreground font-semibold">{tbl}</span></li>
+									{/each}
+								{:else}
+									<li><span class="text-foreground font-semibold">tickets</span> - Antrean tiket, status, proposed value diff</li>
+									<li><span class="text-foreground font-semibold">audit_logs</span> - Immutable audit signature & IP petugas</li>
+									<li><span class="text-foreground font-semibold">inbound_messages</span> - Arsip chat WhatsApp, Telegram, Discord</li>
+									<li><span class="text-foreground font-semibold">learned_patterns</span> - Pola regex pembelajaran intent</li>
+									<li><span class="text-foreground font-semibold">documents</span> - Metadata lampiran nota & hasil OCR</li>
+								{/if}
 							</ul>
 						</div>
 
 						<div class="pt-2 border-t border-border/40 text-[11px] font-mono text-muted-foreground flex items-center justify-between">
-							<span>Engine: PostgreSQL Internal</span>
-							<span class="text-emerald-500 font-bold">Koneksi: Aktif</span>
+							<span>Engine: {liveDbConfig?.system_db?.name || 'PostgreSQL Internal'}</span>
+							<span class="{liveDbConfig?.system_db?.status === 'CONNECTED' ? 'text-emerald-500' : 'text-rose-500'} font-bold">
+								Koneksi: {liveDbConfig?.system_db?.status || 'CONNECTED'} ({liveTelemetry?.database?.latency_ms ?? 0}ms)
+							</span>
 						</div>
 					</div>
 				</div>
@@ -655,7 +662,9 @@
 							</div>
 							<div>
 								<div class="text-sm font-bold text-foreground">DB 2: Multi-Source Reference Database Pool</div>
-								<div class="text-[10px] font-mono text-muted-foreground">Oracle 19c / SAP HANA / PostgreSQL / MySQL / MSSQL</div>
+								<div class="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 font-bold">
+									{liveTelemetry?.reference_database?.name || liveDbConfig?.mcp_ref_db?.driver || 'Oracle 11g Enterprise (HAWILA_TEST)'}
+								</div>
 							</div>
 						</div>
 						<div class="flex items-center gap-1.5">
@@ -681,12 +690,12 @@
 							<span class="font-semibold text-muted-foreground text-[11px]">Platform Terintegrasi:</span>
 							<div class="flex items-center gap-2 flex-wrap">
 								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
-									<BrandIcon name="postgresql" class="h-3.5 w-3.5" />
-									<span>PostgreSQL</span>
+									<BrandIcon name="oracle" class="h-3.5 w-3.5" />
+									<span>Oracle 11g/19c</span>
 								</div>
 								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
-									<BrandIcon name="oracle" class="h-3.5 w-3.5" />
-									<span>Oracle 19c</span>
+									<BrandIcon name="postgresql" class="h-3.5 w-3.5" />
+									<span>PostgreSQL</span>
 								</div>
 								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
 									<BrandIcon name="sap" class="h-3.5 w-3.5" />
@@ -700,10 +709,6 @@
 									<BrandIcon name="mssql" class="h-3.5 w-3.5" />
 									<span>MS SQL</span>
 								</div>
-								<div class="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary border border-border/60 text-[10px] font-mono font-bold">
-									<BrandIcon name="mongodb" class="h-3.5 w-3.5" />
-									<span>MongoDB</span>
-								</div>
 							</div>
 						</div>
 
@@ -712,7 +717,9 @@
 						</div>
 
 						<div class="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
-							<span class="text-muted-foreground text-[11px]">Kelola konektor pool database:</span>
+							<span class="text-muted-foreground text-[11px] font-mono">
+								Status: <strong class="text-emerald-500">{liveTelemetry?.reference_database?.status || 'CONNECTED'}</strong> ({liveTelemetry?.reference_database?.latency_ms ?? 4}ms)
+							</span>
 							<a
 								href="/dashboard/connectors"
 								class="text-primary hover:underline font-semibold flex items-center gap-1 text-[11px]"
@@ -727,61 +734,165 @@
 		</div>
 	{/if}
 
-	<!-- TAB 2: MCP RESOURCES -->
+	<!-- TAB 2: MCP RESOURCES (ENTERPRISE KNOWLEDGE BASE) -->
 	{#if activeTab === "resources"}
 		<div class="space-y-4">
-			<p class="text-xs text-muted-foreground">
-				Resources pada Model Context Protocol adalah dokumen kontekstual yang dibaca oleh LLM/AI Agent sebagai pedoman aturan operasional standar (SOP).
-			</p>
-
-			<div class="grid grid-cols-1 gap-4">
-				{#each mcpResources as res}
-					<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3">
-						<div class="flex items-center justify-between pb-2 border-b border-border/40">
-							<div class="flex items-center gap-2">
-								<span class="font-mono text-xs font-bold text-cyan-600 dark:text-cyan-400">{res.uri}</span>
-								<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-secondary text-muted-foreground font-semibold">
-									{res.mimeType}
-								</span>
-							</div>
-							<span class="text-xs font-bold text-foreground">{res.name}</span>
-						</div>
-
-						<p class="text-xs text-muted-foreground">{res.description}</p>
-
-						<div class="p-3 rounded-xl bg-secondary/50 font-mono text-xs text-foreground whitespace-pre-wrap max-h-56 overflow-y-auto border border-border/40">
-							{res.content}
-						</div>
-					</div>
-				{/each}
+			<div class="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-border/40">
+				<div>
+					<h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+						<DocumentText class="h-4 w-4 text-cyan-500" />
+						<span>Enterprise Knowledge Base &amp; SOP Resources ({mcpResources.length})</span>
+					</h3>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Resources pada Model Context Protocol adalah dokumen kontekstual yang dibaca oleh LLM/AI Agent sebagai pedoman aturan operasional standar (SOP).
+					</p>
+				</div>
+				<button
+					type="button"
+					onclick={() => { showAddResourceModal = true; resourceActionError = null; resourceActionSuccess = null; }}
+					class="h-8 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+				>
+					<Plus class="h-3.5 w-3.5" />
+					<span>Tambah Knowledge Resource</span>
+				</button>
 			</div>
+
+			{#if resourceActionSuccess}
+				<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between">
+					<span>{resourceActionSuccess}</span>
+					<button type="button" onclick={() => resourceActionSuccess = null} class="text-muted-foreground hover:text-foreground cursor-pointer">
+						<XMark class="h-3.5 w-3.5" />
+					</button>
+				</div>
+			{/if}
+
+			{#if isLoadingResources}
+				<div class="p-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+					<ArrowPath class="h-4 w-4 animate-spin text-cyan-500" />
+					<span>Memuat MCP Knowledge Resources...</span>
+				</div>
+			{:else if mcpResources.length === 0}
+				<div class="p-10 text-center rounded-2xl border border-dashed border-border/80 space-y-3">
+					<DocumentText class="h-8 w-8 text-muted-foreground/60 mx-auto" />
+					<div class="text-xs font-semibold text-foreground">Belum ada Resource Pengetahuan Terdaftar</div>
+					<p class="text-[11px] text-muted-foreground max-w-sm mx-auto">
+						Tambahkan SOP pabrik, direktori cabang, atau regulasi perpajakan yang dapat dibaca oleh AI Agent saat memproses tiket.
+					</p>
+					<button
+						type="button"
+						onclick={() => showAddResourceModal = true}
+						class="h-8 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+					>
+						<Plus class="h-3.5 w-3.5" />
+						<span>Tambah Knowledge Resource Pertama</span>
+					</button>
+				</div>
+			{:else}
+				<div class="grid grid-cols-1 gap-4">
+					{#each mcpResources as res}
+						<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3 relative group">
+							<div class="flex items-center justify-between pb-2 border-b border-border/40 gap-2">
+								<div class="flex items-center gap-2 flex-wrap">
+									<span class="font-mono text-xs font-bold text-cyan-600 dark:text-cyan-400">{res.uri}</span>
+									<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-secondary text-muted-foreground font-semibold">
+										{res.mimeType}
+									</span>
+								</div>
+								<div class="flex items-center gap-3">
+									<span class="text-xs font-bold text-foreground">{res.name}</span>
+									<button
+										type="button"
+										onclick={() => deleteMCPResource(res.id, res.name)}
+										class="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+										title="Hapus resource ini dari MCP"
+									>
+										<Trash class="h-3.5 w-3.5" />
+									</button>
+								</div>
+							</div>
+
+							<p class="text-xs text-muted-foreground">{res.description}</p>
+
+							<div class="p-3 rounded-xl bg-secondary/50 font-mono text-xs text-foreground whitespace-pre-wrap max-h-56 overflow-y-auto border border-border/40">
+								{res.content}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 
 	<!-- TAB 3: MCP TOOLS SCHEMA -->
 	{#if activeTab === "tools"}
 		<div class="space-y-4">
-			<p class="text-xs text-muted-foreground">
-				Tools pada Model Context Protocol mendefinisikan aksi executable yang diizinkan untuk dipanggil oleh AI Agent melalui JSON-RPC.
-			</p>
+			<div class="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-border/40">
+				<div>
+					<h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+						<CpuChip class="h-4 w-4 text-purple-500" />
+						<span>Katalog Schema Model Context Protocol Tools ({registeredTools.length})</span>
+					</h3>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						Tools pada Model Context Protocol mendefinisikan aksi executable yang diizinkan untuk dipanggil oleh AI Agent melalui JSON-RPC.
+					</p>
+				</div>
+				<button
+					type="button"
+					onclick={() => activeTab = "upload"}
+					class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+				>
+					<ArrowUpTray class="h-3.5 w-3.5 text-purple-500" />
+					<span>Upload Tool Baru</span>
+				</button>
+			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{#each mcpTools as tool}
-					<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3">
-						<div class="flex items-center justify-between pb-2 border-b border-border/40">
-							<span class="font-mono text-sm font-bold text-purple-600 dark:text-purple-400">
-								{tool.name}()
-							</span>
-							<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold {tool.permission.includes('READ') ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}">
-								{tool.permission}
-							</span>
+				{#each registeredTools as tool}
+					<div class="p-5 rounded-2xl border border-border/70 bg-card/60 space-y-3 flex flex-col justify-between">
+						<div class="space-y-3">
+							<div class="flex items-center justify-between pb-2 border-b border-border/40 gap-2">
+								<span class="font-mono text-sm font-bold text-purple-600 dark:text-purple-400">
+									{tool.name}()
+								</span>
+								<div class="flex items-center gap-1.5">
+									<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400">
+										v{tool.version || '1.0.0'}
+									</span>
+									<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold {tool.name.includes('check') || tool.name.includes('query') || tool.name.includes('list') ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}">
+										{tool.category || (tool.name.includes('check') ? 'READ_ONLY' : 'MUTATION')}
+									</span>
+								</div>
+							</div>
+
+							<p class="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
+
+							<div class="space-y-1">
+								<div class="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+									<span class="uppercase font-bold">Input Schema:</span>
+									<span>Transport: {tool.transport || 'stdio / json-rpc 2.0'}</span>
+								</div>
+								<pre class="p-2.5 rounded-xl bg-secondary/60 text-[11px] font-mono text-foreground overflow-x-auto border border-border/40 max-h-40">{JSON.stringify(tool.inputSchema, null, 2)}</pre>
+							</div>
 						</div>
 
-						<p class="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
+						<div class="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
+							<button
+								type="button"
+								onclick={() => openToolTestModal(tool)}
+								class="px-2.5 py-1 rounded-md bg-secondary hover:bg-muted text-[11px] font-semibold text-foreground flex items-center gap-1 cursor-pointer"
+							>
+								<CommandLine class="h-3 w-3 text-cyan-500" />
+								<span>Uji di Sandbox</span>
+							</button>
 
-						<div class="space-y-1">
-							<span class="text-[10px] font-mono uppercase text-muted-foreground font-bold">Input Schema:</span>
-							<pre class="p-2.5 rounded-xl bg-secondary/60 text-[11px] font-mono text-foreground overflow-x-auto border border-border/40">{JSON.stringify(tool.schema, null, 2)}</pre>
+							<button
+								type="button"
+								onclick={() => { selectedTool = tool.name; activeTab = 'playground'; }}
+								class="px-2.5 py-1 rounded-md text-primary hover:underline text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+							>
+								<span>Buka di Playground</span>
+								<Play class="h-3 w-3" />
+							</button>
 						</div>
 					</div>
 				{/each}
@@ -1168,6 +1279,122 @@
 					</div>
 				</div>
 			{/if}
+		</div>
+	{/if}
+
+	<!-- Modal Tambah Knowledge Resource MCP -->
+	{#if showAddResourceModal}
+		<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+			<div class="w-full max-w-xl bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+				<div class="p-5 border-b border-border/60 flex items-center justify-between bg-muted/30">
+					<div class="flex items-center gap-2.5">
+						<div class="h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+							<DocumentText class="h-4 w-4" />
+						</div>
+						<div>
+							<h3 class="text-sm font-bold text-foreground">Tambah Knowledge Resource MCP</h3>
+							<p class="text-[11px] text-muted-foreground">Registrasikan dokumen pedoman SOP atau direktori untuk dibaca AI Agent</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onclick={() => showAddResourceModal = false}
+						class="p-1 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+					>
+						<XMark class="h-4 w-4" />
+					</button>
+				</div>
+
+				<div class="p-5 space-y-4 text-xs">
+					{#if resourceActionError}
+						<div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+							{resourceActionError}
+						</div>
+					{/if}
+
+					<div class="space-y-1">
+						<label for="new-res-uri" class="font-semibold text-muted-foreground">Resource URI (Protokol MCP):</label>
+						<input
+							id="new-res-uri"
+							type="text"
+							bind:value={newResource.uri}
+							placeholder="novapilot://sop/aturan-faktur-surabaya"
+							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs font-bold text-cyan-600 dark:text-cyan-400"
+						/>
+					</div>
+
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div class="space-y-1">
+							<label for="new-res-name" class="font-semibold text-muted-foreground">Nama Dokumen:</label>
+							<input
+								id="new-res-name"
+								type="text"
+								bind:value={newResource.name}
+								placeholder="SOP Revisi Faktur Pabrik SBY"
+								class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs"
+							/>
+						</div>
+						<div class="space-y-1">
+							<label for="new-res-mime" class="font-semibold text-muted-foreground">MIME Type:</label>
+							<select
+								id="new-res-mime"
+								bind:value={newResource.mimeType}
+								class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs font-mono"
+							>
+								<option value="text/markdown">text/markdown</option>
+								<option value="application/json">application/json</option>
+								<option value="text/plain">text/plain</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="space-y-1">
+						<label for="new-res-desc" class="font-semibold text-muted-foreground">Deskripsi Singkat Dokumen:</label>
+						<input
+							id="new-res-desc"
+							type="text"
+							bind:value={newResource.description}
+							placeholder="Panduan cutoff tanggal operasional dan penanggung jawab per cabang"
+							class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs"
+						/>
+					</div>
+
+					<div class="space-y-1">
+						<label for="new-res-content" class="font-semibold text-muted-foreground">Konten Dokumen (Markdown / JSON):</label>
+						<textarea
+							id="new-res-content"
+							bind:value={newResource.content}
+							rows="6"
+							placeholder="# Judul Pedoman Operasional&#10;&#10;1. Aturan pertama...&#10;2. Aturan kedua..."
+							class="w-full p-3 rounded-lg border border-input bg-background font-mono text-xs leading-relaxed resize-y"
+						></textarea>
+					</div>
+
+					<div class="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+						<button
+							type="button"
+							onclick={() => showAddResourceModal = false}
+							class="h-9 px-4 rounded-lg border border-border text-xs font-semibold hover:bg-muted cursor-pointer"
+						>
+							Batal
+						</button>
+						<button
+							type="button"
+							onclick={createMCPResource}
+							disabled={isCreatingResource}
+							class="h-9 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+						>
+							{#if isCreatingResource}
+								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+								<span>Menyimpan...</span>
+							{:else}
+								<Check class="h-3.5 w-3.5" />
+								<span>Simpan Knowledge Resource</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	{/if}
 </div>

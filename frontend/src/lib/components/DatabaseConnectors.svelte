@@ -475,13 +475,29 @@
 		isTestingMcp || isSimulatingDb2 ? "PROCESSING" : (mcpStatus === "CONNECTED" ? "CONNECTED" : "DISCONNECTED")
 	);
 
-	// Quick toggle helpers for testing animation states
-	function toggleMockStatusDb1() {
-		sysStatus = sysStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
+	// Active reference DB derived from multi-reference pool
+	const activeRef = $derived(referenceDBs.find(d => d.is_active) || null);
+
+	// Live database test & SVG burst actions (Real telemetry & socket ping)
+	async function runLiveTestDb1() {
+		triggerDb1Burst();
+		await testSystemConnection();
+		await fetchConfigAndTelemetry();
 	}
 
-	function toggleMockStatusDb2() {
-		mcpStatus = mcpStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
+	async function runLiveTestDb2() {
+		triggerDb2Burst();
+		const active = referenceDBs.find(d => d.is_active);
+		if (active) {
+			await testSingleRefDB(active.id);
+		} else {
+			await testMCPReferenceConnection();
+		}
+		await fetchConfigAndTelemetry();
+	}
+
+	async function runLivePingAll() {
+		await Promise.all([runLiveTestDb1(), runLiveTestDb2()]);
 	}
 
 	// Dynamic port switching based on database platform
@@ -1243,16 +1259,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<!-- Simulation Action Buttons -->
 				<div class="flex items-center gap-2.5 flex-wrap text-xs font-mono">
 					<span class="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
-						I/O Simulation:
+						Live I/O & Ping:
 					</span>
 
-					<!-- DB 1 Button -->
+					<!-- DB 1 Live Ping Button -->
 					<button
 						type="button"
-						onclick={triggerDb1Burst}
-						disabled={isSimulatingDb1}
+						onclick={runLiveTestDb1}
+						disabled={isTestingSys || isSimulatingDb1}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Trigger PROCESSING transmission pulse on DB 1 (PostgreSQL Core)"
+						title="Uji live socket ping & transmisi data DB 1 (PostgreSQL Core)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 1: Core</span>
@@ -1261,35 +1277,31 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						</span>
 					</button>
 
-					<!-- DB 2 Button -->
+					<!-- DB 2 Live Ping Button -->
 					<button
 						type="button"
-						onclick={triggerDb2Burst}
-						disabled={isSimulatingDb2}
+						onclick={runLiveTestDb2}
+						disabled={isTestingMcp || isSimulatingDb2 || isTestingRefDB !== null}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Trigger PROCESSING transmission pulse on DB 2 (MCP Reference Store)"
+						title="Uji live socket ping & transmisi data DB 2 (MCP Reference / Oracle 11g)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
-						<span>DB 2: MCP Ref</span>
+						<span>DB 2: {activeRef ? activeRef.name.split(' ')[0] : 'MCP Ref'}</span>
 						<span class="text-[10px] px-1.5 py-0.5 rounded font-bold {db2VisualState === 'CONNECTED' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300' : db2VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
 							{db2VisualState}
 						</span>
 					</button>
 
-					<!-- Toggle DB 2 Link State Button -->
+					<!-- Live Ping Both DBs Button -->
 					<button
 						type="button"
-						onclick={toggleMockStatusDb2}
-						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-						title={i18n.locale === 'id' ? 'Alihkan status tautan online vs offline DB 2' : 'Toggle online vs offline link state for DB 2'}
+						onclick={runLivePingAll}
+						disabled={isTestingSys || isTestingMcp || isTestingRefDB !== null}
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs disabled:opacity-50"
+						title={i18n.locale === 'id' ? 'Uji konektivitas live socket & latensi roundtrip kedua database' : 'Test live socket & roundtrip latency for both databases'}
 					>
-						{#if mcpStatus === 'CONNECTED'}
-							<span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-							<span>{i18n.locale === 'id' ? 'Putus Tautan DB 2' : 'Disconnect DB 2 Link'}</span>
-						{:else}
-							<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-							<span>{i18n.locale === 'id' ? 'Hubungkan Tautan DB 2' : 'Connect DB 2 Link'}</span>
-						{/if}
+						<Play class="h-3.5 w-3.5" />
+						<span>{i18n.locale === 'id' ? 'Uji Koneksi Real-time (Live Ping)' : 'Live Ping All Databases'}</span>
 					</button>
 				</div>
 
@@ -1636,7 +1648,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db1VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db1VisualState === 'CONNECTED'}
-									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Socket Latency ~1.2ms
+									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Ping Latency: {telemetry?.database?.latency_ms ?? sysTestResult?.latency_ms ?? 1}ms
 								{:else if db1VisualState === 'PROCESSING'}
 									⚡ Executing Ticket Staging Query &amp; Signing Audit Logs...
 								{:else}
@@ -1813,7 +1825,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.08' : db2VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
 						/>
 						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'}>
-							🏢 MCP Reference &amp; ERP Database ({mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname})
+							🏢 MCP Reference &amp; ERP Database ({activeRef ? activeRef.name : (mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 11g Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname)})
 						</text>
 						
 						<!-- Status Indicator Badge -->
@@ -1831,7 +1843,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<!-- Left Text Details Column -->
 						<g transform="translate(18, 48)">
 							<text x="0" y="16" font-family="monospace" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">
-								Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel (Bastion 22)' : mcpMode === 'ssl' ? 'SSL/TLS Encrypted' : 'Local Direct'}
+								Host: {activeRef ? (activeRef.tns ? `${activeRef.host}:${activeRef.port} (TNS: ${activeRef.service_name || activeRef.dbname})` : `${activeRef.host}:${activeRef.port}/${activeRef.dbname}`) : `${mcpConfig.host}:${mcpConfig.port}/${mcpConfig.dbname}`} • Driver: {activeRef ? activeRef.platform.toUpperCase() : mcpPlatform.toUpperCase()}
 							</text>
 							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
 								• Reference Tables: {mcpReferenceTables.map(t => t.name).join(', ')}
@@ -1842,7 +1854,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db2VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db2VisualState === 'CONNECTED'}
-									✓ Verified Enterprise Business Data Source • Secure Isolated Read/Write Access
+									✓ Verified Enterprise Reference DB • Ping Latency: {activeRef?.latency_ms ?? telemetry?.reference_database?.latency_ms ?? mcpTestResult?.latency_ms ?? 4}ms • Protocol Active
 								{:else if db2VisualState === 'PROCESSING'}
 									⚡ Executing Verified Mutation via MCP Protocol RPC...
 								{:else}

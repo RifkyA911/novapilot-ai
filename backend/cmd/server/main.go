@@ -174,6 +174,11 @@ func main() {
 		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
 		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 
+		// MCP Resources & Enterprise Knowledge Base
+		api.GET("/mcp/resources", apiHandler.ListMCPResources)
+		api.POST("/mcp/resources", apiHandler.CreateMCPResource)
+		api.DELETE("/mcp/resources/:id", apiHandler.DeleteMCPResource)
+
 		// Hermes 3 Agentic LLM Engine
 		api.GET("/llm/config", apiHandler.GetLLMConfig)
 		api.POST("/llm/config", apiHandler.UpdateLLMConfig)

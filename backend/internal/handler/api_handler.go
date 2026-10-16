@@ -91,34 +91,71 @@ func (h *APIHandler) HealthCheck(c *gin.Context) {
 	})
 }
 
+func resolveAccurateLANIP() string {
+	// 1. Inquire the OS routing table for the active outbound interface
+	conn, err := net.DialTimeout("udp", "8.8.8.8:80", 250*time.Millisecond)
+	if err == nil {
+		defer conn.Close()
+		localAddr, ok := conn.LocalAddr().(*net.UDPAddr)
+		if ok {
+			ip := localAddr.IP.String()
+			if !strings.HasPrefix(ip, "169.254.") && !strings.HasPrefix(ip, "127.") && ip != "0.0.0.0" {
+				return ip
+			}
+		}
+	}
+
+	// 2. Fallback: inspect network interfaces, avoiding loopback and APIPA
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
+
+	var candidates []string
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			ip4 := ipnet.IP.To4()
+			if ip4 != nil {
+				ipStr := ip4.String()
+				if strings.HasPrefix(ipStr, "169.254.") {
+					continue
+				}
+				if strings.HasPrefix(ipStr, "172.21.") || strings.HasPrefix(ipStr, "192.168.") || strings.HasPrefix(ipStr, "10.") {
+					return ipStr
+				}
+				candidates = append(candidates, ipStr)
+			}
+		}
+	}
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+	return "127.0.0.1"
+}
+
 func (h *APIHandler) GetTelemetry(c *gin.Context) {
-	// 1. Resolve host active LAN IP (cached with 60s TTL to eliminate Win32 syscall overhead)
+	// 1. Resolve host active LAN IP (routing checked with 60s TTL)
 	h.lanIPMu.RLock()
 	lanIP := h.lanIPCache
 	lanExpired := time.Now().After(h.lanIPExpiry)
 	h.lanIPMu.RUnlock()
 
-	if lanIP == "" || lanExpired {
-		lanIP = "127.0.0.1"
-		if addrs, err := net.InterfaceAddrs(); err == nil {
-			for _, addr := range addrs {
-				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-					if ipnet.IP.To4() != nil {
-						lanIP = ipnet.IP.String()
-						break
-					}
-				}
-			}
-		}
+	if lanIP == "" || lanExpired || strings.HasPrefix(lanIP, "169.254.") || lanIP == "127.0.0.1" {
+		lanIP = resolveAccurateLANIP()
 		h.lanIPMu.Lock()
 		h.lanIPCache = lanIP
 		h.lanIPExpiry = time.Now().Add(60 * time.Second)
 		h.lanIPMu.Unlock()
 	}
 
-	// 2. Resolve database connection pool statistics
+	// 2. Resolve internal database connection pool & real roundtrip ping latency
 	var dbStats gin.H
 	if h.db != nil {
+		pStart := time.Now()
+		var latencyMs int64
+		if err := h.db.Ping(); err == nil {
+			latencyMs = time.Since(pStart).Milliseconds()
+		}
 		stats := h.db.Stats()
 		dbStats = gin.H{
 			"open_connections": stats.OpenConnections,
@@ -128,27 +165,58 @@ func (h *APIHandler) GetTelemetry(c *gin.Context) {
 			"max_open":         25,
 			"status":           "HEALTHY",
 			"driver":           "PostgreSQL 18 (Local)",
+			"latency_ms":       latencyMs,
 		}
 	} else {
 		dbStats = gin.H{
-			"status": "DISCONNECTED",
-			"driver": "None",
+			"status":     "DISCONNECTED",
+			"driver":     "None",
+			"latency_ms": 0,
 		}
 	}
 
-	// 3. Resolve memory and runtime statistics
+	// 3. Resolve active Reference Database stats from pool
+	initRefDBs()
+	refDBsMutex.RLock()
+	var activeRefDB gin.H
+	for _, ref := range refDBsStore {
+		if ref.IsActive {
+			activeRefDB = gin.H{
+				"id":           ref.ID,
+				"name":         ref.Name,
+				"platform":     ref.Platform,
+				"host":         ref.Host,
+				"port":         ref.Port,
+				"dbname":       ref.DBName,
+				"status":       ref.Status,
+				"latency_ms":   ref.LatencyMs,
+				"is_active":    ref.IsActive,
+				"service_name": ref.ServiceName,
+				"tns":          ref.TNS,
+				"mode":         ref.Mode,
+			}
+			break
+		}
+	}
+	refDBsMutex.RUnlock()
+
+	// 4. Memory and runtime statistics
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
 	c.JSON(http.StatusOK, gin.H{
-		"service":         "NovaPilot AI Core",
-		"status":          "OPERATIONAL",
-		"lan_ip":          lanIP,
-		"uptime_seconds":  int(time.Since(h.startTime).Seconds()),
-		"goroutines":      runtime.NumGoroutine(),
-		"memory_alloc_mb": fmt.Sprintf("%.2f MB", float64(memStats.Alloc)/1024/1024),
-		"database":        dbStats,
-		"timestamp":       time.Now().UTC(),
+		"service":            "NovaPilot AI Core",
+		"status":             "OPERATIONAL",
+		"lan_ip":             lanIP,
+		"uptime_seconds":     int(time.Since(h.startTime).Seconds()),
+		"goroutines":         runtime.NumGoroutine(),
+		"cpu_cores":          runtime.NumCPU(),
+		"memory_alloc_mb":    fmt.Sprintf("%.2f MB", float64(memStats.Alloc)/1024/1024),
+		"memory_sys_mb":      fmt.Sprintf("%.2f MB", float64(memStats.Sys)/1024/1024),
+		"gc_cycles":          memStats.NumGC,
+		"database":           dbStats,
+		"reference_database": activeRefDB,
+		"timestamp":          time.Now().UTC(),
 	})
 }
 
@@ -692,11 +760,6 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 		sysStatus = "CONNECTED"
 	}
 
-	mcpStatus := "DISCONNECTED"
-	if h.mcpRefDB != nil && h.mcpRefDB.Ping() == nil {
-		mcpStatus = "CONNECTED"
-	}
-
 	sysHost := os.Getenv("SYSTEM_DB_HOST")
 	if sysHost == "" { sysHost = os.Getenv("POSTGRES_HOST") }
 	if sysHost == "" { sysHost = "localhost" }
@@ -713,20 +776,119 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 	if sysDB == "" { sysDB = os.Getenv("POSTGRES_DB") }
 	if sysDB == "" { sysDB = "novapilot_db" }
 
-	mcpHost := os.Getenv("MCP_REF_DB_HOST")
-	if mcpHost == "" { mcpHost = "localhost" }
+	// Introspect real system tables
+	var sysTables []string
+	if h.db != nil {
+		rows, err := h.db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name")
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var tn string
+				if err := rows.Scan(&tn); err == nil {
+					sysTables = append(sysTables, tn)
+				}
+			}
+		}
+	}
+	if len(sysTables) == 0 {
+		sysTables = []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"}
+	}
 
-	mcpPort := os.Getenv("MCP_REF_DB_PORT")
-	if mcpPort == "" { mcpPort = "5432" }
+	// Resolve active reference database from pool
+	initRefDBs()
+	refDBsMutex.RLock()
+	var activeRef *ReferenceDBConfig
+	for i := range refDBsStore {
+		if refDBsStore[i].IsActive {
+			activeRef = &refDBsStore[i]
+			break
+		}
+	}
+	refDBsMutex.RUnlock()
 
-	mcpUser := os.Getenv("MCP_REF_DB_USER")
-	if mcpUser == "" { mcpUser = "postgres" }
+	var mcpName, mcpPlatform, mcpDriver, mcpHost, mcpPort, mcpUser, mcpDB, mcpStatus, mcpPurpose, mcpTNS, mcpSvc string
+	var mcpTables []string
 
-	mcpPlatform := os.Getenv("MCP_REF_DB_PLATFORM")
-	if mcpPlatform == "" { mcpPlatform = "postgres" }
+	if activeRef != nil {
+		mcpName = activeRef.Name
+		mcpPlatform = activeRef.Platform
+		mcpHost = activeRef.Host
+		mcpPort = activeRef.Port
+		mcpUser = activeRef.User
+		mcpDB = activeRef.DBName
+		mcpStatus = activeRef.Status
+		mcpTNS = activeRef.TNS
+		mcpSvc = activeRef.ServiceName
 
-	mcpDB := os.Getenv("MCP_REF_DB_NAME")
-	if mcpDB == "" { mcpDB = "novapilot_mcp_ref" }
+		if activeRef.Platform == "oracle" {
+			mcpDriver = fmt.Sprintf("Oracle 11g Enterprise (%s)", activeRef.DBName)
+			mcpPurpose = fmt.Sprintf("Enterprise Oracle 11g Business Reference (Service: %s)", activeRef.ServiceName)
+			mcpTables = []string{"HAWILA_INVOICES", "CUSTOMER_MASTER", "GENERAL_LEDGER", "TAX_FAKTUR", "ITEM_INVENTORY", "AR_RECEIVABLES"}
+		} else if activeRef.Platform == "sap" {
+			mcpDriver = "SAP S/4HANA (BAPI & RFC Gateway)"
+			mcpPurpose = "SAP ERP Master Data & Controlling"
+			mcpTables = []string{"BAPI_INVOICES", "KUNNR_CUSTOMERS", "BKPF_ACCOUNTING", "MARA_MATERIALS"}
+		} else {
+			mcpDriver = fmt.Sprintf("%s Enterprise Reference DB", strings.ToUpper(activeRef.Platform))
+			mcpPurpose = activeRef.Description
+			if mcpPurpose == "" {
+				mcpPurpose = "Enterprise Reference Data Source for Sales Orders, Invoices, Tax IDs, and Customers"
+			}
+			if h.mcpRefDB != nil {
+				rows, err := h.mcpRefDB.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name")
+				if err == nil {
+					defer rows.Close()
+					for rows.Next() {
+						var tn string
+						if err := rows.Scan(&tn); err == nil {
+							mcpTables = append(mcpTables, tn)
+						}
+					}
+				}
+			}
+			if len(mcpTables) == 0 {
+				mcpTables = []string{"sales_orders", "customer_master", "erp_invoices", "tax_validations", "item_inventory"}
+			}
+		}
+	} else {
+		mcpName = "MCP Reference Database"
+		mcpPlatform = "postgres"
+		mcpDriver = "PostgreSQL 16/18 (Enterprise MCP)"
+		mcpHost = os.Getenv("MCP_REF_DB_HOST")
+		if mcpHost == "" { mcpHost = "localhost" }
+		mcpPort = os.Getenv("MCP_REF_DB_PORT")
+		if mcpPort == "" { mcpPort = "5432" }
+		mcpUser = os.Getenv("MCP_REF_DB_USER")
+		if mcpUser == "" { mcpUser = "postgres" }
+		mcpDB = os.Getenv("MCP_REF_DB_NAME")
+		if mcpDB == "" { mcpDB = "novapilot_mcp_ref" }
+		mcpStatus = "DISCONNECTED"
+		if h.mcpRefDB != nil && h.mcpRefDB.Ping() == nil {
+			mcpStatus = "CONNECTED"
+		}
+		mcpPurpose = "Enterprise Reference Data Source for Sales Orders, Invoices, Tax IDs, and Customers"
+		mcpTables = []string{"sales_orders", "customer_master", "erp_invoices", "tax_validations", "item_inventory"}
+	}
+
+	mcpRefObj := gin.H{
+		"name":     mcpName,
+		"platform": mcpPlatform,
+		"driver":   mcpDriver,
+		"host":     mcpHost,
+		"port":     mcpPort,
+		"user":     mcpUser,
+		"dbname":   mcpDB,
+		"sslmode":  "disable",
+		"status":   mcpStatus,
+		"purpose":  mcpPurpose,
+		"tables":   mcpTables,
+	}
+	if mcpTNS != "" {
+		mcpRefObj["tns"] = mcpTNS
+	}
+	if mcpSvc != "" {
+		mcpRefObj["service_name"] = mcpSvc
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"system_db": gin.H{
@@ -740,21 +902,9 @@ func (h *APIHandler) GetDatabaseConfig(c *gin.Context) {
 			"sslmode":  "disable",
 			"status":   sysStatus,
 			"purpose":  "Ticket Staging Queue, Audit Trail, Sessions, Inbound Messages, Learned Patterns",
-			"tables":   []string{"tickets", "audit_logs", "inbound_messages", "learned_patterns", "documents"},
+			"tables":   sysTables,
 		},
-		"mcp_ref_db": gin.H{
-			"name":     "MCP Reference Database",
-			"platform": mcpPlatform,
-			"driver":   "PostgreSQL 16/18 (Enterprise MCP)",
-			"host":     mcpHost,
-			"port":     mcpPort,
-			"user":     mcpUser,
-			"dbname":   mcpDB,
-			"sslmode":  "disable",
-			"status":   mcpStatus,
-			"purpose":  "Enterprise Reference Data Source for Sales Orders, Invoices, Tax IDs, and Customers",
-			"tables":   []string{"sales_orders", "customer_master", "erp_invoices", "tax_validations", "item_inventory"},
-		},
+		"mcp_ref_db": mcpRefObj,
 	})
 }
 
@@ -1623,15 +1773,253 @@ var defaultMCPTools = []MCPToolInfo{
 			},
 		},
 	},
+	{
+		ID:          "mcp-tool-check-invoice",
+		Name:        "check_invoice",
+		Description: "Query and verify an invoice in the database by its invoice number.",
+		Version:     "1.0.0",
+		Category:    "READ_ONLY_INVOICE",
+		Transport:   "stdio / json-rpc 2.0",
+		Status:      "ACTIVE",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"invoice_no": map[string]interface{}{"type": "string", "description": "The invoice number (e.g. INV/2026/001)"},
+			},
+			"required": []string{"invoice_no"},
+		},
+	},
+	{
+		ID:          "mcp-tool-stage-invoice",
+		Name:        "stage_invoice_update",
+		Description: "Stage a proposed invoice customer name change into the on-call approval queue.",
+		Version:     "1.0.0",
+		Category:    "MUTATION_STAGING",
+		Transport:   "stdio / json-rpc 2.0",
+		Status:      "ACTIVE",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"document_no":    map[string]interface{}{"type": "string", "description": "The invoice number"},
+				"proposed_value": map[string]interface{}{"type": "string", "description": "The corrected customer name"},
+				"raw_message":    map[string]interface{}{"type": "string", "description": "Original message text from WhatsApp"},
+				"branch_id":      map[string]interface{}{"type": "number", "description": "Optional branch ID"},
+			},
+			"required": []string{"document_no", "proposed_value", "raw_message"},
+		},
+	},
+	{
+		ID:          "mcp-tool-upload-doc",
+		Name:        "upload_document",
+		Description: "Upload an attachment file (invoice PDF, proof photo, delivery order) associated with a ticket.",
+		Version:     "1.0.0",
+		Category:    "WRITE_ATTACHMENT",
+		Transport:   "stdio / json-rpc 2.0",
+		Status:      "ACTIVE",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_name":           map[string]interface{}{"type": "string", "description": "Name of the file including extension"},
+				"file_content_base64": map[string]interface{}{"type": "string", "description": "Base64-encoded binary content"},
+				"mime_type":           map[string]interface{}{"type": "string", "description": "MIME type (e.g. application/pdf, image/jpeg)"},
+				"ticket_id":           map[string]interface{}{"type": "number", "description": "Optional ticket ID to link"},
+			},
+			"required": []string{"file_name", "file_content_base64", "mime_type"},
+		},
+	},
+	{
+		ID:          "mcp-tool-list-tickets",
+		Name:        "list_pending_tickets",
+		Description: "Retrieve all tickets currently waiting for human approval from the on-call engineer.",
+		Version:     "1.0.0",
+		Category:    "READ_QUEUE",
+		Transport:   "stdio / json-rpc 2.0",
+		Status:      "ACTIVE",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+	},
 }
 
 var (
 	mcpToolsMutex sync.RWMutex
 	mcpToolsStore []MCPToolInfo
+
+	mcpResourcesMutex sync.RWMutex
+	mcpResourcesStore []MCPResourceInfo
 )
+
+// =========================================================================
+// MCP RESOURCES (KNOWLEDGE BASE) REGISTRY & MANAGEMENT
+// =========================================================================
+
+type MCPResourceInfo struct {
+	ID          string `json:"id"`
+	URI         string `json:"uri"`
+	Name        string `json:"name"`
+	MimeType    string `json:"mimeType"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+	CreatedAt   string `json:"created_at"`
+}
+
+var defaultMCPResources = []MCPResourceInfo{
+	{
+		ID:          "mcp-res-sop-rules",
+		URI:         "novapilot://sop/factory-rules",
+		Name:        "Factory IT Support SOP & Invoice Rules",
+		MimeType:    "text/markdown",
+		Description: "Official operational guidelines for customer name revisions, cutoff closing dates, and branches.",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		Content: `# NovaPilot Enterprise SOP: Invoice Correction Policy
+
+1. **Eligible Revisions:**
+   - Typographical errors on customer company names (PT, CV, UD, Toko).
+   - Invoices with status **OPEN** and ` + "`is_posted = FALSE`" + ` can be revised.
+2. **Strictly Prohibited Revisions:**
+   - Invoices with status **CLOSED** (already finalized in monthly accounting). Requires Supervisor override.
+   - Modifying transaction amounts or quantities via chat is **STRICTLY PROHIBITED**.
+3. **Approval Requirement:**
+   - Every staged modification requires manual review and sign-off by the on-call IT engineer in the WebUI.`,
+	},
+	{
+		ID:          "mcp-res-branches-dir",
+		URI:         "novapilot://branches/directory",
+		Name:        "Active Factory Branches Directory",
+		MimeType:    "application/json",
+		Description: "Directory of authorized factory branches, city hubs, and whitelist WhatsApp groups.",
+		CreatedAt:   "2026-10-10T08:00:00Z",
+		Content: `[
+  { "code": "SBY-01", "name": "Surabaya Hub", "waGroup": "120363001@g.us" },
+  { "code": "MDN-01", "name": "Medan Hub", "waGroup": "120363002@g.us" },
+  { "code": "SMG-01", "name": "Semarang Hub", "waGroup": "120363003@g.us" },
+  { "code": "MKS-01", "name": "Makassar Hub", "waGroup": "120363004@g.us" },
+  { "code": "BDG-01", "name": "Bandung Hub", "waGroup": "120363005@g.us" }
+]`,
+	},
+	{
+		ID:          "mcp-res-tax-guidelines",
+		URI:         "novapilot://tax/guidelines-2026",
+		Name:        "DJP e-Faktur & NPWP Validation Guidelines 2026",
+		MimeType:    "text/markdown",
+		Description: "Peraturan Dirjen Pajak untuk validasi format NPWP 16-digit (NIK/NPWP16) dan rekonsiliasi PPN 11%.",
+		CreatedAt:   "2026-10-14T09:00:00Z",
+		Content: `# Pedoman Validasi Faktur Pajak & NPWP 2026
+
+1. **Format Identitas Wajib Pajak:**
+   - NPWP Badan Usaha: 16 Digit numerik sesuai format PMK-112/PMK.03/2022.
+   - Faktur tanpa NPWP valid otomatis diberi flag *NEEDS_REVIEW* dan tidak boleh disetujui langsung.
+2. **Kesesuaian Tarif Pajak Pertambahan Nilai (PPN):**
+   - Tarif resmi PPN adalah **11%** dari DPP (Dasar Pengenaan Pajak).
+   - Validasi nama entitas faktur komersial harus identik dengan nama terdaftar di master DJP (tax_validations).`,
+	},
+	{
+		ID:          "mcp-res-oracle-hawila",
+		URI:         "novapilot://erp/oracle-hawila-schema",
+		Name:        "Oracle 11g HAWILA_TEST Enterprise Schema Reference",
+		MimeType:    "text/markdown",
+		Description: "Kamus data tabel referensi Oracle 11g HBS (HAWILA_TEST) untuk sinkronisasi AR dan Invoicing.",
+		CreatedAt:   "2026-10-16T04:00:00Z",
+		Content: `# Enterprise Oracle 11g (HAWILA_TEST / HBS) Metadata
+
+- **Platform Driver:** Oracle 11g Release 2 (TNS Listener)
+- **TNS Host:** 172.20.173.35:1521 | Service: HBS
+- **Skema Utama:**
+  - ` + "`HAWILA_INVOICES`" + `: Faktur komersial, nomor nota, nama entitas pembeli, nominal AR.
+  - ` + "`CUSTOMER_MASTER`" + `: Master kode pelanggan, batas kredit, NPWP badan, alamat penagihan.
+  - ` + "`GENERAL_LEDGER`" + `: Jurnal transaksi piutang dan pembayaran termin.
+  - ` + "`TAX_FAKTUR`" + `: Nomor seri faktur pajak elektronik (NSFP).`,
+	},
+}
 
 func init() {
 	mcpToolsStore = append(mcpToolsStore, defaultMCPTools...)
+	mcpResourcesStore = append(mcpResourcesStore, defaultMCPResources...)
+}
+
+func (h *APIHandler) ListMCPResources(c *gin.Context) {
+	mcpResourcesMutex.RLock()
+	defer mcpResourcesMutex.RUnlock()
+	c.JSON(http.StatusOK, gin.H{
+		"ok":        true,
+		"resources": mcpResourcesStore,
+		"count":     len(mcpResourcesStore),
+	})
+}
+
+func (h *APIHandler) CreateMCPResource(c *gin.Context) {
+	var res MCPResourceInfo
+	if err := c.ShouldBindJSON(&res); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Invalid JSON: " + err.Error()})
+		return
+	}
+	if strings.TrimSpace(res.Name) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Nama dokumen resource wajib diisi"})
+		return
+	}
+	if strings.TrimSpace(res.URI) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "URI protokol MCP wajib diisi (contoh: novapilot://sop/...)"})
+		return
+	}
+	if strings.TrimSpace(res.Content) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Konten resource wajib diisi"})
+		return
+	}
+	if res.ID == "" {
+		res.ID = fmt.Sprintf("mcp-res-%d", time.Now().UnixMilli())
+	}
+	if res.MimeType == "" {
+		trimmed := strings.TrimSpace(res.Content)
+		if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") {
+			res.MimeType = "application/json"
+		} else {
+			res.MimeType = "text/markdown"
+		}
+	}
+	res.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+
+	mcpResourcesMutex.Lock()
+	mcpResourcesStore = append([]MCPResourceInfo{res}, mcpResourcesStore...)
+	mcpResourcesMutex.Unlock()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"ok":       true,
+		"message":  fmt.Sprintf("Knowledge Resource MCP '%s' (%s) berhasil ditambahkan!", res.Name, res.URI),
+		"resource": res,
+	})
+}
+
+func (h *APIHandler) DeleteMCPResource(c *gin.Context) {
+	id := c.Param("id")
+	mcpResourcesMutex.Lock()
+	defer mcpResourcesMutex.Unlock()
+
+	deleted := false
+	var updated []MCPResourceInfo
+	for _, r := range mcpResourcesStore {
+		if r.ID == id || r.URI == id {
+			deleted = true
+			continue
+		}
+		updated = append(updated, r)
+	}
+
+	if !deleted {
+		c.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "Knowledge Resource tidak ditemukan"})
+		return
+	}
+
+	mcpResourcesStore = updated
+	c.JSON(http.StatusOK, gin.H{
+		"ok":      true,
+		"message": "Knowledge Resource berhasil dihapus dari katalog MCP.",
+		"id":      id,
+	})
 }
 
 func (h *APIHandler) ListMCPTools(c *gin.Context) {
