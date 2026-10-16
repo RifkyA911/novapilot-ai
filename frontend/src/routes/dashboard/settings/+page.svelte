@@ -34,7 +34,7 @@
 		ArrowTopRightOnSquare,
 		PaperAirplane
 	} from "svelte-heros-v2";
-	import { sound } from "$lib/audio";
+	import { sound, SOUND_THEMES, type SoundTheme } from "$lib/audio";
 	import { i18n } from "$lib/i18n.svelte";
 	import { formatCurrency } from "$lib/utils";
 
@@ -140,6 +140,7 @@
 	// 5. Alert, Notifikasi & Audio Feedback
 	let soundAlerts = $state(sound.enabled);
 	let soundVolume = $state(Math.round(sound.volume * 100));
+	let soundTheme = $state<SoundTheme>(sound.theme);
 	let navSoundEnabled = $state(sound.navEnabled);
 	let browserPushAlerts = $state(true);
 	let highValueAlertEscalation = $state(true);
@@ -209,6 +210,10 @@
 				if (s.soundVolume !== undefined) {
 					soundVolume = s.soundVolume;
 					sound.volume = s.soundVolume / 100;
+				}
+				if (s.soundTheme && ["sony_crystal", "sony_xperia", "bravia_cinema", "cyber_clean"].includes(s.soundTheme)) {
+					soundTheme = s.soundTheme;
+					sound.theme = s.soundTheme;
 				}
 				if (s.navSoundEnabled !== undefined) {
 					navSoundEnabled = s.navSoundEnabled;
@@ -463,6 +468,7 @@
 				safeDryRunMode,
 				soundAlerts,
 				soundVolume,
+				soundTheme,
 				navSoundEnabled,
 				browserPushAlerts,
 				highValueAlertEscalation,
@@ -477,6 +483,7 @@
 			// Sync with global sound engine
 			sound.enabled = soundAlerts;
 			sound.volume = soundVolume / 100;
+			sound.theme = soundTheme;
 			sound.navEnabled = navSoundEnabled;
 
 			localStorage.setItem("novapilot_settings", JSON.stringify(configObj));
@@ -497,11 +504,25 @@
 	}
 
 	function playTestSound() {
-		sound.playInboundPing();
+		sound.playInboundPing(soundTheme);
+	}
+
+	function playTestActionChime() {
+		sound.playActionChime(soundTheme);
+	}
+
+	function playTestAlertChime() {
+		sound.playAlertChime(soundTheme);
 	}
 
 	function playTestNavClick() {
-		sound.playNavClick();
+		sound.playNavClick(soundTheme);
+	}
+
+	function selectSoundTheme(th: SoundTheme) {
+		soundTheme = th;
+		sound.theme = th;
+		sound.playInboundPing(th);
 	}
 
 	// Simulation for DB 1 Ping
@@ -2097,19 +2118,39 @@
 						</div>
 					</div>
 
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-1.5 flex-wrap">
 						<button
 							type="button"
 							onclick={playTestSound}
-							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							class="h-8 px-2.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Uji Lonceng Pesan Masuk"
 						>
 							<SpeakerWave class="h-3.5 w-3.5 text-purple-500" />
 							<span>{i18n.t.settings.test_sound}</span>
 						</button>
 						<button
 							type="button"
+							onclick={playTestActionChime}
+							class="h-8 px-2.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Uji Akord Aksi / Persetujuan"
+						>
+							<Sparkles class="h-3.5 w-3.5 text-amber-500" />
+							<span>{i18n.t.settings.test_action_chime}</span>
+						</button>
+						<button
+							type="button"
+							onclick={playTestAlertChime}
+							class="h-8 px-2.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Uji Sinyal Peringatan"
+						>
+							<ExclamationTriangle class="h-3.5 w-3.5 text-rose-500" />
+							<span>{i18n.t.settings.test_alert_chime}</span>
+						</button>
+						<button
+							type="button"
 							onclick={playTestNavClick}
-							class="h-8 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							class="h-8 px-2.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Uji Haptic Micro-Tap"
 						>
 							<CursorArrowRays class="h-3.5 w-3.5 text-primary" />
 							<span>{i18n.t.settings.test_nav_click}</span>
@@ -2117,7 +2158,57 @@
 					</div>
 				</div>
 
-				<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+				<!-- SOUND THEME SELECTOR CARDS -->
+				<div class="space-y-3 pt-2">
+					<div>
+						<div class="text-xs font-bold text-foreground flex items-center gap-2">
+							<Sparkles class="h-4 w-4 text-purple-500" />
+							<span>{i18n.t.settings.sound_theme}</span>
+						</div>
+						<p class="text-[11px] text-muted-foreground mt-0.5">
+							{i18n.t.settings.sound_theme_desc}
+						</p>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+						{#each SOUND_THEMES as themeItem}
+							<button
+								type="button"
+								onclick={() => selectSoundTheme(themeItem.id)}
+								class="p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between {soundTheme === themeItem.id ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary/40' : 'border-border/70 bg-secondary/20 hover:bg-secondary/50'}"
+							>
+								<div class="flex items-start justify-between gap-2">
+									<div>
+										<div class="flex items-center gap-2">
+											<span class="text-xs font-bold text-foreground">{themeItem.name}</span>
+											<span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md bg-secondary text-foreground/80 border border-border/60">
+												{themeItem.badge}
+											</span>
+										</div>
+										<p class="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+											{themeItem.description}
+										</p>
+									</div>
+									{#if soundTheme === themeItem.id}
+										<div class="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+											<Check class="h-3.5 w-3.5 stroke-2" />
+										</div>
+									{/if}
+								</div>
+
+								<div class="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
+									<span class="font-mono">Profil: {themeItem.brand}</span>
+									<span class="text-primary font-semibold flex items-center gap-1">
+										<SpeakerWave class="h-3 w-3" />
+										Pilih &amp; Dengarkan
+									</span>
+								</div>
+							</button>
+						{/each}
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs pt-2 border-t border-border/60">
 					<label class="flex items-center gap-3 cursor-pointer">
 						<input
 							type="checkbox"

@@ -568,6 +568,10 @@ export interface Translations {
 		sound_alerts_desc: string;
 		test_sound: string;
 		sound_volume: string;
+		sound_theme: string;
+		sound_theme_desc: string;
+		test_action_chime: string;
+		test_alert_chime: string;
 		nav_sound: string;
 		nav_sound_desc: string;
 		test_nav_click: string;
@@ -1490,6 +1494,10 @@ const dictionaries: Record<Locale, Translations> = {
 			sound_alerts_desc: "Mainkan sinyal audio Web Audio synthesizer saat ada mutasi baru.",
 			test_sound: "Uji Suara",
 			sound_volume: "Volume Suara Efek",
+			sound_theme: "Tema Profil Suara (Audio Soundscape)",
+			sound_theme_desc: "Pilih karakter suara notifikasi, lonceng pesan masuk, dan umpan balik haptic sistem.",
+			test_action_chime: "Uji Sukses",
+			test_alert_chime: "Uji Peringatan",
 			nav_sound: "Efek Suara Klik Navigasi Menu",
 			nav_sound_desc: "Mainkan klik tactile saat berpindah halaman dan menekan tombol kontrol.",
 			test_nav_click: "Uji Klik",
@@ -2410,6 +2418,10 @@ const dictionaries: Record<Locale, Translations> = {
 			sound_alerts_desc: "Play Web Audio synthesized sound pulses on incoming mutations and status updates.",
 			test_sound: "Test Sound",
 			sound_volume: "Sound Effects Volume",
+			sound_theme: "Sound Theme Profile (Audio Soundscape)",
+			sound_theme_desc: "Select the audio sound design profile for notifications, inbound chimes, and haptic clicks.",
+			test_action_chime: "Test Action",
+			test_alert_chime: "Test Alert",
 			nav_sound: "Menu Navigation Click Sounds",
 			nav_sound_desc: "Play tactile clicks when switching routes and pressing control buttons.",
 			test_nav_click: "Test Click",
