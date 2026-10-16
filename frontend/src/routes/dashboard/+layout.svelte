@@ -157,15 +157,6 @@
 					count: cockpit.needsReviewCount
 				},
 				{
-					href: "/dashboard/hermes",
-					label: i18n.t.nav.agents,
-					icon: CpuChip,
-					iconColor: "text-sky-500",
-					title: "AI Agents: Hermes 3 Reasoning & OpenClaw Autonomous Engine",
-					badge: !cockpit.isHermesConfigured ? "SETUP" : undefined,
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
 					href: "/dashboard/hooks",
 					label: i18n.t.nav.hooks,
 					icon: CodeBracket,
@@ -204,6 +195,15 @@
 		{
 			title: i18n.t.nav.settings,
 			items: [
+				{
+					href: "/dashboard/hermes",
+					label: i18n.t.nav.agents,
+					icon: CpuChip,
+					iconColor: "text-sky-500",
+					title: "AI Agents: Hermes 3 Reasoning & OpenClaw Autonomous Engine",
+					badge: !cockpit.isHermesConfigured ? "SETUP" : undefined,
+					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+				},
 				{
 					href: "/dashboard/settings",
 					label: i18n.t.nav.settings,

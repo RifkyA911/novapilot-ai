@@ -36,7 +36,7 @@
 		id: string;
 		title: string;
 		description: string;
-		category: "Core Navigation" | "Operations" | "Databases & Telemetry" | "ChatOps & Hooks";
+		category: "Core Navigation" | "Operations" | "Databases & Telemetry" | "ChatOps & Hooks" | "Settings";
 		url: string;
 		icon: any;
 		badge?: string;
@@ -186,7 +186,7 @@
 			id: "agents",
 			title: "AI Agents (Hermes 3 & OpenClaw)",
 			description: "Local reasoning with Hermes 3 & autonomous browser task automation with OpenClaw",
-			category: "ChatOps & Hooks",
+			category: "Settings",
 			url: "/dashboard/hermes",
 			icon: CpuChip,
 			badge: "AI Fleet",
@@ -206,7 +206,7 @@
 			id: "settings",
 			title: "System Settings & Gatekeeper Policies",
 			description: "Configure Ingestion Policies, High-Value Thresholds, Auto-Reply & Dual-DB Pools",
-			category: "Operations",
+			category: "Settings",
 			url: "/dashboard/settings",
 			icon: Cog6Tooth,
 			badge: "Settings",
@@ -364,7 +364,7 @@
 							</div>
 
 							<div class="flex items-center gap-2 shrink-0 pl-2">
-								<span class="text-[10px] font-mono text-muted-foreground hidden sm:inline">{item.category === "Core Navigation" ? i18n.t.command.category_core : item.category === "Operations" ? i18n.t.command.category_operations : item.category === "Databases & Telemetry" ? i18n.t.command.category_db : i18n.t.command.category_chatops}</span>
+								<span class="text-[10px] font-mono text-muted-foreground hidden sm:inline">{item.category === "Core Navigation" ? i18n.t.command.category_core : item.category === "Operations" ? i18n.t.command.category_operations : item.category === "Databases & Telemetry" ? i18n.t.command.category_db : item.category === "Settings" ? i18n.t.command.category_settings : i18n.t.command.category_chatops}</span>
 								<ArrowRight class="h-3.5 w-3.5 text-muted-foreground opacity-60" />
 							</div>
 						</button>

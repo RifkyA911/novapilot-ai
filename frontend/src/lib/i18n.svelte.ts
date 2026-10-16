@@ -903,6 +903,7 @@ export interface Translations {
 		category_operations: string;
 		category_db: string;
 		category_chatops: string;
+		category_settings: string;
 		nav_hint: string;
 		select_hint: string;
 	};
@@ -1820,6 +1821,7 @@ const dictionaries: Record<Locale, Translations> = {
 			category_operations: "Operasional",
 			category_db: "Database & Telemetri",
 			category_chatops: "ChatOps & Hooks",
+			category_settings: "Pengaturan Sistem",
 			nav_hint: "Gunakan ↑ ↓ untuk navigasi",
 			select_hint: "↵ untuk memilih"
 		},
@@ -2735,6 +2737,7 @@ const dictionaries: Record<Locale, Translations> = {
 			category_operations: "Operations",
 			category_db: "Databases & Telemetry",
 			category_chatops: "ChatOps & Hooks",
+			category_settings: "System Settings",
 			nav_hint: "Use ↑ ↓ to navigate",
 			select_hint: "↵ to select"
 		},
