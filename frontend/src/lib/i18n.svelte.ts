@@ -737,10 +737,44 @@ export interface Translations {
 		hub_badge: string;
 		select_method: string;
 		verified_routes: string;
+		tab_wa_api: string;
+		tab_wa_gateway: string;
+		tab_wa_web: string;
 		wa_gateway_qr: string;
 		wa_web: string;
 		wa_ferdium: string;
 		wa_rambox: string;
+		api_title: string;
+		api_subtitle: string;
+		api_phone_id: string;
+		api_waba_id: string;
+		api_token: string;
+		api_verify_token: string;
+		api_callback_url: string;
+		api_test_btn: string;
+		api_qr_title: string;
+		api_qr_sub: string;
+		tos_modal_title: string;
+		tos_modal_subtitle: string;
+		tos_point_1_title: string;
+		tos_point_1_desc: string;
+		tos_point_2_title: string;
+		tos_point_2_desc: string;
+		tos_point_3_title: string;
+		tos_point_3_desc: string;
+		tos_point_4_title: string;
+		tos_point_4_desc: string;
+		tos_checkbox_label: string;
+		tos_accept_btn: string;
+		tos_cancel_btn: string;
+		tos_locked_title: string;
+		tos_locked_desc: string;
+		tos_open_btn: string;
+		tos_view_btn: string;
+		tos_reset_btn: string;
+		tos_accepted_badge: string;
+		pc_support_title: string;
+		pc_support_desc: string;
 		qr_title: string;
 		qr_subtitle: string;
 		qr_status_connected: string;
@@ -1594,11 +1628,45 @@ const dictionaries: Record<Locale, Translations> = {
 			page_subtitle: "Konfigurasikan kredensial, filter daftar putih, pembatasan kecepatan, dan logika penerimaan untuk setiap platform chat.",
 			hub_badge: "Hub Multi-Saluran",
 			select_method: "Pilih Metode Ingress / Koneksi WhatsApp:",
-			verified_routes: "4 Jalur Terverifikasi",
+			verified_routes: "3 Metode Utama Terverifikasi",
+			tab_wa_api: "WA API Scan",
+			tab_wa_gateway: "WA Gateway (TOS)",
+			tab_wa_web: "Web (PC & Desktop)",
 			wa_gateway_qr: "WA Gateway (QR)",
 			wa_web: "WhatsApp Web",
-			wa_ferdium: "Ferdium",
-			wa_rambox: "Rambox",
+			wa_ferdium: "Ferdium Multi-Service",
+			wa_rambox: "Rambox Desktop",
+			api_title: "WhatsApp Cloud API (Meta Graph v21.0)",
+			api_subtitle: "Integrasi resmi Meta dengan Webhook real-time dan generator QR Quick-Connect",
+			api_phone_id: "Phone Number ID Meta",
+			api_waba_id: "WhatsApp Business Account (WABA) ID",
+			api_token: "Permanent System User Token (Bearer)",
+			api_verify_token: "Webhook Verify Token",
+			api_callback_url: "Webhook Callback URL",
+			api_test_btn: "Uji Koneksi WhatsApp Cloud API",
+			api_qr_title: "QR Quick-Connect Chat (wa.me)",
+			api_qr_sub: "Scan QR berikut untuk langsung memulai obrolan ke nomor akun WhatsApp API",
+			tos_modal_title: "Ketentuan Layanan & Disclaimer Risiko (TOS)",
+			tos_modal_subtitle: "Persetujuan Wajib Operasional Baileys Multi-Device Gateway",
+			tos_point_1_title: "1. Protokol Reverse-Engineered Unofficial",
+			tos_point_1_desc: "Layanan Baileys menggunakan koneksi WhatsApp Web Multi-Device protokol non-resmi (Unofficial API) dan tidak berafiliasi resmi dengan Meta / WhatsApp LLC.",
+			tos_point_2_title: "2. Risiko Pemblokiran Nomor (Account Ban)",
+			tos_point_2_desc: "Penggunaan otomasi pesan berfrekuensi tinggi, blast massal, atau pesan spam dapat memicu sistem deteksi Meta yang mengakibatkan nomor Anda diblokir sementara atau permanen.",
+			tos_point_3_title: "3. Khusus ChatOps Internal Perusahaan",
+			tos_point_3_desc: "Gateway ini dirancang khusus untuk koordinasi internal cabang pabrik, notifikasi approval on-call, dan verifikasi faktur, bukan untuk pemasaran massal.",
+			tos_point_4_title: "4. Tanggung Jawab Kepemilikan Akun",
+			tos_point_4_desc: "Pengguna menyatakan memiliki hak penuh atas nomor seluler yang ditautkan dan membebaskan pengembang dari kerugian akibat pemblokiran akun oleh Meta.",
+			tos_checkbox_label: "Saya telah membaca, memahami risiko pemblokiran, dan menyetujui Ketentuan Layanan (TOS) di atas.",
+			tos_accept_btn: "Saya Setuju & Buka QR Code",
+			tos_cancel_btn: "Batalkan",
+			tos_locked_title: "Ketentuan Layanan & Risiko Wajib Disetujui",
+			tos_locked_desc: "Demi keamanan akun operasional Anda, Anda wajib membaca dan menyetujui Ketentuan Layanan (TOS) sebelum memindai QR code Baileys.",
+			tos_open_btn: "Buka & Setujui Ketentuan Layanan (TOS)",
+			tos_view_btn: "Lihat Ketentuan Layanan (TOS)",
+			tos_reset_btn: "Reset Persetujuan",
+			tos_accepted_badge: "TOS Disetujui",
+			pc_support_title: "100% Dukungan PC & Desktop Ready",
+			pc_support_desc: "Mendukung browser PC (Chrome, Edge, Firefox), desktop aggregators (Ferdium, Rambox), dan background daemon di Windows / Linux.",
 			qr_title: "Penyandingan QR Multi-Device Baileys",
 			qr_subtitle: "Pindai QR langsung dari aplikasi seluler WhatsApp di ponsel Anda",
 			qr_status_connected: "TERHUBUNG",
@@ -2450,11 +2518,45 @@ const dictionaries: Record<Locale, Translations> = {
 			page_subtitle: "Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.",
 			hub_badge: "Multi-Channel Hub",
 			select_method: "Select WhatsApp Ingress / Connection Method:",
-			verified_routes: "4 Verified Paths",
+			verified_routes: "3 Primary Verified Methods",
+			tab_wa_api: "WA API Scan",
+			tab_wa_gateway: "WA Gateway (TOS)",
+			tab_wa_web: "Web (PC & Desktop)",
 			wa_gateway_qr: "WA Gateway (QR)",
 			wa_web: "WhatsApp Web",
-			wa_ferdium: "Ferdium",
-			wa_rambox: "Rambox",
+			wa_ferdium: "Ferdium Multi-Service",
+			wa_rambox: "Rambox Desktop",
+			api_title: "WhatsApp Cloud API (Meta Graph v21.0)",
+			api_subtitle: "Official Meta integration with real-time Webhook intake and Quick-Connect QR generator",
+			api_phone_id: "Meta Phone Number ID",
+			api_waba_id: "WhatsApp Business Account (WABA) ID",
+			api_token: "Permanent System User Token (Bearer)",
+			api_verify_token: "Webhook Verify Token",
+			api_callback_url: "Webhook Callback URL",
+			api_test_btn: "Test WhatsApp Cloud API Connection",
+			api_qr_title: "Quick-Connect QR Chat (wa.me)",
+			api_qr_sub: "Scan this QR to start a direct message thread with the official WhatsApp API account",
+			tos_modal_title: "Terms of Service & Risk Disclaimer (TOS)",
+			tos_modal_subtitle: "Mandatory Operational Acceptance for Baileys Multi-Device Gateway",
+			tos_point_1_title: "1. Unofficial Reverse-Engineered Protocol",
+			tos_point_1_desc: "The Baileys service utilizes an unofficial reverse-engineered WhatsApp Web Multi-Device protocol and is not affiliated with Meta or WhatsApp LLC.",
+			tos_point_2_title: "2. Account Suspension & Ban Risk",
+			tos_point_2_desc: "High-frequency messaging, bulk broadcasting, or unsolicited messages may trigger Meta anti-abuse mechanisms and result in temporary or permanent phone number bans.",
+			tos_point_3_title: "3. Internal Enterprise ChatOps Only",
+			tos_point_3_desc: "This gateway is strictly designed for internal plant branch coordination, on-call engineer notifications, and invoice staging verification, not marketing blasts.",
+			tos_point_4_title: "4. Account Ownership Responsibility",
+			tos_point_4_desc: "The operator assumes full ownership and liability for the connected phone number and agrees that the developers bear no responsibility for account actions by Meta.",
+			tos_checkbox_label: "I have read, understood the account ban risks, and accept the Terms of Service (TOS) above.",
+			tos_accept_btn: "I Agree & Reveal QR Code",
+			tos_cancel_btn: "Cancel",
+			tos_locked_title: "TOS Acceptance Required",
+			tos_locked_desc: "For operational safety, you must review and accept the Terms of Service (TOS) before scanning the Baileys QR code.",
+			tos_open_btn: "Review & Accept Terms of Service (TOS)",
+			tos_view_btn: "View Terms of Service (TOS)",
+			tos_reset_btn: "Reset Agreement",
+			tos_accepted_badge: "TOS Accepted",
+			pc_support_title: "100% PC & Desktop Ready",
+			pc_support_desc: "Fully compatible with PC browsers (Chrome, Edge, Firefox), desktop aggregators (Ferdium, Rambox), and background daemons on Windows / Linux.",
 			qr_title: "Baileys Multi-Device QR Pairing",
 			qr_subtitle: "Scan QR directly from WhatsApp mobile app on your smartphone",
 			qr_status_connected: "CONNECTED",

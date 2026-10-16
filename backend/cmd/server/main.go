@@ -140,6 +140,9 @@ func main() {
 		api.PATCH("/channels/:id/toggle-whitelist", apiHandler.ToggleChannelWhitelist)
 
 		// Omnichannel Webhooks
+		api.GET("/webhooks/whatsapp", apiHandler.HandleWhatsAppWebhookVerify)
+		api.POST("/webhooks/whatsapp", apiHandler.HandleWhatsAppWebhook)
+		api.POST("/whatsapp-api/test", apiHandler.TestWhatsAppAPI)
 		api.POST("/webhooks/telegram", apiHandler.HandleTelegramWebhook)
 		api.POST("/webhooks/discord", apiHandler.HandleDiscordWebhook)
 
