@@ -1357,11 +1357,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 			onwheel={handleWheel}
 		>
 			<!-- Floating Pan & Zoom Controls Toolbar -->
-			<div class="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 rounded-xl bg-card/90 backdrop-blur-md border border-border shadow-md text-xs font-mono">
+			<div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 p-1.5 rounded-xl bg-card/90 backdrop-blur-md border border-border shadow-md text-xs font-mono">
 				<button 
 					type="button"
 					onclick={zoomIn} 
-					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
+					class="h-8 w-8 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-base cursor-pointer transition-colors shadow-2xs" 
 					title={i18n.locale === 'id' ? 'Perbesar (+)' : 'Zoom In (+)'}
 				>
 					+
@@ -1369,7 +1369,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<button 
 					type="button"
 					onclick={zoomOut} 
-					class="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" 
+					class="h-8 w-8 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-bold text-base cursor-pointer transition-colors shadow-2xs" 
 					title={i18n.locale === 'id' ? 'Perkecil (-)' : 'Zoom Out (-)'}
 				>
 					-
@@ -1377,7 +1377,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<button 
 					type="button"
 					onclick={resetPanZoom} 
-					class="h-7 px-2 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-semibold text-[11px] cursor-pointer transition-colors" 
+					class="h-8 px-2.5 rounded-lg hover:bg-muted text-foreground flex items-center justify-center font-semibold text-xs cursor-pointer transition-colors shadow-2xs" 
 					title={i18n.locale === 'id' ? 'Reset Zoom & Posisi (100%)' : 'Reset Zoom & Position (100%)'}
 				>
 					{Math.round(zoom * 100)}%
@@ -2009,37 +2009,37 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	</div>
 
 	<!-- Navigation Tabs: 4 Distinct Workflows -->
-	<div class="flex items-center gap-2 border-b border-border/50 pb-1 text-xs font-semibold overflow-x-auto">
+	<div class="flex items-center gap-2 border-b border-border/50 pb-2 text-xs font-semibold overflow-x-auto">
 		<button
 			type="button"
 			onclick={() => activeTab = "system"}
-			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'system' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'system' ? 'bg-primary text-primary-foreground shadow-xs font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
-			<ServerStack class="h-3.5 w-3.5" />
+			<ServerStack class="h-4 w-4" />
 			<span>1. {i18n.t.connectors.tab_system}</span>
 		</button>
 		<button
 			type="button"
 			onclick={() => activeTab = "mcp"}
-			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'mcp' ? 'bg-primary text-primary-foreground shadow-xs font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
-			<CircleStack class="h-3.5 w-3.5" />
+			<CircleStack class="h-4 w-4" />
 			<span>2. {i18n.t.connectors.tab_mcp}</span>
 		</button>
 		<button
 			type="button"
 			onclick={() => activeTab = "mcp_tools"}
-			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'mcp_tools' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'mcp_tools' ? 'bg-primary text-primary-foreground shadow-xs font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
-			<CommandLine class="h-3.5 w-3.5" />
+			<CommandLine class="h-4 w-4" />
 			<span>3. {i18n.t.connectors.tab_tools} ({mcpTools.length})</span>
 		</button>
 		<button
 			type="button"
 			onclick={() => activeTab = "env"}
-			class="px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 {activeTab === 'env' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			class="px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 {activeTab === 'env' ? 'bg-primary text-primary-foreground shadow-xs font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
-			<ClipboardDocument class="h-3.5 w-3.5" />
+			<ClipboardDocument class="h-4 w-4" />
 			<span>4. {i18n.t.connectors.tab_env}</span>
 		</button>
 	</div>
@@ -2233,16 +2233,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={testSystemConnection}
 							disabled={isTestingSys}
-							class="h-9 px-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+							class="h-10 px-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
 						>
-							<ArrowPath class="h-3.5 w-3.5 {isTestingSys ? 'animate-spin' : ''}" />
+							<ArrowPath class="h-4 w-4 {isTestingSys ? 'animate-spin' : ''}" />
 							<span>{isTestingSys ? 'Testing Connection...' : '⚡ Test Connection'}</span>
 						</button>
 						<button
 							type="button"
 							onclick={applySystemConfig}
 							disabled={isApplyingSys}
-							class="h-9 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+							class="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-95"
 						>
 							<Check class="h-4 w-4" />
 							<span>{isApplyingSys ? 'Applying...' : 'Apply & Save'}</span>
@@ -2342,7 +2342,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={fetchReferenceDBs}
 							disabled={isLoadingRefDBs}
-							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+							class="h-9 px-3.5 rounded-xl border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isLoadingRefDBs ? 'animate-spin' : ''}" />
 							<span>{isLoadingRefDBs ? 'Refreshing...' : 'Refresh Pool'}</span>
@@ -2351,7 +2351,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<button
 							type="button"
 							onclick={() => showAddRefModal = true}
-							class="h-8 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+							class="h-9 px-4.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
 						>
 							<Plus class="h-4 w-4" />
 							<span>Tambah Database</span>
@@ -2391,7 +2391,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<button
 							type="button"
 							onclick={() => showAddRefModal = true}
-							class="h-8 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+							class="h-9 px-4.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
 						>
 							<Plus class="h-3.5 w-3.5" />
 							<span>Tambah Database Pertama</span>
@@ -2429,7 +2429,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									</div>
 
 									{#if isActive}
-										<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 shrink-0">
+										<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 shrink-0">
 											<Star class="h-3 w-3 fill-current" />
 											<span>ACTIVE</span>
 										</span>
@@ -2438,10 +2438,10 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 											type="button"
 											onclick={(e) => { e.stopPropagation(); activateReferenceDB(db.id); }}
 											disabled={isActivatingRefDB === db.id}
-											class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary hover:bg-primary hover:text-primary-foreground border border-border text-foreground transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+											class="h-7.5 px-3 rounded-lg text-xs font-semibold bg-secondary hover:bg-primary hover:text-primary-foreground border border-border text-foreground transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
 											title="Aktifkan sebagai database referensi utama untuk agent MCP"
 										>
-											<Play class="h-2.5 w-2.5" />
+											<Play class="h-3 w-3" />
 											<span>{isActivatingRefDB === db.id ? 'Mengaktifkan...' : 'Aktifkan'}</span>
 										</button>
 									{/if}
@@ -2478,14 +2478,14 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 										{/if}
 									</div>
 
-									<div class="flex items-center gap-1">
+									<div class="flex items-center gap-1.5">
 										<button
 											type="button"
 											onclick={(e) => { e.stopPropagation(); openEditRefModal(db); }}
-											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+											class="h-8 px-3 rounded-lg text-xs font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
 											title="Edit konfigurasi koneksi database ini"
 										>
-											<PencilSquare class="h-3 w-3 text-cyan-500" />
+											<PencilSquare class="h-3.5 w-3.5 text-cyan-500" />
 											<span>Edit</span>
 										</button>
 
@@ -2493,20 +2493,20 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 											type="button"
 											onclick={(e) => { e.stopPropagation(); testSingleRefDB(db.id); }}
 											disabled={isTestingRefDB === db.id}
-											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+											class="h-8 px-3 rounded-lg text-xs font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
 											title="Uji koneksi jaringan ke endpoint ini"
 										>
-											<ArrowPath class="h-3 w-3 {isTestingRefDB === db.id ? 'animate-spin text-cyan-500' : ''}" />
+											<ArrowPath class="h-3.5 w-3.5 {isTestingRefDB === db.id ? 'animate-spin text-cyan-500' : ''}" />
 											<span>{isTestingRefDB === db.id ? 'Testing...' : 'Uji'}</span>
 										</button>
 
 										<button
 											type="button"
 											onclick={(e) => { e.stopPropagation(); deleteSingleRefDB(db.id); }}
-											class="h-7 w-7 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 flex items-center justify-center transition-colors cursor-pointer"
+											class="h-8 w-8 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 flex items-center justify-center transition-all cursor-pointer"
 											title="Hapus dari pool"
 										>
-											<Trash class="h-3.5 w-3.5" />
+											<Trash class="h-4 w-4" />
 										</button>
 									</div>
 								</div>
@@ -2705,13 +2705,13 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 								<button
 									type="button"
 									onclick={() => showAddRefModal = false}
-									class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+									class="h-10 px-4.5 rounded-xl border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
 								>
 									Batal
 								</button>
 								<button
 									type="submit"
-									class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+									class="h-10 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
 								>
 									<Plus class="h-4 w-4" />
 									<span>Simpan ke Pool</span>
@@ -2944,27 +2944,27 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 									type="button"
 									onclick={testEditingRefDB}
 									disabled={isTestingEditRefDB}
-									class="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+									class="h-10 px-4.5 rounded-xl border border-border bg-secondary hover:bg-muted text-foreground font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
 								>
-									<ArrowPath class="h-3.5 w-3.5 {isTestingEditRefDB ? 'animate-spin text-cyan-500' : ''}" />
+									<ArrowPath class="h-4 w-4 {isTestingEditRefDB ? 'animate-spin text-cyan-500' : ''}" />
 									<span>{isTestingEditRefDB ? 'Menguji Koneksi...' : 'Uji Koneksi'}</span>
 								</button>
 
-								<div class="flex items-center gap-2">
+								<div class="flex items-center gap-2.5">
 									<button
 										type="button"
 										onclick={() => { showEditRefModal = false; editingRefDB = null; }}
-										class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+										class="h-10 px-4.5 rounded-xl border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
 									>
 										Batal
 									</button>
 									<button
 										type="submit"
 										disabled={isUpdatingRefDB}
-										class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+										class="h-10 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 active:scale-95"
 									>
 										{#if isUpdatingRefDB}
-											<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+											<ArrowPath class="h-4 w-4 animate-spin" />
 											<span>Menyimpan...</span>
 										{:else}
 											<Check class="h-4 w-4" />
@@ -3264,16 +3264,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={testMCPReferenceConnection}
 							disabled={isTestingMcp}
-							class="h-9 px-4 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+							class="h-10 px-5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
 						>
-							<ArrowPath class="h-3.5 w-3.5 {isTestingMcp ? 'animate-spin' : ''}" />
+							<ArrowPath class="h-4 w-4 {isTestingMcp ? 'animate-spin' : ''}" />
 							<span>{isTestingMcp ? 'Testing Connection...' : '⚡ Test Connection'}</span>
 						</button>
 						<button
 							type="button"
 							onclick={applyMCPReferenceConfig}
 							disabled={isApplyingMcp}
-							class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+							class="h-10 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-95"
 						>
 							<Check class="h-4 w-4" />
 							<span>{isApplyingMcp ? 'Applying...' : 'Apply & Save'}</span>
@@ -3340,7 +3340,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={fetchMCPTools}
 							disabled={isLoadingMcpTools}
-							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+							class="h-9 px-3.5 rounded-xl border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isLoadingMcpTools ? 'animate-spin' : ''}" />
 							<span>{isLoadingMcpTools ? 'Loading...' : 'Reload Tools'}</span>
@@ -3381,42 +3381,42 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("postgres_invoicing")}
-								class="px-2.5 py-1 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 text-[11px] font-mono cursor-pointer transition-colors font-semibold"
+								class="px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 text-xs font-mono cursor-pointer transition-colors font-semibold"
 							>
 								PostgreSQL Invoice Mutation
 							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("customer_master_query")}
-								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+								class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border text-xs font-mono cursor-pointer transition-colors font-medium"
 							>
 								Customer Master Query
 							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("oracle_invoicing")}
-								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+								class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border text-xs font-mono cursor-pointer transition-colors font-medium"
 							>
 								Oracle Invoice Mutation
 							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("sap_bapi_customer")}
-								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+								class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border text-xs font-mono cursor-pointer transition-colors font-medium"
 							>
 								SAP Customer Master
 							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("tax_compliance_djp")}
-								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+								class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border text-xs font-mono cursor-pointer transition-colors font-medium"
 							>
 								DJP Tax Validator
 							</button>
 							<button
 								type="button"
 								onclick={() => loadPresetManifest("warehouse_stock_sync")}
-								class="px-2.5 py-1 rounded bg-secondary hover:bg-muted text-foreground border border-border text-[11px] font-mono cursor-pointer transition-colors"
+								class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border text-xs font-mono cursor-pointer transition-colors font-medium"
 							>
 								Stock Sync
 							</button>
@@ -3425,7 +3425,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 					<!-- Drag & Drop / File Input -->
 					<div class="flex items-center gap-3">
-						<label class="h-8 px-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
+						<label class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-2xs transition-all cursor-pointer">
 							<span>Select File (.json / .yaml)</span>
 							<input
 								type="file"
@@ -3473,7 +3473,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={registerUploadedMCPTool}
 							disabled={isUploadingTool || !uploadManifestText.trim()}
-							class="h-9 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+							class="h-10 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 active:scale-95"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isUploadingTool ? 'animate-spin' : ''}" />
 							<span>{isUploadingTool ? 'Registering Tool...' : 'Upload &amp; Register MCP Tool'}</span>
@@ -3598,11 +3598,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						</div>
 					{/if}
 
-					<div class="flex items-center justify-end gap-2 pt-1">
+					<div class="flex items-center justify-end gap-2.5 pt-1">
 						<button
 							type="button"
 							onclick={() => activeToolForTest = null}
-							class="h-8 px-3 rounded-lg border border-border text-xs font-semibold hover:bg-muted cursor-pointer"
+							class="h-9 px-4 rounded-xl border border-border text-xs font-semibold hover:bg-muted cursor-pointer transition-colors"
 						>
 							Close
 						</button>
@@ -3610,7 +3610,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							type="button"
 							onclick={executeToolTest}
 							disabled={isExecutingToolTest}
-							class="h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+							class="h-9 px-4.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
 						>
 							<ArrowPath class="h-3.5 w-3.5 {isExecutingToolTest ? 'animate-spin' : ''}" />
 							<span>{isExecutingToolTest ? 'Executing...' : 'Run MCP Tool Simulation'}</span>
@@ -3634,11 +3634,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<button
 					type="button"
 					onclick={copyEnvSnippet}
-					class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+					class="h-9 px-4 rounded-xl border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
 				>
 					{#if copiedEnv}
 						<Check class="h-3.5 w-3.5 text-emerald-500" />
-						<span class="text-emerald-500">Copied!</span>
+						<span class="text-emerald-500 font-bold">Copied!</span>
 					{:else}
 						<ClipboardDocument class="h-3.5 w-3.5" />
 						<span>Copy to Clipboard</span>

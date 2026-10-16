@@ -810,244 +810,293 @@
 			</div>
 		{:else}
 			{#each filteredMessages as msg (msg.id)}
+				{@const hasIntel = Boolean(msg.media_url || msg.media_type === 'image' || msg.ocr_text || msg.ai_reply)}
 				<div 
-					class="p-4 sm:p-5 rounded-xl border transition-all duration-200 {msg.classification === 'NEEDS_REVIEW' ? 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500/60 shadow-xs' : msg.classification === 'ACTIONABLE' ? 'border-emerald-500/30 bg-card/70 hover:border-emerald-500/50 shadow-xs' : 'border-border/60 bg-card/40 hover:border-border'} space-y-3"
+					class="rounded-2xl border transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md {
+						msg.classification === 'NEEDS_REVIEW' 
+							? 'border-amber-500/40 bg-card hover:border-amber-500/70 ring-1 ring-amber-500/20' 
+							: msg.classification === 'ACTIONABLE' 
+								? 'border-emerald-500/35 bg-card hover:border-emerald-500/60 ring-1 ring-emerald-500/15' 
+								: 'border-border/70 bg-card hover:border-border'
+					}"
 				>
-					<!-- Top Row: Sender Info, Platform, Badges, Timestamp -->
-					<div class="flex flex-wrap items-center justify-between gap-2.5">
-						<div class="flex items-center gap-2.5 min-w-0">
-							<!-- Platform Badge with Icon -->
+					<!-- 1. Header Strip: Platform, Sender Avatar, Sender Name, Status & Time -->
+					<div class="px-4 sm:px-5 py-3 border-b border-border/50 bg-secondary/30 dark:bg-muted/15 flex flex-wrap items-center justify-between gap-3">
+						<div class="flex items-center gap-3 min-w-0">
+							<!-- Platform Badge with Glowing Indicator -->
 							{#if msg.platform === 'whatsapp'}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shrink-0">
-									<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0 shadow-2xs">
+									<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
 									WhatsApp
 								</span>
 							{:else if msg.platform === 'telegram'}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 flex items-center gap-1 shrink-0">
-									<span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 flex items-center gap-1.5 shrink-0 shadow-2xs">
+									<span class="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse"></span>
 									Telegram
 								</span>
 							{:else if msg.platform === 'discord'}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 flex items-center gap-1 shrink-0">
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 flex items-center gap-1.5 shrink-0 shadow-2xs">
 									<span class="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
 									Discord
 								</span>
 							{:else}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shrink-0">
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shrink-0 shadow-2xs">
 									<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
 									Slack
 								</span>
 							{/if}
 
-							<!-- Sender Name & Identifier -->
-							<div class="flex items-center gap-1.5 min-w-0">
-								<span class="text-xs font-semibold text-foreground truncate">
-									{msg.sender_name || "Unknown Sender"}
-								</span>
-								<span class="text-[10px] text-muted-foreground font-mono truncate hidden sm:inline">
-									({msg.sender_id})
-								</span>
+							<!-- Sender Avatar & Details -->
+							<div class="flex items-center gap-2 min-w-0">
+								<div class="h-7 w-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+									{(msg.sender_name || 'U').charAt(0).toUpperCase()}
+								</div>
+								<div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+									<span class="text-xs font-bold text-foreground truncate max-w-[200px]">
+										{msg.sender_name || "Unknown Sender"}
+									</span>
+									<span class="text-[11px] text-muted-foreground font-mono bg-muted/60 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/40 truncate">
+										{msg.sender_id}
+									</span>
+								</div>
 							</div>
 
 							<!-- Media Type Badge -->
 							{#if msg.media_type === 'image'}
-								<span class="px-1.5 py-0.2 rounded text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1">
+								<span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1 shrink-0">
 									<Photo class="h-3 w-3" />
-									Photo / Nota
+									Foto / Nota
 								</span>
 							{:else if msg.media_type === 'document'}
-								<span class="px-1.5 py-0.2 rounded text-[10px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1">
+								<span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1 shrink-0">
 									<DocumentText class="h-3 w-3" />
-									Document PDF
+									Dokumen PDF
 								</span>
 							{/if}
 						</div>
 
-						<!-- Right: Status Badge & Timestamp -->
-						<div class="flex items-center gap-2">
+						<!-- Status Badge & Timestamp -->
+						<div class="flex items-center gap-2.5 shrink-0">
 							{#if msg.classification === 'ACTIONABLE'}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-									<CheckCircle class="h-3 w-3" />
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-2xs">
+									<CheckCircle class="h-3.5 w-3.5" />
 									ACTIONABLE TICKET
 								</span>
 							{:else if msg.classification === 'NEEDS_REVIEW'}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1 animate-pulse">
-									<ExclamationTriangle class="h-3 w-3" />
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1.5 animate-pulse shadow-2xs">
+									<ExclamationTriangle class="h-3.5 w-3.5" />
 									NEEDS ON-CALL REVIEW
 								</span>
 							{:else}
-								<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-secondary text-muted-foreground border border-border/50 flex items-center gap-1">
-									<ChatBubbleOvalLeftEllipsis class="h-3 w-3" />
+								<span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-secondary text-muted-foreground border border-border/60 flex items-center gap-1.5">
+									<ChatBubbleOvalLeftEllipsis class="h-3.5 w-3.5" />
 									CASUAL BANTER
 								</span>
 							{/if}
 
-							<span class="text-[11px] font-mono text-muted-foreground shrink-0">
-								{timeAgo(msg.created_at)}
-							</span>
+							<div class="flex items-center gap-1 text-[11px] font-mono text-muted-foreground">
+								<Clock class="h-3 w-3" />
+								<span>{timeAgo(msg.created_at)}</span>
+							</div>
 						</div>
 					</div>
 
-					<!-- Middle: Chat Bubble Text & Media Attachments -->
-					<div class="p-3.5 rounded-lg bg-background/80 border border-border/50 text-xs text-foreground font-mono leading-relaxed relative group space-y-2.5">
-						<div class="relative pr-8">
-							<p class="whitespace-pre-wrap select-text">{msg.raw_message}</p>
-							<button
-								type="button"
-								onclick={() => copyToClipboard(msg.raw_message, msg.id)}
-								class="absolute top-0 right-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-								title="Copy raw text"
-							>
-								{#if copiedId === msg.id}
-									<Check class="h-3.5 w-3.5 text-emerald-500" />
-								{:else}
-									<ClipboardDocument class="h-3.5 w-3.5" />
-								{/if}
-							</button>
+					<!-- 2. Body Grid: Conversational Message Left + Intel Shelf Right -->
+					<div class="p-4 sm:p-5">
+						<div class="grid grid-cols-1 {hasIntel ? 'lg:grid-cols-12' : ''} gap-5 items-start">
+							<!-- Left Column: Customer Speech Bubble & Extracted ERP Metadata -->
+							<div class="{hasIntel ? 'lg:col-span-7 xl:col-span-7' : 'w-full'} space-y-3">
+								<!-- Speech Bubble -->
+								<div class="p-4 rounded-2xl bg-secondary/30 dark:bg-muted/15 border border-border/70 relative group transition-colors hover:border-border">
+									<div class="flex items-center justify-between pb-2 mb-2 border-b border-border/40 text-[11px] text-muted-foreground font-mono">
+										<div class="flex items-center gap-1.5 font-semibold text-foreground/80">
+											<ChatBubbleLeftRight class="h-3.5 w-3.5 text-primary" />
+											<span>Pesan Asli Pengirim:</span>
+										</div>
+										<button
+											type="button"
+											onclick={() => copyToClipboard(msg.raw_message, msg.id)}
+											class="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
+											title="Salin teks pesan mentah"
+										>
+											{#if copiedId === msg.id}
+												<Check class="h-3 w-3 text-emerald-500" />
+												<span class="text-emerald-500">Tersalin</span>
+											{:else}
+												<ClipboardDocument class="h-3 w-3" />
+												<span>Salin Teks</span>
+											{/if}
+										</button>
+									</div>
+
+									<p class="font-sans text-sm leading-relaxed text-foreground select-text whitespace-pre-wrap">
+										{msg.raw_message}
+									</p>
+								</div>
+
+								<!-- Extracted ERP Metadata Tag Shelf -->
+								<div class="flex flex-wrap items-center gap-2 text-xs">
+									<span class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">
+										Entitas Terdeteksi:
+									</span>
+
+									{#if msg.extracted_doc}
+										<span class="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono font-semibold border border-primary/25 flex items-center gap-1.5">
+											<DocumentText class="h-3.5 w-3.5" />
+											<span class="text-muted-foreground">Faktur:</span>
+											<span class="font-bold">{msg.extracted_doc}</span>
+										</span>
+									{:else if msg.classification === 'NEEDS_REVIEW'}
+										<span class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono border border-amber-500/25 flex items-center gap-1.5 text-[11px]">
+											<ExclamationTriangle class="h-3.5 w-3.5" />
+											<span class="italic font-medium">Nomor faktur tidak tercantum dalam chat teks</span>
+										</span>
+									{/if}
+
+									{#if msg.extracted_target}
+										<span class="px-2.5 py-1 rounded-lg bg-secondary text-foreground font-mono font-medium border border-border/70 flex items-center gap-1.5">
+											<span class="text-muted-foreground">Target:</span>
+											<span class="font-bold">{msg.extracted_target}</span>
+										</span>
+									{/if}
+
+									{#if msg.ticket_no}
+										<a
+											href="/dashboard/queue"
+											class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold border border-emerald-500/30 flex items-center gap-1.5 hover:underline"
+										>
+											<ShieldCheck class="h-3.5 w-3.5" />
+											<span class="text-muted-foreground">Tiket:</span>
+											<span>{msg.ticket_no}</span>
+										</a>
+									{/if}
+
+									{#if !msg.extracted_doc && !msg.extracted_target && !msg.ticket_no && msg.classification !== 'NEEDS_REVIEW'}
+										<span class="text-xs text-muted-foreground italic font-mono">
+											Tidak ada entitas formal (percakapan santai/informal)
+										</span>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Right Column: Intel Shelf (Media Preview, OCR Terminal & AI Auto-Reply) -->
+							{#if hasIntel}
+								<div class="lg:col-span-5 xl:col-span-5 space-y-3">
+									<!-- 1. Media Preview Card -->
+									{#if msg.media_url}
+										<div class="p-3 rounded-xl border border-border/70 bg-card space-y-2 shadow-2xs">
+											<div class="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
+												<span class="flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+													<Photo class="h-3.5 w-3.5" />
+													<span>Lampiran Foto / Nota:</span>
+												</span>
+												<span class="text-[10px]">Klik gambar untuk perbesar</span>
+											</div>
+											<button
+												type="button"
+												onclick={() => imagePreviewUrl = msg.media_url || null}
+												class="relative w-full rounded-lg overflow-hidden border border-border bg-black/5 hover:border-primary transition-all cursor-pointer group/thumb block text-left"
+											>
+												<img
+													src={msg.media_url}
+													alt="Lampiran Dokumen dari {msg.sender_name}"
+													class="max-h-48 w-full object-cover rounded-lg group-hover/thumb:scale-102 transition-transform duration-200"
+													onerror={(e) => {
+														(e.currentTarget as HTMLImageElement).src = '/uploads/sample_invoice.svg';
+													}}
+												/>
+												<div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
+													<Eye class="h-4 w-4" />
+													<span>Buka Pratinjau Penuh</span>
+												</div>
+											</button>
+										</div>
+									{:else if msg.media_type === 'image'}
+										<div class="p-3 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2.5">
+											<Photo class="h-4 w-4 shrink-0" />
+											<p class="text-[11px] leading-relaxed">
+												Foto diterima sebelum modul media diaktifkan. Kirim foto baru via WhatsApp untuk melihat file &amp; OCR live.
+											</p>
+										</div>
+									{/if}
+
+									<!-- 2. OCR Text Terminal -->
+									{#if msg.ocr_text}
+										<div class="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20 text-xs space-y-2 shadow-2xs">
+											<div class="flex items-center justify-between text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase">
+												<span class="flex items-center gap-1.5">
+													<DocumentText class="h-3.5 w-3.5" />
+													<span>Hasil OCR (Tesseract / Vision AI)</span>
+												</span>
+												<button
+													type="button"
+													onclick={() => copyToClipboard(msg.ocr_text || "", msg.id + 900000)}
+													class="hover:underline flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-foreground text-[10px]"
+												>
+													{#if copiedId === msg.id + 900000}
+														<Check class="h-3 w-3 text-emerald-500" />
+														<span class="text-emerald-500">Tersalin</span>
+													{:else}
+														<ClipboardDocument class="h-3 w-3" />
+														<span>Salin Teks OCR</span>
+													{/if}
+												</button>
+											</div>
+											<div class="font-mono text-[11px] text-foreground/90 whitespace-pre-wrap bg-background/80 dark:bg-black/40 p-2.5 rounded-lg border border-blue-500/20 max-h-36 overflow-y-auto leading-relaxed select-text">
+												{msg.ocr_text}
+											</div>
+										</div>
+									{/if}
+
+									<!-- 3. AI Generated Auto-Reply Box -->
+									{#if msg.ai_reply}
+										<div class="p-3 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 text-xs space-y-2 shadow-2xs">
+											<div class="flex items-center justify-between text-[10px] font-mono font-bold text-primary uppercase">
+												<span class="flex items-center gap-1.5">
+													<Sparkles class="h-3.5 w-3.5" />
+													<span>Balasan Otomatis (Auto-Reply):</span>
+												</span>
+												<button
+													type="button"
+													onclick={() => copyToClipboard(msg.ai_reply || "", msg.id + 700000)}
+													class="hover:underline flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-foreground text-[10px]"
+												>
+													{#if copiedId === msg.id + 700000}
+														<Check class="h-3 w-3 text-emerald-500" />
+														<span class="text-emerald-500">Tersalin</span>
+													{:else}
+														<ClipboardDocument class="h-3 w-3" />
+														<span>Salin Balasan</span>
+													{/if}
+												</button>
+											</div>
+											<div class="font-mono text-[11px] text-foreground/90 whitespace-pre-wrap bg-background/80 dark:bg-black/40 p-2.5 rounded-lg border border-primary/20 max-h-36 overflow-y-auto leading-relaxed select-text">
+												{msg.ai_reply}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/if}
 						</div>
-
-						<!-- Image Media Attachment Preview -->
-						{#if msg.media_url}
-							<div class="pt-2 border-t border-border/40">
-								<span class="text-[10px] uppercase font-mono font-bold text-muted-foreground flex items-center gap-1 mb-1.5">
-									<Photo class="h-3.5 w-3.5 text-blue-500" />
-									Lampiran Gambar / Nota Masuk (WhatsApp Media):
-								</span>
-								<button
-									type="button"
-									onclick={() => imagePreviewUrl = msg.media_url || null}
-									class="relative inline-block rounded-lg overflow-hidden border border-border bg-black/5 hover:border-primary transition-all cursor-pointer group/thumb"
-								>
-									<img
-										src={msg.media_url}
-										alt="Lampiran Dokumen dari {msg.sender_name}"
-										class="max-h-48 max-w-xs object-cover rounded-lg group-hover/thumb:scale-102 transition-transform duration-200"
-										onerror={(e) => {
-											(e.currentTarget as HTMLImageElement).src = '/uploads/sample_invoice.svg';
-										}}
-									/>
-									<div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-semibold gap-1">
-										<Eye class="h-4 w-4" />
-										<span>Klik untuk Zoom</span>
-									</div>
-								</button>
-							</div>
-						{:else if msg.media_type === 'image'}
-							<div class="pt-2 border-t border-border/40">
-								<span class="text-[10px] uppercase font-mono font-bold text-muted-foreground flex items-center gap-1 mb-1.5">
-									<Photo class="h-3.5 w-3.5 text-amber-500" />
-									Lampiran Gambar / Nota Masuk:
-								</span>
-								<div class="p-3 rounded-lg border border-dashed border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2.5">
-									<Photo class="h-5 w-5 shrink-0" />
-									<div>
-										<p class="font-semibold">Foto Diterima Sebelum Modul Media Storage Diaktifkan</p>
-										<p class="text-[11px] text-muted-foreground mt-0.5">Pesan ini masuk sebelum modul Baileys Media Downloader &amp; OCR diaktifkan di sesi server. Kirim foto baru via WhatsApp untuk melihat file asli &amp; OCR live.</p>
-									</div>
-								</div>
-							</div>
-						{/if}
-
-						<!-- OCR Extracted Text Box -->
-						{#if msg.ocr_text}
-							<div class="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs space-y-1.5">
-								<div class="flex items-center justify-between text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase">
-									<span class="flex items-center gap-1.5">
-										<DocumentText class="h-3.5 w-3.5" />
-										OCR Engine: Teks Nota / Faktur Terdeteksi (Tesseract)
-									</span>
-									<button
-										type="button"
-										onclick={() => copyToClipboard(msg.ocr_text || "", msg.id + 900000)}
-										class="hover:underline flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-foreground text-[10px]"
-									>
-										{#if copiedId === msg.id + 900000}
-											<Check class="h-3 w-3 text-emerald-500" />
-											<span>Tersalin</span>
-										{:else}
-											<ClipboardDocument class="h-3 w-3" />
-											<span>Salin Teks OCR</span>
-										{/if}
-									</button>
-								</div>
-								<p class="font-mono text-[11px] text-foreground/90 whitespace-pre-wrap bg-background/60 p-2 rounded border border-blue-500/10 leading-relaxed select-text">
-									{msg.ocr_text}
-								</p>
-							</div>
-						{/if}
-
-						<!-- AI Generated Auto-Reply Box -->
-						{#if msg.ai_reply}
-							<div class="p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs space-y-1">
-								<div class="flex items-center justify-between text-[10px] font-mono font-bold text-primary uppercase">
-									<span class="flex items-center gap-1.5">
-										<Sparkles class="h-3 w-3" />
-										Balasan Otomatis AI (Auto-Reply):
-									</span>
-									<button
-										type="button"
-										onclick={() => copyToClipboard(msg.ai_reply || "", msg.id + 700000)}
-										class="hover:underline flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-foreground text-[10px]"
-									>
-										{#if copiedId === msg.id + 700000}
-											<Check class="h-3 w-3 text-emerald-500" />
-											<span>Tersalin</span>
-										{:else}
-											<ClipboardDocument class="h-3 w-3" />
-											<span>Salin Balasan</span>
-										{/if}
-									</button>
-								</div>
-								<p class="font-mono text-[11px] text-foreground/90 whitespace-pre-wrap bg-background/60 p-2 rounded border border-primary/15 leading-relaxed select-text">
-									{msg.ai_reply}
-								</p>
-							</div>
-						{/if}
 					</div>
 
-					<!-- Bottom Row: Extracted Entity Tags & Actions -->
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-border/40">
-						<!-- Extracted Metadata Pills -->
-						<div class="flex flex-wrap items-center gap-2 text-[11px]">
-							{#if msg.extracted_doc}
-								<span class="px-2 py-0.5 rounded bg-secondary text-foreground font-mono font-medium border border-border/50 flex items-center gap-1">
-									<DocumentText class="h-3 w-3 text-primary" />
-									<span>Doc:</span>
-									<span class="font-bold text-primary">{msg.extracted_doc}</span>
-								</span>
-							{:else if msg.classification === 'NEEDS_REVIEW'}
-								<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono border border-amber-500/20 flex items-center gap-1">
-									<ExclamationTriangle class="h-3 w-3" />
-									<span>Doc:</span>
-									<span class="font-semibold italic">Missing in text (Referenced photo/nota)</span>
-								</span>
-							{/if}
-
-							{#if msg.extracted_target}
-								<span class="px-2 py-0.5 rounded bg-secondary text-foreground font-mono font-medium border border-border/50 flex items-center gap-1">
-									<span>Target:</span>
-									<span class="font-bold text-foreground">{msg.extracted_target}</span>
-								</span>
-							{/if}
-
-							{#if msg.ticket_no}
-								<a
-									href="/dashboard/queue"
-									class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold border border-emerald-500/30 flex items-center gap-1 hover:underline"
-								>
-									<ShieldCheck class="h-3 w-3" />
-									<span>Ticket:</span>
-									<span>{msg.ticket_no}</span>
-								</a>
-							{/if}
+					<!-- 3. Bottom Action Toolbar: Audit Trail Left + Executive Action Buttons Right -->
+					<div class="px-4 sm:px-5 py-3 border-t border-border/50 bg-secondary/20 dark:bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+						<!-- Audit Trail Hint -->
+						<div class="text-[11px] font-mono text-muted-foreground flex items-center gap-2 flex-wrap">
+							<span>Pesan ID: <strong class="text-foreground font-semibold">#{msg.id}</strong></span>
+							<span>•</span>
+							<span>Kanal: <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{msg.platform.toUpperCase()}</span></span>
+							<span>•</span>
+							<span>Kredensial: <span class="text-foreground">{msg.sender_id}</span></span>
 						</div>
 
 						<!-- Action Buttons -->
-						<div class="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
+						<div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
 							<button
 								type="button"
 								onclick={() => openReplyModal(msg)}
-								class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+								class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
 								title="Balas chat ini via WhatsApp Gateway"
 							>
 								<PaperAirplane class="h-3.5 w-3.5" />
@@ -1057,7 +1106,7 @@
 							<button
 								type="button"
 								onclick={() => openLearningModal(msg)}
-								class="h-9 px-3.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+								class="h-9 px-3.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
 								title="Ajarkan AI mengenali gaya chat ini sebagai pola mutasi dokumen"
 							>
 								<span>🧠 Ajarkan NovaPilot</span>
@@ -1066,7 +1115,7 @@
 							<button
 								type="button"
 								onclick={() => inspectModalMessage = msg}
-								class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+								class="h-9 px-3.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
 							>
 								<Eye class="h-3.5 w-3.5 text-muted-foreground" />
 								<span>Inspect Details</span>
@@ -1076,7 +1125,7 @@
 								<button
 									type="button"
 									onclick={() => openStagingModal(msg)}
-									class="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer active:scale-95"
+									class="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
 								>
 									<Bolt class="h-3.5 w-3.5" />
 									<span>Convert to Ticket</span>
