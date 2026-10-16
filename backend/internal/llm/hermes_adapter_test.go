@@ -181,3 +181,59 @@ func TestProcessViaCLI_Live(t *testing.T) {
 		t.Logf("CLI succeeded! Model: %s, Latency: %dms, Raw: %s", res.ModelUsed, res.LatencyMs, res.RawContent)
 	}
 }
+
+func TestParseHermesReply_Extraction(t *testing.T) {
+	raw := `<thought>Reasoning complete.</thought>
+<tool_call>{"name": "stage_invoice_update", "arguments": {"document_no": "INV/2026/001"}}</tool_call>
+<reply>
+Permintaan mutasi faktur INV/2026/001 telah kami catat dalam antrean on-call.
+</reply>`
+
+	reply := llm.ParseHermesReply(raw)
+	expected := "Permintaan mutasi faktur INV/2026/001 telah kami catat dalam antrean on-call."
+	if reply != expected {
+		t.Errorf("expected '%s', got '%s'", expected, reply)
+	}
+}
+
+func TestGenerateAutoReply_ContextualScenarios(t *testing.T) {
+	adapter := llm.NewHermesAdapter(llm.DefaultConfig())
+
+	// Scenario 1: Actionable
+	toolCall := &llm.ToolCallPayload{
+		Name: "stage_invoice_update",
+		Arguments: map[string]interface{}{
+			"document_no":    "INV/2026/001",
+			"proposed_value": "PT Sumber Makmur",
+		},
+	}
+	reply := adapter.GenerateAutoReply("Ubah invoice INV/2026/001", toolCall, false, "professional", "[NovaPilot AI]", "id")
+	if reply == "" || !containsSubstring(reply, "INV/2026/001") || !containsSubstring(reply, "PT Sumber Makmur") {
+		t.Errorf("unexpected reply for actionable scenario: %s", reply)
+	}
+
+	// Scenario 2: Greeting
+	greetingReply := adapter.GenerateAutoReply("halo selamat pagi min", nil, false, "friendly", "[NovaPilot AI]", "id")
+	if greetingReply == "" || !containsSubstring(greetingReply, "Halo!") {
+		t.Errorf("unexpected greeting reply: %s", greetingReply)
+	}
+
+	// Scenario 3: Needs Review
+	unclearReply := adapter.GenerateAutoReply("tolong ubah nama pt jadi PT Berkah", nil, false, "professional", "[NovaPilot AI]", "id")
+	if unclearReply == "" || !containsSubstring(unclearReply, "nomor invoice/faktur") {
+		t.Errorf("unexpected needs review reply: %s", unclearReply)
+	}
+}
+
+func containsSubstring(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && len(substr) > 0 && (stringContains(s, substr)))
+}
+
+func stringContains(s, substr string) bool {
+	for i := 0; i+len(substr) <= len(s); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

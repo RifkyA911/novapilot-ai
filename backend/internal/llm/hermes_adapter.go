@@ -26,9 +26,14 @@ type Config struct {
 	CLIPath     string        // Path to hermes.exe or hermes command
 	CLIProvider string        // Provider for hermes CLI (e.g. "copilot", "nous")
 	CLIModel    string        // Model for hermes CLI (e.g. "gpt-4o", "claude-3.5-sonnet")
-	Timeout     time.Duration // Timeout for HTTP/CLI execution (default 25s)
-	Temperature float64       // Low temperature for deterministic tool calling (default 0.1)
-	MaxTokens   int           // Max output tokens (default 1024)
+	Timeout          time.Duration // Timeout for HTTP/CLI execution (default 25s)
+	Temperature      float64       // Low temperature for deterministic tool calling (default 0.1)
+	MaxTokens        int           // Max output tokens (default 1024)
+	AutoReplyEnabled bool          // Master toggle for AI chat auto reply
+	AutoReplyMode    string        // "smart", "actionable_only", "all", "manual"
+	ReplyTone        string        // "professional", "friendly", "concise"
+	ReplyPrefix      string        // Bot prefix e.g. "[NovaPilot AI]"
+	ReplyLanguage    string        // "id", "en", "auto"
 }
 
 // DefaultConfig loads configuration from environment variables or standard defaults
@@ -80,17 +85,46 @@ func DefaultConfig() Config {
 		cliModel = "gpt-4o"
 	}
 
+	autoReplyEnabled := true
+	if v := os.Getenv("AUTO_REPLY_ENABLED"); v == "false" || v == "0" {
+		autoReplyEnabled = false
+	}
+	if v := os.Getenv("AI_AUTO_REPLY_ENABLED"); v == "false" || v == "0" {
+		autoReplyEnabled = false
+	}
+	autoReplyMode := os.Getenv("AI_AUTO_REPLY_MODE")
+	if autoReplyMode == "" {
+		autoReplyMode = "smart"
+	}
+	replyTone := os.Getenv("AI_REPLY_TONE")
+	if replyTone == "" {
+		replyTone = "professional"
+	}
+	replyPrefix := os.Getenv("AI_REPLY_PREFIX")
+	if replyPrefix == "" {
+		replyPrefix = "[NovaPilot AI]"
+	}
+	replyLanguage := os.Getenv("AI_REPLY_LANGUAGE")
+	if replyLanguage == "" {
+		replyLanguage = "id"
+	}
+
 	return Config{
-		Mode:        mode,
-		BaseURL:     strings.TrimRight(baseURL, "/"),
-		Model:       model,
-		APIKey:      apiKey,
-		CLIPath:     cliPath,
-		CLIProvider: cliProvider,
-		CLIModel:    cliModel,
-		Timeout:     25 * time.Second,
-		Temperature: 0.1,
-		MaxTokens:   1024,
+		Mode:             mode,
+		BaseURL:          strings.TrimRight(baseURL, "/"),
+		Model:            model,
+		APIKey:           apiKey,
+		CLIPath:          cliPath,
+		CLIProvider:      cliProvider,
+		CLIModel:         cliModel,
+		Timeout:          25 * time.Second,
+		Temperature:      0.1,
+		MaxTokens:        1024,
+		AutoReplyEnabled: autoReplyEnabled,
+		AutoReplyMode:    autoReplyMode,
+		ReplyTone:        replyTone,
+		ReplyPrefix:      replyPrefix,
+		ReplyLanguage:    replyLanguage,
 	}
 }
 
@@ -102,12 +136,13 @@ type ToolCallPayload struct {
 
 // HermesResult represents the processed outcome from Hermes 3 reasoning and tool calling
 type HermesResult struct {
-	RawContent string           `json:"raw_content"`
-	Thought    string           `json:"thought"`
-	ToolCall   *ToolCallPayload `json:"tool_call,omitempty"`
-	IsFallback bool             `json:"is_fallback"`
-	ModelUsed  string           `json:"model_used"`
-	LatencyMs  int64            `json:"latency_ms"`
+	RawContent     string           `json:"raw_content"`
+	Thought        string           `json:"thought"`
+	ToolCall       *ToolCallPayload `json:"tool_call,omitempty"`
+	GeneratedReply string           `json:"generated_reply"`
+	IsFallback     bool             `json:"is_fallback"`
+	ModelUsed      string           `json:"model_used"`
+	LatencyMs      int64            `json:"latency_ms"`
 }
 
 // ChatMessage represents a single turn in OpenAI-compatible format
@@ -202,7 +237,14 @@ Step 4: Check for fraud or anomalies (amount change requested? If amount change 
 </thought>
 <tool_call>
 {"name": "stage_invoice_update", "arguments": {"document_no": "INV/2026/001", "proposed_value": "PT Sumber Makmur", "raw_message": "..."}}
-</tool_call>`
+</tool_call>
+<reply>
+Provide a polite, professional, concise response message to reply directly to the chat user (in Indonesian or English matching the user message language).
+- If staging an invoice: confirm receipt, document number, proposed value, and state that it's waiting for on-call supervisor approval.
+- If sales/pricing inquiry: summarize that the information query is being looked up or provide the findings.
+- If missing details/needs review: politely ask the user to provide the invoice number (e.g. INV/2026/001) or specific amendment details.
+- If casual chat/greeting: respond cordially and offer enterprise assistance.
+</reply>`
 
 // ProcessMessage sends a chat prompt to Hermes 3 (via HTTP, CLI, or Heuristic fallback)
 func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, branchContext string) (*HermesResult, error) {
@@ -229,21 +271,15 @@ func (h *HermesAdapter) ProcessMessage(ctx context.Context, rawMessage string, b
 		return h.ProcessViaHTTP(ctx, rawMessage, branchContext)
 	}
 
-	// Mode 3: "auto" - Try HTTP first, then CLI, then Heuristic Fallback
-	res, err := h.ProcessViaHTTP(ctx, rawMessage, branchContext)
+	// Mode 3: "auto" - Try HTTP first with responsive timeout (3s), fallback to heuristic instantly
+	httpCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	res, err := h.ProcessViaHTTP(httpCtx, rawMessage, branchContext)
 	if err == nil && !res.IsFallback && res.ToolCall != nil {
 		return res, nil
 	}
 
-	// If HTTP was fallback or failed, try CLI if binary is available
-	if h.hasCLI() {
-		cliRes, cliErr := h.ProcessViaCLI(ctx, rawMessage, branchContext)
-		if cliErr == nil && !cliRes.IsFallback && cliRes.ToolCall != nil {
-			return cliRes, nil
-		}
-	}
-
-	// Default to heuristic fallback
+	// Default to instant heuristic fallback (<10ms)
 	return h.FallbackHeuristic(rawMessage), nil
 }
 
@@ -321,16 +357,21 @@ func (h *HermesAdapter) ProcessViaHTTP(ctx context.Context, rawMessage string, b
 
 	content := chatResp.Choices[0].Message.Content
 	thought, toolCall := ParseHermesOutput(content)
+	reply := ParseHermesReply(content)
+	if reply == "" {
+		reply = h.GenerateAutoReply(rawMessage, toolCall, false, h.cfg.ReplyTone, h.cfg.ReplyPrefix, h.cfg.ReplyLanguage)
+	}
 
 	latency := time.Since(start).Milliseconds()
 
 	return &HermesResult{
-		RawContent: content,
-		Thought:    thought,
-		ToolCall:   toolCall,
-		IsFallback: false,
-		ModelUsed:  fmt.Sprintf("http:%s", h.cfg.Model),
-		LatencyMs:  latency,
+		RawContent:     content,
+		Thought:        thought,
+		ToolCall:       toolCall,
+		GeneratedReply: reply,
+		IsFallback:     false,
+		ModelUsed:      fmt.Sprintf("http:%s", h.cfg.Model),
+		LatencyMs:      latency,
 	}, nil
 }
 
@@ -374,10 +415,18 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 
 	content := string(outBytes)
 	thought, toolCall := ParseHermesOutput(content)
+	reply := ParseHermesReply(content)
+	if reply == "" {
+		reply = h.GenerateAutoReply(rawMessage, toolCall, false, h.cfg.ReplyTone, h.cfg.ReplyPrefix, h.cfg.ReplyLanguage)
+	}
+
 	if toolCall == nil {
 		res := h.FallbackHeuristic(rawMessage)
 		if thought != "" {
 			res.Thought = thought
+		}
+		if reply != "" {
+			res.GeneratedReply = reply
 		}
 		res.RawContent = content
 		res.LatencyMs = time.Since(start).Milliseconds()
@@ -387,21 +436,36 @@ func (h *HermesAdapter) ProcessViaCLI(ctx context.Context, rawMessage string, br
 	latency := time.Since(start).Milliseconds()
 
 	return &HermesResult{
-		RawContent: content,
-		Thought:    thought,
-		ToolCall:   toolCall,
-		IsFallback: false,
-		ModelUsed:  fmt.Sprintf("hermes-cli:%s", filepath.Base(h.cfg.CLIPath)),
-		LatencyMs:  latency,
+		RawContent:     content,
+		Thought:        thought,
+		ToolCall:       toolCall,
+		GeneratedReply: reply,
+		IsFallback:     false,
+		ModelUsed:      fmt.Sprintf("hermes-cli:%s", filepath.Base(h.cfg.CLIPath)),
+		LatencyMs:      latency,
 	}, nil
 }
 
 var (
 	thoughtRegex      = regexp.MustCompile(`(?s)<thought>(.*?)</thought>`)
 	toolCallRegex     = regexp.MustCompile(`(?s)<tool_call>(.*?)</tool_call>`)
+	replyRegex        = regexp.MustCompile(`(?s)<reply>\s*(.*?)\s*</reply>`)
 	cliReasoningRegex = regexp.MustCompile(`(?s)┌─ Reasoning ─+┐\s*(.*?)\s*└─+┘`)
 	cliHermesBoxRegex = regexp.MustCompile(`(?s)╭─ ☤ Hermes ─+╮\s*(.*?)\s*╰─+╯`)
 )
+
+// ParseHermesReply extracts <reply> block from raw LLM output
+func ParseHermesReply(raw string) string {
+	match := replyRegex.FindStringSubmatch(raw)
+	if len(match) > 1 {
+		reply := strings.TrimSpace(match[1])
+		reply = strings.TrimPrefix(reply, "```markdown")
+		reply = strings.TrimPrefix(reply, "```")
+		reply = strings.TrimSuffix(reply, "```")
+		return strings.TrimSpace(reply)
+	}
+	return ""
+}
 
 // ParseHermesOutput extracts <thought> and <tool_call> blocks from raw LLM output
 func ParseHermesOutput(raw string) (string, *ToolCallPayload) {
@@ -460,6 +524,141 @@ func ParseHermesOutput(raw string) (string, *ToolCallPayload) {
 	return thought, toolCall
 }
 
+// GenerateAutoReply builds a natural, contextual auto-reply based on message content, tool calls, and configuration
+func (h *HermesAdapter) GenerateAutoReply(rawMessage string, toolCall *ToolCallPayload, isFallback bool, tone string, prefix string, lang string) string {
+	if prefix == "" {
+		prefix = h.cfg.ReplyPrefix
+		if prefix == "" {
+			prefix = "[NovaPilot AI]"
+		}
+	}
+	if tone == "" {
+		tone = h.cfg.ReplyTone
+		if tone == "" {
+			tone = "professional"
+		}
+	}
+	if lang == "" || lang == "auto" {
+		lower := strings.ToLower(rawMessage)
+		if strings.Contains(lower, "please") || strings.Contains(lower, "update") || strings.Contains(lower, "invoice") || strings.Contains(lower, "thanks") || strings.Contains(lower, "change") {
+			lang = "en"
+		} else {
+			lang = "id"
+		}
+	}
+
+	lower := strings.ToLower(rawMessage)
+
+	// Scenario 1: Actionable invoice mutation / staging
+	if toolCall != nil && (toolCall.Name == "stage_invoice_update" || toolCall.Name == "UPDATE_CUSTOMER_NAME") {
+		docNo, _ := toolCall.Arguments["document_no"].(string)
+		if docNo == "" {
+			docNo, _ = toolCall.Arguments["invoice_no"].(string)
+		}
+		target, _ := toolCall.Arguments["proposed_value"].(string)
+		if target == "" {
+			target, _ = toolCall.Arguments["target_client"].(string)
+		}
+
+		if lang == "en" {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Hello! We've recorded your mutation request for invoice %s (new customer: \"%s\"). It is currently awaiting IT on-call approval.", prefix, docNo, target)
+			case "concise":
+				return fmt.Sprintf("%s TICKET LOGGED: %s -> \"%s\" [Pending On-Call Clearance]", prefix, docNo, target)
+			default: // professional
+				return fmt.Sprintf("%s Request received. The customer name revision for invoice %s to \"%s\" has been queued for on-call supervisor sign-off. Enterprise audit checks in progress.", prefix, docNo, target)
+			}
+		} else {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Halo Rekan! Permintaan mutasi faktur %s ke \"%s\" sudah berhasil dicatat ya. Tiket sedang menunggu konfirmasi supervisor on-call.", prefix, docNo, target)
+			case "concise":
+				return fmt.Sprintf("%s TIKET DICATAT: Faktur %s -> \"%s\" (Menunggu Verifikasi On-Call)", prefix, docNo, target)
+			default: // professional
+				return fmt.Sprintf("%s Yth. Rekan, permintaan revisi nama customer faktur %s menjadi \"%s\" telah berhasil dicatat ke antrean persetujuan on-call. Pemeriksaan data SAP/Oracle sedang berjalan.", prefix, docNo, target)
+			}
+		}
+	}
+
+	// Scenario 2: Invoice query
+	if toolCall != nil && toolCall.Name == "check_invoice" {
+		docNo, _ := toolCall.Arguments["invoice_no"].(string)
+		if lang == "en" {
+			return fmt.Sprintf("%s Checking database status and verifying line items for invoice %s...", prefix, docNo)
+		}
+		return fmt.Sprintf("%s Sedang memeriksa status dan memvalidasi rincian faktur %s pada basis data operasional ERP...", prefix, docNo)
+	}
+
+	// Scenario 3: Sales Order query
+	if strings.Contains(lower, "penjualan") || strings.Contains(lower, "sales order") || strings.Contains(lower, "so/2026") || strings.Contains(lower, "order") {
+		if lang == "en" {
+			return fmt.Sprintf("%s Looking up Sales Order records and fulfillment status in the ERP registry...", prefix)
+		}
+		return fmt.Sprintf("%s Permintaan penelusuran data pesanan penjualan (Sales Order) sedang diproses dari katalog ERP.", prefix)
+	}
+
+	// Scenario 4: Pricing / Discount query
+	if strings.Contains(lower, "harga") || strings.Contains(lower, "diskon") || strings.Contains(lower, "pricelist") || strings.Contains(lower, "plafon") {
+		if lang == "en" {
+			return fmt.Sprintf("%s Retrieving verified corporate price lists and credit discount ceilings from ERP database...", prefix)
+		}
+		return fmt.Sprintf("%s Permintaan informasi daftar harga dan plafon diskon resmi produk sedang disiapkan dari basis data.", prefix)
+	}
+
+	// Scenario 5: Ambiguous / Missing details (contains mutation keywords like "ubah", "ganti", "revisi", but missing invoice number)
+	if strings.Contains(lower, "ubah") || strings.Contains(lower, "ganti") || strings.Contains(lower, "revisi") || strings.Contains(lower, "koreksi") || strings.Contains(lower, "bisa diubah") {
+		if lang == "en" {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Hi there! Please share the invoice number (e.g., INV/2026/001) and the target company name so we can assist you with the revision.", prefix)
+			case "concise":
+				return fmt.Sprintf("%s INCOMPLETE: Please specify invoice number (e.g., INV/2026/001) and target name.", prefix)
+			default:
+				return fmt.Sprintf("%s Thank you for reaching out. To proceed with the requested amendment, please provide the official invoice number (e.g., INV/2026/001) and the verified customer entity name.", prefix)
+			}
+		} else {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Halo Rekan! Mohon sertakan nomor fakturnya (misal: INV/2026/001) dan nama PT barunya ya agar bisa langsung kami bantu proseskan.", prefix)
+			case "concise":
+				return fmt.Sprintf("%s DATA KURANG: Mohon lampirkan nomor faktur (contoh: INV/2026/001) dan nama entitas tujuan.", prefix)
+			default:
+				return fmt.Sprintf("%s Terima kasih atas informasinya. Agar proses verifikasi mutasi dapat kami lakukan, mohon sertakan nomor invoice/faktur resmi (contoh: INV/2026/001) serta nama customer tujuan.", prefix)
+			}
+		}
+	}
+
+	// Scenario 6: Casual banter / Greeting
+	if strings.Contains(lower, "halo") || strings.Contains(lower, "hello") || strings.Contains(lower, "hi") || strings.Contains(lower, "selamat") || strings.Contains(lower, "pagi") || strings.Contains(lower, "siang") || strings.Contains(lower, "sore") || strings.Contains(lower, "malam") || strings.Contains(lower, "ping") || strings.Contains(lower, "tes") {
+		if lang == "en" {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Hello! How can we assist you with invoice verification or warehouse ChatOps today?", prefix)
+			case "concise":
+				return fmt.Sprintf("%s NovaPilot AI Online. Send invoice number or command to proceed.", prefix)
+			default:
+				return fmt.Sprintf("%s Welcome to NovaPilot AI ChatOps. Our on-call system is active. Please let us know if you require invoice verification or data mutation.", prefix)
+			}
+		} else {
+			switch tone {
+			case "friendly":
+				return fmt.Sprintf("%s Halo! Ada yang bisa kami bantu seputar faktur, pesanan penjualan, atau mutasi data hari ini?", prefix)
+			case "concise":
+				return fmt.Sprintf("%s NovaPilot AI Online (Siaga On-Call). Silakan ketik perintah atau nomor faktur.", prefix)
+			default:
+				return fmt.Sprintf("%s Halo! Sistem NovaPilot AI On-Call aktif siaga 24/7. Silakan informasikan nomor faktur atau dokumen yang memerlukan bantuan verifikasi.", prefix)
+			}
+		}
+	}
+
+	// Default fallback
+	if lang == "en" {
+		return fmt.Sprintf("%s Your message has been received by NovaPilot AI. On-call IT operations will follow up promptly.", prefix)
+	}
+	return fmt.Sprintf("%s Pesan Anda telah diterima oleh sistem NovaPilot AI. Petugas IT On-Call akan menindaklanjuti pesan Anda.", prefix)
+}
+
 // FallbackHeuristic extracts invoice number and target name using regex when LLM is unavailable
 func (h *HermesAdapter) FallbackHeuristic(rawMessage string) *HermesResult {
 	invRegex := regexp.MustCompile(`(?i)(?:invoice|inv|faktur|nota)[\s/:\-_#]*([a-z0-9]+(?:[\/\-_][a-z0-9]+)+)`)
@@ -499,12 +698,15 @@ func (h *HermesAdapter) FallbackHeuristic(rawMessage string) *HermesResult {
 		}
 	}
 
+	reply := h.GenerateAutoReply(rawMessage, toolCall, true, h.cfg.ReplyTone, h.cfg.ReplyPrefix, h.cfg.ReplyLanguage)
+
 	return &HermesResult{
-		RawContent: "Fallback Rule-Based Heuristic",
-		Thought:    thought,
-		ToolCall:   toolCall,
-		IsFallback: true,
-		ModelUsed:  "heuristic-fallback-v1",
-		LatencyMs:  0,
+		RawContent:     "Fallback Rule-Based Heuristic",
+		Thought:        thought,
+		ToolCall:       toolCall,
+		GeneratedReply: reply,
+		IsFallback:     true,
+		ModelUsed:      "heuristic-fallback-v1",
+		LatencyMs:      0,
 	}
 }

@@ -127,6 +127,31 @@ export interface Translations {
 		openclaw_disconnected_desc: string;
 		check_connection: string;
 		checking: string;
+		auto_reply_card_title: string;
+		auto_reply_card_subtitle: string;
+		auto_reply_toggle_label: string;
+		auto_reply_toggle_desc: string;
+		auto_reply_mode_label: string;
+		auto_reply_mode_smart: string;
+		auto_reply_mode_actionable: string;
+		auto_reply_mode_all: string;
+		auto_reply_mode_manual: string;
+		auto_reply_tone_label: string;
+		auto_reply_tone_professional: string;
+		auto_reply_tone_friendly: string;
+		auto_reply_tone_concise: string;
+		auto_reply_prefix_label: string;
+		auto_reply_lang_label: string;
+		auto_reply_lang_auto: string;
+		auto_reply_lang_id: string;
+		auto_reply_lang_en: string;
+		auto_reply_sandbox_title: string;
+		auto_reply_sandbox_desc: string;
+		auto_reply_generate_btn: string;
+		auto_reply_generating: string;
+		auto_reply_result_label: string;
+		auto_reply_test_dispatch: string;
+		auto_reply_dispatched: string;
 	};
 	overview: {
 		guardrail_title: string;
@@ -404,6 +429,8 @@ export interface Translations {
 		tab_resources: string;
 		tab_tools: string;
 		tab_playground: string;
+		tab_upload: string;
+		tab_multi_db: string;
 		sop_policy: string;
 		branches_directory: string;
 		execute_tool: string;
@@ -739,10 +766,44 @@ export interface Translations {
 		hub_badge: string;
 		select_method: string;
 		verified_routes: string;
+		tab_wa_api: string;
+		tab_wa_gateway: string;
+		tab_wa_web: string;
 		wa_gateway_qr: string;
 		wa_web: string;
 		wa_ferdium: string;
 		wa_rambox: string;
+		api_title: string;
+		api_subtitle: string;
+		api_phone_id: string;
+		api_waba_id: string;
+		api_token: string;
+		api_verify_token: string;
+		api_callback_url: string;
+		api_test_btn: string;
+		api_qr_title: string;
+		api_qr_sub: string;
+		tos_modal_title: string;
+		tos_modal_subtitle: string;
+		tos_point_1_title: string;
+		tos_point_1_desc: string;
+		tos_point_2_title: string;
+		tos_point_2_desc: string;
+		tos_point_3_title: string;
+		tos_point_3_desc: string;
+		tos_point_4_title: string;
+		tos_point_4_desc: string;
+		tos_checkbox_label: string;
+		tos_accept_btn: string;
+		tos_cancel_btn: string;
+		tos_locked_title: string;
+		tos_locked_desc: string;
+		tos_open_btn: string;
+		tos_view_btn: string;
+		tos_reset_btn: string;
+		tos_accepted_badge: string;
+		pc_support_title: string;
+		pc_support_desc: string;
 		qr_title: string;
 		qr_subtitle: string;
 		qr_status_connected: string;
@@ -846,6 +907,7 @@ export interface Translations {
 		category_operations: string;
 		category_db: string;
 		category_chatops: string;
+		category_settings: string;
 		nav_hint: string;
 		select_hint: string;
 	};
@@ -986,7 +1048,32 @@ const dictionaries: Record<Locale, Translations> = {
 			openclaw_disconnected_title: "OpenClaw Gateway belum terdeteksi aktif di {url}",
 			openclaw_disconnected_desc: "NovaPilot siap mengintegrasikan alur tugas otonom. Untuk mengaktifkan eksekusi browser Playwright lokal, jalankan perintah berikut di terminal:",
 			check_connection: "Cek Ulang Koneksi",
-			checking: "Mengecek..."
+			checking: "Mengecek...",
+			auto_reply_card_title: "AI Auto-Generate Reply Chat",
+			auto_reply_card_subtitle: "Konfigurasi mesin otomatisasi respons balasan chat berbasis Hermes 3 & Fallback Heuristik untuk WhatsApp & Omnichannel.",
+			auto_reply_toggle_label: "Aktifkan Balasan Otomatis AI (Auto-Reply)",
+			auto_reply_toggle_desc: "Jika aktif, AI secara cerdas menghasilkan draf balasan kontekstual dan dapat membalas langsung ke nomor WhatsApp/grup.",
+			auto_reply_mode_label: "Mode Pemicu Respons",
+			auto_reply_mode_smart: "Smart Auto (Konfirmasi Mutasi, Kueri ERP & Klarifikasi Sopan)",
+			auto_reply_mode_actionable: "Hanya Mutasi Faktur (Actionable Only)",
+			auto_reply_mode_all: "Semua Pesan (Termasuk Sapaan & Obrolan Santai)",
+			auto_reply_mode_manual: "Manual Clearance (Hanya Buat Draf Balasan di Dashboard)",
+			auto_reply_tone_label: "Gaya Bahasa Respons (Tone)",
+			auto_reply_tone_professional: "Formal Korporat (SOP Baku & Audit-Ready)",
+			auto_reply_tone_friendly: "Ramah & Cepat (Bahasa Percakapan Santun)",
+			auto_reply_tone_concise: "Ringkas Operasional (Format Singkat ChatOps)",
+			auto_reply_prefix_label: "Awalan Bot (Prefix)",
+			auto_reply_lang_label: "Bahasa Balasan",
+			auto_reply_lang_auto: "Deteksi Otomatis (Mengikuti Bahasa Pesan)",
+			auto_reply_lang_id: "Bahasa Indonesia",
+			auto_reply_lang_en: "English (International)",
+			auto_reply_sandbox_title: "Sandbox Pengujian Auto-Generate Balasan AI",
+			auto_reply_sandbox_desc: "Ketik simulasi pesan masuk dari WhatsApp/grup untuk melihat dan menguji respons instan yang digenerate oleh AI.",
+			auto_reply_generate_btn: "Generate Balasan AI",
+			auto_reply_generating: "Menghasilkan Balasan...",
+			auto_reply_result_label: "Hasil Balasan yang Digenerate AI",
+			auto_reply_test_dispatch: "Kirim Balasan Uji ke WhatsApp",
+			auto_reply_dispatched: "Terkirim ke WhatsApp!"
 		},
 		overview: {
 			guardrail_title: "Guardrail Assurance & Intake Engine",
@@ -1264,6 +1351,8 @@ const dictionaries: Record<Locale, Translations> = {
 			tab_resources: "Sumber Konteks",
 			tab_tools: "Alat Skema",
 			tab_playground: "Playground Agen",
+			tab_upload: "Upload & Registrasi Tool",
+			tab_multi_db: "Pool Multi-Database Referensi",
 			sop_policy: "Kebijakan SOP Support Pabrik",
 			branches_directory: "Direktori Cabang",
 			execute_tool: "Jalankan Alat"
@@ -1598,11 +1687,45 @@ const dictionaries: Record<Locale, Translations> = {
 			page_subtitle: "Konfigurasikan kredensial, filter daftar putih, pembatasan kecepatan, dan logika penerimaan untuk setiap platform chat.",
 			hub_badge: "Hub Multi-Saluran",
 			select_method: "Pilih Metode Ingress / Koneksi WhatsApp:",
-			verified_routes: "4 Jalur Terverifikasi",
+			verified_routes: "3 Metode Utama Terverifikasi",
+			tab_wa_api: "WA API Scan",
+			tab_wa_gateway: "WA Gateway (TOS)",
+			tab_wa_web: "Web (PC & Desktop)",
 			wa_gateway_qr: "WA Gateway (QR)",
 			wa_web: "WhatsApp Web",
-			wa_ferdium: "Ferdium",
-			wa_rambox: "Rambox",
+			wa_ferdium: "Ferdium Multi-Service",
+			wa_rambox: "Rambox Desktop",
+			api_title: "WhatsApp Cloud API (Meta Graph v21.0)",
+			api_subtitle: "Integrasi resmi Meta dengan Webhook real-time dan generator QR Quick-Connect",
+			api_phone_id: "Phone Number ID Meta",
+			api_waba_id: "WhatsApp Business Account (WABA) ID",
+			api_token: "Permanent System User Token (Bearer)",
+			api_verify_token: "Webhook Verify Token",
+			api_callback_url: "Webhook Callback URL",
+			api_test_btn: "Uji Koneksi WhatsApp Cloud API",
+			api_qr_title: "QR Quick-Connect Chat (wa.me)",
+			api_qr_sub: "Scan QR berikut untuk langsung memulai obrolan ke nomor akun WhatsApp API",
+			tos_modal_title: "Ketentuan Layanan & Disclaimer Risiko (TOS)",
+			tos_modal_subtitle: "Persetujuan Wajib Operasional Baileys Multi-Device Gateway",
+			tos_point_1_title: "1. Protokol Reverse-Engineered Unofficial",
+			tos_point_1_desc: "Layanan Baileys menggunakan koneksi WhatsApp Web Multi-Device protokol non-resmi (Unofficial API) dan tidak berafiliasi resmi dengan Meta / WhatsApp LLC.",
+			tos_point_2_title: "2. Risiko Pemblokiran Nomor (Account Ban)",
+			tos_point_2_desc: "Penggunaan otomasi pesan berfrekuensi tinggi, blast massal, atau pesan spam dapat memicu sistem deteksi Meta yang mengakibatkan nomor Anda diblokir sementara atau permanen.",
+			tos_point_3_title: "3. Khusus ChatOps Internal Perusahaan",
+			tos_point_3_desc: "Gateway ini dirancang khusus untuk koordinasi internal cabang pabrik, notifikasi approval on-call, dan verifikasi faktur, bukan untuk pemasaran massal.",
+			tos_point_4_title: "4. Tanggung Jawab Kepemilikan Akun",
+			tos_point_4_desc: "Pengguna menyatakan memiliki hak penuh atas nomor seluler yang ditautkan dan membebaskan pengembang dari kerugian akibat pemblokiran akun oleh Meta.",
+			tos_checkbox_label: "Saya telah membaca, memahami risiko pemblokiran, dan menyetujui Ketentuan Layanan (TOS) di atas.",
+			tos_accept_btn: "Saya Setuju & Buka QR Code",
+			tos_cancel_btn: "Batalkan",
+			tos_locked_title: "Ketentuan Layanan & Risiko Wajib Disetujui",
+			tos_locked_desc: "Demi keamanan akun operasional Anda, Anda wajib membaca dan menyetujui Ketentuan Layanan (TOS) sebelum memindai QR code Baileys.",
+			tos_open_btn: "Buka & Setujui Ketentuan Layanan (TOS)",
+			tos_view_btn: "Lihat Ketentuan Layanan (TOS)",
+			tos_reset_btn: "Reset Persetujuan",
+			tos_accepted_badge: "TOS Disetujui",
+			pc_support_title: "100% Dukungan PC & Desktop Ready",
+			pc_support_desc: "Mendukung browser PC (Chrome, Edge, Firefox), desktop aggregators (Ferdium, Rambox), dan background daemon di Windows / Linux.",
 			qr_title: "Penyandingan QR Multi-Device Baileys",
 			qr_subtitle: "Pindai QR langsung dari aplikasi seluler WhatsApp di ponsel Anda",
 			qr_status_connected: "TERHUBUNG",
@@ -1706,6 +1829,7 @@ const dictionaries: Record<Locale, Translations> = {
 			category_operations: "Operasional",
 			category_db: "Database & Telemetri",
 			category_chatops: "ChatOps & Hooks",
+			category_settings: "Pengaturan Sistem",
 			nav_hint: "Gunakan ↑ ↓ untuk navigasi",
 			select_hint: "↵ untuk memilih"
 		},
@@ -1844,7 +1968,32 @@ const dictionaries: Record<Locale, Translations> = {
 			openclaw_disconnected_title: "OpenClaw Gateway not detected on {url}",
 			openclaw_disconnected_desc: "NovaPilot is ready to orchestrate autonomous browser flows. To enable local browser automation, start the gateway via terminal:",
 			check_connection: "Recheck Connection",
-			checking: "Checking..."
+			checking: "Checking...",
+			auto_reply_card_title: "AI Auto-Generate Reply Chat",
+			auto_reply_card_subtitle: "Configure autonomous chat response generation powered by Hermes 3 & Heuristic Fallback for WhatsApp & Omnichannel.",
+			auto_reply_toggle_label: "Enable AI Auto-Reply",
+			auto_reply_toggle_desc: "When enabled, AI intelligently generates contextual replies and can reply back to WhatsApp users or groups.",
+			auto_reply_mode_label: "Trigger Mode",
+			auto_reply_mode_smart: "Smart Auto (Mutation Acks, ERP Queries & Polite Clarifications)",
+			auto_reply_mode_actionable: "Actionable Mutations Only",
+			auto_reply_mode_all: "All Messages (Including Greetings & Casual Chat)",
+			auto_reply_mode_manual: "Manual Clearance (Draft Replies in Dashboard Only)",
+			auto_reply_tone_label: "Response Tone",
+			auto_reply_tone_professional: "Corporate Formal (Audit-Ready & Standard SOP)",
+			auto_reply_tone_friendly: "Warm & Helpful (Polite Conversational)",
+			auto_reply_tone_concise: "Concise Telemetry (Fast ChatOps Format)",
+			auto_reply_prefix_label: "Bot Prefix",
+			auto_reply_lang_label: "Response Language",
+			auto_reply_lang_auto: "Auto-Detect (Follows Inbound Message Language)",
+			auto_reply_lang_id: "Bahasa Indonesia",
+			auto_reply_lang_en: "English",
+			auto_reply_sandbox_title: "AI Reply Sandbox & Live Preview",
+			auto_reply_sandbox_desc: "Type a simulated incoming message from WhatsApp or ChatOps to preview instant AI response generation.",
+			auto_reply_generate_btn: "Generate AI Reply",
+			auto_reply_generating: "Generating Reply...",
+			auto_reply_result_label: "AI Generated Response Preview",
+			auto_reply_test_dispatch: "Send Test Reply to WhatsApp",
+			auto_reply_dispatched: "Delivered to WhatsApp!"
 		},
 		overview: {
 			guardrail_title: "Guardrail Assurance & Intake Engine",
@@ -2122,6 +2271,8 @@ const dictionaries: Record<Locale, Translations> = {
 			tab_resources: "Context Resources",
 			tab_tools: "Schema Tools",
 			tab_playground: "Agent Playground",
+			tab_upload: "Upload & Register Tools",
+			tab_multi_db: "Multi-Source Reference DB Pool",
 			sop_policy: "Factory Support SOP Policy",
 			branches_directory: "Branch Directory",
 			execute_tool: "Execute Tool"
@@ -2456,11 +2607,45 @@ const dictionaries: Record<Locale, Translations> = {
 			page_subtitle: "Configure credentials, whitelist filters, rate-limiting, and intake logic for each chat platform.",
 			hub_badge: "Multi-Channel Hub",
 			select_method: "Select WhatsApp Ingress / Connection Method:",
-			verified_routes: "4 Verified Paths",
+			verified_routes: "3 Primary Verified Methods",
+			tab_wa_api: "WA API Scan",
+			tab_wa_gateway: "WA Gateway (TOS)",
+			tab_wa_web: "Web (PC & Desktop)",
 			wa_gateway_qr: "WA Gateway (QR)",
 			wa_web: "WhatsApp Web",
-			wa_ferdium: "Ferdium",
-			wa_rambox: "Rambox",
+			wa_ferdium: "Ferdium Multi-Service",
+			wa_rambox: "Rambox Desktop",
+			api_title: "WhatsApp Cloud API (Meta Graph v21.0)",
+			api_subtitle: "Official Meta integration with real-time Webhook intake and Quick-Connect QR generator",
+			api_phone_id: "Meta Phone Number ID",
+			api_waba_id: "WhatsApp Business Account (WABA) ID",
+			api_token: "Permanent System User Token (Bearer)",
+			api_verify_token: "Webhook Verify Token",
+			api_callback_url: "Webhook Callback URL",
+			api_test_btn: "Test WhatsApp Cloud API Connection",
+			api_qr_title: "Quick-Connect QR Chat (wa.me)",
+			api_qr_sub: "Scan this QR to start a direct message thread with the official WhatsApp API account",
+			tos_modal_title: "Terms of Service & Risk Disclaimer (TOS)",
+			tos_modal_subtitle: "Mandatory Operational Acceptance for Baileys Multi-Device Gateway",
+			tos_point_1_title: "1. Unofficial Reverse-Engineered Protocol",
+			tos_point_1_desc: "The Baileys service utilizes an unofficial reverse-engineered WhatsApp Web Multi-Device protocol and is not affiliated with Meta or WhatsApp LLC.",
+			tos_point_2_title: "2. Account Suspension & Ban Risk",
+			tos_point_2_desc: "High-frequency messaging, bulk broadcasting, or unsolicited messages may trigger Meta anti-abuse mechanisms and result in temporary or permanent phone number bans.",
+			tos_point_3_title: "3. Internal Enterprise ChatOps Only",
+			tos_point_3_desc: "This gateway is strictly designed for internal plant branch coordination, on-call engineer notifications, and invoice staging verification, not marketing blasts.",
+			tos_point_4_title: "4. Account Ownership Responsibility",
+			tos_point_4_desc: "The operator assumes full ownership and liability for the connected phone number and agrees that the developers bear no responsibility for account actions by Meta.",
+			tos_checkbox_label: "I have read, understood the account ban risks, and accept the Terms of Service (TOS) above.",
+			tos_accept_btn: "I Agree & Reveal QR Code",
+			tos_cancel_btn: "Cancel",
+			tos_locked_title: "TOS Acceptance Required",
+			tos_locked_desc: "For operational safety, you must review and accept the Terms of Service (TOS) before scanning the Baileys QR code.",
+			tos_open_btn: "Review & Accept Terms of Service (TOS)",
+			tos_view_btn: "View Terms of Service (TOS)",
+			tos_reset_btn: "Reset Agreement",
+			tos_accepted_badge: "TOS Accepted",
+			pc_support_title: "100% PC & Desktop Ready",
+			pc_support_desc: "Fully compatible with PC browsers (Chrome, Edge, Firefox), desktop aggregators (Ferdium, Rambox), and background daemons on Windows / Linux.",
 			qr_title: "Baileys Multi-Device QR Pairing",
 			qr_subtitle: "Scan QR directly from WhatsApp mobile app on your smartphone",
 			qr_status_connected: "CONNECTED",
@@ -2564,6 +2749,7 @@ const dictionaries: Record<Locale, Translations> = {
 			category_operations: "Operations",
 			category_db: "Databases & Telemetry",
 			category_chatops: "ChatOps & Hooks",
+			category_settings: "System Settings",
 			nav_hint: "Use ↑ ↓ to navigate",
 			select_hint: "↵ to select"
 		},

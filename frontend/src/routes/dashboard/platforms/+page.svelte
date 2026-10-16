@@ -5,6 +5,7 @@
 		Check, 
 		ArrowPath, 
 		ShieldCheck, 
+		ShieldExclamation,
 		LockClosed, 
 		Key, 
 		Signal, 
@@ -18,7 +19,8 @@
 		GlobeAlt,
 		ComputerDesktop,
 		DevicePhoneMobile,
-		ArrowTopRightOnSquare
+		ArrowTopRightOnSquare,
+		XMark
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
@@ -165,9 +167,89 @@
 		setTimeout(() => (copiedSnippet = false), 2500);
 	}
 
-	// WhatsApp Ingress Connection Options
-	type WAConnectMode = "gateway" | "browser" | "ferdium" | "rambox";
+	// WhatsApp Ingress Connection Options: 3 Main Tabs
+	// 1. "api": WA API Scan (WhatsApp Cloud API / Meta Graph API)
+	// 2. "gateway": WA Gateway (TOS) - Baileys with mandatory TOS modal
+	// 3. "web": Web - Unified WhatsApp Web, Ferdium & Rambox Desktop
+	type WAConnectMode = "api" | "gateway" | "web";
 	let waConnectMode = $state<WAConnectMode>("gateway");
+
+	// Web client sub-selector inside "web" tab
+	type WebClientType = "browser" | "ferdium" | "rambox";
+	let webClientType = $state<WebClientType>("ferdium");
+
+	// WhatsApp Cloud API Form & Test State
+	let waApiConfig = $state({
+		phoneNumberId: "109283748291024",
+		wabaId: "102938475618290",
+		accessToken: "EAAG_NOVAPILOT_ENTERPRISE_SYSTEM_USER_TOKEN",
+		verifyToken: "novapilot_wa_verify_2026",
+		phoneNumber: "081228632195",
+		defaultMessage: "Halo NovaPilot AI, cek status faktur INV/2026/001"
+	});
+	let waApiTesting = $state(false);
+	let waApiTestResult = $state<{ ok: boolean; message: string; timestamp?: string } | null>(null);
+
+	async function testWaApiConnection() {
+		if (waApiTesting) return;
+		waApiTesting = true;
+		waApiTestResult = null;
+		try {
+			const res = await fetch("/api/whatsapp-api/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone_number_id: waApiConfig.phoneNumberId,
+					token: waApiConfig.accessToken,
+					recipient: waApiConfig.phoneNumber,
+					message: waApiConfig.defaultMessage
+				})
+			});
+			const data = await res.json();
+			if (res.ok && data.ok) {
+				waApiTestResult = {
+					ok: true,
+					message: data.note || "Koneksi WhatsApp API berhasil diverifikasi!",
+					timestamp: data.timestamp
+				};
+			} else {
+				waApiTestResult = {
+					ok: false,
+					message: data.error || "Gagal memverifikasi koneksi WhatsApp API."
+				};
+			}
+		} catch (err: any) {
+			waApiTestResult = {
+				ok: false,
+				message: `Network error: ${err.message}`
+			};
+		} finally {
+			waApiTesting = false;
+		}
+	}
+
+	// TOS Modal State for WA Gateway
+	let isTosAccepted = $state(false);
+	let showTosModal = $state(false);
+	let tosAgreedCheckbox = $state(false);
+
+	function acceptTos() {
+		if (!tosAgreedCheckbox) return;
+		isTosAccepted = true;
+		showTosModal = false;
+		if (typeof window !== "undefined") {
+			localStorage.setItem("novapilot_wa_gateway_tos_accepted", "true");
+		}
+		manualRefreshQR();
+	}
+
+	function resetTos() {
+		isTosAccepted = false;
+		tosAgreedCheckbox = false;
+		if (typeof window !== "undefined") {
+			localStorage.removeItem("novapilot_wa_gateway_tos_accepted");
+		}
+	}
 
 	let qrData = $state<{
 		status: "WAITING_SCAN" | "CONNECTED" | "DISCONNECTED" | "LOADING";
@@ -201,6 +283,9 @@
 	}
 
 	onMount(() => {
+		if (typeof window !== "undefined") {
+			isTosAccepted = localStorage.getItem("novapilot_wa_gateway_tos_accepted") === "true";
+		}
 		fetchWAQR();
 		qrPollingInterval = setInterval(() => {
 			if (cockpit.chatPlatform === "whatsapp" && waConnectMode === "gateway") {
@@ -616,44 +701,190 @@
 								<span class="font-semibold text-foreground text-xs">{i18n.t.platforms.select_method}</span>
 								<span class="text-[10px] text-muted-foreground font-mono">{i18n.t.platforms.verified_routes}</span>
 							</div>
-							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border">
+							<div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border">
+								<button
+									type="button"
+									onclick={() => waConnectMode = "api"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'api' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+								>
+									<QrCode class="h-3.5 w-3.5" />
+									<span>{i18n.t.platforms.tab_wa_api}</span>
+								</button>
 								<button
 									type="button"
 									onclick={() => waConnectMode = "gateway"}
 									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'gateway' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
-									<QrCode class="h-3.5 w-3.5" />
-									<span>{i18n.t.platforms.wa_gateway_qr}</span>
+									<ShieldCheck class="h-3.5 w-3.5" />
+									<span>{i18n.t.platforms.tab_wa_gateway}</span>
+									{#if isTosAccepted}
+										<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+									{/if}
 								</button>
 								<button
 									type="button"
-									onclick={() => waConnectMode = "browser"}
-									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'browser' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+									onclick={() => waConnectMode = "web"}
+									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'web' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
 								>
 									<GlobeAlt class="h-3.5 w-3.5" />
-									<span>{i18n.t.platforms.wa_web}</span>
-								</button>
-								<button
-									type="button"
-									onclick={() => waConnectMode = "ferdium"}
-									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'ferdium' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
-								>
-									<ComputerDesktop class="h-3.5 w-3.5" />
-									<span>{i18n.t.platforms.wa_ferdium}</span>
-								</button>
-								<button
-									type="button"
-									onclick={() => waConnectMode = "rambox"}
-									class="px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer {waConnectMode === 'rambox' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
-								>
-									<DevicePhoneMobile class="h-3.5 w-3.5" />
-									<span>{i18n.t.platforms.wa_rambox}</span>
+									<span>{i18n.t.platforms.tab_wa_web}</span>
 								</button>
 							</div>
 						</div>
 
-						<!-- TAB 1: WA MULTI-DEVICE GATEWAY (LIVE QR CODE) -->
-						{#if waConnectMode === "gateway"}
+						<!-- ========================================================================= -->
+						<!-- TAB 1: OFFICIAL WHATSAPP CLOUD API & SCAN                                -->
+						<!-- ========================================================================= -->
+						{#if waConnectMode === "api"}
+							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
+								<div class="flex items-center justify-between flex-wrap gap-2">
+									<div class="flex items-center gap-2">
+										<div class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+											<QrCode class="h-4 w-4" />
+										</div>
+										<div>
+											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.api_title}</h4>
+											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.api_subtitle}</p>
+										</div>
+									</div>
+
+									<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+										Meta Cloud API v21.0
+									</span>
+								</div>
+
+								<!-- API Credentials Grid -->
+								<div class="grid sm:grid-cols-2 gap-3.5 pt-1">
+									<div class="space-y-1">
+										<label for="wa-phone-id" class="font-medium text-foreground text-[11px]">{i18n.t.platforms.api_phone_id}</label>
+										<input
+											id="wa-phone-id"
+											type="text"
+											bind:value={waApiConfig.phoneNumberId}
+											placeholder="109283748291024"
+											class="w-full h-8 rounded-lg border border-input bg-background px-2.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+										/>
+									</div>
+
+									<div class="space-y-1">
+										<label for="wa-waba-id" class="font-medium text-foreground text-[11px]">{i18n.t.platforms.api_waba_id}</label>
+										<input
+											id="wa-waba-id"
+											type="text"
+											bind:value={waApiConfig.wabaId}
+											placeholder="102938475618290"
+											class="w-full h-8 rounded-lg border border-input bg-background px-2.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+										/>
+									</div>
+								</div>
+
+								<!-- Webhook Verify Token & Callback -->
+								<div class="grid sm:grid-cols-2 gap-3.5">
+									<div class="space-y-1">
+										<label for="wa-verify-token" class="font-medium text-foreground text-[11px]">{i18n.t.platforms.api_verify_token}</label>
+										<input
+											id="wa-verify-token"
+											type="text"
+											bind:value={waApiConfig.verifyToken}
+											class="w-full h-8 rounded-lg border border-input bg-background px-2.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+										/>
+									</div>
+
+									<div class="space-y-1">
+										<label for="wa-callback-url" class="font-medium text-foreground text-[11px]">{i18n.t.platforms.api_callback_url}</label>
+										<div class="flex items-center gap-1.5">
+											<input
+												id="wa-callback-url"
+												type="text"
+												readonly
+												value={`http://${cockpit.telemetry?.lan_ip || "127.0.0.1"}:8088/api/webhooks/whatsapp`}
+												class="w-full h-8 rounded-lg border border-input bg-muted/40 px-2.5 font-mono text-xs text-muted-foreground select-all"
+											/>
+											<button
+												type="button"
+												onclick={() => copySnippet(`http://${cockpit.telemetry?.lan_ip || "127.0.0.1"}:8088/api/webhooks/whatsapp`)}
+												class="h-8 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-[11px] font-semibold shrink-0 cursor-pointer"
+											>
+												{copiedSnippet ? "✓" : "Copy"}
+											</button>
+										</div>
+									</div>
+								</div>
+
+								<!-- Access Token with Eye Toggle -->
+								<div class="space-y-1">
+									<label for="wa-api-token" class="font-medium text-foreground text-[11px]">{i18n.t.platforms.api_token}</label>
+									<div class="relative">
+										<input
+											id="wa-api-token"
+											type={showSecrets.whatsapp ? "text" : "password"}
+											bind:value={waApiConfig.accessToken}
+											class="w-full h-8 rounded-lg border border-input bg-background px-2.5 pr-8 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+										/>
+										<button
+											type="button"
+											onclick={() => toggleSecret("whatsapp")}
+											class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+										>
+											{#if showSecrets.whatsapp}
+												<EyeSlash class="h-3.5 w-3.5" />
+											{:else}
+												<Eye class="h-3.5 w-3.5" />
+											{/if}
+										</button>
+									</div>
+								</div>
+
+								<!-- Quick-Connect QR Code Card & Ping Test -->
+								<div class="p-4 rounded-xl bg-muted/30 border border-border/80 flex flex-col sm:flex-row items-center gap-4">
+									<div class="bg-white p-2.5 rounded-xl shadow-xs border border-border shrink-0 text-center">
+										<img 
+											src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`https://wa.me/${waApiConfig.phoneNumber.replace(/\\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(waApiConfig.defaultMessage)}`)}`}
+											alt="WhatsApp API Quick Connect QR"
+											class="w-28 h-28 object-contain rounded-md mx-auto"
+										/>
+										<span class="text-[9px] text-zinc-500 font-mono mt-1 block">wa.me Quick-Scan</span>
+									</div>
+
+									<div class="space-y-2 flex-1 text-xs">
+										<div class="font-semibold text-foreground flex items-center gap-1.5">
+											<QrCode class="h-4 w-4 text-emerald-500" />
+											<span>{i18n.t.platforms.api_qr_title}</span>
+										</div>
+										<p class="text-[11px] text-muted-foreground leading-relaxed">
+											{i18n.t.platforms.api_qr_sub}: <strong>{waApiConfig.phoneNumber}</strong>.
+										</p>
+										
+										<div class="flex items-center gap-2 pt-1">
+											<button
+												type="button"
+												onclick={testWaApiConnection}
+												disabled={waApiTesting}
+												class="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+											>
+												{#if waApiTesting}
+													<ArrowPath class="h-3 w-3 animate-spin" />
+													<span>Menguji...</span>
+												{:else}
+													<Check class="h-3 w-3" />
+													<span>{i18n.t.platforms.api_test_btn}</span>
+												{/if}
+											</button>
+										</div>
+
+										{#if waApiTestResult}
+											<div class="p-2 rounded-lg border text-[11px] flex items-center gap-2 animate-in fade-in duration-150 {waApiTestResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+												<span>{waApiTestResult.message}</span>
+											</div>
+										{/if}
+									</div>
+								</div>
+							</div>
+
+						<!-- ========================================================================= -->
+						<!-- TAB 2: WA MULTI-DEVICE GATEWAY (LIVE QR CODE WITH MANDATORY TOS)         -->
+						<!-- ========================================================================= -->
+						{:else if waConnectMode === "gateway"}
 							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
 								<div class="flex items-center justify-between flex-wrap gap-2">
 									<div class="flex items-center gap-2">
@@ -667,22 +898,59 @@
 									</div>
 									
 									<div class="flex items-center gap-2">
+										{#if isTosAccepted}
+											<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+												✓ {i18n.t.platforms.tos_accepted_badge}
+											</span>
+											<button
+												type="button"
+												onclick={() => showTosModal = true}
+												class="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+											>
+												{i18n.t.platforms.tos_view_btn}
+											</button>
+										{/if}
+
 										<span class="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border {qrData.status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : qrData.status === 'WAITING_SCAN' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 animate-pulse' : 'bg-muted text-muted-foreground border-border'}">
 											{qrData.status === 'CONNECTED' ? i18n.t.platforms.qr_status_connected : qrData.status === 'WAITING_SCAN' ? i18n.t.platforms.qr_status_waiting : qrData.status === 'LOADING' ? i18n.t.platforms.qr_status_loading : i18n.t.platforms.qr_status_offline}
 										</span>
-										<button
-											type="button"
-											onclick={manualRefreshQR}
-											disabled={isRefreshingQR}
-											class="h-7 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-[11px] font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
-										>
-											<ArrowPath class="h-3 w-3 {isRefreshingQR ? 'animate-spin' : ''}" />
-											<span>{i18n.t.platforms.qr_refresh_btn}</span>
-										</button>
+
+										{#if isTosAccepted}
+											<button
+												type="button"
+												onclick={manualRefreshQR}
+												disabled={isRefreshingQR}
+												class="h-7 px-2.5 rounded-lg border border-input bg-background hover:bg-muted text-[11px] font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+											>
+												<ArrowPath class="h-3 w-3 {isRefreshingQR ? 'animate-spin' : ''}" />
+												<span>{i18n.t.platforms.qr_refresh_btn}</span>
+											</button>
+										{/if}
 									</div>
 								</div>
 
-								{#if qrData.status === 'CONNECTED'}
+								<!-- TOS GATEKEEPER CHECK: MUST ACCEPT TOS BEFORE SCANNING -->
+								{#if !isTosAccepted}
+									<div class="p-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-center space-y-3 shadow-xs">
+										<div class="h-12 w-12 mx-auto rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+											<ShieldExclamation class="h-6 w-6" />
+										</div>
+										<div class="space-y-1">
+											<h5 class="text-xs font-bold text-foreground">{i18n.t.platforms.tos_locked_title}</h5>
+											<p class="text-[11px] text-muted-foreground max-w-md mx-auto leading-relaxed">
+												{i18n.t.platforms.tos_locked_desc}
+											</p>
+										</div>
+										<button
+											type="button"
+											onclick={() => showTosModal = true}
+											class="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-xs"
+										>
+											<ShieldCheck class="h-4 w-4" />
+											<span>{i18n.t.platforms.tos_open_btn}</span>
+										</button>
+									</div>
+								{:else if qrData.status === 'CONNECTED'}
 									<div class="p-6 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
 										<div class="h-10 w-10 mx-auto rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
 											<Check class="h-5 w-5" />
@@ -727,115 +995,152 @@
 								{/if}
 							</div>
 
-						<!-- TAB 2: WHATSAPP WEB (BROWSER USERSCRIPT) -->
-						{:else if waConnectMode === "browser"}
+						<!-- ========================================================================= -->
+						<!-- TAB 3: WEB (UNIFIED BROWSER, FERDIUM & RAMBOX WITH PC SUPPORT)             -->
+						<!-- ========================================================================= -->
+						{:else if waConnectMode === "web"}
 							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
-								<div class="flex items-center justify-between flex-wrap gap-2">
-									<div class="flex items-center gap-2">
-										<div class="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-											<GlobeAlt class="h-4 w-4" />
+								<!-- PC & Desktop Ready Badge Banner -->
+								<div class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-start gap-3">
+									<ComputerDesktop class="h-5 w-5 text-sky-500 shrink-0 mt-0.5" />
+									<div class="space-y-0.5">
+										<div class="text-xs font-bold text-foreground flex items-center gap-2">
+											<span>{i18n.t.platforms.pc_support_title}</span>
+											<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-sky-500/20 text-sky-600 dark:text-sky-400 font-bold">WINDOWS / LINUX / MAC</span>
 										</div>
-										<div>
-											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.browser_hook_title}</h4>
-											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.browser_hook_sub}</p>
-										</div>
+										<p class="text-[11px] text-muted-foreground leading-relaxed">
+											{i18n.t.platforms.pc_support_desc}
+										</p>
 									</div>
+								</div>
+
+								<!-- Client Sub-Tabs (Pills) -->
+								<div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+									<button
+										type="button"
+										onclick={() => webClientType = "ferdium"}
+										class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 {webClientType === 'ferdium' ? 'bg-purple-600 text-white shadow-xs' : 'bg-muted/60 text-muted-foreground hover:text-foreground'}"
+									>
+										<ComputerDesktop class="h-3.5 w-3.5" />
+										<span>{i18n.t.platforms.wa_ferdium}</span>
+										<span class="px-1 py-0.2 rounded text-[9px] bg-white/20 font-mono">Multi-WA</span>
+									</button>
 
 									<button
 										type="button"
-										onclick={() => copyIntegrationScript("browser", browserUserscript)}
-										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+										onclick={() => webClientType = "browser"}
+										class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 {webClientType === 'browser' ? 'bg-blue-600 text-white shadow-xs' : 'bg-muted/60 text-muted-foreground hover:text-foreground'}"
 									>
-										{#if copiedScriptType === "browser"}
-											<Check class="h-3 w-3" />
-											<span>Copied!</span>
-										{:else}
-											<CodeBracket class="h-3 w-3" />
-											<span>Copy Userscript</span>
-										{/if}
+										<GlobeAlt class="h-3.5 w-3.5" />
+										<span>{i18n.t.platforms.wa_web} (Tampermonkey)</span>
 									</button>
-								</div>
-
-								<div class="space-y-2">
-									<div class="text-[11px] text-muted-foreground leading-relaxed">
-										<strong>Cara Pasang:</strong> Pasang ekstensi <strong>Tampermonkey</strong> atau <strong>Violentmonkey</strong> di Chrome/Edge/Firefox, buat script baru, paste kode di bawah, lalu buka <strong>web.whatsapp.com</strong>.
-									</div>
-									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{browserUserscript}</code></pre>
-								</div>
-							</div>
-
-						<!-- TAB 3: FERDIUM DESKTOP -->
-						{:else if waConnectMode === "ferdium"}
-							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
-								<div class="flex items-center justify-between flex-wrap gap-2">
-									<div class="flex items-center gap-2">
-										<div class="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
-											<ComputerDesktop class="h-4 w-4" />
-										</div>
-										<div>
-											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.ferdium_hook_title}</h4>
-											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.ferdium_hook_sub}</p>
-										</div>
-									</div>
 
 									<button
 										type="button"
-										onclick={() => copyIntegrationScript("ferdium", ferdiumHookScript)}
-										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+										onclick={() => webClientType = "rambox"}
+										class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 {webClientType === 'rambox' ? 'bg-amber-600 text-white shadow-xs' : 'bg-muted/60 text-muted-foreground hover:text-foreground'}"
 									>
-										{#if copiedScriptType === "ferdium"}
-											<Check class="h-3 w-3" />
-											<span>Copied!</span>
-										{:else}
-											<CodeBracket class="h-3 w-3" />
-											<span>Copy Ferdium Hook</span>
-										{/if}
+										<DevicePhoneMobile class="h-3.5 w-3.5" />
+										<span>{i18n.t.platforms.wa_rambox}</span>
 									</button>
 								</div>
 
-								<div class="space-y-2">
-									<div class="text-[11px] text-muted-foreground leading-relaxed">
-										<strong>{i18n.locale === 'id' ? 'Mendukung Multi-Service (1, 2, atau 3 Akun WA Sekaligus):' : 'Supports Multi-Service (1, 2, or 3+ WA Accounts Concurrently):'}</strong> {i18n.locale === 'id' ? 'Buka Ferdium > Klik kanan setiap service WhatsApp > Edit Service > Menu Advanced > Tempel kode pada input "Custom Code (Inject JavaScript code)" > Simpan & Reload. Anda bisa membedakan label service (misal "WA 1", "WA 2", "WA 3") di baris atas skrip.' : 'Open Ferdium > Right-click each WhatsApp service > Edit Service > Advanced > Paste code into "Custom Code (Inject JavaScript code)" > Save & Reload. You can customize the service label (e.g. "WA 1", "WA 2", "WA 3") at the top of the script.'}
-									</div>
-									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ferdiumHookScript}</code></pre>
-								</div>
-							</div>
+								<!-- Sub-View: Ferdium Desktop Hook -->
+								{#if webClientType === "ferdium"}
+									<div class="space-y-3 animate-in fade-in duration-150">
+										<div class="flex items-center justify-between flex-wrap gap-2">
+											<div>
+												<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.ferdium_hook_title}</h4>
+												<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.ferdium_hook_sub}</p>
+											</div>
 
-						<!-- TAB 4: RAMBOX DESKTOP -->
-						{:else if waConnectMode === "rambox"}
-							<div class="p-5 rounded-2xl border border-border bg-card/60 space-y-4">
-								<div class="flex items-center justify-between flex-wrap gap-2">
-									<div class="flex items-center gap-2">
-										<div class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-											<DevicePhoneMobile class="h-4 w-4" />
+											<button
+												type="button"
+												onclick={() => copyIntegrationScript("ferdium", ferdiumHookScript)}
+												class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+											>
+												{#if copiedScriptType === "ferdium"}
+													<Check class="h-3 w-3" />
+													<span>Copied!</span>
+												{:else}
+													<CodeBracket class="h-3 w-3" />
+													<span>Copy Ferdium Hook</span>
+												{/if}
+											</button>
 										</div>
-										<div>
-											<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.rambox_hook_title}</h4>
-											<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.rambox_hook_sub}</p>
+
+										<div class="space-y-2">
+											<div class="text-[11px] text-muted-foreground leading-relaxed">
+												<strong>{i18n.locale === 'id' ? 'Mendukung Multi-Service (1, 2, atau 3 Akun WA Sekaligus di PC):' : 'Supports Multi-Service (1, 2, or 3+ WA Accounts Concurrently on PC):'}</strong> {i18n.locale === 'id' ? 'Buka Ferdium > Klik kanan setiap service WhatsApp > Edit Service > Menu Advanced > Tempel kode pada input "Custom Code (Inject JavaScript code)" > Simpan & Reload. Anda bisa membedakan label service (misal "WA 1", "WA 2", "WA 3") di baris atas skrip.' : 'Open Ferdium > Right-click each WhatsApp service > Edit Service > Advanced > Paste code into "Custom Code (Inject JavaScript code)" > Save & Reload. You can customize the service label (e.g. "WA 1", "WA 2", "WA 3") at the top of the script.'}
+											</div>
+											<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ferdiumHookScript}</code></pre>
 										</div>
 									</div>
 
-									<button
-										type="button"
-										onclick={() => copyIntegrationScript("rambox", ramboxHookScript)}
-										class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-									>
-										{#if copiedScriptType === "rambox"}
-											<Check class="h-3 w-3" />
-											<span>Copied!</span>
-										{:else}
-											<CodeBracket class="h-3 w-3" />
-											<span>Copy Rambox Hook</span>
-										{/if}
-									</button>
-								</div>
+								<!-- Sub-View: WhatsApp Web (Tampermonkey) -->
+								{:else if webClientType === "browser"}
+									<div class="space-y-3 animate-in fade-in duration-150">
+										<div class="flex items-center justify-between flex-wrap gap-2">
+											<div>
+												<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.browser_hook_title}</h4>
+												<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.browser_hook_sub}</p>
+											</div>
 
-								<div class="space-y-2">
-									<div class="text-[11px] text-muted-foreground leading-relaxed">
-										<strong>Cara Pasang:</strong> Buka Rambox &gt; Klik kanan tab service WhatsApp &gt; <strong>Edit</strong> &gt; Buka tab <strong>Advanced</strong> &gt; Tempel kode ke kotak <strong>Inject JavaScript code</strong> &gt; Simpan.
+											<button
+												type="button"
+												onclick={() => copyIntegrationScript("browser", browserUserscript)}
+												class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+											>
+												{#if copiedScriptType === "browser"}
+													<Check class="h-3 w-3" />
+													<span>Copied!</span>
+												{:else}
+													<CodeBracket class="h-3 w-3" />
+													<span>Copy Userscript</span>
+												{/if}
+											</button>
+										</div>
+
+										<div class="space-y-2">
+											<div class="text-[11px] text-muted-foreground leading-relaxed">
+												<strong>Cara Pasang di Browser PC:</strong> Pasang ekstensi <strong>Tampermonkey</strong> atau <strong>Violentmonkey</strong> di Chrome/Edge/Firefox, buat script baru, paste kode di bawah, lalu buka <strong>web.whatsapp.com</strong>.
+											</div>
+											<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{browserUserscript}</code></pre>
+										</div>
 									</div>
-									<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ramboxHookScript}</code></pre>
-								</div>
+
+								<!-- Sub-View: Rambox Desktop Hook -->
+								{:else if webClientType === "rambox"}
+									<div class="space-y-3 animate-in fade-in duration-150">
+										<div class="flex items-center justify-between flex-wrap gap-2">
+											<div>
+												<h4 class="text-xs font-bold text-foreground">{i18n.t.platforms.rambox_hook_title}</h4>
+												<p class="text-[11px] text-muted-foreground">{i18n.t.platforms.rambox_hook_sub}</p>
+											</div>
+
+											<button
+												type="button"
+												onclick={() => copyIntegrationScript("rambox", ramboxHookScript)}
+												class="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+											>
+												{#if copiedScriptType === "rambox"}
+													<Check class="h-3 w-3" />
+													<span>Copied!</span>
+												{:else}
+													<CodeBracket class="h-3 w-3" />
+													<span>Copy Rambox Hook</span>
+												{/if}
+											</button>
+										</div>
+
+										<div class="space-y-2">
+											<div class="text-[11px] text-muted-foreground leading-relaxed">
+												<strong>Cara Pasang di Rambox PC:</strong> Buka Rambox &gt; Klik kanan tab service WhatsApp &gt; <strong>Edit</strong> &gt; Buka tab <strong>Advanced</strong> &gt; Tempel kode ke kotak <strong>Inject JavaScript code</strong> &gt; Simpan.
+											</div>
+											<pre class="p-3 rounded-xl bg-black/70 border border-border/80 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed"><code>{ramboxHookScript}</code></pre>
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 
@@ -1177,4 +1482,127 @@ SLACK_TEAM_ID="{slackConfig.teamId}"{/if}</code></pre>
 			</div>
 		</div>
 	</div>
+
+	<!-- ========================================================================= -->
+	<!-- TOS (TERMS OF SERVICE) MODAL FOR WA GATEWAY                              -->
+	<!-- ========================================================================= -->
+	{#if showTosModal}
+		<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+			<div class="w-full max-w-xl rounded-3xl bg-card border border-border shadow-2xl p-6 sm:p-7 space-y-5 text-foreground relative animate-in zoom-in-95 duration-200">
+				<!-- Modal Close Button -->
+				<button
+					type="button"
+					onclick={() => showTosModal = false}
+					class="absolute right-5 top-5 h-8 w-8 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+					aria-label="Tutup Modal"
+				>
+					<XMark class="h-4 w-4" />
+				</button>
+
+				<!-- Header -->
+				<div class="flex items-start gap-3.5 pr-8">
+					<div class="h-10 w-10 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+						<ShieldExclamation class="h-5 w-5" />
+					</div>
+					<div>
+						<h3 class="text-base font-bold text-foreground">
+							{i18n.t.platforms.tos_modal_title}
+						</h3>
+						<p class="text-xs text-muted-foreground mt-0.5">
+							{i18n.t.platforms.tos_modal_subtitle}
+						</p>
+					</div>
+				</div>
+
+				<!-- TOS Content Box -->
+				<div class="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3.5 max-h-72 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
+					<div class="space-y-1">
+						<div class="font-bold text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+							<span>{i18n.t.platforms.tos_point_1_title}</span>
+						</div>
+						<p class="text-[11px] pl-3">
+							{i18n.t.platforms.tos_point_1_desc}
+						</p>
+					</div>
+
+					<div class="space-y-1">
+						<div class="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+							<span>{i18n.t.platforms.tos_point_2_title}</span>
+						</div>
+						<p class="text-[11px] pl-3">
+							{i18n.t.platforms.tos_point_2_desc}
+						</p>
+					</div>
+
+					<div class="space-y-1">
+						<div class="font-bold text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+							<span>{i18n.t.platforms.tos_point_3_title}</span>
+						</div>
+						<p class="text-[11px] pl-3">
+							{i18n.t.platforms.tos_point_3_desc}
+						</p>
+					</div>
+
+					<div class="space-y-1">
+						<div class="font-bold text-foreground flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+							<span>{i18n.t.platforms.tos_point_4_title}</span>
+						</div>
+						<p class="text-[11px] pl-3">
+							{i18n.t.platforms.tos_point_4_desc}
+						</p>
+					</div>
+				</div>
+
+				<!-- Mandatory Checkbox -->
+				<label class="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs cursor-pointer select-none">
+					<input
+						type="checkbox"
+						bind:checked={tosAgreedCheckbox}
+						class="mt-0.5 rounded border-border text-amber-600 focus:ring-amber-500 h-4 w-4"
+					/>
+					<span class="text-xs font-medium text-foreground leading-snug">
+						{i18n.t.platforms.tos_checkbox_label}
+					</span>
+				</label>
+
+				<!-- Modal Actions -->
+				<div class="flex items-center justify-between gap-3 pt-1">
+					{#if isTosAccepted}
+						<button
+							type="button"
+							onclick={resetTos}
+							class="text-xs text-rose-500 hover:text-rose-600 underline font-semibold cursor-pointer"
+						>
+							{i18n.t.platforms.tos_reset_btn}
+						</button>
+					{:else}
+						<div></div>
+					{/if}
+
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={() => showTosModal = false}
+							class="h-9 px-4 rounded-xl border border-input bg-background hover:bg-muted text-xs font-semibold cursor-pointer transition-colors"
+						>
+							{i18n.t.platforms.tos_cancel_btn}
+						</button>
+						<button
+							type="button"
+							onclick={acceptTos}
+							disabled={!tosAgreedCheckbox}
+							class="h-9 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+						>
+							<ShieldCheck class="h-4 w-4" />
+							<span>{i18n.t.platforms.tos_accept_btn}</span>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>

@@ -22,7 +22,8 @@
 		Play,
 		Trash,
 		CpuChip,
-		PaperAirplane
+		PaperAirplane,
+		Sparkles
 	} from "svelte-heros-v2";
 	import { cockpit, type InboundMessage, type Ticket } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
@@ -974,6 +975,34 @@
 								</p>
 							</div>
 						{/if}
+
+						<!-- AI Generated Auto-Reply Box -->
+						{#if msg.ai_reply}
+							<div class="p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs space-y-1">
+								<div class="flex items-center justify-between text-[10px] font-mono font-bold text-primary uppercase">
+									<span class="flex items-center gap-1.5">
+										<Sparkles class="h-3 w-3" />
+										Balasan Otomatis AI (Auto-Reply):
+									</span>
+									<button
+										type="button"
+										onclick={() => copyToClipboard(msg.ai_reply || "", msg.id + 700000)}
+										class="hover:underline flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-foreground text-[10px]"
+									>
+										{#if copiedId === msg.id + 700000}
+											<Check class="h-3 w-3 text-emerald-500" />
+											<span>Tersalin</span>
+										{:else}
+											<ClipboardDocument class="h-3 w-3" />
+											<span>Salin Balasan</span>
+										{/if}
+									</button>
+								</div>
+								<p class="font-mono text-[11px] text-foreground/90 whitespace-pre-wrap bg-background/60 p-2 rounded border border-primary/15 leading-relaxed select-text">
+									{msg.ai_reply}
+								</p>
+							</div>
+						{/if}
 					</div>
 
 					<!-- Bottom Row: Extracted Entity Tags & Actions -->
@@ -1134,6 +1163,18 @@
 						{/if}
 					</div>
 				</div>
+
+				{#if inspectModalMessage.ai_reply}
+					<div class="space-y-1">
+						<span class="text-primary text-[10px] uppercase font-bold flex items-center gap-1">
+							<Sparkles class="h-3.5 w-3.5" />
+							AI Auto-Generated Chat Reply
+						</span>
+						<div class="p-3 rounded-lg bg-primary/10 border border-primary/20 text-foreground font-mono text-[11px] whitespace-pre-wrap select-text leading-relaxed">
+							{inspectModalMessage.ai_reply}
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<div class="pt-2 flex justify-end gap-2 border-t border-border/50">

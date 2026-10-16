@@ -19,7 +19,8 @@
 		ChatBubbleLeftRight,
 		Clock,
 		ArrowRight,
-		Eye
+		Eye,
+		PaperAirplane
 	} from "svelte-heros-v2";
 	import { cockpit, type Ticket } from "$lib/cockpit.svelte";
 	import { sound } from "$lib/audio";
@@ -159,6 +160,25 @@
 	let editBaseURL = $state("http://localhost:11434/v1");
 	let editModel = $state("hermes3:8b");
 	let editCliPath = $state("C:\\Users\\USER\\.local\\bin\\hermes.cmd");
+	let editAutoReplyEnabled = $state(true);
+	let editAutoReplyMode = $state("smart");
+	let editReplyTone = $state("professional");
+	let editReplyPrefix = $state("[NovaPilot AI]");
+	let editReplyLanguage = $state("id");
+
+	// Auto-Reply Live Sandbox State
+	let autoReplyTestPrompt = $state("Halo min tolong ubah customer faktur INV/2026/001 menjadi PT Sumber Makmur Abadi");
+	let autoReplyGenerating = $state(false);
+	let autoReplyResult = $state<{
+		generated_reply: string;
+		model_used: string;
+		latency_ms: number;
+		is_fallback: boolean;
+		thought?: string;
+		tool_call?: any;
+	} | null>(null);
+	let testDispatching = $state(false);
+	let testDispatched = $state(false);
 
 	async function activateCliMode() {
 		editMode = "cli";
@@ -246,6 +266,11 @@
 				editBaseURL = json.base_url || "http://localhost:11434/v1";
 				editModel = json.model || "hermes3:8b";
 				editCliPath = json.cli_path || "";
+				if (json.auto_reply_enabled !== undefined) editAutoReplyEnabled = json.auto_reply_enabled;
+				if (json.auto_reply_mode) editAutoReplyMode = json.auto_reply_mode;
+				if (json.reply_tone) editReplyTone = json.reply_tone;
+				if (json.reply_prefix) editReplyPrefix = json.reply_prefix;
+				if (json.reply_language) editReplyLanguage = json.reply_language;
 			}
 		} catch (e) {
 			console.error("Failed to load Hermes LLM config:", e);
@@ -264,7 +289,12 @@
 					mode: editMode,
 					base_url: editBaseURL,
 					model: editModel,
-					cli_path: editCliPath
+					cli_path: editCliPath,
+					auto_reply_enabled: editAutoReplyEnabled,
+					auto_reply_mode: editAutoReplyMode,
+					reply_tone: editReplyTone,
+					reply_prefix: editReplyPrefix,
+					reply_language: editReplyLanguage
 				})
 			});
 			const json = await res.json();
@@ -280,6 +310,58 @@
 			configError = e.message;
 		} finally {
 			configLoading = false;
+		}
+	}
+
+	async function runAutoReplySandbox() {
+		if (autoReplyGenerating || !autoReplyTestPrompt.trim()) return;
+		autoReplyGenerating = true;
+		autoReplyResult = null;
+		testDispatched = false;
+		try {
+			const res = await fetch("/api/llm/generate-reply", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: autoReplyTestPrompt,
+					tone: editReplyTone,
+					mode: editAutoReplyMode,
+					prefix: editReplyPrefix,
+					language: editReplyLanguage,
+					branch_context: branchContext
+				})
+			});
+			if (res.ok) {
+				autoReplyResult = await res.json();
+				sound.playActionChime();
+			}
+		} catch (e) {
+			console.error("Failed to generate auto-reply:", e);
+		} finally {
+			autoReplyGenerating = false;
+		}
+	}
+
+	async function dispatchTestReplyToWhatsApp() {
+		if (testDispatching || !autoReplyResult?.generated_reply) return;
+		testDispatching = true;
+		try {
+			const res = await fetch("/api/gateway/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: autoReplyResult.generated_reply
+				})
+			});
+			if (res.ok) {
+				testDispatched = true;
+				sound.playActionChime();
+				setTimeout(() => (testDispatched = false), 4000);
+			}
+		} catch (e) {
+			console.error("Failed to dispatch test reply:", e);
+		} finally {
+			testDispatching = false;
 		}
 	}
 
@@ -947,6 +1029,233 @@
 						<span>{configError}</span>
 					</div>
 				{/if}
+			</div>
+
+			<!-- ============================================================= -->
+			<!-- AI AUTO-GENERATE REPLY CHAT CONFIGURATION CARD                -->
+			<!-- ============================================================= -->
+			<div class="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-5">
+				<!-- Header with Master Toggle -->
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/70">
+					<div class="flex items-start gap-3">
+						<div class="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+							<ChatBubbleLeftRight class="h-5 w-5" />
+						</div>
+						<div>
+							<h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+								<span>{i18n.t.agents.auto_reply_card_title}</span>
+								<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold {editAutoReplyEnabled ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground border border-border'}">
+									{editAutoReplyEnabled ? 'AUTO-REPLY ACTIVE' : 'MUTED'}
+								</span>
+							</h3>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								{i18n.t.agents.auto_reply_card_subtitle}
+							</p>
+						</div>
+					</div>
+
+					<div class="flex items-center gap-3">
+						<label class="flex items-center gap-2 cursor-pointer select-none">
+							<input
+								type="checkbox"
+								bind:checked={editAutoReplyEnabled}
+								class="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+							/>
+							<span class="text-xs font-semibold text-foreground">
+								{i18n.t.agents.auto_reply_toggle_label}
+							</span>
+						</label>
+
+						<button
+							type="button"
+							onclick={saveConfig}
+							disabled={configLoading}
+							class="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+						>
+							<Bolt class="h-3.5 w-3.5" />
+							<span>{configLoading ? i18n.t.agents.saving : i18n.t.agents.save_config}</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Settings Grid: Trigger Mode, Tone, Prefix, Language -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+					<!-- 1. Trigger Mode -->
+					<div class="space-y-1.5">
+						<label for="autoReplyModeSelect" class="font-medium text-muted-foreground">{i18n.t.agents.auto_reply_mode_label}</label>
+						<select
+							id="autoReplyModeSelect"
+							bind:value={editAutoReplyMode}
+							class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
+						>
+							<option value="smart">{i18n.t.agents.auto_reply_mode_smart}</option>
+							<option value="actionable_only">{i18n.t.agents.auto_reply_mode_actionable}</option>
+							<option value="all">{i18n.t.agents.auto_reply_mode_all}</option>
+							<option value="manual">{i18n.t.agents.auto_reply_mode_manual}</option>
+						</select>
+					</div>
+
+					<!-- 2. Response Tone -->
+					<div class="space-y-1.5">
+						<label for="replyToneSelect" class="font-medium text-muted-foreground">{i18n.t.agents.auto_reply_tone_label}</label>
+						<select
+							id="replyToneSelect"
+							bind:value={editReplyTone}
+							class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
+						>
+							<option value="professional">{i18n.t.agents.auto_reply_tone_professional}</option>
+							<option value="friendly">{i18n.t.agents.auto_reply_tone_friendly}</option>
+							<option value="concise">{i18n.t.agents.auto_reply_tone_concise}</option>
+						</select>
+					</div>
+
+					<!-- 3. Bot Prefix -->
+					<div class="space-y-1.5">
+						<label for="replyPrefixInput" class="font-medium text-muted-foreground">{i18n.t.agents.auto_reply_prefix_label}</label>
+						<input
+							id="replyPrefixInput"
+							type="text"
+							bind:value={editReplyPrefix}
+							class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground font-mono text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
+							placeholder="[NovaPilot AI]"
+						/>
+					</div>
+
+					<!-- 4. Response Language -->
+					<div class="space-y-1.5">
+						<label for="replyLangSelect" class="font-medium text-muted-foreground">{i18n.t.agents.auto_reply_lang_label}</label>
+						<select
+							id="replyLangSelect"
+							bind:value={editReplyLanguage}
+							class="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
+						>
+							<option value="id">{i18n.t.agents.auto_reply_lang_id}</option>
+							<option value="auto">{i18n.t.agents.auto_reply_lang_auto}</option>
+							<option value="en">{i18n.t.agents.auto_reply_lang_en}</option>
+						</select>
+					</div>
+				</div>
+
+				<!-- Live Interactive Reply Sandbox -->
+				<div class="p-4 rounded-xl bg-muted/20 border border-border/80 space-y-3.5">
+					<div class="flex items-center justify-between flex-wrap gap-2">
+						<div class="flex items-center gap-2">
+							<Sparkles class="h-4 w-4 text-primary" />
+							<h4 class="text-xs font-bold text-foreground">{i18n.t.agents.auto_reply_sandbox_title}</h4>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<button
+								type="button"
+								onclick={() => { autoReplyTestPrompt = "Halo min tolong ubah customer faktur INV/2026/001 menjadi PT Sumber Makmur Abadi"; runAutoReplySandbox(); }}
+								class="px-2 py-0.5 rounded text-[11px] bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition-colors"
+							>
+								Mutasi INV
+							</button>
+							<button
+								type="button"
+								onclick={() => { autoReplyTestPrompt = "halo selamat pagi min mau tanya jam operasional cabang"; runAutoReplySandbox(); }}
+								class="px-2 py-0.5 rounded text-[11px] bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition-colors"
+							>
+								Sapaan
+							</button>
+							<button
+								type="button"
+								onclick={() => { autoReplyTestPrompt = "cek harga dan plafon diskon pipa baja schedule 40"; runAutoReplySandbox(); }}
+								class="px-2 py-0.5 rounded text-[11px] bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition-colors"
+							>
+								Katalog ERP
+							</button>
+							<button
+								type="button"
+								onclick={() => { autoReplyTestPrompt = "tolong revisi nama pt jadi PT Mitra Sukses"; runAutoReplySandbox(); }}
+								class="px-2 py-0.5 rounded text-[11px] bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition-colors"
+							>
+								Data Kurang
+							</button>
+						</div>
+					</div>
+
+					<div class="flex flex-col sm:flex-row gap-2">
+						<input
+							type="text"
+							bind:value={autoReplyTestPrompt}
+							class="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-primary"
+							placeholder="Ketik simulasi pesan masuk..."
+						/>
+						<button
+							type="button"
+							onclick={runAutoReplySandbox}
+							disabled={autoReplyGenerating || !autoReplyTestPrompt.trim()}
+							class="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+						>
+							{#if autoReplyGenerating}
+								<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+								<span>{i18n.t.agents.auto_reply_generating}</span>
+							{:else}
+								<Sparkles class="h-3.5 w-3.5" />
+								<span>{i18n.t.agents.auto_reply_generate_btn}</span>
+							{/if}
+						</button>
+					</div>
+
+					<!-- Auto-Reply Output Preview Box -->
+					{#if autoReplyResult}
+						<div class="p-3.5 rounded-xl bg-card border border-primary/30 shadow-xs space-y-2.5 animate-in fade-in duration-150">
+							<div class="flex items-center justify-between text-[11px] text-muted-foreground flex-wrap gap-2">
+								<span class="font-bold text-foreground flex items-center gap-1.5">
+									<ChatBubbleLeftRight class="h-3.5 w-3.5 text-primary" />
+									<span>{i18n.t.agents.auto_reply_result_label}</span>
+								</span>
+								<div class="flex items-center gap-2 font-mono text-[10px]">
+									<span class="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+										{autoReplyResult.model_used}
+									</span>
+									<span class="text-primary font-bold">
+										⚡ {autoReplyResult.latency_ms}ms
+									</span>
+								</div>
+							</div>
+
+							<div class="p-3 rounded-lg bg-muted/40 border border-border/80 text-xs font-mono text-foreground leading-relaxed select-all">
+								{autoReplyResult.generated_reply}
+							</div>
+
+							<div class="flex items-center justify-between pt-1 flex-wrap gap-2">
+								<button
+									type="button"
+									onclick={() => copyToClipboard(autoReplyResult?.generated_reply || '', 'auto_reply')}
+									class="h-7 px-2.5 rounded-md border border-border bg-background hover:bg-muted text-[11px] font-medium flex items-center gap-1 cursor-pointer transition-colors"
+								>
+									{#if copiedField === 'auto_reply'}
+										<Check class="h-3 w-3 text-emerald-500" />
+										<span>{i18n.t.agents.copied}</span>
+									{:else}
+										<ClipboardDocument class="h-3 w-3" />
+										<span>{i18n.t.agents.copy_code}</span>
+									{/if}
+								</button>
+
+								<button
+									type="button"
+									onclick={dispatchTestReplyToWhatsApp}
+									disabled={testDispatching}
+									class="h-7 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+								>
+									{#if testDispatched}
+										<Check class="h-3 w-3" />
+										<span>{i18n.t.agents.auto_reply_dispatched}</span>
+									{:else if testDispatching}
+										<ArrowPath class="h-3 w-3 animate-spin" />
+										<span>Mengirim...</span>
+									{:else}
+										<PaperAirplane class="h-3 w-3" />
+										<span>{i18n.t.agents.auto_reply_test_dispatch}</span>
+									{/if}
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
 			</div>
 
 			<!-- Interactive Playground Console -->

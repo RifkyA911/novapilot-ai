@@ -25,6 +25,7 @@ type InboundMessage struct {
 	ExtractedTarget string                `json:"extracted_target,omitempty"`
 	TicketID        *int                  `json:"ticket_id,omitempty"`
 	TicketNo        string                `json:"ticket_no,omitempty"`
+	AIReply         string                `json:"ai_reply,omitempty"`
 	CreatedAt       time.Time             `json:"created_at"`
 }
 

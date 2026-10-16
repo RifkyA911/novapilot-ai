@@ -16,9 +16,17 @@
 		ClipboardDocument,
 		TableCells,
 		CommandLine,
-		ArrowTopRightOnSquare
+		ArrowTopRightOnSquare,
+		Plus,
+		Trash,
+		Play,
+		Star,
+		PencilSquare
 	} from "svelte-heros-v2";
 	import { i18n } from "$lib/i18n.svelte";
+	import DatabasePlatformSelect, { type PlatformOption } from "./DatabasePlatformSelect.svelte";
+	import CustomSelect from "./CustomSelect.svelte";
+	import BrandIcon from "./BrandIcon.svelte";
 
 	// Database Connection Form States
 	let sysConfig = $state({
@@ -78,6 +86,14 @@
 			idle: number;
 			max_open: number;
 			wait_count: number;
+			latency_ms?: number;
+		};
+		reference_database?: {
+			id?: string;
+			name?: string;
+			platform?: string;
+			status?: string;
+			latency_ms?: number;
 		};
 	}
 	let telemetry = $state<TelemetryData | null>(null);
@@ -113,6 +129,297 @@
 	function triggerDb2Burst() {
 		isSimulatingDb2 = true;
 		setTimeout(() => { isSimulatingDb2 = false; }, 1800);
+	}
+
+	// =========================================================================
+	// MULTI-REFERENCE DATABASE POOL STATE & API METHODS
+	// =========================================================================
+	interface ReferenceDB {
+		id: string;
+		name: string;
+		platform: string;
+		host: string;
+		port: string;
+		dbname: string;
+		user: string;
+		password?: string;
+		sslmode: string;
+		mode: string;
+		status: string;
+		is_active: boolean;
+		latency_ms?: number;
+		description?: string;
+		tns?: string;
+		service_name?: string;
+		created_at: string;
+	}
+
+	let referenceDBs = $state<ReferenceDB[]>([]);
+	let isLoadingRefDBs = $state(false);
+	let isActivatingRefDB = $state<string | null>(null);
+	let isTestingRefDB = $state<string | null>(null);
+	let refDBActionMessage = $state<{ ok: boolean; text: string } | null>(null);
+
+	// Add New Reference DB Modal State
+	let showAddRefModal = $state(false);
+	let newRefDB = $state({
+		name: "",
+		platform: "postgres",
+		host: "localhost",
+		port: "5432",
+		dbname: "",
+		user: "postgres",
+		password: "",
+		sslmode: "disable",
+		mode: "local",
+		description: "",
+		tns: "",
+		service_name: ""
+	});
+
+	// Edit Reference DB Modal State
+	let showEditRefModal = $state(false);
+	let editingRefDB = $state<ReferenceDB | null>(null);
+	let isUpdatingRefDB = $state(false);
+	let isTestingEditRefDB = $state(false);
+	let editTestResult = $state<{ ok: boolean; message: string; latency_ms?: number } | null>(null);
+	let showEditRefPass = $state(false);
+	let showNewRefPass = $state(false);
+	let mcpOracleTNS = $state("");
+
+	// Oracle TNS Auto-parser helper
+	function parseOracleTNS(tns: string) {
+		let host = "";
+		let port = "1521";
+		let serviceName = "";
+
+		const hostMatch = tns.match(/HOST\s*=\s*([^)\s]+)/i);
+		if (hostMatch) host = hostMatch[1].trim();
+
+		const portMatch = tns.match(/PORT\s*=\s*([0-9]+)/i);
+		if (portMatch) port = portMatch[1].trim();
+
+		const svcMatch = tns.match(/SERVICE_NAME\s*=\s*([^)\s]+)/i);
+		if (svcMatch) serviceName = svcMatch[1].trim();
+
+		const sidMatch = tns.match(/SID\s*=\s*([^)\s]+)/i);
+		if (!serviceName && sidMatch) serviceName = sidMatch[1].trim();
+
+		return { host, port, serviceName };
+	}
+
+	function handleEditTNSInput() {
+		if (!editingRefDB || !editingRefDB.tns) return;
+		const { host, port, serviceName } = parseOracleTNS(editingRefDB.tns);
+		if (host) editingRefDB.host = host;
+		if (port) editingRefDB.port = port;
+		if (serviceName) {
+			editingRefDB.service_name = serviceName;
+			if (!editingRefDB.dbname || editingRefDB.dbname === "XE" || editingRefDB.dbname === "ORCL") {
+				editingRefDB.dbname = serviceName;
+			}
+		}
+	}
+
+	function handleNewRefTNSInput() {
+		if (!newRefDB.tns) return;
+		const { host, port, serviceName } = parseOracleTNS(newRefDB.tns);
+		if (host) newRefDB.host = host;
+		if (port) newRefDB.port = port;
+		if (serviceName) {
+			newRefDB.service_name = serviceName;
+			if (!newRefDB.dbname) newRefDB.dbname = serviceName;
+		}
+	}
+
+	function handleMcpTNSInput() {
+		if (!mcpOracleTNS) return;
+		const { host, port, serviceName } = parseOracleTNS(mcpOracleTNS);
+		if (host) mcpConfig.host = host;
+		if (port) mcpConfig.port = port;
+		if (serviceName) mcpConfig.dbname = serviceName;
+	}
+
+	function openEditRefModal(db: ReferenceDB) {
+		editingRefDB = {
+			...db,
+			password: db.password || "",
+			tns: db.tns || (db.host && db.host.includes("DESCRIPTION") ? db.host : ""),
+			service_name: db.service_name || ""
+		};
+		if (editingRefDB.tns && (!editingRefDB.host || editingRefDB.host.includes("DESCRIPTION"))) {
+			const { host, port, serviceName } = parseOracleTNS(editingRefDB.tns);
+			if (host) editingRefDB.host = host;
+			if (port) editingRefDB.port = port;
+			if (serviceName) editingRefDB.service_name = serviceName;
+		}
+		editTestResult = null;
+		showEditRefPass = false;
+		showEditRefModal = true;
+	}
+
+	async function handleUpdateRefDB() {
+		if (!editingRefDB) return;
+		isUpdatingRefDB = true;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${editingRefDB.id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(editingRefDB)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message || "Konfigurasi database referensi berhasil diperbarui!" };
+				showEditRefModal = false;
+				editingRefDB = null;
+				await fetchReferenceDBs();
+				await fetchConfigAndTelemetry();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal memperbarui database referensi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isUpdatingRefDB = false;
+		}
+	}
+
+	async function testEditingRefDB() {
+		if (!editingRefDB) return;
+		isTestingEditRefDB = true;
+		editTestResult = null;
+		try {
+			const res = await fetch("/api/database/test", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					platform: editingRefDB.platform,
+					host: editingRefDB.host,
+					port: editingRefDB.port,
+					user: editingRefDB.user,
+					password: editingRefDB.password,
+					dbname: editingRefDB.dbname,
+					sslmode: editingRefDB.sslmode,
+					tns: editingRefDB.tns,
+					service_name: editingRefDB.service_name
+				})
+			});
+			const data = await res.json();
+			editTestResult = {
+				ok: data.ok,
+				message: data.message || data.error || (data.ok ? "Koneksi berhasil diverifikasi!" : "Gagal terkoneksi"),
+				latency_ms: data.latency_ms
+			};
+		} catch (e: any) {
+			editTestResult = { ok: false, message: e.message };
+		} finally {
+			isTestingEditRefDB = false;
+		}
+	}
+
+	async function fetchReferenceDBs() {
+		isLoadingRefDBs = true;
+		try {
+			const res = await fetch("/api/database/reference-dbs");
+			if (res.ok) {
+				const data = await res.json();
+				referenceDBs = data.reference_dbs || [];
+			}
+		} catch (e) {
+			console.error("Failed to fetch reference dbs:", e);
+		} finally {
+			isLoadingRefDBs = false;
+		}
+	}
+
+	async function activateReferenceDB(id: string) {
+		isActivatingRefDB = id;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}/activate`, { method: "POST" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+				await fetchConfigAndTelemetry();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal mengaktifkan database referensi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isActivatingRefDB = null;
+		}
+	}
+
+	async function testSingleRefDB(id: string) {
+		isTestingRefDB = id;
+		refDBActionMessage = null;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}/test`, { method: "POST" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal verifikasi koneksi" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		} finally {
+			isTestingRefDB = null;
+		}
+	}
+
+	async function deleteSingleRefDB(id: string) {
+		if (!confirm("Hapus database referensi ini dari pool?")) return;
+		try {
+			const res = await fetch(`/api/database/reference-dbs/${id}`, { method: "DELETE" });
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		}
+	}
+
+	async function handleCreateRefDB() {
+		try {
+			const res = await fetch("/api/database/reference-dbs", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(newRefDB)
+			});
+			const data = await res.json();
+			if (res.ok) {
+				refDBActionMessage = { ok: true, text: data.message };
+				showAddRefModal = false;
+				newRefDB = {
+					name: "",
+					platform: "postgres",
+					host: "localhost",
+					port: "5432",
+					dbname: "",
+					user: "postgres",
+					password: "",
+					sslmode: "disable",
+					mode: "local",
+					description: "",
+					tns: "",
+					service_name: ""
+				};
+				await fetchReferenceDBs();
+			} else {
+				refDBActionMessage = { ok: false, text: data.error || "Gagal menambahkan database" };
+			}
+		} catch (e: any) {
+			refDBActionMessage = { ok: false, text: e.message };
+		}
 	}
 
 	// =========================================================================
@@ -176,13 +483,29 @@
 		isTestingMcp || isSimulatingDb2 ? "PROCESSING" : (mcpStatus === "CONNECTED" ? "CONNECTED" : "DISCONNECTED")
 	);
 
-	// Quick toggle helpers for testing animation states
-	function toggleMockStatusDb1() {
-		sysStatus = sysStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
+	// Active reference DB derived from multi-reference pool
+	const activeRef = $derived(referenceDBs.find(d => d.is_active) || null);
+
+	// Live database test & SVG burst actions (Real telemetry & socket ping)
+	async function runLiveTestDb1() {
+		triggerDb1Burst();
+		await testSystemConnection();
+		await fetchConfigAndTelemetry();
 	}
 
-	function toggleMockStatusDb2() {
-		mcpStatus = mcpStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED";
+	async function runLiveTestDb2() {
+		triggerDb2Burst();
+		const active = referenceDBs.find(d => d.is_active);
+		if (active) {
+			await testSingleRefDB(active.id);
+		} else {
+			await testMCPReferenceConnection();
+		}
+		await fetchConfigAndTelemetry();
+	}
+
+	async function runLivePingAll() {
+		await Promise.all([runLiveTestDb1(), runLiveTestDb2()]);
 	}
 
 	// Dynamic port switching based on database platform
@@ -865,6 +1188,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	onMount(() => {
 		fetchConfigAndTelemetry();
 		fetchMCPTools();
+		fetchReferenceDBs();
 	});
 </script>
 
@@ -943,16 +1267,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<!-- Simulation Action Buttons -->
 				<div class="flex items-center gap-2.5 flex-wrap text-xs font-mono">
 					<span class="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1 hidden sm:inline">
-						I/O Simulation:
+						Live I/O & Ping:
 					</span>
 
-					<!-- DB 1 Button -->
+					<!-- DB 1 Live Ping Button -->
 					<button
 						type="button"
-						onclick={triggerDb1Burst}
-						disabled={isSimulatingDb1}
+						onclick={runLiveTestDb1}
+						disabled={isTestingSys || isSimulatingDb1}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Trigger PROCESSING transmission pulse on DB 1 (PostgreSQL Core)"
+						title="Uji live socket ping & transmisi data DB 1 (PostgreSQL Core)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db1VisualState === 'CONNECTED' ? 'bg-emerald-500' : db1VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
 						<span>DB 1: Core</span>
@@ -961,35 +1285,31 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						</span>
 					</button>
 
-					<!-- DB 2 Button -->
+					<!-- DB 2 Live Ping Button -->
 					<button
 						type="button"
-						onclick={triggerDb2Burst}
-						disabled={isSimulatingDb2}
+						onclick={runLiveTestDb2}
+						disabled={isTestingMcp || isSimulatingDb2 || isTestingRefDB !== null}
 						class="h-9 px-3.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-50 text-xs"
-						title="Trigger PROCESSING transmission pulse on DB 2 (MCP Reference Store)"
+						title="Uji live socket ping & transmisi data DB 2 (MCP Reference / Oracle 11g)"
 					>
 						<span class="h-2.5 w-2.5 rounded-full {db2VisualState === 'CONNECTED' ? 'bg-cyan-500' : db2VisualState === 'PROCESSING' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'}"></span>
-						<span>DB 2: MCP Ref</span>
+						<span>DB 2: {activeRef ? activeRef.name.split(' ')[0] : 'MCP Ref'}</span>
 						<span class="text-[10px] px-1.5 py-0.5 rounded font-bold {db2VisualState === 'CONNECTED' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300' : db2VisualState === 'PROCESSING' ? 'bg-amber-500/20 text-amber-500' : 'bg-rose-500/20 text-rose-500'}">
 							{db2VisualState}
 						</span>
 					</button>
 
-					<!-- Toggle DB 2 Link State Button -->
+					<!-- Live Ping Both DBs Button -->
 					<button
 						type="button"
-						onclick={toggleMockStatusDb2}
-						class="h-9 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-						title={i18n.locale === 'id' ? 'Alihkan status tautan online vs offline DB 2' : 'Toggle online vs offline link state for DB 2'}
+						onclick={runLivePingAll}
+						disabled={isTestingSys || isTestingMcp || isTestingRefDB !== null}
+						class="h-9 px-3.5 py-1.5 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs text-xs disabled:opacity-50"
+						title={i18n.locale === 'id' ? 'Uji konektivitas live socket & latensi roundtrip kedua database' : 'Test live socket & roundtrip latency for both databases'}
 					>
-						{#if mcpStatus === 'CONNECTED'}
-							<span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-							<span>{i18n.locale === 'id' ? 'Putus Tautan DB 2' : 'Disconnect DB 2 Link'}</span>
-						{:else}
-							<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-							<span>{i18n.locale === 'id' ? 'Hubungkan Tautan DB 2' : 'Connect DB 2 Link'}</span>
-						{/if}
+						<Play class="h-3.5 w-3.5" />
+						<span>{i18n.locale === 'id' ? 'Uji Koneksi Real-time (Live Ping)' : 'Live Ping All Databases'}</span>
 					</button>
 				</div>
 
@@ -1336,7 +1656,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db1VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db1VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db1VisualState === 'CONNECTED'}
-									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Socket Latency ~1.2ms
+									✓ Pool Conns: {telemetry?.database?.in_use || 0} in use, {telemetry?.database?.idle || 0} idle • Ping Latency: {telemetry?.database?.latency_ms ?? sysTestResult?.latency_ms ?? 1}ms
 								{:else if db1VisualState === 'PROCESSING'}
 									⚡ Executing Ticket Staging Query &amp; Signing Audit Logs...
 								{:else}
@@ -1513,7 +1833,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							fill-opacity={db2VisualState === 'DISCONNECTED' ? '0.08' : db2VisualState === 'PROCESSING' ? '0.24' : '0.16'} 
 						/>
 						<text x="16" y="25" font-family="system-ui" font-size="13.5" font-weight="bold" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : '#2563eb'}>
-							🏢 MCP Reference &amp; ERP Database ({mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 19c Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname})
+							🏢 MCP Reference &amp; ERP Database ({activeRef ? activeRef.name : (mcpPlatform === 'postgres' ? `PostgreSQL 16/18 (${mcpConfig.dbname})` : mcpPlatform === 'oracle' ? 'Oracle 11g Enterprise' : mcpPlatform === 'sap' ? 'SAP S/4HANA' : mcpPlatform === 'mysql' ? 'MySQL Cluster' : mcpPlatform === 'mssql' ? 'MS SQL Server' : mcpConfig.dbname)})
 						</text>
 						
 						<!-- Status Indicator Badge -->
@@ -1531,7 +1851,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 						<!-- Left Text Details Column -->
 						<g transform="translate(18, 48)">
 							<text x="0" y="16" font-family="monospace" font-size="12" font-weight="bold" fill="currentColor" class="text-foreground">
-								Host: {mcpConfig.host}:{mcpConfig.port}/{mcpConfig.dbname} • Mode: {mcpMode === 'ssh' ? 'SSH Tunnel (Bastion 22)' : mcpMode === 'ssl' ? 'SSL/TLS Encrypted' : 'Local Direct'}
+								Host: {activeRef ? (activeRef.tns ? `${activeRef.host}:${activeRef.port} (TNS: ${activeRef.service_name || activeRef.dbname})` : `${activeRef.host}:${activeRef.port}/${activeRef.dbname}`) : `${mcpConfig.host}:${mcpConfig.port}/${mcpConfig.dbname}`} • Driver: {activeRef ? activeRef.platform.toUpperCase() : mcpPlatform.toUpperCase()}
 							</text>
 							<text x="0" y="34" font-family="monospace" font-size="11" fill="currentColor" class="text-muted-foreground">
 								• Reference Tables: {mcpReferenceTables.map(t => t.name).join(', ')}
@@ -1542,7 +1862,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 							<!-- Realtime Health Notice -->
 							<text x="0" y="66" font-family="monospace" font-size="10" fill={db2VisualState === 'DISCONNECTED' ? '#ef4444' : 'currentColor'} class={db2VisualState === 'DISCONNECTED' ? '' : 'text-muted-foreground'}>
 								{#if db2VisualState === 'CONNECTED'}
-									✓ Verified Enterprise Business Data Source • Secure Isolated Read/Write Access
+									✓ Verified Enterprise Reference DB • Ping Latency: {activeRef?.latency_ms ?? telemetry?.reference_database?.latency_ms ?? mcpTestResult?.latency_ms ?? 4}ms • Protocol Active
 								{:else if db2VisualState === 'PROCESSING'}
 									⚡ Executing Verified Mutation via MCP Protocol RPC...
 								{:else}
@@ -1869,16 +2189,11 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 					<div class="space-y-1">
 						<label for="sys-sslmode" class="font-semibold text-muted-foreground">SSL Mode:</label>
-						<select
+						<CustomSelect
 							id="sys-sslmode"
 							bind:value={sysConfig.sslmode}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
-						>
-							<option value="disable">disable</option>
-							<option value="require">require</option>
-							<option value="verify-ca">verify-ca</option>
-							<option value="verify-full">verify-full</option>
-						</select>
+							options={["disable", "require", "verify-ca", "verify-full"]}
+						/>
 					</div>
 				</div>
 
@@ -2007,11 +2322,667 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 	<!-- ========================================================================= -->
 	{#if activeTab === "mcp"}
 		<div class="space-y-6">
-			<!-- Config Form Box -->
+			<!-- Multi-Reference Database Pool Section -->
+			<div class="p-5 rounded-2xl border border-border bg-card space-y-4 shadow-xs">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+					<div class="space-y-0.5">
+						<div class="flex items-center gap-2">
+							<h2 class="text-sm font-bold text-foreground">Multi-Source Enterprise Reference Database Pool</h2>
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+								{referenceDBs.length} SOURCE{referenceDBs.length === 1 ? '' : 'S'}
+							</span>
+						</div>
+						<p class="text-xs text-muted-foreground">
+							Kelola berbagai database referensi (ERP SAP, Oracle Finance, PostgreSQL Warehouse, MySQL CRM). Agent MCP membaca data dari database yang sedang diaktifkan.
+						</p>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							onclick={fetchReferenceDBs}
+							disabled={isLoadingRefDBs}
+							class="h-8 px-3 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+						>
+							<ArrowPath class="h-3.5 w-3.5 {isLoadingRefDBs ? 'animate-spin' : ''}" />
+							<span>{isLoadingRefDBs ? 'Refreshing...' : 'Refresh Pool'}</span>
+						</button>
+
+						<button
+							type="button"
+							onclick={() => showAddRefModal = true}
+							class="h-8 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+						>
+							<Plus class="h-4 w-4" />
+							<span>Tambah Database</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Action Result Feedback Notification -->
+				{#if refDBActionMessage}
+					<div class="p-3 rounded-xl border flex items-center justify-between text-xs {refDBActionMessage.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+						<div class="flex items-center gap-2">
+							{#if refDBActionMessage.ok}
+								<CheckCircle class="h-4 w-4 text-emerald-500 shrink-0" />
+							{:else}
+								<XCircle class="h-4 w-4 text-rose-500 shrink-0" />
+							{/if}
+							<span>{refDBActionMessage.text}</span>
+						</div>
+						<button
+							type="button"
+							onclick={() => refDBActionMessage = null}
+							class="text-muted-foreground hover:text-foreground cursor-pointer"
+						>
+							<XMark class="h-4 w-4" />
+						</button>
+					</div>
+				{/if}
+
+				<!-- Pool Grid of Reference Databases -->
+				{#if referenceDBs.length === 0 && !isLoadingRefDBs}
+					<div class="p-8 text-center rounded-xl border border-dashed border-border/80 bg-secondary/20 space-y-3">
+						<CircleStack class="h-8 w-8 mx-auto text-muted-foreground opacity-50" />
+						<div class="text-xs font-bold text-foreground">Belum ada database referensi tambahan di pool</div>
+						<p class="text-xs text-muted-foreground max-w-md mx-auto">
+							Daftarkan database Oracle, SAP HANA, MySQL CRM, atau PostgreSQL tambahan agar AI Agent dapat memverifikasi faktur lintas sistem.
+						</p>
+						<button
+							type="button"
+							onclick={() => showAddRefModal = true}
+							class="h-8 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+						>
+							<Plus class="h-3.5 w-3.5" />
+							<span>Tambah Database Pertama</span>
+						</button>
+					</div>
+				{:else}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{#each referenceDBs as db}
+							{@const isActive = db.is_active}
+							<div 
+								class="p-4 rounded-xl border transition-all duration-200 relative flex flex-col justify-between space-y-3 shadow-2xs cursor-pointer group {isActive ? 'border-cyan-500/70 bg-cyan-500/5 ring-2 ring-cyan-500/20' : 'border-border/70 bg-secondary/30 hover:border-cyan-500/50 hover:bg-secondary/60'}"
+								onclick={() => openEditRefModal(db)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditRefModal(db); } }}
+								title="Klik untuk membuka editor konfigurasi database ini"
+							>
+								<!-- Card Top: Brand Icon + Platform Badge + Active State -->
+								<div class="flex items-start justify-between gap-2">
+									<div class="flex items-center gap-2.5">
+										<div class="p-1.5 rounded-lg bg-background border border-border/60 shadow-2xs group-hover:border-cyan-500/40 transition-colors">
+											<BrandIcon name={db.platform} class="h-6 w-6" />
+										</div>
+										<div>
+											<div class="text-xs font-bold text-foreground leading-snug flex items-center gap-1.5">
+												<span>{db.name}</span>
+												<PencilSquare class="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+											</div>
+											<div class="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
+												<span>{db.platform}</span>
+												<span>•</span>
+												<span class="text-cyan-600 dark:text-cyan-400 font-bold">{db.mode}</span>
+											</div>
+										</div>
+									</div>
+
+									{#if isActive}
+										<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 shrink-0">
+											<Star class="h-3 w-3 fill-current" />
+											<span>ACTIVE</span>
+										</span>
+									{:else}
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); activateReferenceDB(db.id); }}
+											disabled={isActivatingRefDB === db.id}
+											class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary hover:bg-primary hover:text-primary-foreground border border-border text-foreground transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+											title="Aktifkan sebagai database referensi utama untuk agent MCP"
+										>
+											<Play class="h-2.5 w-2.5" />
+											<span>{isActivatingRefDB === db.id ? 'Mengaktifkan...' : 'Aktifkan'}</span>
+										</button>
+									{/if}
+								</div>
+
+								<!-- Card Body: Connection Spec -->
+								<div class="p-2.5 rounded-lg bg-background/80 border border-border/50 font-mono text-[11px] space-y-1">
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>Target:</span>
+										<span class="text-foreground font-semibold truncate max-w-[170px]">{db.host}:{db.port}</span>
+									</div>
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>Database:</span>
+										<span class="text-cyan-600 dark:text-cyan-400 font-bold truncate max-w-[170px]">{db.dbname}</span>
+									</div>
+									<div class="flex items-center justify-between text-muted-foreground">
+										<span>User:</span>
+										<span class="text-foreground truncate max-w-[170px]">{db.user}</span>
+									</div>
+									{#if db.description}
+										<div class="pt-1 border-t border-border/40 text-[10px] font-sans text-muted-foreground line-clamp-2">
+											{db.description}
+										</div>
+									{/if}
+								</div>
+
+								<!-- Card Footer: Edit, Test & Delete Actions -->
+								<div class="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
+									<div class="flex items-center gap-1.5 font-mono text-[10px]">
+										<span class="h-2 w-2 rounded-full {db.status === 'CONNECTED' ? 'bg-emerald-500' : 'bg-zinc-400'}"></span>
+										<span class="{db.status === 'CONNECTED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">{db.status || 'UNTESTED'}</span>
+										{#if db.latency_ms}
+											<span class="text-muted-foreground">({db.latency_ms}ms)</span>
+										{/if}
+									</div>
+
+									<div class="flex items-center gap-1">
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); openEditRefModal(db); }}
+											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+											title="Edit konfigurasi koneksi database ini"
+										>
+											<PencilSquare class="h-3 w-3 text-cyan-500" />
+											<span>Edit</span>
+										</button>
+
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); testSingleRefDB(db.id); }}
+											disabled={isTestingRefDB === db.id}
+											class="h-7 px-2 rounded-md text-[11px] font-semibold bg-secondary hover:bg-muted border border-border text-foreground flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+											title="Uji koneksi jaringan ke endpoint ini"
+										>
+											<ArrowPath class="h-3 w-3 {isTestingRefDB === db.id ? 'animate-spin text-cyan-500' : ''}" />
+											<span>{isTestingRefDB === db.id ? 'Testing...' : 'Uji'}</span>
+										</button>
+
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); deleteSingleRefDB(db.id); }}
+											class="h-7 w-7 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 flex items-center justify-center transition-colors cursor-pointer"
+											title="Hapus dari pool"
+										>
+											<Trash class="h-3.5 w-3.5" />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- MODAL: Tambah Database Referensi Baru -->
+			{#if showAddRefModal}
+				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150">
+					<div class="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+						<div class="flex items-center justify-between pb-3 border-b border-border/50">
+							<div class="flex items-center gap-2">
+								<CircleStack class="h-5 w-5 text-cyan-500" />
+								<h3 class="text-base font-bold text-foreground">Tambah Database Referensi ke Pool</h3>
+							</div>
+							<button
+								type="button"
+								onclick={() => showAddRefModal = false}
+								class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+							>
+								<XMark class="h-4 w-4" />
+							</button>
+						</div>
+
+						<form onsubmit={(e) => { e.preventDefault(); handleCreateRefDB(); }} class="space-y-4 text-xs">
+							<!-- Platform Selector with Official Brand Icons -->
+							<div class="space-y-1.5">
+								<label for="new-ref-platform" class="font-bold text-foreground flex items-center justify-between">
+									<span>Platform Database:</span>
+									<span class="text-[10px] text-cyan-500 font-mono font-bold">BRANDED ICON SELECTOR</span>
+								</label>
+								<DatabasePlatformSelect
+									id="new-ref-platform"
+									bind:value={newRefDB.platform}
+									onchange={(opt) => {
+										newRefDB.port = opt.defaultPort;
+									}}
+								/>
+							</div>
+
+							<!-- Database Alias / Name -->
+							<div class="space-y-1">
+								<label for="new-ref-name" class="font-semibold text-muted-foreground">Label / Nama Database (e.g. ERP Finance, SAP Materials):</label>
+								<input
+									id="new-ref-name"
+									type="text"
+									required
+									bind:value={newRefDB.name}
+									placeholder="Contoh: Oracle ERP Keuangan Pusat"
+									class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold focus:ring-2 focus:ring-primary/20 focus:outline-none"
+								/>
+							</div>
+
+							<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+							{#if newRefDB.platform === 'oracle'}
+								<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+									<div class="flex items-center justify-between">
+										<label for="new-ref-tns" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+											<BrandIcon name="oracle" class="h-4 w-4" />
+											<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+										</label>
+										<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+									</div>
+									<textarea
+										id="new-ref-tns"
+										bind:value={newRefDB.tns}
+										oninput={handleNewRefTNSInput}
+										rows={3}
+										placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+										class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									></textarea>
+									<p class="text-[10px] text-muted-foreground">
+										Format TNS Oracle 11g diekstrak otomatis: Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.port || '-'}</span>), Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{newRefDB.service_name || newRefDB.dbname || '-'}</span>).
+									</p>
+								</div>
+							{/if}
+
+							<!-- Host & Port -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="sm:col-span-2 space-y-1">
+									<label for="new-ref-host" class="font-semibold text-muted-foreground">Host / IP Address:</label>
+									<input
+										id="new-ref-host"
+										type="text"
+										required
+										bind:value={newRefDB.host}
+										placeholder="erp-db.internal atau 10.0.1.50"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-port" class="font-semibold text-muted-foreground">Port:</label>
+									<input
+										id="new-ref-port"
+										type="text"
+										required
+										bind:value={newRefDB.port}
+										placeholder="1521"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- DB Name & User -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-dbname" class="font-semibold text-muted-foreground">Nama Database / SID / PDB:</label>
+									<input
+										id="new-ref-dbname"
+										type="text"
+										required
+										bind:value={newRefDB.dbname}
+										placeholder="ERP_PROD_PDB"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-user" class="font-semibold text-muted-foreground">Username Kredensial:</label>
+									<input
+										id="new-ref-user"
+										type="text"
+										required
+										bind:value={newRefDB.user}
+										placeholder="mcp_reader"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Password & SSL Mode -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-password" class="font-semibold text-muted-foreground">Password:</label>
+									<div class="relative">
+										<input
+											id="new-ref-password"
+											type={showNewRefPass ? "text" : "password"}
+											bind:value={newRefDB.password}
+											placeholder="••••••••"
+											class="w-full h-9 px-3 pr-9 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+										/>
+										<button
+											type="button"
+											onclick={() => showNewRefPass = !showNewRefPass}
+											class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+										>
+											{#if showNewRefPass}
+												<EyeSlash class="h-4 w-4" />
+											{:else}
+												<Eye class="h-4 w-4" />
+											{/if}
+										</button>
+									</div>
+								</div>
+								<div class="space-y-1">
+									<label for="new-ref-sslmode" class="font-semibold text-muted-foreground">SSL / TLS Mode:</label>
+									<CustomSelect
+										id="new-ref-sslmode"
+										bind:value={newRefDB.sslmode}
+										options={["disable", "require", "verify-ca", "verify-full"]}
+									/>
+								</div>
+							</div>
+
+							<!-- Mode Selector & Description -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="space-y-1">
+									<label for="new-ref-mode" class="font-semibold text-muted-foreground">Konektivitas:</label>
+									<CustomSelect
+										id="new-ref-mode"
+										bind:value={newRefDB.mode}
+										options={[
+											{ value: "local", label: "Direct LAN / Local" },
+											{ value: "ssl", label: "Encrypted SSL/TLS" },
+											{ value: "ssh", label: "SSH Bastion Tunnel" }
+										]}
+									/>
+								</div>
+								<div class="sm:col-span-2 space-y-1">
+									<label for="new-ref-desc" class="font-semibold text-muted-foreground">Keterangan / Scope Data (Opsional):</label>
+									<input
+										id="new-ref-desc"
+										type="text"
+										bind:value={newRefDB.description}
+										placeholder="Contoh: Faktur pajak dan master vendor wilayah timur"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex items-center justify-end gap-2.5 pt-3 border-t border-border/50">
+								<button
+									type="button"
+									onclick={() => showAddRefModal = false}
+									class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+								>
+									Batal
+								</button>
+								<button
+									type="submit"
+									class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+								>
+									<Plus class="h-4 w-4" />
+									<span>Simpan ke Pool</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			{/if}
+
+			<!-- MODAL: Edit Database Referensi Pool -->
+			{#if showEditRefModal && editingRefDB}
+				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150">
+					<div class="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+						<div class="flex items-center justify-between pb-3 border-b border-border/50">
+							<div class="flex items-center gap-2.5">
+								<div class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+									<PencilSquare class="h-5 w-5" />
+								</div>
+								<div>
+									<h3 class="text-base font-bold text-foreground">Edit Database Referensi Pool</h3>
+									<p class="text-[11px] text-muted-foreground font-mono">{editingRefDB.id} • {editingRefDB.name}</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => { showEditRefModal = false; editingRefDB = null; }}
+								class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+							>
+								<XMark class="h-4 w-4" />
+							</button>
+						</div>
+
+						<!-- Test Connection Banner in Modal -->
+						{#if editTestResult}
+							<div class="p-3.5 rounded-xl border flex items-start gap-2.5 text-xs {editTestResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'}">
+								{#if editTestResult.ok}
+									<CheckCircle class="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+								{:else}
+									<XCircle class="h-4 w-4 shrink-0 text-rose-500 mt-0.5" />
+								{/if}
+								<div class="flex-1 font-mono">
+									<div class="font-bold flex items-center justify-between">
+										<span>{editTestResult.ok ? 'KONEKSI BERHASIL TERVERIFIKASI' : 'GAGAL TERKONEKSI'}</span>
+										{#if editTestResult.latency_ms}
+											<span class="opacity-80">({editTestResult.latency_ms}ms)</span>
+										{/if}
+									</div>
+									<div class="mt-1 text-[11px]">{editTestResult.message}</div>
+								</div>
+								<button
+									type="button"
+									onclick={() => editTestResult = null}
+									class="text-muted-foreground hover:text-foreground cursor-pointer"
+								>
+									<XMark class="h-3.5 w-3.5" />
+								</button>
+							</div>
+						{/if}
+
+						<form onsubmit={(e) => { e.preventDefault(); handleUpdateRefDB(); }} class="space-y-4 text-xs">
+							<!-- Platform Selector with Official Brand Icons -->
+							<div class="space-y-1.5">
+								<label for="edit-ref-platform" class="font-bold text-foreground flex items-center justify-between">
+									<span>Platform Database:</span>
+									<span class="text-[10px] text-cyan-500 font-mono font-bold">PLATFORM SELECTOR</span>
+								</label>
+								<DatabasePlatformSelect
+									id="edit-ref-platform"
+									bind:value={editingRefDB.platform}
+									onchange={(opt) => {
+										if (editingRefDB) editingRefDB.port = opt.defaultPort;
+									}}
+								/>
+							</div>
+
+							<!-- Database Alias / Name -->
+							<div class="space-y-1">
+								<label for="edit-ref-name" class="font-semibold text-muted-foreground">Label / Nama Database:</label>
+								<input
+									id="edit-ref-name"
+									type="text"
+									required
+									bind:value={editingRefDB.name}
+									placeholder="Contoh: Oracle 11g Enterprise Test Database"
+									class="w-full h-9 px-3 rounded-lg border border-input bg-background text-foreground text-xs font-semibold focus:ring-2 focus:ring-primary/20 focus:outline-none"
+								/>
+							</div>
+
+							<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+							{#if editingRefDB.platform === 'oracle'}
+								<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+									<div class="flex items-center justify-between">
+										<label for="edit-ref-tns" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+											<BrandIcon name="oracle" class="h-4 w-4" />
+											<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+										</label>
+										<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+									</div>
+									<textarea
+										id="edit-ref-tns"
+										bind:value={editingRefDB.tns}
+										oninput={handleEditTNSInput}
+										rows={4}
+										placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+										class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									></textarea>
+									<p class="text-[10px] text-muted-foreground">
+										Format TNS Oracle 11g diekstrak otomatis: Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.port || '-'}</span>), Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{editingRefDB.service_name || editingRefDB.dbname || '-'}</span>).
+									</p>
+								</div>
+							{/if}
+
+							<!-- Host & Port -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="sm:col-span-2 space-y-1">
+									<label for="edit-ref-host" class="font-semibold text-muted-foreground">Host / IP Address:</label>
+									<input
+										id="edit-ref-host"
+										type="text"
+										required
+										bind:value={editingRefDB.host}
+										placeholder="172.20.173.35"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-port" class="font-semibold text-muted-foreground">Port:</label>
+									<input
+										id="edit-ref-port"
+										type="text"
+										required
+										bind:value={editingRefDB.port}
+										placeholder="1521"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- DB Name & User -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-dbname" class="font-semibold text-muted-foreground">Database / Service Name / SID:</label>
+									<input
+										id="edit-ref-dbname"
+										type="text"
+										required
+										bind:value={editingRefDB.dbname}
+										placeholder="HAWILA_TEST"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-user" class="font-semibold text-muted-foreground">Username Kredensial:</label>
+									<input
+										id="edit-ref-user"
+										type="text"
+										required
+										bind:value={editingRefDB.user}
+										placeholder="HBS_TEST"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Password & SSL Mode -->
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-password" class="font-semibold text-muted-foreground">Password Kredensial:</label>
+									<div class="relative">
+										<input
+											id="edit-ref-password"
+											type={showEditRefPass ? "text" : "password"}
+											bind:value={editingRefDB.password}
+											placeholder="••••••••"
+											class="w-full h-9 px-3 pr-9 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+										/>
+										<button
+											type="button"
+											onclick={() => showEditRefPass = !showEditRefPass}
+											class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+										>
+											{#if showEditRefPass}
+												<EyeSlash class="h-4 w-4" />
+											{:else}
+												<Eye class="h-4 w-4" />
+											{/if}
+										</button>
+									</div>
+								</div>
+								<div class="space-y-1">
+									<label for="edit-ref-sslmode" class="font-semibold text-muted-foreground">SSL / TLS Mode:</label>
+									<CustomSelect
+										id="edit-ref-sslmode"
+										bind:value={editingRefDB.sslmode}
+										options={["disable", "require", "verify-ca", "verify-full"]}
+									/>
+								</div>
+							</div>
+
+							<!-- Mode Selector & Description -->
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div class="space-y-1">
+									<label for="edit-ref-mode" class="font-semibold text-muted-foreground">Konektivitas:</label>
+									<CustomSelect
+										id="edit-ref-mode"
+										bind:value={editingRefDB.mode}
+										options={[
+											{ value: "local", label: "Direct LAN / Local" },
+											{ value: "ssl", label: "Encrypted SSL/TLS" },
+											{ value: "ssh", label: "SSH Bastion Tunnel" }
+										]}
+									/>
+								</div>
+								<div class="sm:col-span-2 space-y-1">
+									<label for="edit-ref-desc" class="font-semibold text-muted-foreground">Keterangan / Scope Data:</label>
+									<input
+										id="edit-ref-desc"
+										type="text"
+										bind:value={editingRefDB.description}
+										placeholder="Contoh: Oracle 11g Enterprise Test Database"
+										class="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex items-center justify-between gap-2.5 pt-3 border-t border-border/50">
+								<button
+									type="button"
+									onclick={testEditingRefDB}
+									disabled={isTestingEditRefDB}
+									class="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-muted text-foreground font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+								>
+									<ArrowPath class="h-3.5 w-3.5 {isTestingEditRefDB ? 'animate-spin text-cyan-500' : ''}" />
+									<span>{isTestingEditRefDB ? 'Menguji Koneksi...' : 'Uji Koneksi'}</span>
+								</button>
+
+								<div class="flex items-center gap-2">
+									<button
+										type="button"
+										onclick={() => { showEditRefModal = false; editingRefDB = null; }}
+										class="h-9 px-4 rounded-lg border border-border text-foreground hover:bg-muted font-semibold text-xs transition-colors cursor-pointer"
+									>
+										Batal
+									</button>
+									<button
+										type="submit"
+										disabled={isUpdatingRefDB}
+										class="h-9 px-5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+									>
+										{#if isUpdatingRefDB}
+											<ArrowPath class="h-3.5 w-3.5 animate-spin" />
+											<span>Menyimpan...</span>
+										{:else}
+											<Check class="h-4 w-4" />
+											<span>Simpan Perubahan</span>
+										{/if}
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Config Form Box (Active Source) -->
 			<div class="p-5 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/50">
 					<div>
-						<h2 class="text-sm font-bold text-foreground">MCP &amp; ERP Reference Database Setup</h2>
+						<h2 class="text-sm font-bold text-foreground">Parameter Konfigurasi Sumber Aktif (Runtime)</h2>
 						<p class="text-xs text-muted-foreground">Business invoices &amp; customer master data source accessed strictly via Model Context Protocol tools (Zero Raw SQL).</p>
 					</div>
 					<div class="flex items-center gap-2">
@@ -2050,22 +3021,18 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-secondary/40 border border-border/60">
 					<!-- Platform Database Selector -->
 					<div class="space-y-1.5">
-						<label for="mcp-platform" class="text-xs font-bold text-foreground flex items-center gap-1.5">
+						<label for="mcp-platform" class="text-xs font-bold text-foreground flex items-center justify-between">
 							<span>Reference Database Platform:</span>
+							<span class="text-[10px] text-cyan-500 font-mono font-bold">PLATFORM SELECTOR</span>
 						</label>
-						<select
+						<DatabasePlatformSelect
 							id="mcp-platform"
-							value={mcpPlatform}
-							onchange={handlePlatformChange}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-cyan-500/20 focus:outline-none"
-						>
-							<option value="postgres">PostgreSQL 16/18 (novapilot_mcp_ref / Enterprise MCP)</option>
-							<option value="oracle">Oracle 19c / 21c Enterprise (ERP Prod / Financials)</option>
-							<option value="sap">SAP S/4HANA (BAPI / RFC Data Source)</option>
-							<option value="mysql">MySQL / MariaDB Enterprise Cluster</option>
-							<option value="mssql">Microsoft SQL Server (MSSQL Enterprise)</option>
-							<option value="custom_rest">Custom MCP REST / GraphQL Adapter</option>
-						</select>
+							bind:value={mcpPlatform}
+							onchange={(opt) => {
+								mcpPlatform = opt.value as any;
+								handlePlatformChange({ target: { value: opt.value } } as any);
+							}}
+						/>
 						<p class="text-[11px] text-muted-foreground">Default port automatically adjusts to the selected platform architecture.</p>
 					</div>
 
@@ -2151,6 +3118,30 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 					</div>
 				{/if}
 
+				<!-- Oracle TNS Connect Descriptor (If Oracle Platform) -->
+				{#if mcpPlatform === 'oracle'}
+					<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+						<div class="flex items-center justify-between">
+							<label for="mcp-tns-runtime" class="font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+								<BrandIcon name="oracle" class="h-4 w-4" />
+								<span>Oracle TNS Connect Descriptor (ezConnect / TNS):</span>
+							</label>
+							<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300">AUTO-PARSE</span>
+						</div>
+						<textarea
+							id="mcp-tns-runtime"
+							bind:value={mcpOracleTNS}
+							oninput={handleMcpTNSInput}
+							rows={3}
+							placeholder="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.173.35)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=HBS)))"
+							class="w-full p-2.5 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+						></textarea>
+						<p class="text-[10px] text-muted-foreground">
+							Format TNS Oracle 11g diekstrak otomatis ke Host (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.host || '-'}</span>), Port (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.port || '-'}</span>), dan Database / Service (<span class="text-cyan-600 dark:text-cyan-400 font-mono font-bold">{mcpConfig.dbname || '-'}</span>).
+						</p>
+					</div>
+				{/if}
+
 				<!-- Inputs Grid for Target Database -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
 					<div class="space-y-1">
@@ -2224,16 +3215,16 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 
 					<div class="space-y-1">
 						<label for="mcp-sslmode" class="font-semibold text-muted-foreground">SSL Encryption Level:</label>
-						<select
+						<CustomSelect
 							id="mcp-sslmode"
 							bind:value={mcpConfig.sslmode}
-							class="w-full h-9 px-3 rounded-lg border border-input bg-background font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
-						>
-							<option value="disable">disable (No Encryption)</option>
-							<option value="require">require (Enforce TLS)</option>
-							<option value="verify-ca">verify-ca (Validate CA Certificate)</option>
-							<option value="verify-full">verify-full (Validate CA &amp; Hostname)</option>
-						</select>
+							options={[
+								{ value: "disable", label: "disable (No Encryption)" },
+								{ value: "require", label: "require (Enforce TLS)" },
+								{ value: "verify-ca", label: "verify-ca (Validate CA Certificate)" },
+								{ value: "verify-full", label: "verify-full (Validate CA & Hostname)" }
+							]}
+						/>
 					</div>
 				</div>
 

@@ -140,6 +140,9 @@ func main() {
 		api.PATCH("/channels/:id/toggle-whitelist", apiHandler.ToggleChannelWhitelist)
 
 		// Omnichannel Webhooks
+		api.GET("/webhooks/whatsapp", apiHandler.HandleWhatsAppWebhookVerify)
+		api.POST("/webhooks/whatsapp", apiHandler.HandleWhatsAppWebhook)
+		api.POST("/whatsapp-api/test", apiHandler.TestWhatsAppAPI)
 		api.POST("/webhooks/telegram", apiHandler.HandleTelegramWebhook)
 		api.POST("/webhooks/discord", apiHandler.HandleDiscordWebhook)
 
@@ -162,16 +165,28 @@ func main() {
 		api.GET("/database/config", apiHandler.GetDatabaseConfig)
 		api.POST("/database/test", apiHandler.TestDatabaseConnection)
 		api.POST("/database/apply", apiHandler.ApplyDatabaseConfig)
+		api.GET("/database/reference-dbs", apiHandler.ListReferenceDBs)
+		api.POST("/database/reference-dbs", apiHandler.CreateReferenceDB)
+		api.PUT("/database/reference-dbs/:id", apiHandler.UpdateReferenceDB)
+		api.POST("/database/reference-dbs/:id/activate", apiHandler.ActivateReferenceDB)
+		api.DELETE("/database/reference-dbs/:id", apiHandler.DeleteReferenceDB)
+		api.POST("/database/reference-dbs/:id/test", apiHandler.TestReferenceDB)
 
 		// MCP Tool Catalog & Manifest Upload
 		api.GET("/mcp/tools", apiHandler.ListMCPTools)
 		api.POST("/mcp/tools", apiHandler.UploadMCPTool)
 		api.POST("/mcp/test", apiHandler.ExecuteMCPToolTest)
 
+		// MCP Resources & Enterprise Knowledge Base
+		api.GET("/mcp/resources", apiHandler.ListMCPResources)
+		api.POST("/mcp/resources", apiHandler.CreateMCPResource)
+		api.DELETE("/mcp/resources/:id", apiHandler.DeleteMCPResource)
+
 		// Hermes 3 Agentic LLM Engine & Multi-Model Providers
 		api.GET("/llm/config", apiHandler.GetLLMConfig)
 		api.POST("/llm/config", apiHandler.UpdateLLMConfig)
 		api.POST("/llm/process", apiHandler.ProcessLLMMessage)
+		api.POST("/llm/generate-reply", apiHandler.GenerateLLMReply)
 		api.GET("/llm/providers", apiHandler.GetLLMProviders)
 		api.POST("/llm/providers", apiHandler.SaveLLMProviders)
 		api.POST("/llm/providers/test", apiHandler.TestLLMProvider)

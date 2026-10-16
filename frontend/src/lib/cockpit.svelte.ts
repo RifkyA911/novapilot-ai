@@ -43,6 +43,14 @@ export interface TelemetryData {
 		open_connections?: number;
 		idle?: number;
 		in_use?: number;
+		latency_ms?: number;
+	};
+	reference_database?: {
+		id?: string;
+		name?: string;
+		platform?: string;
+		status?: string;
+		latency_ms?: number;
 	};
 }
 
@@ -63,6 +71,7 @@ export interface InboundMessage {
 	extracted_target?: string;
 	ticket_id?: number;
 	ticket_no?: string;
+	ai_reply?: string;
 	created_at: string;
 }
 
