@@ -587,25 +587,8 @@ func (h *APIHandler) CreateInboundMessage(c *gin.Context) {
 		h.sseHub.Broadcast("inbound_message", msg)
 	}
 
-	// Auto-dispatch reply back to WhatsApp if enabled and not in manual mode (LOCKED TO 081228632195 ONLY)
-	if h.hermesAdapter != nil && aiReply != "" {
-		cfg := h.hermesAdapter.GetConfig()
-		if cfg.AutoReplyEnabled && cfg.AutoReplyMode != "manual" && input.Platform == "whatsapp" {
-			safeRecipient := "081228632195"
-			go func(origSender string, text string) {
-				msgToSend := text
-				if !strings.Contains(origSender, "081228632195") && !strings.Contains(origSender, "81228632195") {
-					msgToSend = fmt.Sprintf("*[Auto-Reply Sandbox Forwarded to 081228632195]*\n_Asal pesan: %s_\n\n%s", origSender, text)
-				}
-				payload, _ := json.Marshal(map[string]string{
-					"phone":   safeRecipient,
-					"message": msgToSend,
-				})
-				client := http.Client{Timeout: 4 * time.Second}
-				_, _ = client.Post("http://127.0.0.1:3002/api/send", "application/json", bytes.NewReader(payload))
-			}(input.SenderID, aiReply)
-		}
-	}
+	// Auto-reply is dispatched natively by the platform gateway (whatsapp-gateway / telegram-bot)
+	// to prevent duplicate message dispatch and ratchet desynchronization.
 
 	c.JSON(http.StatusCreated, msg)
 }

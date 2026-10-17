@@ -18,7 +18,7 @@ import Tesseract from "tesseract.js";
 // 1. Load Configurations
 const BACKEND_URL = process.env.NOVAPILOT_BACKEND_URL || "http://127.0.0.1:8088";
 const WHITELISTED_GROUPS = (process.env.WHITELISTED_GROUPS || "").split(",").map(g => g.trim()).filter(Boolean);
-const AUTO_REPLY = process.env.AUTO_REPLY_ENABLED !== "false";
+const AUTO_REPLY = process.env.AUTO_REPLY_ENABLED === "true";
 const IS_SIMULATION = process.argv.includes("--mock") || process.env.SIMULATION_MODE === "true";
 const AUTH_DIR = path.join(process.cwd(), ".baileys_auth");
 const UPLOAD_DIR = path.resolve(process.cwd(), "..", "uploads");
@@ -261,6 +261,9 @@ try {
                         let sendResult: any = null;
                         if (activeSock && typeof activeSock.sendMessage === "function") {
                             sendResult = await activeSock.sendMessage(jid, { text });
+                            if (sendResult?.key?.id && sendResult?.message) {
+                                messageStore.set(sendResult.key.id, sendResult.message);
+                            }
                             appendGatewayLog("INFO", `[DISPATCH SUCCESS] Delivered to ${jid}`);
                         } else {
                             appendGatewayLog("WARN", `[DISPATCH MOCK] Simulation mode active. Dispatched to ${jid}`);
@@ -800,6 +803,10 @@ async function runMockSimulation() {
     console.log("=============================================================\n");
 }
 
+// In-memory message store for Baileys Signal Protocol pre-key retry exchanges
+// Prevents "Menunggu pesan ini. Ini mungkin memerlukan waktu beberapa saat" (Waiting for this message)
+const messageStore = new Map<string, any>();
+
 // 6. Live WhatsApp Multi-Device Connection (Baileys)
 async function startLiveGateway() {
     if (!fs.existsSync(AUTH_DIR)) {
@@ -813,7 +820,15 @@ async function startLiveGateway() {
         version,
         auth: state,
         printQRInTerminal: false,
-        logger: pino({ level: "silent" })
+        logger: pino({ level: "silent" }),
+        browser: ["NovaPilot AI", "Chrome", "1.0.0"],
+        syncFullHistory: false,
+        getMessage: async (key) => {
+            if (key?.id && messageStore.has(key.id)) {
+                return messageStore.get(key.id);
+            }
+            return undefined;
+        }
     });
 
     activeSock = sock;
@@ -878,6 +893,15 @@ async function startLiveGateway() {
     // Inbound Message Listener
     sock.ev.on("messages.upsert", async (m) => {
         for (const msg of m.messages) {
+            // Cache in memory for E2EE retry requests (prevents "waiting for this message")
+            if (msg.key?.id && msg.message) {
+                messageStore.set(msg.key.id, msg.message);
+                if (messageStore.size > 3000) {
+                    const oldest = messageStore.keys().next().value;
+                    if (oldest) messageStore.delete(oldest);
+                }
+            }
+
             if (!msg.message || msg.key.fromMe) continue;
 
             const fromJid = msg.key.remoteJid || "";
@@ -1106,76 +1130,51 @@ async function startLiveGateway() {
 
             if (extracted) {
                 console.log(`[DETECTED REQUEST]: Document ${extracted.documentNo} -> ${extracted.proposedValue}`);
-                const ticket = await submitTicketToBackend(body, extracted, fromJid);
+                await submitTicketToBackend(body, extracted, fromJid);
+            }
 
-                if (AUTO_REPLY) {
-                    const ackText = aiGeneratedReply || (ticket ? 
-                        `*[NovaPilot AI • Permintaan Dicatat]*\n\n` +
-                        `📋 *No Tiket:* ${ticket.ticket_no}\n` +
-                        `📄 *Dokumen:* ${extracted.documentNo}\n` +
-                        `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
-                        `🔒 *Status:* Menunggu Verifikasi IT On-Call\n\n` +
-                        `_Sistem sedang melakukan pre-check database & menunggu approval on-call engineer._` :
-                        `[NovaPilot AI] Permintaan mutasi telah dicatat ke sistem.`);
+            // =========================================================================
+            // ZERO-SPAM STRICT SAFETY GUARD:
+            // 1. NEVER forward incoming third-party or group chats to 081228632195.
+            // 2. NEVER auto-reply in group chats (@g.us).
+            // 3. ONLY reply if AUTO_REPLY is explicitly enabled AND the sender IS the tester directly.
+            // =========================================================================
+            const isDirectFromTester = !isGroup && fromJid.replace(/\D/g, "").includes("81228632195");
 
-                    // Strict Testing Safety Guard: Auto-reply ONLY to 081228632195, never to any other number or group!
-                    const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
-                    const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
+            if (AUTO_REPLY && isDirectFromTester) {
+                try {
+                    let replyText = "";
+                    if (extracted) {
+                        replyText = aiGeneratedReply || 
+                            `*[NovaPilot AI • Permintaan Dicatat]*\n\n` +
+                            `📄 *Dokumen:* ${extracted.documentNo}\n` +
+                            `✏️ *Nilai Baru:* ${extracted.proposedValue}\n` +
+                            `🔒 *Status:* Menunggu Verifikasi IT On-Call`;
+                    } else if (mcpSalesReply) {
+                        replyText = mcpSalesReply;
+                    } else if (mcpPricingReply) {
+                        replyText = mcpPricingReply;
+                    } else if (aiGeneratedReply) {
+                        replyText = aiGeneratedReply;
+                    }
 
-                    const sendSafeAutoReply = async (text: string, label: string) => {
-                        try {
-                            const isDirectToTester = fromJid.replace(/\D/g, "").includes("81228632195");
-                            const finalText = isDirectToTester 
-                                ? text 
-                                : `*[Auto-Reply Sandbox Forwarded to 081228632195]*\n_Asal pesan: ${senderName} (${fromJid})_\n\n${text}`;
-                            
-                            await sock.sendMessage(testTargetJid, { text: finalText });
-                            console.log(`[${label} SENT -> 081228632195] Delivered test auto-reply safely (origin: ${fromJid})`);
-                        } catch (e: any) {
-                            console.warn(`[${label} SEND FAILED] ${e.message}`);
+                    if (replyText) {
+                        const sent = await sock.sendMessage(fromJid, { text: replyText });
+                        if (sent?.key?.id && sent?.message) {
+                            messageStore.set(sent.key.id, sent.message);
                         }
-                    };
-
-                    await sendSafeAutoReply(ackText, "ACK");
-                }
-            } else if (mcpSalesReply && AUTO_REPLY) {
-                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
-                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
-                try {
-                    await sock.sendMessage(testTargetJid, { text: mcpSalesReply });
-                    console.log(`[MCP SALES SENT -> 081228632195] Sent sales records reply (origin: ${fromJid})`);
+                        console.log(`[SAFE DIRECT REPLY] Sent reply to tester ${fromJid}`);
+                    }
                 } catch (e: any) {
-                    console.warn(`[MCP SALES SEND FAILED] ${e.message}`);
-                }
-            } else if (mcpPricingReply && AUTO_REPLY) {
-                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
-                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
-                try {
-                    await sock.sendMessage(testTargetJid, { text: mcpPricingReply });
-                    console.log(`[MCP PRICING SENT -> 081228632195] Sent pricing catalog reply (origin: ${fromJid})`);
-                } catch (e: any) {
-                    console.warn(`[MCP PRICING SEND FAILED] ${e.message}`);
-                }
-            } else if (aiGeneratedReply && AUTO_REPLY) {
-                // AI Generated contextual reply for greetings or clarifying questions locked to 081228632195
-                const TEST_TARGET_PHONE = process.env.WA_TEST_RECIPIENT || "081228632195";
-                const testTargetJid = formatWhatsAppJID(TEST_TARGET_PHONE);
-                try {
-                    const isDirectToTester = fromJid.replace(/\D/g, "").includes("81228632195");
-                    const finalText = isDirectToTester 
-                        ? aiGeneratedReply 
-                        : `*[Auto-Reply Sandbox Forwarded to 081228632195]*\n_Asal pesan: ${senderName} (${fromJid})_\n\n${aiGeneratedReply}`;
-
-                    await sock.sendMessage(testTargetJid, { text: finalText });
-                    console.log(`[AI AUTO-REPLY SENT -> 081228632195] Sent AI generated reply safely (origin: ${fromJid})`);
-                } catch (e: any) {
-                    console.warn(`[AI AUTO-REPLY SEND FAILED] ${e.message}`);
+                    console.warn(`[DIRECT REPLY FAILED] ${e.message}`);
                 }
             } else {
                 if (classification === "NEEDS_REVIEW") {
-                    console.log(`[NEEDS REVIEW]: "${body}" contains mutation intent (${fallbackTarget || 'unknown'}) without full invoice number. Synced to Dashboard Feed for 1-click Staging.`);
+                    console.log(`[NEEDS REVIEW]: "${body.substring(0, 60)}" synced to Dashboard Feed.`);
+                } else if (classification === "ACTIONABLE") {
+                    console.log(`[ACTIONABLE INBOUND]: Recorded request for ${extracted?.documentNo || fallbackTarget || 'ticket'} without auto-reply.`);
                 } else {
-                    console.log(`[CASUAL BANTER]: "${body}" marked as general conversation.`);
+                    console.log(`[FEED INGEST]: Recorded inbound from ${senderName} silently.`);
                 }
             }
         }

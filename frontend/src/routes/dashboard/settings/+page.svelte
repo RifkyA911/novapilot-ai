@@ -36,6 +36,7 @@
 	} from "svelte-heros-v2";
 	import { sound, SOUND_THEMES, type SoundTheme } from "$lib/audio";
 	import { i18n } from "$lib/i18n.svelte";
+	import { cockpit } from "$lib/cockpit.svelte";
 	import { formatCurrency } from "$lib/utils";
 
 	// Active Navigation Tab
@@ -2298,6 +2299,95 @@
 				<div class="pb-3 border-b border-border/60">
 					<h3 class="text-sm font-bold text-foreground">{i18n.t.settings.ui_title}</h3>
 					<p class="text-xs text-muted-foreground">{i18n.t.settings.ui_desc}</p>
+				</div>
+
+				<!-- GLOBAL UI MODE SELECTION (PRO MODE VS COMPACT LITE) -->
+				<div class="space-y-3 pb-5 border-b border-border/60">
+					<div>
+						<div class="text-xs font-bold text-foreground flex items-center gap-2">
+							<Sparkles class="h-4 w-4 text-primary" />
+							<span>{i18n.t.settings.ui_mode_title}</span>
+						</div>
+						<p class="text-[11px] text-muted-foreground mt-0.5">
+							{i18n.t.settings.ui_desc}
+						</p>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<!-- PRO MODE CARD -->
+						<button
+							type="button"
+							onclick={() => {
+								cockpit.setUiMode("pro");
+								sound.playActionChime();
+							}}
+							class="p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between {cockpit.uiMode === 'pro' ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary/40' : 'border-border/70 bg-secondary/20 hover:bg-secondary/50'}"
+						>
+							<div class="flex items-start justify-between gap-2">
+								<div>
+									<div class="flex items-center gap-2">
+										<span class="text-xs font-bold text-foreground">{i18n.t.settings.ui_mode_pro}</span>
+										<span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md bg-secondary text-foreground/80 border border-border/60">
+											DEFAULT
+										</span>
+									</div>
+									<p class="text-[11px] text-muted-foreground mt-1">
+										{i18n.t.settings.ui_mode_pro_desc}
+									</p>
+								</div>
+								{#if cockpit.uiMode === 'pro'}
+									<div class="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+										<Check class="h-3.5 w-3.5 stroke-2" />
+									</div>
+								{/if}
+							</div>
+
+							<div class="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
+								<span class="font-mono">Circuit visualizers &amp; rich telemetry</span>
+								<span class="text-primary font-semibold flex items-center gap-1">
+									<Sparkles class="h-3 w-3" />
+									Full Experience
+								</span>
+							</div>
+						</button>
+
+						<!-- COMPACT LITE MODE CARD -->
+						<button
+							type="button"
+							onclick={() => {
+								cockpit.setUiMode("compact_lite");
+								sound.playActionChime();
+							}}
+							class="p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between {cockpit.uiMode === 'compact_lite' ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary/40' : 'border-border/70 bg-secondary/20 hover:bg-secondary/50'}"
+						>
+							<div class="flex items-start justify-between gap-2">
+								<div>
+									<div class="flex items-center gap-2">
+										<span class="text-xs font-bold text-foreground">{i18n.t.settings.ui_mode_compact_lite}</span>
+										<span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+											FAST &amp; MINIMAL
+										</span>
+									</div>
+									<p class="text-[11px] text-muted-foreground mt-1">
+										{i18n.t.settings.ui_mode_compact_lite_desc}
+									</p>
+								</div>
+								{#if cockpit.uiMode === 'compact_lite'}
+									<div class="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+										<Check class="h-3.5 w-3.5 stroke-2" />
+									</div>
+								{/if}
+							</div>
+
+							<div class="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
+								<span class="font-mono">Tight padding &amp; condensed tables</span>
+								<span class="text-amber-500 font-semibold flex items-center gap-1">
+									<Bolt class="h-3 w-3" />
+									Ultra Fast
+								</span>
+							</div>
+						</button>
+					</div>
 				</div>
 
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">

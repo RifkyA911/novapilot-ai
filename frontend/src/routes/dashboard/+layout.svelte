@@ -30,6 +30,7 @@
 	import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 	import SoundToggle from "$lib/components/SoundToggle.svelte";
 	import LocaleToggle from "$lib/components/LocaleToggle.svelte";
+	import UiModeToggle from "$lib/components/UiModeToggle.svelte";
 	import UserNav from "$lib/components/UserNav.svelte";
 	import CommandPalette from "$lib/components/CommandPalette.svelte";
 	import PlatformSelect from "$lib/components/PlatformSelect.svelte";
@@ -230,6 +231,7 @@
 	]);
 
 	onMount(() => {
+		cockpit.initUiMode();
 		cockpit.setupSSE();
 		cockpit.fetchTickets();
 		cockpit.fetchInboundMessages();
@@ -458,8 +460,11 @@
 				</button>
 			</div>
 
-			<!-- Right: LOCALE TOGGLE, SOUND TOGGLE, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
-			<div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+			<!-- Right: UI MODE TOGGLE, LOCALE TOGGLE, SOUND TOGGLE, THEME TOGGLE & USER AVATAR WITH NAME & ROLE -->
+			<div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+				<!-- Pro vs Compact Lite Density Switcher -->
+				<UiModeToggle />
+
 				<!-- Language Switcher (Intl ID/EN) -->
 				<LocaleToggle />
 

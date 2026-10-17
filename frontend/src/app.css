@@ -106,3 +106,60 @@ code, kbd, samp, pre {
 	scrollbar-width: thin;
 	scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
 }
+
+/* ========================================================================= */
+/* COMPACT LITE DENSITY MODE                                                 */
+/* Streamlined padding, tight table rows, compact cards across all pages      */
+/* ========================================================================= */
+html.compact-lite {
+	--radius: 0.5rem;
+}
+
+/* Page Containers */
+html.compact-lite main {
+	padding-top: 1rem !important;
+	padding-bottom: 1.5rem !important;
+}
+
+/* Card Padding & Spacing */
+html.compact-lite .p-6,
+html.compact-lite .p-8 {
+	padding: 1rem !important;
+}
+
+html.compact-lite .space-y-6 > :not([hidden]) ~ :not([hidden]),
+html.compact-lite .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+	margin-top: 0.75rem !important;
+}
+
+html.compact-lite .gap-6 {
+	gap: 0.75rem !important;
+}
+
+html.compact-lite .gap-8 {
+	gap: 1rem !important;
+}
+
+/* Compact Table Density */
+html.compact-lite table th,
+html.compact-lite table td {
+	padding-top: 0.4rem !important;
+	padding-bottom: 0.4rem !important;
+	padding-left: 0.65rem !important;
+	padding-right: 0.65rem !important;
+}
+
+/* Crisper Card Radius in Compact Mode */
+html.compact-lite .rounded-3xl {
+	border-radius: 1rem !important;
+}
+
+html.compact-lite .rounded-2xl {
+	border-radius: 0.75rem !important;
+}
+
+/* Utility to hide extra decorative banners in compact mode */
+html.compact-lite .pro-mode-only {
+	display: none !important;
+}
+

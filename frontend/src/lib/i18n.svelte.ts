@@ -582,6 +582,14 @@ export interface Translations {
 		idle_minutes: string;
 		ui_title: string;
 		ui_desc: string;
+		ui_mode_title: string;
+		ui_mode_desc: string;
+		ui_mode_pro: string;
+		ui_mode_pro_badge: string;
+		ui_mode_pro_desc: string;
+		ui_mode_compact_lite: string;
+		ui_mode_compact_lite_badge: string;
+		ui_mode_compact_lite_desc: string;
 		compact_table: string;
 		compact_table_desc: string;
 		telemetry_rate: string;
@@ -1508,6 +1516,14 @@ const dictionaries: Record<Locale, Translations> = {
 			idle_minutes: "Batas Waktu Menunggu Peninjauan (Menit)",
 			ui_title: "Pengaturan Antarmuka Cockpit & Tampilan Data",
 			ui_desc: "Sesuaikan kerapatan tabel data, frekuensi penyegaran telemetri, dan format ekspor.",
+			ui_mode_title: "Mode Densitas Antarmuka (UI View Mode)",
+			ui_mode_desc: "Pilih antara Pro Mode (lengkap dengan kanvas sirkuit & visualisasi enterprise) atau Compact Lite Mode (ramping, padat & hemat ruang).",
+			ui_mode_pro: "Pro Mode (Enterprise Visualizer)",
+			ui_mode_pro_badge: "DEFAULT PRO",
+			ui_mode_pro_desc: "Tampilan visual lengkap dengan diagram kanvas interaktif, visualisasi sirkuit telemetri, panel intel komprehensif, dan animasi fluid.",
+			ui_mode_compact_lite: "Compact Lite Mode (Ultra Ramping)",
+			ui_mode_compact_lite_badge: "FAST & MINIMAL",
+			ui_mode_compact_lite_desc: "Tampilan rapat dan minimalis di semua halaman. Memangkas padding berlebih, meringkas kartu data, dan memprioritaskan efisiensi layar kerja.",
 			compact_table: "Tampilan Baris Tabel Rapat (Compact Mode)",
 			compact_table_desc: "Kurangi padding baris tabel untuk menampilkan lebih banyak entri per layar.",
 			telemetry_rate: "Frekuensi Penyegaran Telemetri Otomatis",
@@ -2432,6 +2448,14 @@ const dictionaries: Record<Locale, Translations> = {
 			idle_minutes: "Review Idle Timeout (Minutes)",
 			ui_title: "Cockpit Interface & Data Display Preferences",
 			ui_desc: "Adjust table density, telemetry refresh intervals, and report export formats.",
+			ui_mode_title: "Interface Density Mode (UI View Mode)",
+			ui_mode_desc: "Choose between Pro Mode (rich interactive circuits & enterprise visualizers) or Compact Lite Mode (streamlined, dense & minimal).",
+			ui_mode_pro: "Pro Mode (Enterprise Visualizer)",
+			ui_mode_pro_badge: "DEFAULT PRO",
+			ui_mode_pro_desc: "Full visual display with interactive canvas diagrams, live telemetry circuit visualizers, comprehensive intel shelves, and fluid motion.",
+			ui_mode_compact_lite: "Compact Lite Mode (Ultra Minimal)",
+			ui_mode_compact_lite_badge: "FAST & MINIMAL",
+			ui_mode_compact_lite_desc: "Streamlined, dense view across all dashboard pages. Minimizes padding, condenses triage cards, and maximizes screen efficiency.",
 			compact_table: "Compact Table Row Spacing",
 			compact_table_desc: "Reduce row padding to fit more operational records per viewport.",
 			telemetry_rate: "Auto-Refresh Telemetry Rate",

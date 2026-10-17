@@ -103,8 +103,47 @@ class CockpitState {
 	// Database engine architecture mode
 	dbEngineMode = $state<"relational" | "non_relational">("relational");
 	
+	// UI Density Mode: "pro" (Default, full enterprise graphics & telemetry) vs "compact_lite" (Streamlined minimal layout)
+	uiMode = $state<"pro" | "compact_lite">("pro");
+
 	// Selected ChatOps Platform (WhatsApp, Telegram, Discord, Slack)
 	chatPlatform = $state<ChatPlatform>("whatsapp");
+
+	initUiMode() {
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("novapilot_ui_mode") as "pro" | "compact_lite" | null;
+			if (saved === "compact_lite" || saved === "pro") {
+				this.uiMode = saved;
+			}
+			this.applyUiModeClass(this.uiMode);
+		}
+	}
+
+	setUiMode(mode: "pro" | "compact_lite") {
+		this.uiMode = mode;
+		if (typeof window !== "undefined") {
+			localStorage.setItem("novapilot_ui_mode", mode);
+			this.applyUiModeClass(mode);
+		}
+	}
+
+	toggleUiMode() {
+		const next = this.uiMode === "pro" ? "compact_lite" : "pro";
+		this.setUiMode(next);
+		return next;
+	}
+
+	private applyUiModeClass(mode: "pro" | "compact_lite") {
+		if (typeof document !== "undefined") {
+			if (mode === "compact_lite") {
+				document.documentElement.classList.add("compact-lite");
+				document.documentElement.setAttribute("data-ui-mode", "compact_lite");
+			} else {
+				document.documentElement.classList.remove("compact-lite");
+				document.documentElement.setAttribute("data-ui-mode", "pro");
+			}
+		}
+	}
 
 	// Realistic Platform Status Tracking (Zero Fake "Connected" Badges!)
 	platformStatuses = $state({
