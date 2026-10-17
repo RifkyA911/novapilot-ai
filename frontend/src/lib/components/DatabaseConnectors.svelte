@@ -1349,7 +1349,7 @@ MCP_REF_SSH_KEY_PATH=/etc/novapilot/keys/id_rsa`;
 		<div 
 			role="region"
 			aria-label="Interactive Dual-DB Connector Architecture Visualizer"
-			class="relative w-full rounded-xl bg-secondary/25 dark:bg-black/70 border border-border/80 overflow-hidden select-none transition-colors {isDragging ? 'cursor-grabbing' : 'cursor-grab'} h-[390px]"
+			class="relative w-full rounded-xl bg-secondary/25 dark:bg-black/70 border border-border/80 overflow-hidden select-none transition-colors {isDragging ? 'cursor-grabbing' : 'cursor-grab'} h-[390px] db-circuit-canvas"
 			onmousedown={handleMouseDown}
 			onmousemove={handleMouseMove}
 			onmouseup={handleMouseUp}

@@ -193,7 +193,7 @@
 	<!-- Interactive Animated SVG Canvas Container -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div 
-		class="relative w-full h-[400px] sm:h-[460px] md:h-[500px] bg-gradient-to-b from-card/30 via-background to-secondary/15 select-none overflow-hidden cursor-grab active:cursor-grabbing"
+		class="relative w-full h-[400px] sm:h-[460px] md:h-[500px] telemetry-canvas-container bg-gradient-to-b from-card/30 via-background to-secondary/15 select-none overflow-hidden cursor-grab active:cursor-grabbing"
 		onmousedown={handleMouseDown}
 		onmousemove={handleMouseMove}
 		onmouseup={handleMouseUp}

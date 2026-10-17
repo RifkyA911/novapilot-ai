@@ -115,51 +115,111 @@ html.compact-lite {
 	--radius: 0.5rem;
 }
 
-/* Page Containers */
+/* Page Containers & Headers */
 html.compact-lite main {
-	padding-top: 1rem !important;
-	padding-bottom: 1.5rem !important;
+	padding-top: 0.75rem !important;
+	padding-bottom: 1.25rem !important;
+	padding-left: 0.85rem !important;
+	padding-right: 0.85rem !important;
+}
+
+/* Compact Header & Sidebar Top Heights */
+html.compact-lite header.h-16,
+html.compact-lite aside > div.h-16 {
+	height: 3.25rem !important; /* 52px */
+}
+
+/* Sidebar Navigation Items Density */
+html.compact-lite aside nav a {
+	padding-top: 0.35rem !important;
+	padding-bottom: 0.35rem !important;
+	padding-left: 0.6rem !important;
+	padding-right: 0.6rem !important;
+	font-size: 0.75rem !important;
 }
 
 /* Card Padding & Spacing */
 html.compact-lite .p-6,
 html.compact-lite .p-8 {
-	padding: 1rem !important;
+	padding: 0.85rem !important;
+}
+
+html.compact-lite .p-5 {
+	padding: 0.75rem !important;
+}
+
+html.compact-lite .p-4 {
+	padding: 0.65rem !important;
 }
 
 html.compact-lite .space-y-6 > :not([hidden]) ~ :not([hidden]),
 html.compact-lite .space-y-8 > :not([hidden]) ~ :not([hidden]) {
-	margin-top: 0.75rem !important;
+	margin-top: 0.6rem !important;
+}
+
+html.compact-lite .space-y-4 > :not([hidden]) ~ :not([hidden]),
+html.compact-lite .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+	margin-top: 0.5rem !important;
 }
 
 html.compact-lite .gap-6 {
-	gap: 0.75rem !important;
+	gap: 0.6rem !important;
 }
 
 html.compact-lite .gap-8 {
-	gap: 1rem !important;
+	gap: 0.75rem !important;
 }
 
-/* Compact Table Density */
-html.compact-lite table th,
+html.compact-lite .gap-4 {
+	gap: 0.5rem !important;
+}
+
+/* Compact Table Density across all pages */
+html.compact-lite table th {
+	padding-top: 0.35rem !important;
+	padding-bottom: 0.35rem !important;
+	padding-left: 0.5rem !important;
+	padding-right: 0.5rem !important;
+	font-size: 0.68rem !important;
+}
+
 html.compact-lite table td {
-	padding-top: 0.4rem !important;
-	padding-bottom: 0.4rem !important;
-	padding-left: 0.65rem !important;
-	padding-right: 0.65rem !important;
+	padding-top: 0.35rem !important;
+	padding-bottom: 0.35rem !important;
+	padding-left: 0.5rem !important;
+	padding-right: 0.5rem !important;
+	font-size: 0.72rem !important;
 }
 
 /* Crisper Card Radius in Compact Mode */
 html.compact-lite .rounded-3xl {
-	border-radius: 1rem !important;
+	border-radius: 0.75rem !important;
 }
 
 html.compact-lite .rounded-2xl {
-	border-radius: 0.75rem !important;
+	border-radius: 0.625rem !important;
+}
+
+/* Compact Heights for Circuit & Diagram Visualizers */
+html.compact-lite .telemetry-canvas-container {
+	height: 280px !important;
+}
+
+html.compact-lite .db-circuit-canvas {
+	height: 250px !important;
+}
+
+html.compact-lite .dash-chart-container {
+	height: 7.5rem !important; /* 120px vs 176px */
 }
 
 /* Utility to hide extra decorative banners in compact mode */
 html.compact-lite .pro-mode-only {
 	display: none !important;
 }
+
+html:not(.compact-lite) .compact-mode-only {
+	display: none !important;
+}
+
 

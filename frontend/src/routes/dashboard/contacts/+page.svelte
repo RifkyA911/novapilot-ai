@@ -840,7 +840,7 @@
 	<!-- ========================================================================= -->
 	<!-- ANIMATED SVG DIRECTORY TOPOLOGY (LIVE CHANNEL INGRESS & GUARDRAIL ROUTER) -->
 	<!-- ========================================================================= -->
-	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 overflow-hidden relative">
+	<div class="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 overflow-hidden relative pro-mode-only">
 		<!-- Toolbar / Title -->
 		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-border/60">
 			<div class="flex items-center gap-2.5">

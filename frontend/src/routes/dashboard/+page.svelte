@@ -414,7 +414,7 @@
 				</div>
 
 				<!-- SVG Area Chart -->
-				<div class="w-full h-44 flex items-end">
+				<div class="w-full h-44 dash-chart-container flex items-end">
 					<svg viewBox="0 0 600 160" class="w-full h-full overflow-visible">
 						<defs>
 							<linearGradient id="dashTrafficGrad" x1="0%" y1="0%" x2="0%" y2="100%">
