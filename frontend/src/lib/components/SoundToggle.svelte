@@ -86,44 +86,25 @@
 <svelte:window onclick={handleClickOutside} />
 
 <div class="relative inline-flex items-center sound-control-wrapper">
-	<!-- Primary Sound Toggle Button (Left Click = Toggle Mute) -->
-	<div class="inline-flex items-center rounded-lg border border-border/80 bg-background hover:bg-secondary transition-all shadow-2xs">
-		<button
-			type="button"
-			onclick={toggle}
-			class="h-9 px-2.5 flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all cursor-pointer relative"
-			title={isSoundEnabled ? "Sound Aktif (Klik untuk Mute)" : "Sound Muted (Klik untuk Aktifkan)"}
-			aria-label="Toggle Sound"
-		>
-			{#if isSoundEnabled}
-				<SpeakerWave class="h-4 w-4 text-primary shrink-0" />
-				<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-			{:else}
-				<SpeakerXMark class="h-4 w-4 opacity-50 shrink-0" />
-				<span class="h-1.5 w-1.5 rounded-full bg-zinc-400"></span>
-			{/if}
-		</button>
-
-		<!-- Divider -->
-		<div class="w-px h-5 bg-border/60"></div>
-
-		<!-- Quick Config Popover Trigger -->
-		<button
-			type="button"
-			onclick={(e) => {
-				e.stopPropagation();
-				popoverOpen = !popoverOpen;
-			}}
-			class="h-9 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-r-lg transition-colors cursor-pointer flex items-center justify-center gap-1"
-			title="Pengaturan Audio & Tema Suara Sony"
-			aria-label="Audio Configuration"
-		>
-			<AdjustmentsHorizontal class="h-3.5 w-3.5" />
-			<span class="text-[9px] font-bold font-mono px-1 rounded bg-primary/10 text-primary hidden sm:inline-block">
-				{SOUND_THEMES.find(t => t.id === currentTheme)?.badge || "Sony"}
-			</span>
-		</button>
-	</div>
+	<!-- Primary Sound Toggle Button (Single Icon Button) -->
+	<button
+		type="button"
+		onclick={toggle}
+		oncontextmenu={(e) => {
+			e.preventDefault();
+			popoverOpen = !popoverOpen;
+		}}
+		class="h-8 w-8 rounded-xl border border-border/70 bg-card/60 hover:bg-muted text-foreground/80 hover:text-foreground transition-all cursor-pointer flex items-center justify-center shadow-2xs select-none active:scale-95 relative"
+		title={isSoundEnabled ? "Suara Aktif (Klik untuk Mute, Klik Kanan untuk Pengaturan)" : "Suara Dimatikan (Klik untuk Aktifkan)"}
+		aria-label="Toggle Sound"
+	>
+		{#if isSoundEnabled}
+			<SpeakerWave class="h-4 w-4 text-primary shrink-0" />
+			<span class="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+		{:else}
+			<SpeakerXMark class="h-4 w-4 text-muted-foreground/60 shrink-0" />
+		{/if}
+	</button>
 
 	<!-- Quick Audio Config Popover Modal -->
 	{#if popoverOpen}

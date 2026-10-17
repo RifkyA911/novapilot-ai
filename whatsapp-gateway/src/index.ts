@@ -184,6 +184,32 @@ try {
                     }), { headers: corsHeaders });
                 }
 
+                if (url.pathname === "/api/groups" || url.pathname === "/groups") {
+                    const isConnected = !!(activeSock && activeSock.user);
+                    if (isConnected && typeof activeSock.groupFetchAllParticipating === "function") {
+                        try {
+                            const groupsObj = await activeSock.groupFetchAllParticipating();
+                            const groups = Object.values(groupsObj).map((g: any) => ({
+                                id: g.id,
+                                name: g.subject || g.id,
+                                owner: g.owner || g.subjectOwner || "",
+                                creation: g.creation || 0,
+                                desc: g.desc || "",
+                                participantsCount: g.participants?.length || 0,
+                                participants: (g.participants || []).map((p: any) => ({
+                                    id: p.id,
+                                    admin: p.admin || null,
+                                    phone: p.id ? p.id.split("@")[0] : ""
+                                }))
+                            }));
+                            return new Response(JSON.stringify({ ok: true, count: groups.length, groups }), { headers: corsHeaders });
+                        } catch (err: any) {
+                            return new Response(JSON.stringify({ ok: false, error: err.message, groups: [] }), { headers: corsHeaders });
+                        }
+                    }
+                    return new Response(JSON.stringify({ ok: true, count: 0, groups: [] }), { headers: corsHeaders });
+                }
+
                 if ((url.pathname === "/api/shutdown" || url.pathname === "/shutdown") && req.method === "POST") {
                     console.log("[GATEWAY] Shutdown requested via WebUI.");
                     setTimeout(() => { process.exit(0); }, 300);

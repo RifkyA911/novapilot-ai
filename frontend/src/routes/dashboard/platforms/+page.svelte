@@ -20,7 +20,10 @@
 		ComputerDesktop,
 		DevicePhoneMobile,
 		ArrowTopRightOnSquare,
-		XMark
+		XMark,
+		BookOpen,
+		QuestionMarkCircle,
+		ClipboardDocument
 	} from "svelte-heros-v2";
 	import { cockpit, type ChatPlatform } from "$lib/cockpit.svelte";
 	import { i18n } from "$lib/i18n.svelte";
@@ -85,12 +88,68 @@
 	});
 
 	let tgConfig = $state({
-		botToken: "6192837492:AAHgK891vBnc781K9aLj182NmPql910",
+		botToken: "8625472390:AAGiAXwbJNwe017i9THSjoSg10SLOWlDaJU",
 		webhookUrl: "https://gateway.factory.internal:8088/api/webhooks/telegram",
 		connectionMode: "webhook", // "webhook" | "polling"
 		whitelistedChatIds: "-100192837482, -100281920194",
 		adminUserId: "109283719"
 	});
+
+	// Telegram Bot Live Testing State
+	let tgTesting = $state(false);
+	let tgTestResult = $state<{ ok: boolean; message: string; botInfo?: any } | null>(null);
+
+	async function testTelegramBot() {
+		if (!tgConfig.botToken.trim()) return;
+		tgTesting = true;
+		tgTestResult = null;
+		try {
+			const res = await fetch(`https://api.telegram.org/bot${tgConfig.botToken.trim()}/getMe`);
+			const data = await res.json();
+			if (res.ok && data.ok && data.result) {
+				tgTestResult = {
+					ok: true,
+					message: `Koneksi Telegram Berhasil! Bot @${data.result.username} (${data.result.first_name}) aktif dan siap menerima pesan.`,
+					botInfo: data.result
+				};
+				cockpit.recordPlatformEvent("telegram");
+			} else {
+				tgTestResult = {
+					ok: false,
+					message: `Gagal verifikasi token: ${data.description || "Token tidak valid"}`
+				};
+			}
+		} catch (err: any) {
+			tgTestResult = {
+				ok: false,
+				message: `Error koneksi ke api.telegram.org: ${err.message}`
+			};
+		} finally {
+			tgTesting = false;
+		}
+	}
+
+	// How to Get Credentials Modal State
+	let showCredentialModal = $state(false);
+	let credentialGuidePlatform = $state<ChatPlatform>("whatsapp");
+
+	function openCredentialGuide(platform?: ChatPlatform) {
+		credentialGuidePlatform = platform || cockpit.chatPlatform;
+		showCredentialModal = true;
+	}
+
+	function closeCredentialGuide() {
+		showCredentialModal = false;
+	}
+
+	let copiedGuideText = $state<string | null>(null);
+	function copyGuideText(id: string, text: string) {
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(text);
+			copiedGuideText = id;
+			setTimeout(() => (copiedGuideText = null), 2000);
+		}
+	}
 
 	let discordConfig = $state({
 		botToken: "MTE5MjgzNzQ5MjgxOTIwMTk0.Gb819a.K91aLj182NmPql910-AAHgK",
@@ -599,6 +658,15 @@
 		<div class="flex items-center gap-2 flex-wrap">
 			<button
 				type="button"
+				onclick={() => openCredentialGuide(cockpit.chatPlatform)}
+				class="h-9 px-3.5 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+			>
+				<BookOpen class="h-4 w-4" />
+				<span>{i18n.current === 'id' ? 'Panduan Kredensial' : 'How to Get Credentials'}</span>
+			</button>
+
+			<button
+				type="button"
 				onclick={handleTestPing}
 				disabled={pinging}
 				class="h-9 px-3 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
@@ -697,9 +765,16 @@
 					<div class="space-y-5 text-xs font-sans">
 						<!-- Connection Mode Selector Tabs -->
 						<div class="space-y-2">
-							<div class="flex items-center justify-between">
+							<div class="flex items-center justify-between flex-wrap gap-2">
 								<span class="font-semibold text-foreground text-xs">{i18n.t.platforms.select_method}</span>
-								<span class="text-[10px] text-muted-foreground font-mono">{i18n.t.platforms.verified_routes}</span>
+								<button
+									type="button"
+									onclick={() => openCredentialGuide("whatsapp")}
+									class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+								>
+									<QuestionMarkCircle class="h-3.5 w-3.5" />
+									<span>Panduan Kredensial WhatsApp</span>
+								</button>
 							</div>
 							<div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border">
 								<button
@@ -1211,30 +1286,108 @@
 				<!-- TELEGRAM SPECIFIC INPUTS -->
 				{:else if cockpit.chatPlatform === "telegram"}
 					<div class="space-y-4 text-xs font-sans">
+						<!-- Telegram Header Actions -->
+						<div class="flex items-center justify-between pb-1 flex-wrap gap-2">
+							<div class="flex items-center gap-2">
+								<span class="text-xs font-bold text-foreground">Konfigurasi Telegram Bot API</span>
+								{#if tgTestResult?.ok}
+									<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+										● Terverifikasi
+									</span>
+								{/if}
+							</div>
+							<button
+								type="button"
+								onclick={() => openCredentialGuide("telegram")}
+								class="text-xs text-sky-500 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+							>
+								<QuestionMarkCircle class="h-3.5 w-3.5" />
+								<span>Panduan Token @BotFather</span>
+							</button>
+						</div>
+
 						<div class="space-y-1.5">
-							<label for="tg-token" class="font-medium text-foreground">{i18n.t.platforms.bot_token}</label>
-							<div class="relative">
-								<input
-									id="tg-token"
-									type={showSecrets.telegram ? "text" : "password"}
-									bind:value={tgConfig.botToken}
-									class="w-full h-9 rounded-xl border border-input bg-background px-3 pr-10 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-									placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-								/>
+							<div class="flex items-center justify-between">
+								<label for="tg-token" class="font-medium text-foreground">{i18n.t.platforms.bot_token}</label>
+								<span class="text-[10px] font-mono text-muted-foreground">Format: 123456789:AA...</span>
+							</div>
+							<div class="flex gap-2">
+								<div class="relative flex-1">
+									<input
+										id="tg-token"
+										type={showSecrets.telegram ? "text" : "password"}
+										bind:value={tgConfig.botToken}
+										class="w-full h-9 rounded-xl border border-input bg-background px-3 pr-10 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+										placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+									/>
+									<button
+										type="button"
+										onclick={() => toggleSecret("telegram")}
+										class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+										aria-label={showSecrets.telegram ? "Sembunyikan token" : "Tampilkan token"}
+									>
+										{#if showSecrets.telegram}
+											<EyeSlash class="h-4 w-4" />
+										{:else}
+											<Eye class="h-4 w-4" />
+										{/if}
+									</button>
+								</div>
+
 								<button
 									type="button"
-									onclick={() => toggleSecret("telegram")}
-									class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									onclick={testTelegramBot}
+									disabled={tgTesting || !tgConfig.botToken}
+									class="h-9 px-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50 shrink-0 transition-colors"
 								>
-									{#if showSecrets.telegram}
-										<EyeSlash class="h-4 w-4" />
-									{:else}
-										<Eye class="h-4 w-4" />
-									{/if}
+									<ArrowPath class="h-3.5 w-3.5 {tgTesting ? 'animate-spin' : ''}" />
+									<span>{tgTesting ? (i18n.current === 'id' ? 'Menguji...' : 'Testing...') : (i18n.current === 'id' ? 'Uji Token' : 'Test Token')}</span>
 								</button>
 							</div>
 							<span class="text-[10px] text-muted-foreground">{i18n.t.platforms.bot_token_desc}</span>
 						</div>
+
+						<!-- Telegram Test Feedback Card -->
+						{#if tgTestResult}
+							{#if tgTestResult.ok && tgTestResult.botInfo}
+								<div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2 animate-in fade-in">
+									<div class="flex items-center justify-between flex-wrap gap-2">
+										<div class="flex items-center gap-2.5">
+											<div class="h-8 w-8 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold">
+												<Check class="h-4 w-4" />
+											</div>
+											<div>
+												<div class="font-bold text-foreground text-xs flex items-center gap-1.5">
+													<span>{tgTestResult.botInfo.first_name}</span>
+													<span class="text-sky-500 font-mono">@{tgTestResult.botInfo.username}</span>
+												</div>
+												<div class="text-[10px] text-muted-foreground font-mono">
+													Bot ID: {tgTestResult.botInfo.id} • Grup: {tgTestResult.botInfo.can_join_groups ? 'Diizinkan' : 'Dibatasi'}
+												</div>
+											</div>
+										</div>
+
+										<a
+											href="https://t.me/{tgTestResult.botInfo.username}"
+											target="_blank"
+											rel="noopener noreferrer"
+											class="h-7 px-3 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+										>
+											<ArrowTopRightOnSquare class="h-3 w-3" />
+											<span>Buka di Telegram</span>
+										</a>
+									</div>
+									<p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
+										{tgTestResult.message} Bot siap menerima pesan transaksi & integrasi on-call.
+									</p>
+								</div>
+							{:else}
+								<div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 animate-in fade-in">
+									<ShieldExclamation class="h-4 w-4 shrink-0" />
+									<span>{tgTestResult.message}</span>
+								</div>
+							{/if}
+						{/if}
 
 						<div class="grid sm:grid-cols-2 gap-4">
 							<div class="space-y-1.5">
@@ -1275,6 +1428,18 @@
 				<!-- DISCORD SPECIFIC INPUTS -->
 				{:else if cockpit.chatPlatform === "discord"}
 					<div class="space-y-4 text-xs font-sans">
+						<div class="flex items-center justify-between pb-1 flex-wrap gap-2">
+							<span class="text-xs font-bold text-foreground">Konfigurasi Discord Gateway & Bot</span>
+							<button
+								type="button"
+								onclick={() => openCredentialGuide("discord")}
+								class="text-xs text-indigo-500 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+							>
+								<QuestionMarkCircle class="h-3.5 w-3.5" />
+								<span>Panduan Kredensial Discord</span>
+							</button>
+						</div>
+
 						<div class="space-y-1.5">
 							<label for="dc-token" class="font-medium text-foreground">{i18n.t.platforms.discord_token}</label>
 							<div class="relative">
@@ -1334,6 +1499,17 @@
 				<!-- SLACK SPECIFIC INPUTS -->
 				{:else if cockpit.chatPlatform === "slack"}
 					<div class="space-y-4 text-xs font-sans">
+						<div class="flex items-center justify-between pb-1 flex-wrap gap-2">
+							<span class="text-xs font-bold text-foreground">Konfigurasi Slack Web API & OAuth</span>
+							<button
+								type="button"
+								onclick={() => openCredentialGuide("slack")}
+								class="text-xs text-amber-500 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+							>
+								<QuestionMarkCircle class="h-3.5 w-3.5" />
+								<span>Panduan Kredensial Slack</span>
+							</button>
+						</div>
 						<div class="space-y-1.5">
 							<label for="sl-token" class="font-medium text-foreground">{i18n.t.platforms.slack_token}</label>
 							<div class="relative">
@@ -1601,6 +1777,434 @@ SLACK_TEAM_ID="{slackConfig.teamId}"{/if}</code></pre>
 							<span>{i18n.t.platforms.tos_accept_btn}</span>
 						</button>
 					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- ========================================================================= -->
+	<!-- CREDENTIAL GUIDE MODAL (Cara Mendapatkan Kredensial Platform)             -->
+	<!-- ========================================================================= -->
+	{#if showCredentialModal}
+		<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+			<div class="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-6 flex flex-col max-h-[90vh]">
+				<!-- Modal Header -->
+				<div class="p-5 border-b border-border/70 flex items-center justify-between relative bg-muted/20 shrink-0">
+					<div class="flex items-center gap-3">
+						<div class="h-10 w-10 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 flex items-center justify-center shrink-0">
+							<BookOpen class="h-5 w-5" />
+						</div>
+						<div>
+							<h3 class="text-base font-bold text-foreground flex items-center gap-2">
+								<span>Panduan Mendapatkan Kredensial</span>
+								<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold">
+									ChatOps Hub
+								</span>
+							</h3>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								Langkah praktis mendapatkan token API, Bot ID, dan otentikasi on-call gateway.
+							</p>
+						</div>
+					</div>
+
+					<button
+						type="button"
+						onclick={closeCredentialGuide}
+						class="h-8 w-8 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+						aria-label="Tutup Panduan"
+					>
+						<XMark class="h-4 w-4" />
+					</button>
+				</div>
+
+				<!-- Platform Tabs -->
+				<div class="p-3 bg-muted/10 border-b border-border/50 grid grid-cols-4 gap-2 shrink-0">
+					{#each platforms as platform}
+						<button
+							type="button"
+							onclick={() => credentialGuidePlatform = platform.id}
+							class="py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer {credentialGuidePlatform === platform.id ? 'bg-card border border-primary/40 shadow-xs text-foreground font-bold ring-1 ring-primary/20' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'}"
+						>
+							<img src={platform.icon} alt={platform.name} class="h-4 w-4 object-contain" />
+							<span class="truncate">{platform.name}</span>
+						</button>
+					{/each}
+				</div>
+
+				<!-- Modal Scrollable Content -->
+				<div class="p-6 overflow-y-auto space-y-6 text-xs leading-relaxed">
+					<!-- ============================================== -->
+					<!-- TELEGRAM GUIDE                                 -->
+					<!-- ============================================== -->
+					{#if credentialGuidePlatform === "telegram"}
+						<div class="space-y-5 animate-in fade-in duration-150">
+							<div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-start gap-3">
+								<img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" class="h-6 w-6 shrink-0 mt-0.5" />
+								<div class="space-y-1">
+									<h4 class="font-bold text-foreground text-xs">Telegram Bot API (Rekomendasi Cepat & Gratis)</h4>
+									<p class="text-[11px] text-muted-foreground">
+										Telegram bot tidak memerlukan verifikasi kartu kredit atau persetujuan Meta. Cukup 2 menit dengan akun Telegram Anda.
+									</p>
+								</div>
+							</div>
+
+							<!-- Current Tested Token Callout -->
+							<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+								<div class="flex items-center justify-between">
+									<span class="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+										<Check class="h-4 w-4 text-emerald-500" />
+										Token Terverifikasi Aktif
+									</span>
+									<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">
+										@novapilot_ai_ky_bot
+									</span>
+								</div>
+								<p class="text-[11px] text-muted-foreground">
+									Bot Telegram <strong class="text-foreground">novapilot_ai</strong> (<a href="https://t.me/novapilot_ai_ky_bot" target="_blank" rel="noopener noreferrer" class="text-sky-500 hover:underline">@novapilot_ai_ky_bot</a>) sudah terverifikasi di server Telegram.
+								</p>
+								<div class="flex items-center gap-2 pt-1">
+									<button
+										type="button"
+										onclick={() => copyGuideText("tg-token-sample", "8625472390:AAGiAXwbJNwe017i9THSjoSg10SLOWlDaJU")}
+										class="h-7 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+									>
+										{#if copiedGuideText === "tg-token-sample"}
+											<Check class="h-3.5 w-3.5" />
+											<span>Tersalin!</span>
+										{:else}
+											<ClipboardDocument class="h-3.5 w-3.5" />
+											<span>Salin Token Aktif</span>
+										{/if}
+									</button>
+									<button
+										type="button"
+										onclick={() => {
+											tgConfig.botToken = "8625472390:AAGiAXwbJNwe017i9THSjoSg10SLOWlDaJU";
+											cockpit.chatPlatform = "telegram";
+											testTelegramBot();
+											closeCredentialGuide();
+										}}
+										class="h-7 px-3 rounded-lg border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+									>
+										<span>Terapkan ke Form & Uji</span>
+									</button>
+								</div>
+							</div>
+
+							<!-- Step by step list -->
+							<div class="space-y-4">
+								<h5 class="font-bold text-foreground text-xs uppercase tracking-wider text-muted-foreground">Langkah Membuat Bot Baru Sendiri:</h5>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">1</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Buka @BotFather di Telegram</p>
+										<p class="text-[11px] text-muted-foreground">
+											Buka aplikasi Telegram di HP atau Desktop, cari bot resmi <code class="px-1.5 py-0.5 rounded bg-muted font-mono font-bold">@BotFather</code> (ada centang biru), atau kunjungi link berikut:
+										</p>
+										<a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sky-500 hover:underline font-medium text-[11px]">
+											<ArrowTopRightOnSquare class="h-3 w-3" />
+											<span>Buka https://t.me/BotFather</span>
+										</a>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">2</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Jalankan Perintah Pembuatan Bot</p>
+										<p class="text-[11px] text-muted-foreground">
+											Kirim pesan <code class="px-1.5 py-0.5 rounded bg-muted font-mono font-bold">/newbot</code> ke BotFather.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">3</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Beri Nama dan Username Bot</p>
+										<p class="text-[11px] text-muted-foreground">
+											Masukkan nama tampilan bot Anda (misal: <em>NovaPilot Gatekeeper</em>), lalu masukkan username bot yang berakhiran <code class="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">bot</code> (misal: <em>novapilot_ops_bot</em>).
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">4</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Salin HTTP API Token</p>
+										<p class="text-[11px] text-muted-foreground">
+											BotFather akan mengirimkan pesan berisi token dengan format:
+										</p>
+										<div class="p-2.5 rounded-xl bg-black/60 text-amber-400 font-mono text-[11px] flex items-center justify-between">
+											<span>123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ</span>
+										</div>
+										<p class="text-[11px] text-muted-foreground">
+											Tempel token tersebut ke kolom <strong>Bot Token</strong> di NovaPilot.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">5</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Cari Supervisor User ID (Opsional)</p>
+										<p class="text-[11px] text-muted-foreground">
+											Kirim pesan apa saja ke bot <code class="px-1.5 py-0.5 rounded bg-muted font-mono font-bold">@userinfobot</code> di Telegram untuk mengetahui ID akun Anda (angka numerik). Masukkan ke <strong>Supervisor User ID</strong>.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">6</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Matikan Group Privacy (Jika Digunakan di Grup On-Call)</p>
+										<p class="text-[11px] text-muted-foreground">
+											Di chat BotFather, kirim <code class="px-1.5 py-0.5 rounded bg-muted font-mono font-bold">/setprivacy</code> &gt; pilih bot Anda &gt; pilih <strong>Disable</strong> agar bot dapat membaca semua pesan transaksi di grup tanpa harus di-mention.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					<!-- ============================================== -->
+					<!-- WHATSAPP GUIDE                                 -->
+					<!-- ============================================== -->
+					{:else if credentialGuidePlatform === "whatsapp"}
+						<div class="space-y-5 animate-in fade-in duration-150">
+							<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3">
+								<img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="h-6 w-6 shrink-0 mt-0.5" />
+								<div class="space-y-1">
+									<h4 class="font-bold text-foreground text-xs">WhatsApp Multi-Channel (3 Pilihan Metode)</h4>
+									<p class="text-[11px] text-muted-foreground">
+										NovaPilot mendukung Gateway QR Code Baileys (gratis dari nomor sendiri), Meta Cloud API resmi bisnis, serta Hook Browser/Desktop.
+									</p>
+								</div>
+							</div>
+
+							<!-- Method 1: Baileys QR Gateway -->
+							<div class="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+								<div class="flex items-center gap-2">
+									<span class="px-2 py-0.5 rounded-lg bg-emerald-500 text-white font-bold text-[10px]">METODE 1</span>
+									<h5 class="font-bold text-foreground text-xs">Gateway QR Code (Baileys) — Paling Praktis</h5>
+								</div>
+								<ol class="list-decimal pl-4 space-y-1.5 text-[11px] text-muted-foreground">
+									<li>Buka tab <strong>Gateway QR Code (Baileys)</strong> di halaman Platform Settings.</li>
+									<li>Klik tombol <strong>Buka Ketentuan & Tautkan QR</strong> dan setujui disclaimer keamanan.</li>
+									<li>Buka aplikasi WhatsApp di HP Anda &gt; Menu Tiga Titik &gt; <strong>Perangkat Tertaut (Linked Devices)</strong> &gt; <strong>Tautkan Perangkat</strong>.</li>
+									<li>Arahkan kamera ke QR Code di layar dashboard. Status akan langsung berubah menjadi <strong class="text-emerald-500">CONNECTED</strong>.</li>
+									<li>Tidak memerlukan token berbayar dari Meta. Nomor HP Anda langsung bertindak sebagai host bot.</li>
+								</ol>
+							</div>
+
+							<!-- Method 2: Meta Cloud API -->
+							<div class="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+								<div class="flex items-center gap-2">
+									<span class="px-2 py-0.5 rounded-lg bg-blue-600 text-white font-bold text-[10px]">METODE 2</span>
+									<h5 class="font-bold text-foreground text-xs">Meta WhatsApp Cloud API — Resmi Enterprise</h5>
+								</div>
+								<ol class="list-decimal pl-4 space-y-1.5 text-[11px] text-muted-foreground">
+									<li>
+										Buka portal pengembang Meta di <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" class="text-sky-500 hover:underline">developers.facebook.com</a> dan login.
+									</li>
+									<li>Klik <strong>My Apps</strong> &gt; <strong>Create App</strong> &gt; Pilih tipe <strong>Business</strong>.</li>
+									<li>Pada panel produk, tambahkan produk <strong>WhatsApp</strong>.</li>
+									<li>
+										Masuk ke menu <strong>WhatsApp &gt; API Setup</strong>:
+										<ul class="list-disc pl-4 mt-1 space-y-0.5 text-foreground">
+											<li>Salin <strong>Phone number ID</strong> (ID numerik) ke kolom <em>Phone Number ID</em> di NovaPilot.</li>
+											<li>Salin <strong>Temporary Access Token</strong> (atau buat System User Token permanen) ke kolom <em>Access Token</em>.</li>
+										</ul>
+									</li>
+									<li>
+										Masuk ke menu <strong>Configuration &gt; Webhook</strong>: Masukkan Callback URL backend Anda dan samakan Verify Token dengan yang terdaftar di NovaPilot.
+									</li>
+								</ol>
+							</div>
+
+							<!-- Method 3: Browser & Desktop Hook -->
+							<div class="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+								<div class="flex items-center gap-2">
+									<span class="px-2 py-0.5 rounded-lg bg-purple-600 text-white font-bold text-[10px]">METODE 3</span>
+									<h5 class="font-bold text-foreground text-xs">Ferdium Desktop / Tampermonkey Userscript</h5>
+								</div>
+								<p class="text-[11px] text-muted-foreground">
+									Cocok untuk memantau 1 hingga banyak akun WhatsApp Web sekaligus di komputer on-call tanpa setup server tambahan:
+								</p>
+								<ol class="list-decimal pl-4 space-y-1.5 text-[11px] text-muted-foreground">
+									<li>Pilih tab <strong>Browser & Desktop Hook</strong> di konfigurasi WhatsApp.</li>
+									<li>Pilih sub-kategori: <strong>Ferdium Desktop</strong> atau <strong>Tampermonkey Web</strong>.</li>
+									<li>Salin skrip JavaScript yang disediakan dan tempel pada menu Custom Script aplikasi Anda.</li>
+								</ol>
+							</div>
+						</div>
+
+					<!-- ============================================== -->
+					<!-- DISCORD GUIDE                                  -->
+					<!-- ============================================== -->
+					{:else if credentialGuidePlatform === "discord"}
+						<div class="space-y-5 animate-in fade-in duration-150">
+							<div class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-start gap-3">
+								<img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" alt="Discord" class="h-6 w-6 shrink-0 mt-0.5 object-contain" />
+								<div class="space-y-1">
+									<h4 class="font-bold text-foreground text-xs">Discord Bot & Server Integration</h4>
+									<p class="text-[11px] text-muted-foreground">
+										Menggunakan Discord Gateway API untuk menangkap pesan perintah di channel tertentu pada server Discord Anda.
+									</p>
+								</div>
+							</div>
+
+							<div class="space-y-4">
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs flex items-center justify-center shrink-0">1</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Buka Discord Developer Portal</p>
+										<p class="text-[11px] text-muted-foreground">Kunjungi portal resmi pengembang Discord:</p>
+										<a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-indigo-500 hover:underline font-medium text-[11px]">
+											<ArrowTopRightOnSquare class="h-3 w-3" />
+											<span>https://discord.com/developers/applications</span>
+										</a>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs flex items-center justify-center shrink-0">2</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Buat Aplikasi & Bot Baru</p>
+										<p class="text-[11px] text-muted-foreground">
+											Klik <strong>New Application</strong> &gt; Beri nama (misal: <em>NovaPilot Gatekeeper</em>) &gt; Masuk ke menu <strong>Bot</strong> di sidebar &gt; Klik <strong>Reset Token</strong> &gt; Salin Bot Token ke NovaPilot.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs flex items-center justify-center shrink-0">3</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-rose-600 dark:text-rose-400">Aktifkan Message Content Intent (PENTING!)</p>
+										<p class="text-[11px] text-muted-foreground">
+											Masih di tab <strong>Bot</strong>, scroll ke bawah ke bagian <strong>Privileged Gateway Intents</strong>, lalu centang:
+										</p>
+										<div class="p-2.5 rounded-xl bg-card border border-border/80 font-mono text-[10px] space-y-1">
+											<div class="text-emerald-500 font-bold">✓ MESSAGE CONTENT INTENT (Wajib untuk membaca pesan on-call)</div>
+											<div class="text-emerald-500 font-bold">✓ SERVER MEMBERS INTENT</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs flex items-center justify-center shrink-0">4</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Undang Bot ke Server Anda</p>
+										<p class="text-[11px] text-muted-foreground">
+											Buka tab <strong>OAuth2 &gt; URL Generator</strong>, centang scope <code class="px-1 py-0.5 rounded bg-muted font-mono">bot</code> dan <code class="px-1 py-0.5 rounded bg-muted font-mono">applications.commands</code>, lalu centang permissions <em>Send Messages</em>, <em>Read Messages/View Channels</em>, dan <em>Read Message History</em>. Buka link tersebut untuk menambahkan bot ke server Anda.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs flex items-center justify-center shrink-0">5</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Salin Guild ID & Channel ID</p>
+										<p class="text-[11px] text-muted-foreground">
+											Di Discord, buka <strong>User Settings &gt; Advanced &gt; Aktifkan Developer Mode</strong>. Klik kanan ikon server Anda &gt; <strong>Copy Server ID</strong> (Guild ID). Klik kanan channel target &gt; <strong>Copy Channel ID</strong>.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					<!-- ============================================== -->
+					<!-- SLACK GUIDE                                    -->
+					<!-- ============================================== -->
+					{:else if credentialGuidePlatform === "slack"}
+						<div class="space-y-5 animate-in fade-in duration-150">
+							<div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+								<img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" alt="Slack" class="h-6 w-6 shrink-0 mt-0.5" />
+								<div class="space-y-1">
+									<h4 class="font-bold text-foreground text-xs">Slack App & OAuth 2.0 Integration</h4>
+									<p class="text-[11px] text-muted-foreground">
+										Mengintegrasikan bot ke channel internal Slack perusahaan dengan Bot Token (<code class="px-1 py-0.5 rounded bg-muted font-mono">xoxb-</code>) dan Signing Secret.
+									</p>
+								</div>
+							</div>
+
+							<div class="space-y-4">
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">1</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Buka Slack Apps Management</p>
+										<p class="text-[11px] text-muted-foreground">Kunjungi dashboard pengembang Slack:</p>
+										<a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:underline font-medium text-[11px]">
+											<ArrowTopRightOnSquare class="h-3 w-3" />
+											<span>https://api.slack.com/apps</span>
+										</a>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">2</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Create App (From Scratch)</p>
+										<p class="text-[11px] text-muted-foreground">
+											Klik tombol <strong>Create New App</strong> &gt; Pilih <strong>From scratch</strong> &gt; Masukkan nama aplikasi (misal: <em>NovaPilot</em>) dan pilih workspace Slack Anda.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">3</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Tambahkan Bot Token Scopes</p>
+										<p class="text-[11px] text-muted-foreground">
+											Masuk ke menu <strong>OAuth &amp; Permissions</strong> di sidebar &gt; Scroll ke <strong>Scopes &gt; Bot Token Scopes</strong>, tambahkan permission:
+										</p>
+										<div class="flex flex-wrap gap-1.5 pt-1">
+											<code class="px-2 py-0.5 rounded bg-muted text-[10px] font-mono">chat:write</code>
+											<code class="px-2 py-0.5 rounded bg-muted text-[10px] font-mono">channels:history</code>
+											<code class="px-2 py-0.5 rounded bg-muted text-[10px] font-mono">groups:history</code>
+											<code class="px-2 py-0.5 rounded bg-muted text-[10px] font-mono">commands</code>
+										</div>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">4</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Install ke Workspace &amp; Salin Token</p>
+										<p class="text-[11px] text-muted-foreground">
+											Di bagian atas halaman <strong>OAuth &amp; Permissions</strong>, klik tombol <strong>Install to Workspace</strong> dan izinkan. Salin <strong>Bot User OAuth Token</strong> (awalan <code class="px-1 py-0.5 rounded bg-muted font-mono font-bold">xoxb-</code>) ke kolom <em>Slack Bot User Token</em>.
+										</p>
+									</div>
+								</div>
+
+								<div class="flex gap-3">
+									<div class="h-6 w-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">5</div>
+									<div class="space-y-1 flex-1">
+										<p class="font-semibold text-foreground">Salin Signing Secret</p>
+										<p class="text-[11px] text-muted-foreground">
+											Buka menu <strong>Basic Information</strong> &gt; Scroll ke <strong>App Credentials</strong> &gt; Salin <strong>Signing Secret</strong> ke kolom <em>Signing Secret</em> di NovaPilot.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="p-4 bg-muted/20 border-t border-border/70 flex items-center justify-between gap-3 shrink-0">
+					<div class="text-[11px] text-muted-foreground flex items-center gap-1.5">
+						<InformationCircle class="h-4 w-4 text-sky-500 shrink-0" />
+						<span>Token disimpan lokal di sesi browser dan server on-call internal.</span>
+					</div>
+
+					<button
+						type="button"
+						onclick={closeCredentialGuide}
+						class="h-9 px-5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+					>
+						Tutup Panduan
+					</button>
 				</div>
 			</div>
 		</div>
