@@ -71,164 +71,230 @@
 	}
 
 	// Unified Navigation Items Structure (Shared between Desktop & Mobile)
-	// Reactive to language changes (i18n) and service status
-	const navGroups = $derived([
-		{
-			title: i18n.t.nav.operations,
-			items: [
-				{
-					href: "/dashboard",
-					label: i18n.t.nav.overview,
-					icon: CommandLine,
-					iconColor: "text-primary",
-					title: "Operations Dashboard Overview"
-				},
-				{
-					href: "/dashboard/cockpit",
-					label: i18n.t.nav.cockpit,
-					icon: Sparkles,
-					iconColor: "text-purple-500",
-					title: "Cockpit Overview & AI Analytics",
-					badge: "DMY",
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/queue",
-					label: i18n.t.nav.queue,
-					icon: Clock,
-					iconColor: "text-amber-500",
-					title: "Approval Queue",
-					count: cockpit.pendingCount
-				},
-				{
-					href: "/dashboard/history",
-					label: i18n.t.nav.history,
-					icon: ChartBarSquare,
-					iconColor: "text-foreground",
-					title: "Execution History & Audit Log"
-				}
-			]
-		},
-		{
-			title: i18n.t.nav.databases,
-			items: [
-				{
-					href: "/dashboard/connectors",
-					label: i18n.t.nav.connectors,
-					icon: CircleStack,
-					iconColor: "text-amber-500",
-					title: "Database Configuration & Setup",
-					badge: !cockpit.isDbConfigured ? "SETUP" : undefined,
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/mcp",
-					label: i18n.t.nav.mcp,
-					icon: Cube,
-					iconColor: "text-cyan-500",
-					title: "Model Context Protocol (MCP) Knowledge Base & Tools",
-					badge: !cockpit.isMcpConfigured ? "SETUP" : undefined,
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/connectivity",
-					label: i18n.t.nav.telemetry,
-					icon: CpuChip,
-					iconColor: "text-blue-500",
-					title: "System Telemetry & Platform Probes"
-				},
-				{
-					href: "/dashboard/logs",
-					label: i18n.t.nav.logs,
-					icon: DocumentText,
-					iconColor: "text-cyan-500",
-					title: "Enterprise System Logs & Daemon Telemetry"
-				}
-			]
-		},
-		{
-			title: i18n.t.nav.chatops_gateways,
-			items: [
-				{
-					href: "/dashboard/messages",
-					label: i18n.t.nav.inbound,
-					icon: ChatBubbleLeftRight,
-					iconColor: "text-emerald-500",
-					title: "Omnichannel Inbound Messages Feed",
-					count: cockpit.needsReviewCount
-				},
-				{
-					href: "/dashboard/automation",
-					label: i18n.t.nav.automation,
-					icon: Sparkles,
-					iconColor: "text-emerald-500",
-					title: "Inbound Auto-Reply Engine & Dispatch Rules"
-				},
-				{
-					href: "/dashboard/hooks",
-					label: i18n.t.nav.hooks,
-					icon: CodeBracket,
-					iconColor: "text-purple-500",
-					title: "Client Hook Flows"
-				},
-				{
-					href: "/dashboard/contacts",
-					label: i18n.t.nav.contacts,
-					icon: UserGroup,
-					iconColor: "text-teal-500",
-					title: "Omnichannel Group Contacts & Directory",
-					badge: "DMY",
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/simulator",
-					label: i18n.t.nav.simulator,
-					icon: PaperAirplane,
-					iconColor: "text-foreground",
-					title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
-					badge: "EXP",
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/platforms",
-					label: i18n.t.nav.flows,
-					icon: AdjustmentsHorizontal,
-					iconColor: "text-sky-500",
-					title: "ChatOps Platform Settings & Logic Flows",
-					badge: !cockpit.isGatewayRunning ? "OFFLINE" : undefined,
-					badgeColor: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
-				}
-			]
-		},
-		{
-			title: i18n.t.nav.settings,
-			items: [
-				{
-					href: "/dashboard/settings",
-					label: i18n.t.nav.settings,
-					icon: Cog6Tooth,
-					iconColor: "text-zinc-400",
-					title: "System Settings & Gatekeeper Policies"
-				},
-				{
-					href: "/dashboard/hermes",
-					label: i18n.t.nav.agents_llm || "AI Agents & LLM",
-					icon: CpuChip,
-					iconColor: "text-sky-500",
-					title: "AI Agents & Multi-Model LLM API Configuration Hub",
-					badge: !cockpit.isHermesConfigured ? "CONFIG" : undefined,
-					badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-				},
-				{
-					href: "/dashboard/about",
-					label: i18n.t.nav.about,
-					icon: InformationCircle,
-					iconColor: "text-purple-500",
-					title: "About NovaPilot AI & Creator"
-				}
-			]
-		}
-	]);
+	// Dynamic based on Lite Mode (Clean Operator Interface) vs Pro Mode (Full SRE & Dev Stack)
+	const navGroups = $derived(
+		cockpit.isLite
+			? [
+					{
+						title: i18n.locale === "id" ? "Operasional Harian" : "Daily Operations",
+						items: [
+							{
+								href: "/dashboard",
+								label: i18n.t.nav.overview,
+								icon: CommandLine,
+								iconColor: "text-primary",
+								title: "Operations Dashboard Overview"
+							},
+							{
+								href: "/dashboard/messages",
+								label: i18n.t.nav.inbound,
+								icon: ChatBubbleLeftRight,
+								iconColor: "text-emerald-500",
+								title: "Omnichannel Inbound Messages Feed",
+								count: cockpit.needsReviewCount
+							},
+							{
+								href: "/dashboard/queue",
+								label: i18n.t.nav.queue,
+								icon: Clock,
+								iconColor: "text-amber-500",
+								title: "Approval Queue",
+								count: cockpit.pendingCount
+							},
+							{
+								href: "/dashboard/history",
+								label: i18n.t.nav.history,
+								icon: ChartBarSquare,
+								iconColor: "text-foreground",
+								title: "Execution History & Audit Log"
+							}
+						]
+					},
+					{
+						title: i18n.locale === "id" ? "Direktori & Pengaturan" : "Directory & Settings",
+						items: [
+							{
+								href: "/dashboard/contacts",
+								label: i18n.t.nav.contacts,
+								icon: UserGroup,
+								iconColor: "text-teal-500",
+								title: "Omnichannel Group Contacts & Directory"
+							},
+							{
+								href: "/dashboard/settings",
+								label: i18n.t.nav.settings,
+								icon: Cog6Tooth,
+								iconColor: "text-zinc-400",
+								title: "System Settings & Display Mode"
+							},
+							{
+								href: "/dashboard/about",
+								label: i18n.t.nav.about,
+								icon: InformationCircle,
+								iconColor: "text-purple-500",
+								title: "About NovaPilot AI"
+							}
+						]
+					}
+			  ]
+			: [
+					{
+						title: i18n.t.nav.operations,
+						items: [
+							{
+								href: "/dashboard",
+								label: i18n.t.nav.overview,
+								icon: CommandLine,
+								iconColor: "text-primary",
+								title: "Operations Dashboard Overview"
+							},
+							{
+								href: "/dashboard/cockpit",
+								label: i18n.t.nav.cockpit,
+								icon: Sparkles,
+								iconColor: "text-purple-500",
+								title: "Cockpit Overview & AI Analytics",
+								badge: "DMY",
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/queue",
+								label: i18n.t.nav.queue,
+								icon: Clock,
+								iconColor: "text-amber-500",
+								title: "Approval Queue",
+								count: cockpit.pendingCount
+							},
+							{
+								href: "/dashboard/history",
+								label: i18n.t.nav.history,
+								icon: ChartBarSquare,
+								iconColor: "text-foreground",
+								title: "Execution History & Audit Log"
+							}
+						]
+					},
+					{
+						title: i18n.t.nav.databases,
+						items: [
+							{
+								href: "/dashboard/connectors",
+								label: i18n.t.nav.connectors,
+								icon: CircleStack,
+								iconColor: "text-amber-500",
+								title: "Database Configuration & Setup",
+								badge: !cockpit.isDbConfigured ? "SETUP" : undefined,
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/mcp",
+								label: i18n.t.nav.mcp,
+								icon: Cube,
+								iconColor: "text-cyan-500",
+								title: "Model Context Protocol (MCP) Knowledge Base & Tools",
+								badge: !cockpit.isMcpConfigured ? "SETUP" : undefined,
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/connectivity",
+								label: i18n.t.nav.telemetry,
+								icon: CpuChip,
+								iconColor: "text-blue-500",
+								title: "System Telemetry & Platform Probes"
+							},
+							{
+								href: "/dashboard/logs",
+								label: i18n.t.nav.logs,
+								icon: DocumentText,
+								iconColor: "text-cyan-500",
+								title: "Enterprise System Logs & Daemon Telemetry"
+							}
+						]
+					},
+					{
+						title: i18n.t.nav.chatops_gateways,
+						items: [
+							{
+								href: "/dashboard/messages",
+								label: i18n.t.nav.inbound,
+								icon: ChatBubbleLeftRight,
+								iconColor: "text-emerald-500",
+								title: "Omnichannel Inbound Messages Feed",
+								count: cockpit.needsReviewCount
+							},
+							{
+								href: "/dashboard/automation",
+								label: i18n.t.nav.automation,
+								icon: Sparkles,
+								iconColor: "text-emerald-500",
+								title: "Inbound Auto-Reply Engine & Dispatch Rules"
+							},
+							{
+								href: "/dashboard/hooks",
+								label: i18n.t.nav.hooks,
+								icon: CodeBracket,
+								iconColor: "text-purple-500",
+								title: "Client Hook Flows"
+							},
+							{
+								href: "/dashboard/contacts",
+								label: i18n.t.nav.contacts,
+								icon: UserGroup,
+								iconColor: "text-teal-500",
+								title: "Omnichannel Group Contacts & Directory",
+								badge: "DMY",
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/simulator",
+								label: i18n.t.nav.simulator,
+								icon: PaperAirplane,
+								iconColor: "text-foreground",
+								title: "ChatOps Ingestion Simulator [EXPERIMENTAL]",
+								badge: "EXP",
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/platforms",
+								label: i18n.t.nav.flows,
+								icon: AdjustmentsHorizontal,
+								iconColor: "text-sky-500",
+								title: "ChatOps Platform Settings & Logic Flows",
+								badge: !cockpit.isGatewayRunning ? "OFFLINE" : undefined,
+								badgeColor: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+							}
+						]
+					},
+					{
+						title: i18n.t.nav.settings,
+						items: [
+							{
+								href: "/dashboard/settings",
+								label: i18n.t.nav.settings,
+								icon: Cog6Tooth,
+								iconColor: "text-zinc-400",
+								title: "System Settings & Gatekeeper Policies"
+							},
+							{
+								href: "/dashboard/hermes",
+								label: i18n.t.nav.agents_llm || "AI Agents & LLM",
+								icon: CpuChip,
+								iconColor: "text-sky-500",
+								title: "AI Agents & Multi-Model LLM API Configuration Hub",
+								badge: !cockpit.isHermesConfigured ? "CONFIG" : undefined,
+								badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+							},
+							{
+								href: "/dashboard/about",
+								label: i18n.t.nav.about,
+								icon: InformationCircle,
+								iconColor: "text-purple-500",
+								title: "About NovaPilot AI & Creator"
+							}
+						]
+					}
+			  ]
+	);
 
 	onMount(() => {
 		cockpit.initUiMode();

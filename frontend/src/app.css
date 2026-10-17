@@ -222,4 +222,40 @@ html:not(.compact-lite) .compact-mode-only {
 	display: none !important;
 }
 
+/* ========================================================================= */
+/* LITE MODE: GPU/CPU LOW-POWER FREEZE (Opsi B)                              */
+/* Freezes continuous background SVG and canvas loops to protect laptop CPU  */
+/* ========================================================================= */
+html.compact-lite .animate-pulse,
+html.compact-lite .animate-ping,
+html.compact-lite .animate-bounce,
+html.compact-lite .sonar-sweep-group,
+html.compact-lite .sonar-echo-ring,
+html.compact-lite .ingress-wire,
+html.compact-lite .guardrail-laser,
+html.compact-lite .radar-sweep,
+html.compact-lite .sonar-echo,
+html.compact-lite svg animate,
+html.compact-lite svg animateMotion,
+html.compact-lite svg animateTransform {
+	animation: none !important;
+}
 
+/* Pause keyframe animations on canvas/visualizer paths & SVG lines */
+html.compact-lite .telemetry-canvas-container *,
+html.compact-lite .db-circuit-canvas * {
+	animation-play-state: paused !important;
+}
+
+/* Keep user interaction spinners running on active loading buttons */
+html.compact-lite button .animate-spin {
+	animation: spin 1s linear infinite !important;
+}
+
+/* Reduce GPU strain from heavy backdrop-blur filters */
+html.compact-lite .backdrop-blur-md,
+html.compact-lite .backdrop-blur-lg,
+html.compact-lite .backdrop-blur-xl {
+	backdrop-filter: blur(4px) !important;
+	-webkit-backdrop-filter: blur(4px) !important;
+}

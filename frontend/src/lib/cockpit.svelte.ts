@@ -106,6 +106,14 @@ class CockpitState {
 	// UI Density Mode: "pro" (Default, full enterprise graphics & telemetry) vs "compact_lite" (Streamlined minimal layout)
 	uiMode = $state<"pro" | "compact_lite">("pro");
 
+	get isLite(): boolean {
+		return this.uiMode === "compact_lite";
+	}
+
+	get isPro(): boolean {
+		return this.uiMode === "pro";
+	}
+
 	// Selected ChatOps Platform (WhatsApp, Telegram, Discord, Slack)
 	chatPlatform = $state<ChatPlatform>("whatsapp");
 

@@ -43,6 +43,13 @@
 	type SettingsTab = "profile" | "storage" | "gatekeeper" | "ai_model" | "chatops" | "database" | "alerts" | "interface";
 	let activeTab = $state<SettingsTab>("profile");
 
+	// Guard: If switching to Lite Mode while on an SRE/Dev tab, redirect gracefully
+	$effect(() => {
+		if (cockpit.isLite && (activeTab === "storage" || activeTab === "gatekeeper" || activeTab === "ai_model" || activeTab === "chatops" || activeTab === "database")) {
+			activeTab = "interface";
+		}
+	});
+
 	// 0. User Profile & Account Settings
 	let profileName = $state("John Doe");
 	let profileEmail = $state("johndoe@factory.internal");
@@ -727,50 +734,52 @@
 			<span>Profile &amp; Avatar</span>
 		</button>
 
-		<button
-			type="button"
-			onclick={() => activeTab = "storage"}
-			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'storage' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
-		>
-			<Folder class="h-4 w-4" />
-			<span>Backend Storage &amp; S3</span>
-		</button>
+		{#if cockpit.isPro}
+			<button
+				type="button"
+				onclick={() => activeTab = "storage"}
+				class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'storage' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+			>
+				<Folder class="h-4 w-4" />
+				<span>Backend Storage &amp; S3</span>
+			</button>
 
-		<button
-			type="button"
-			onclick={() => activeTab = "gatekeeper"}
-			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'gatekeeper' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
-		>
-			<ShieldCheck class="h-4 w-4" />
-			<span>{i18n.t.settings.tab_gatekeeper}</span>
-		</button>
+			<button
+				type="button"
+				onclick={() => activeTab = "gatekeeper"}
+				class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'gatekeeper' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+			>
+				<ShieldCheck class="h-4 w-4" />
+				<span>{i18n.t.settings.tab_gatekeeper}</span>
+			</button>
 
-		<button
-			type="button"
-			onclick={() => activeTab = "ai_model"}
-			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'ai_model' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
-		>
-			<Sparkles class="h-4 w-4" />
-			<span>{i18n.t.settings.tab_ai}</span>
-		</button>
+			<button
+				type="button"
+				onclick={() => activeTab = "ai_model"}
+				class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'ai_model' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+			>
+				<Sparkles class="h-4 w-4" />
+				<span>{i18n.t.settings.tab_ai}</span>
+			</button>
 
-		<button
-			type="button"
-			onclick={() => activeTab = "chatops"}
-			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'chatops' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
-		>
-			<ChatBubbleLeftRight class="h-4 w-4" />
-			<span>{i18n.t.settings.tab_chatops}</span>
-		</button>
+			<button
+				type="button"
+				onclick={() => activeTab = "chatops"}
+				class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'chatops' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+			>
+				<ChatBubbleLeftRight class="h-4 w-4" />
+				<span>{i18n.t.settings.tab_chatops}</span>
+			</button>
 
-		<button
-			type="button"
-			onclick={() => activeTab = "database"}
-			class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'database' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
-		>
-			<CircleStack class="h-4 w-4" />
-			<span>{i18n.t.settings.tab_database}</span>
-		</button>
+			<button
+				type="button"
+				onclick={() => activeTab = "database"}
+				class="h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap {activeTab === 'database' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}"
+			>
+				<CircleStack class="h-4 w-4" />
+				<span>{i18n.t.settings.tab_database}</span>
+			</button>
+		{/if}
 
 		<button
 			type="button"
